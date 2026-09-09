@@ -1,0 +1,98 @@
+name: Aerium Development Delivery
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Aerium CI run ID on master
+        required: true
+        type: string
+      tag:
+        description: Draft development tag (for example v0.1.0-dev.1)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aerium-development-delivery
+  cancel-in-progress: false
+
+jobs:
+  draft-release:
+    name: Draft Development Release
+    if: github.repository == 'AeriumChris/Aerium' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: development-releases
+      url: https://github.com/${{ github.repository }}/releases
+    permissions:
+      actions: read
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ inputs.run_id }}
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Validate the requested build
+        id: build
+        run: |
+          [[ "$RUN_ID" =~ ^[0-9]+$ ]] || { echo 'Expected a numeric CI run ID'; exit 1; }
+          [[ "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-dev\.[0-9]+$ ]] || { echo 'Only versioned development tags are allowed'; exit 1; }
+          gh api "repos/${GH_REPO}/actions/runs/${RUN_ID}" > run.json
+          jq -e --arg repository "$GH_REPO" '
+            .status == "completed" and .conclusion == "success" and
+            .path == ".github/workflows/aerium-ci.yaml" and
+            .head_branch == "master" and .head_repository.full_name == $repository and
+            (.event == "push" or .event == "workflow_dispatch") and
+            (.head_sha | test("^[0-9a-f]{40}$"))
+          ' run.json
+          commit=$(jq -r .head_sha run.json)
+          echo "commit=${commit}" >> "$GITHUB_OUTPUT"
+
+      - name: Download the tested artifacts
+        env:
+          BUILD_COMMIT: ${{ steps.build.outputs.commit }}
+        run: |
+          gh run download "$RUN_ID" --name "aerium-macos-arm64-${BUILD_COMMIT}" --dir artifacts
+
+      - name: Verify provenance and checksums
+        working-directory: artifacts
+        env:
+          BUILD_COMMIT: ${{ steps.build.outputs.commit }}
+        run: |
+          jq -e --arg commit "$BUILD_COMMIT" --arg run "$RUN_ID" --arg repository "$GH_REPO" '
+            .schema == 1 and .commit == $commit and .run_id == $run and
+            .repository == $repository and .platform == "macos-arm64" and
+            .development_only == true and .notarized == false and .signing == "ad-hoc" and
+            .bundle == ("aerium-macos-arm64-" + $commit + ".zip") and
+            .source == ("aerium-source-" + $commit + ".tar.gz")
+          ' build-metadata.json
+          test "$(wc -l < SHA256SUMS)" -eq 3
+          while read -r digest filename; do
+            [[ "$digest" =~ ^[0-9a-f]{64}$ ]]
+            case "$filename" in
+              "aerium-macos-arm64-${BUILD_COMMIT}.zip"|"aerium-source-${BUILD_COMMIT}.tar.gz"|build-metadata.json) ;;
+              *) echo 'Unexpected checksum entry'; exit 1 ;;
+            esac
+          done < SHA256SUMS
+          sha256sum --check --strict SHA256SUMS
+          test "$(awk '{print $2}' SHA256SUMS | sort -u | wc -l)" -eq 3
+
+      - name: Create a draft prerelease
+        env:
+          BUILD_COMMIT: ${{ steps.build.outputs.commit }}
+        run: |
+          gh api "repos/${GH_REPO}/git/matching-refs/tags/${RELEASE_TAG}" |
+            jq -e --arg ref "refs/tags/${RELEASE_TAG}" 'all(.[]; .ref != $ref)'
+          gh release create "$RELEASE_TAG" \
+            "artifacts/aerium-macos-arm64-${BUILD_COMMIT}.zip" \
+            "artifacts/aerium-source-${BUILD_COMMIT}.tar.gz" \
+            artifacts/build-metadata.json artifacts/SHA256SUMS \
+            --target "$BUILD_COMMIT" \
+            --title "Aerium ${RELEASE_TAG} (development draft)" \
+            --draft --prerelease --latest=false \
+            --notes "Experimental macOS Apple Silicon development build. Ad-hoc signed, not notarized, and not a supported production release. Use Launch-Aerium.command for isolated portable profiles. OBS updates and virtual camera are disabled. Matching source and SHA-256 checksums are attached. Build: https://github.com/${GH_REPO}/actions/runs/${RUN_ID} . Review the public release gate before publishing: https://github.com/${GH_REPO}/blob/${BUILD_COMMIT}/DEVELOPMENT.md#public-release-gate ."

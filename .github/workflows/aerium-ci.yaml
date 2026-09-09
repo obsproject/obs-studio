@@ -42,11 +42,18 @@ jobs:
           cmake --version
 
       - name: Validate documentation and workflow
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: |
-          actionlint .github/workflows/aerium-ci.yaml
+          actionlint .github/workflows/aerium-*.yaml
+          shellcheck build-aux/package-aerium build-aux/launch-aerium.command
           "${RUNNER_TEMP}/aerium-docs/bin/rst2html" --halt=warning README.rst /dev/null
           "${RUNNER_TEMP}/aerium-docs/bin/rst2html" --halt=warning COC.rst /dev/null
-          git diff --check HEAD^ HEAD
+          if [[ "$BASE_SHA" =~ ^[0-9a-f]{40}$ && ! "$BASE_SHA" =~ ^0+$ ]]; then
+            git diff --check "$BASE_SHA" HEAD
+          else
+            git show --format= --check HEAD
+          fi
           test -z "$(git submodule status --recursive | sed -n '/^[+-U]/p')"
 
       - name: Restore build dependencies
@@ -79,3 +86,16 @@ jobs:
         with:
           path: .deps
           key: aerium-deps-macos-arm64-${{ hashFiles('CMakePresets.json') }}
+
+      - name: Package development build
+        run: bash build-aux/package-aerium
+
+      - name: Upload development bundle and matching source
+        if: github.repository == 'AeriumChris/Aerium' && github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: aerium-macos-arm64-${{ github.sha }}
+          path: build_aerium/delivery/*
+          if-no-files-found: error
+          retention-days: 14
+          compression-level: 0

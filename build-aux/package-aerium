@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+cd "$(git rev-parse --show-toplevel)"
+source_root=$(pwd -P)
+git diff --exit-code --quiet
+git diff --cached --exit-code --quiet
+test -z "$(git submodule status --recursive | sed -n '/^[+-U]/p')"
+
+commit=$(git rev-parse HEAD)
+app=build_aerium/frontend/RelWithDebInfo/Aerium.app
+delivery="${PWD}/build_aerium/delivery"
+staging=$(mktemp -d "${TMPDIR:-/tmp}/aerium-package.XXXXXX")
+trap 'rm -rf "$staging"' EXIT
+
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${app}/Contents/Info.plist")" = io.github.aeriumchris.aerium
+codesign --verify --deep --strict "$app"
+version=$("${app}/Contents/MacOS/Aerium" --version)
+bundle_name="aerium-macos-arm64-${commit}.zip"
+source_name="aerium-source-${commit}.tar.gz"
+package="${staging}/Aerium-Development"
+source_dir="${staging}/aerium-source-${commit}"
+mkdir -p "$delivery" "$package" "$source_dir"
+
+ditto "$app" "${package}/Aerium.app"
+cp build-aux/launch-aerium.command "${package}/Launch-Aerium.command"
+chmod +x "${package}/Launch-Aerium.command"
+cp DEVELOPMENT.md COPYING "${package}/"
+git submodule status --recursive > "${package}/SUBMODULES.txt"
+ditto -c -k --sequesterRsrc --keepParent "$package" "${delivery}/${bundle_name}"
+
+git archive HEAD | tar -x -C "$source_dir"
+while IFS= read -r module_root; do
+  module_path=${module_root#"${source_root}/"}
+  mkdir -p "${source_dir}/${module_path}"
+  git -C "$module_path" archive HEAD | tar -x -C "${source_dir}/${module_path}"
+done < <(git submodule foreach --quiet --recursive 'git rev-parse --show-toplevel')
+test -f "${source_dir}/plugins/obs-browser/CMakeLists.txt"
+test -f "${source_dir}/plugins/obs-websocket/CMakeLists.txt"
+tar -czf "${delivery}/${source_name}" -C "$staging" "aerium-source-${commit}"
+
+jq -n \
+  --arg commit "$commit" \
+  --arg repository "${GITHUB_REPOSITORY:-AeriumChris/Aerium}" \
+  --arg run_id "${GITHUB_RUN_ID:-local}" \
+  --arg version "$version" \
+  --arg bundle "$bundle_name" \
+  --arg source "$source_name" \
+  '{schema:1,commit:$commit,repository:$repository,run_id:$run_id,version:$version,platform:"macos-arm64",signing:"ad-hoc",notarized:false,development_only:true,bundle:$bundle,source:$source}' \
+  > "${delivery}/build-metadata.json"
+
+cd "$delivery"
+shasum -a 256 "$bundle_name" "$source_name" build-metadata.json > SHA256SUMS
+shasum -a 256 --check SHA256SUMS
+printf 'Development delivery: %s\n' "$delivery"

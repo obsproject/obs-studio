@@ -30,19 +30,45 @@ The bundle uses `io.github.aeriumchris.aerium` and ad-hoc signing for local deve
 
 The `Aerium CI` workflow runs on pushes to `master`, pull requests targeting `master`, and manual dispatch. It validates reStructuredText, lints its workflow, compiles the Apple Silicon app, checks its identifier and ad-hoc signature, and runs `--version` and `--help`. It also checks that the development preset has no Sparkle updater or virtual camera enabled.
 
-CI does not publish installers, sign with a Developer ID, notarize, or grant recording permissions. Inherited OBS workflows are disabled in the Aerium repository; their source is retained for upstream comparison, not as supported Aerium release automation.
+CI packages the development bundle on every run to validate delivery. Only successful pushes to `master` and manual CI runs on `master` upload artifacts, retained for 14 days. Pull requests do not upload distributable artifacts. Packaging includes the portable launcher, development guide, license, matching tracked source including recursive submodules, build metadata, and SHA-256 checksums.
+
+CI does not publish public releases, sign with a Developer ID, notarize, or grant recording permissions. Inherited OBS workflows are disabled in the Aerium repository; their source is retained for upstream comparison, not as supported Aerium release automation.
 
 Useful local checks:
 
 ```sh
 git diff --check
-actionlint .github/workflows/aerium-ci.yaml
+actionlint .github/workflows/aerium-*.yaml
+shellcheck build-aux/package-aerium build-aux/launch-aerium.command
 codesign --verify --deep --strict build_aerium/frontend/RelWithDebInfo/Aerium.app
 ```
 
 Install Actionlint with `brew install actionlint`. Documentation CI uses `docutils==0.21.2` in an isolated Python environment. For changed C/C++, CMake, or Swift files, use the inherited format-check tools described in [build-aux/README.md](build-aux/README.md).
 
 A successful compilation or CLI check does **not** verify capture, encoding, audio, or streaming. Before accepting changes to those paths, record the OS, hardware, commit, and results of the relevant runtime tests. Existing tests under `test/` are inherited; this baseline workflow does not claim to run an OBS unit-test suite.
+
+## Development Delivery
+
+Download the `aerium-macos-arm64-<commit>` artifact from a successful [Aerium CI run](https://github.com/AeriumChris/Aerium/actions/workflows/aerium-ci.yaml). Extract the artifact, run `shasum -a 256 --check SHA256SUMS` in that directory, then extract the application ZIP. Keep the launcher and app together in a writable development folder. Use `Launch-Aerium.command`, not the app directly: it keeps profiles under the extracted package's `config` directory and loads only bundled plugins.
+
+These builds use ad-hoc signing, not a trusted Developer ID, and macOS may block them. Do not treat downloaded artifacts as supported releases or disable system-wide Gatekeeper protections. For normal development, building locally is the preferred path.
+
+To package an existing clean checkout locally after building, run `bash build-aux/package-aerium`. Files are written under the ignored `build_aerium/delivery` directory. The source archive includes submodules but not Git history or downloaded third-party dependency packages. When building from an archive, pass `-DOBS_VERSION_OVERRIDE=<version>` to CMake using the version recorded in `build-metadata.json` without the `OBS Studio - ` prefix; dependencies still come from the pinned URLs and hashes in the presets.
+
+### Draft Prereleases
+
+`Aerium Development Delivery` is a manual workflow restricted to protected `master` and the `development-releases` GitHub environment. It accepts a successful Aerium CI run on `master` and a new tag in the form `v0.1.0-dev.1`. It rejects pull-request runs, runs from other repositories or workflows, unsuccessful runs, mismatched metadata, invalid checksums, and existing tags. Expired artifacts require a fresh CI run.
+
+Run it from the [Actions page](https://github.com/AeriumChris/Aerium/actions/workflows/aerium-delivery.yaml) or the GitHub CLI:
+
+```sh
+gh workflow run aerium-delivery.yaml --ref master \
+	-f run_id=<successful-ci-run-id> -f tag=v0.1.0-dev.1
+```
+
+The workflow promotes the already-tested artifacts, without rebuilding or executing downloaded code. It creates an **unpublished draft prerelease**, attaches the application, source, metadata, and checksums, and never replaces existing releases or marks them latest. No additional signing, service, or cloud credentials are required; GitHub's scoped workflow token is used.
+
+Only the delivery job has repository write permission. The environment is restricted to protected branches; it does not require an unavailable second maintainer's approval. Public publication remains a separate human decision after the release gate below is satisfied. Creating a draft does not mean its contents are approved for public distribution.
 
 ### Manual Recording Smoke Test
 
