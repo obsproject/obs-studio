@@ -1,79 +1,92 @@
-OBS Studio <https://obsproject.com>
-===================================
+Aerium
+======
 
-.. image:: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml/badge.svg?branch=master
-   :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml?query=branch%3Amaster
+Aerium is an independent fork of `OBS Studio <https://obsproject.com>`_,
+maintained by `AeriumChris <https://github.com/AeriumChris>`_. The aim is to
+build on OBS Studio's recording and streaming capabilities with additional
+functionality, a customised interface, and simpler approaches to selected
+workflows.
 
-.. image:: https://badges.crowdin.net/obs-studio/localized.svg
-   :alt: OBS Studio Translation Project Progress
-   :target: https://crowdin.com/project/obs-studio
+The project is starting from OBS Studio's existing foundation, not building
+a new recording and streaming engine from scratch. Credit for that
+foundation belongs to the OBS Project and its contributors. Aerium is not
+an official OBS Project release or an endorsed OBS product.
 
-.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+Early Development
+-----------------
 
-What is OBS Studio?
--------------------
+**Aerium is in its very early stages.** So far, work has focused on setting
+up the fork and documenting its direction. Aerium-specific application
+features and interface changes have not been implemented yet.
 
-OBS Studio is software designed for capturing, compositing, encoding,
-recording, and streaming video content, efficiently.
+The goals below describe what the project intends to explore, not features
+that are already available or a committed release roadmap. Scope, design,
+and priorities may change as development progresses.
 
-It's distributed under the GNU General Public License v2 (or any later
-version) - see the accompanying COPYING file for more details.
+Aerium does not yet have its own validated release or release process. For
+everyday recording or production streaming, use an official
+`OBS Studio release <https://obsproject.com/download>`_.
 
-Quick Links
------------
+Project Goals
+-------------
 
-- Website: https://obsproject.com
+- **Additional functionality:** explore useful features that build on the
+  capabilities already available in OBS Studio.
+- **A customised interface:** develop Aerium's own interface and visual
+  identity around practical recording and streaming workflows.
+- **Simpler workflows:** identify where setup, controls, or common tasks
+  can be made easier without unnecessarily removing useful flexibility.
+- **A maintainable fork:** keep changes focused so that improvements and
+  fixes from upstream OBS Studio remain practical to incorporate.
 
-- Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
+AI-Assisted Development
+-----------------------
 
-- Forums: https://obsproject.com/forum/
+AI assistance, including GitHub Copilot, is part of Aerium's development
+workflow from the outset. It has helped with repository setup and project
+documentation. As application work begins, it will also support exploring
+the OBS codebase, planning changes, drafting code, and investigating bugs.
 
-- Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+This is AI-assisted development, not a claim that Aerium currently includes
+AI-powered recording or streaming features. AI-generated suggestions can
+be incorrect, incomplete, or unsuitable for the project. They need review
+and appropriate testing before being relied on; generated code is not
+evidence that a feature works.
 
-- Developer/API Documentation: https://obsproject.com/docs
+Responsibility for project direction, code quality, security, and licensing
+remains with the people maintaining and contributing to Aerium. AI tools
+support that work; they do not replace engineering judgement or validation.
 
-- Donating/backing/sponsoring: https://obsproject.com/contribute
+Development and Feedback
+------------------------
 
-- Bug Tracker: https://github.com/obsproject/obs-studio/issues
+The source and Aerium-specific work live in the
+`Aerium repository <https://github.com/AeriumChris/Aerium>`_. Please direct
+feedback and proposed changes for this fork there, rather than to OBS
+Studio's support channels.
 
-Contributing
-------------
+For source builds, the upstream
+`OBS build instructions <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_
+are the starting point. Aerium-specific instructions will be documented as
+the fork develops. Setting up this repository does not mean an Aerium build
+has been independently validated.
 
-- If you would like to help fund or sponsor the project, you can do so
-  via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
-  <https://opencollective.com/obsproject>`_, or `PayPal
-  <https://www.paypal.me/obsproject>`_.  See our `contribute page
-  <https://obsproject.com/contribute>`_ for more information.
+Before proposing code changes, read the inherited
+`contribution guidelines <CONTRIBUTING.md>`_,
+`code style guidelines <CODESTYLE.md>`_, and `Code of Conduct <COC.rst>`_.
+Some inherited documentation still refers to OBS Studio and its processes.
 
-- If you wish to contribute code to the project, please make sure to
-  read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
-  
-- Code for the project follows the code style guidelines, located
-  here: https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
+Upstream and Licensing
+----------------------
 
-- Developer/API documentation can be found here:
-  https://obsproject.com/docs
+- Official OBS Studio: https://obsproject.com
+- Upstream source: https://github.com/obsproject/obs-studio
+- OBS documentation and guides: https://github.com/obsproject/obs-studio/wiki
+- Developer/API documentation: https://obsproject.com/docs
+- Support the OBS Project: https://obsproject.com/contribute
 
-- If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this page:
-  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
-
-- Contributors to OBS Studio and related repositories are expected to
-  follow our Code of Conduct, which can be read here:
-  https://github.com/obsproject/obs-studio/blob/master/COC.rst
-
-- Other ways to contribute are by helping people out with support on
-  our forums or in our community chat.  Please limit support to topics
-  you fully understand -- bad advice is worse than no advice.  When it
-  comes to something that you don't fully know or understand, please
-  defer to the official help or official channels.
-
-
-SAST Tools
-----------
-
-`PVS-Studio <https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source>`_ - static analyzer for C, C++, C#, and Java code.
+Aerium retains OBS Studio's GNU General Public License v2 (or any later
+version). See `COPYING <COPYING>`_ for the license and `AUTHORS <AUTHORS>`_
+for upstream contributor credits. Modifications and redistribution must
+respect the applicable license obligations; AI assistance does not change
+those obligations.
