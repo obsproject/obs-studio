@@ -4,12 +4,10 @@ Code of Conduct
 Preamble
 --------
 
-OBS is made up of many people from all over the world, with different
-backgrounds and experiences that they bring to the project. In order to
-continue letting the community grow, feel safe, and to encourage good
-communication, we are adopting the following Code of Conduct. This
-document—or any subsequent version—will be enforced from July 31st, 2021
-onwards.
+Aerium welcomes people with different backgrounds and experiences. To
+support respectful collaboration, we adopt the guidelines below, adapted
+from the OBS Project's Code of Conduct. This version applies to Aerium
+from September 9th, 2026; OBS maintains its own community and policies.
 
 Scope
 -----
@@ -23,14 +21,12 @@ intend to speak for the project or not.
 A person is considered to be representing the project if they’re
 speaking as a code contributor, support volunteer, member involved with
 the project, or if they have some kind of visible role in an official
-channel for OBS. This does not include roles for Sponsors or Patrons.
+channel for Aerium. This does not include roles for Sponsors or Patrons.
 
-Official channels for OBS include the Discord server, the forum, any
-GitHub repositories within the OBS Project organization, any social
-media accounts for OBS Project, any public events where OBS Project has
-a presence, any presentations given on behalf of OBS Project, or any
-other situation that can be reasonably interpreted as being hosted,
-attended or communicated by the OBS Project.
+Aerium's current official channel is the
+`Aerium GitHub repository <https://github.com/AeriumChris/Aerium>`_,
+including its issues and pull requests. OBS forums, Discord, and email
+addresses are not Aerium reporting channels.
 
 This Code of Conduct is subject to change, and any changes will have a 2
 week notice period before taking immediate effect. Changes will not be
@@ -82,10 +78,10 @@ Support Volunteers
 
 -  There are many users of differing skill levels or abilities. This is
    never a reason to refuse support for someone, as long as it’s within
-   the scope of OBS support, and the user is willing to cooperate.
+   the scope of Aerium support, and the user is willing to cooperate.
 -  Just because something seems obvious to you, doesn’t mean it’s
    actually obvious. If someone is having difficulty understanding how
-   to use OBS, it should never be treated as their fault.
+   to use Aerium, it should never be treated as their fault.
 -  Bad advice is often worse than no advice. If you don’t know how to
    address someone’s issue, then get ahold of someone who’ll be able to
    provide them help. We can only expect so much patience from a user
@@ -114,33 +110,29 @@ within our community:
 Enforcement
 -----------
 
-Instances of unacceptable behavior may be reported by contacting an
-enforcement team member at one of the following addresses:
-coc@obsproject.com. All complaints will be reviewed and investigated,
-and will result in a response that is deemed necessary and appropriate
-to the circumstances. The project team is obligated to maintain
-confidentiality with regard to the reporter of an incident. Further
-details of specific enforcement policies may be posted separately.
+For public moderation concerns, mention ``@AeriumChris`` on the relevant
+issue or pull request without reposting abusive content or personal data.
+The maintainer may request changes, remove content, restrict participation,
+or block accounts as appropriate to the circumstances.
 
-In other cases where behavior is against the general guidelines set out
-in this Code of Conduct, this may be brought up with a moderator through
-either a Discord DM, or through an email to an enforcement member. In
-these cases, it is always assumed in the first instance that a person
-means well, and action will only be taken in the case of repeated
-failure to follow the guidelines.
+Aerium does not yet have a dedicated private conduct-reporting mailbox.
+For confidential reports about abuse on GitHub, use
+`GitHub's reporting process <https://docs.github.com/en/site-policy/content-removal-policies/reporting-abuse-or-spam>`_.
+That process is handled by GitHub, not Aerium. Do not publish sensitive
+information to request moderation. Security vulnerabilities should instead
+use the private channel described in `SECURITY.md <SECURITY.md>`_.
 
 Feedback
 --------
 
 Suggestions for changes can be made by submitting a pull request on the
-`obsproject/obs-studio <https://github.com/obsproject/obs-studio>`__
-repo, or if you wish to privately discuss your concerns, you can instead
-email coc@obsproject.com.
+`Aerium repository <https://github.com/AeriumChris/Aerium>`__.
 
 Attribution
 -----------
 
-This Code of Conduct is adapted in part from the Contributor Covenant,
+Aerium's adaptation is based on the OBS Project's Code of Conduct, which
+is adapted in part from the Contributor Covenant,
 version 1.4, in part from the Citizen Code of Conduct (used under
 CC-BY-SA 3.0), and in part from the Rust Code of Conduct.
 
@@ -151,3 +143,5 @@ Version History
 ---------------
 
 V1.0 - First Iteration - July 31st, 2021
+
+Aerium adaptation - September 9th, 2026

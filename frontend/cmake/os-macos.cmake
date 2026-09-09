@@ -1,5 +1,7 @@
 include(cmake/feature-sparkle.cmake)
 
+target_compile_definitions(obs-studio PRIVATE $<$<BOOL:${ENABLE_PORTABLE_CONFIG}>:ENABLE_PORTABLE_CONFIG>)
+
 target_sources(
   obs-studio
   PRIVATE

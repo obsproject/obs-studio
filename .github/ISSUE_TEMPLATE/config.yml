@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Report a security vulnerability privately
+    url: https://github.com/AeriumChris/Aerium/security/advisories/new
+    about: Do not post security vulnerabilities in public issues.

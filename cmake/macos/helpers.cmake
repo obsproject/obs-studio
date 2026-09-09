@@ -72,6 +72,16 @@ function(set_target_properties_obs target)
       )
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
+      if(AERIUM_BUILD)
+        set_target_properties(${target} PROPERTIES OUTPUT_NAME Aerium)
+        set_target_xcode_properties(
+          ${target}
+          PROPERTIES PRODUCT_BUNDLE_IDENTIFIER io.github.aeriumchris.aerium
+                     PRODUCT_NAME Aerium
+                     INFOPLIST_KEY_CFBundleDisplayName "Aerium Development"
+        )
+      endif()
+
       add_dependencies(${target} ${obs_dependencies})
 
       get_property(obs_frameworks GLOBAL PROPERTY _OBS_FRAMEWORKS)

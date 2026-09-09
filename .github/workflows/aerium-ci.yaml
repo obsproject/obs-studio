@@ -1,0 +1,81 @@
+name: Aerium CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: aerium-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos-build:
+    name: macOS Build
+    runs-on: macos-26
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
+    env:
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+    steps:
+      - name: Check out source and submodules
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
+          submodules: recursive
+          persist-credentials: false
+
+      - name: Install validation tools
+        run: |
+          env -u HOMEBREW_ASK brew install cmake actionlint
+          python3 -m venv "${RUNNER_TEMP}/aerium-docs"
+          "${RUNNER_TEMP}/aerium-docs/bin/pip" install docutils==0.21.2
+          xcodebuild -version
+          cmake --version
+
+      - name: Validate documentation and workflow
+        run: |
+          actionlint .github/workflows/aerium-ci.yaml
+          "${RUNNER_TEMP}/aerium-docs/bin/rst2html" --halt=warning README.rst /dev/null
+          "${RUNNER_TEMP}/aerium-docs/bin/rst2html" --halt=warning COC.rst /dev/null
+          git diff --check HEAD^ HEAD
+          test -z "$(git submodule status --recursive | sed -n '/^[+-U]/p')"
+
+      - name: Restore build dependencies
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        id: dependencies
+        with:
+          path: .deps
+          key: aerium-deps-macos-arm64-${{ hashFiles('CMakePresets.json') }}
+
+      - name: Configure
+        run: cmake --preset aerium-macos
+
+      - name: Build
+        run: cmake --build --preset aerium-macos --parallel 3 -- -quiet
+
+      - name: Check executable and development safeguards
+        run: |
+          app=build_aerium/frontend/RelWithDebInfo/Aerium.app
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "${app}/Contents/Info.plist")" = io.github.aeriumchris.aerium
+          "${app}/Contents/MacOS/Aerium" --version
+          "${app}/Contents/MacOS/Aerium" --help | grep -q -- --portable
+          grep -q '^ENABLE_VIRTUALCAM:BOOL=FALSE$' build_aerium/CMakeCache.txt
+          grep -q '^SPARKLE_APPCAST_URL:.*=$' build_aerium/CMakeCache.txt
+          test ! -d "${app}/Contents/Frameworks/Sparkle.framework"
+          codesign --verify --deep --strict "${app}"
+
+      - name: Save build dependencies
+        if: github.event_name == 'push' && steps.dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae
+        with:
+          path: .deps
+          key: aerium-deps-macos-arm64-${{ hashFiles('CMakePresets.json') }}

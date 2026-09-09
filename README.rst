@@ -1,6 +1,10 @@
 Aerium
 ======
 
+.. image:: https://github.com/AeriumChris/Aerium/actions/workflows/aerium-ci.yaml/badge.svg?branch=master
+  :alt: Aerium macOS Development CI
+  :target: https://github.com/AeriumChris/Aerium/actions/workflows/aerium-ci.yaml
+
 Aerium is an independent fork of `OBS Studio <https://obsproject.com>`_,
 maintained by `AeriumChris <https://github.com/AeriumChris>`_. The aim is to
 build on OBS Studio's recording and streaming capabilities with additional
@@ -15,9 +19,10 @@ an official OBS Project release or an endorsed OBS product.
 Early Development
 -----------------
 
-**Aerium is in its very early stages.** So far, work has focused on setting
-up the fork and documenting its direction. Aerium-specific application
-features and interface changes have not been implemented yet.
+**Aerium is in its very early stages.** Work so far covers repository
+setup, project policies, and a macOS development build configuration.
+The application interface remains inherited from OBS; the planned
+workflow improvements and additional features have not been implemented.
 
 The goals below describe what the project intends to explore, not features
 that are already available or a committed release roadmap. Scope, design,
@@ -44,8 +49,8 @@ AI-Assisted Development
 
 AI assistance, including GitHub Copilot, is part of Aerium's development
 workflow from the outset. It has helped with repository setup and project
-documentation. As application work begins, it will also support exploring
-the OBS codebase, planning changes, drafting code, and investigating bugs.
+documentation, build configuration, and CI. It also supports exploring the
+OBS codebase, planning changes, drafting code, and investigating bugs.
 
 This is AI-assisted development, not a claim that Aerium currently includes
 AI-powered recording or streaming features. AI-generated suggestions can
@@ -65,16 +70,23 @@ The source and Aerium-specific work live in the
 feedback and proposed changes for this fork there, rather than to OBS
 Studio's support channels.
 
-For source builds, the upstream
-`OBS build instructions <https://github.com/obsproject/obs-studio/wiki/Install-Instructions>`_
-are the starting point. Aerium-specific instructions will be documented as
-the fork develops. Setting up this repository does not mean an Aerium build
-has been independently validated.
+Start with the `Aerium development guide <DEVELOPMENT.md>`_ for the macOS
+build commands, isolated test profiles, validation checklist, first
+milestone, and upstream-sync procedure. Other platforms remain inherited
+from OBS and are not yet validated Aerium targets. The guide distinguishes
+build checks from runtime testing and lists the requirements for a public
+release.
 
-Before proposing code changes, read the inherited
+Use `Aerium Issues <https://github.com/AeriumChris/Aerium/issues>`_ for bugs
+and proposals. Report vulnerabilities privately as described in the
+`security policy <SECURITY.md>`_.
+
+Before proposing code changes, read the
 `contribution guidelines <CONTRIBUTING.md>`_,
 `code style guidelines <CODESTYLE.md>`_, and `Code of Conduct <COC.rst>`_.
-Some inherited documentation still refers to OBS Studio and its processes.
+Aerium permits disclosed, reviewed AI assistance; upstream OBS maintains
+its own contribution policy. Some inherited engineering documentation
+still refers to OBS Studio and its processes.
 
 Upstream and Licensing
 ----------------------

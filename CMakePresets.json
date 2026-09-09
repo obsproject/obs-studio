@@ -109,6 +109,28 @@
       }
     },
     {
+      "name": "aerium-macos",
+      "displayName": "Aerium macOS Development",
+      "description": "Apple Silicon development build without publishing or OBS updates",
+      "inherits": ["macos"],
+      "binaryDir": "${sourceDir}/build_aerium",
+      "cacheVariables": {
+        "AERIUM_BUILD": true,
+        "ENABLE_PORTABLE_CONFIG": true,
+        "ENABLE_WHATSNEW": false,
+        "CMAKE_OSX_ARCHITECTURES": "arm64",
+        "OBS_CODESIGN_IDENTITY": "-",
+        "OBS_CODESIGN_TEAM": "",
+        "OBS_PROVISIONING_PROFILE": "",
+        "SPARKLE_APPCAST_URL": "",
+        "SPARKLE_PUBLIC_KEY": "",
+        "VIRTUALCAM_DEVICE_UUID": "",
+        "VIRTUALCAM_SINK_UUID": "",
+        "VIRTUALCAM_SOURCE_UUID": "",
+        "ENABLE_VIRTUALCAM": false
+      }
+    },
+    {
       "name": "macos-ci",
       "displayName": "macOS (CI)",
       "description": "CI macOS build (single architecture only)",
@@ -215,6 +237,13 @@
     }
   ],
   "buildPresets": [
+    {
+      "name": "aerium-macos",
+      "configurePreset": "aerium-macos",
+      "displayName": "Aerium macOS Development",
+      "configuration": "RelWithDebInfo",
+      "targets": ["obs-studio"]
+    },
     {
       "name": "windows-x64",
       "configurePreset": "windows-x64",
