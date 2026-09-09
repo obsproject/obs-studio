@@ -583,18 +583,17 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 
 	ng->context = filter;
 
-	char sdk_path[MAX_PATH];
+	wchar_t sdk_path[MAX_PATH];
 
 	/* find SDK */
-	if (!nvafx_get_sdk_path(sdk_path, sizeof(sdk_path))) {
+	if (!nvafx_get_sdk_path(sdk_path, _countof(sdk_path))) {
 		ng->nvidia_sdk_dir_found = false;
 		do_log(LOG_ERROR, "NVAFX redist is not installed.");
 		nvidia_audio_destroy(ng);
 		return NULL;
 	} else {
-		size_t size = sizeof(sdk_path) + 1;
-		ng->sdk_path = bmalloc(size);
-		strcpy(ng->sdk_path, sdk_path);
+
+		os_wcs_to_utf8_ptr(sdk_path, 0, &ng->sdk_path);
 		ng->nvidia_sdk_dir_found = true;
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
@@ -602,7 +601,7 @@ static void *nvidia_audio_create(obs_data_t *settings, obs_source_t *filter)
 
 		pthread_mutex_init(&ng->nvafx_mutex, NULL);
 
-		info("NVAFX SDK redist path was found here %s", sdk_path);
+		info("NVAFX SDK redist path was found here %s", ng->sdk_path);
 		// set FX
 		const char *method = obs_data_get_string(settings, S_METHOD);
 		set_nv_model(ng, method);

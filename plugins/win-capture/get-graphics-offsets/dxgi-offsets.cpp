@@ -26,20 +26,20 @@ static inline bool dxgi_init(dxgi_info &info)
 	IUnknown *device;
 	HRESULT hr;
 
-	info.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "d3d10 get-offset window", WS_POPUP, 0, 0, 2, 2, nullptr,
-				    nullptr, GetModuleHandleA(nullptr), nullptr);
+	info.hwnd = CreateWindowExW(0, DUMMY_WNDCLASS, L"d3d10 get-offset window", WS_POPUP, 0, 0, 2, 2, nullptr,
+				    nullptr, GetModuleHandleW(nullptr), nullptr);
 	if (!info.hwnd) {
 		return false;
 	}
 
-	info.module = LoadLibraryA("dxgi.dll");
+	info.module = LoadLibraryW(L"dxgi.dll");
 	if (!info.module) {
 		return false;
 	}
 
 	create_factory = (create_fac_t)GetProcAddress(info.module, "CreateDXGIFactory1");
 
-	d3d10_module = LoadLibraryA("d3d10.dll");
+	d3d10_module = LoadLibraryW(L"d3d10.dll");
 	if (!d3d10_module) {
 		return false;
 	}

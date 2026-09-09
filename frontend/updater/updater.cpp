@@ -82,6 +82,39 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 /* ----------------------------------------------------------------------- */
 
+static inline bool UTF8ToWide(wchar_t *wide, int wideSize, const char *utf8)
+{
+	return !!MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, wideSize);
+}
+
+static inline bool WideToUTF8(char *utf8, int utf8Size, const wchar_t *wide)
+{
+	return !!WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Size, nullptr, nullptr);
+}
+
+static inline bool UTF8ToWidePtr(wchar_t *wide, const char *utf8)
+{
+	wide = nullptr;
+	int utf8_length = (int)strlen(utf8);
+	int size = MultiByteToWideChar(CP_UTF8, 0, utf8, utf8_length + 1, nullptr, 0);
+	if (size <= 0) {
+		return false;
+	}
+
+	wide = (wchar_t *)malloc((size_t)size);
+	if (MultiByteToWideChar(CP_UTF8, 0, utf8, utf8_length + 1, wide, size) <= 0) {
+		free(wide);
+		wide = nullptr;
+		return false;
+	}
+	return true;
+}
+
+#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
+#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
+
+/* ----------------------------------------------------------------------- */
+
 static bool IsVSRedistOutdated()
 {
 	VS_FIXEDFILEINFO *info = nullptr;
@@ -559,7 +592,10 @@ try {
 	return true;
 
 } catch (const exception &e) {
-	Status(L"Exception: %S", e.what());
+	wchar_t *what = nullptr;
+	UTF8ToWidePtr(what, e.what());
+	Status(L"Exception: %s", what ? what : L"<encoding error>");
+	free(what);
 	return false;
 } catch (...) {
 	Status(L"Unknown exception occurred in RunDownloadWorkers");
@@ -647,21 +683,6 @@ static bool WaitForOBS()
 
 /* ----------------------------------------------------------------------- */
 
-static inline bool UTF8ToWide(wchar_t *wide, int wideSize, const char *utf8)
-{
-	return !!MultiByteToWideChar(CP_UTF8, 0, utf8, -1, wide, wideSize);
-}
-
-static inline bool WideToUTF8(char *utf8, int utf8Size, const wchar_t *wide)
-{
-	return !!WideCharToMultiByte(CP_UTF8, 0, wide, -1, utf8, utf8Size, nullptr, nullptr);
-}
-
-#define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
-#define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
-
-/* ----------------------------------------------------------------------- */
-
 queue<string> hashQueue;
 
 void HasherThread()
@@ -718,7 +739,10 @@ try {
 	}
 
 } catch (const exception &e) {
-	Status(L"Exception: %S", e.what());
+	wchar_t *what = nullptr;
+	UTF8ToWidePtr(what, e.what());
+	Status(L"Exception: %s", what ? what : L"<encoding error>");
+	free(what);
 } catch (...) {
 	Status(L"Unknown exception occurred in RunHasherWorkers");
 }
@@ -1197,7 +1221,10 @@ try {
 	return true;
 
 } catch (const exception &e) {
-	Status(L"Exception: %S", e.what());
+	wchar_t *what = nullptr;
+	UTF8ToWidePtr(what, e.what());
+	Status(L"Exception: %s", what ? what : L"<encoding error>");
+	free(what);
 	return false;
 } catch (...) {
 	Status(L"Unknown exception occurred in RunUpdateWorkers");
@@ -1226,7 +1253,7 @@ static bool UpdateVSRedists()
 
 	HttpHandle hConnect = WinHttpConnect(hSession, kMSHostname, INTERNET_DEFAULT_HTTPS_PORT, 0);
 	if (!hConnect) {
-		Status(L"Update failed: Couldn't connect to %S", kMSHostname);
+		Status(L"Update failed: Couldn't connect to %s", kMSHostname);
 		return false;
 	}
 
@@ -1317,32 +1344,32 @@ static bool UpdateVSRedists()
 
 static void UpdateRegistryVersion(const Manifest &manifest)
 {
-	const char *regKey = R"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
+	const wchar_t *regKey = LR"(Software\Microsoft\Windows\CurrentVersion\Uninstall\OBS Studio)";
 	LSTATUS res;
 	HKEY key;
-	char version[32];
+	wchar_t version[32];
 	int formattedLen;
 
 	/* The manifest does not store a version string, so we gotta make one ourselves. */
 	if (manifest.beta || manifest.rc) {
-		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d-%s%d", manifest.version_major,
-					 manifest.version_minor, manifest.version_patch, manifest.beta ? "beta" : "rc",
-					 manifest.beta ? manifest.beta : manifest.rc);
+		formattedLen = swprintf_s(version, _countof(version), L"%d.%d.%d-%s%d", manifest.version_major,
+					  manifest.version_minor, manifest.version_patch,
+					  manifest.beta ? L"beta" : L"rc", manifest.beta ? manifest.beta : manifest.rc);
 	} else {
-		formattedLen = sprintf_s(version, sizeof(version), "%d.%d.%d", manifest.version_major,
-					 manifest.version_minor, manifest.version_patch);
+		formattedLen = swprintf_s(version, _countof(version), L"%d.%d.%d", manifest.version_major,
+					  manifest.version_minor, manifest.version_patch);
 	}
 
 	if (formattedLen <= 0) {
 		return;
 	}
 
-	res = RegOpenKeyExA(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
+	res = RegOpenKeyExW(HKEY_LOCAL_MACHINE, regKey, 0, KEY_WRITE | KEY_WOW64_32KEY, &key);
 	if (res != ERROR_SUCCESS) {
 		return;
 	}
 
-	RegSetValueExA(key, "DisplayVersion", 0, REG_SZ, (const BYTE *)version, formattedLen + 1);
+	RegSetValueExW(key, L"DisplayVersion", 0, REG_SZ, (const BYTE *)version, (formattedLen + 1) * sizeof(wchar_t));
 	RegCloseKey(key);
 }
 
@@ -1513,9 +1540,13 @@ static bool Update(wchar_t *cmdLine)
 			json manifestContents = json::parse(manifestFile);
 			manifest = manifestContents.get<Manifest>();
 		} catch (json::exception &e) {
+
+			wchar_t *what = nullptr;
+			UTF8ToWidePtr(what, e.what());
 			Status(L"Update failed: Couldn't parse update "
-			       L"manifest: %S",
-			       e.what());
+			       L"manifest: %s",
+			       what ? what : L"<encoding error>");
+			free(what);
 			return false;
 		}
 	}
@@ -1568,7 +1599,8 @@ static bool Update(wchar_t *cmdLine)
 			continue;
 		}
 
-		char outputPath[MAX_PATH];
+		// UTF-16 code unit converted to UTF-8 is 3 bytes at most
+		char outputPath[MAX_PATH * 3];
 		if (!WideToUTF8Buf(outputPath, update.outputPath.c_str())) {
 			continue;
 		}
@@ -1639,7 +1671,10 @@ static bool Update(wchar_t *cmdLine)
 		json patchManifest = json::parse(newManifest);
 		patches = patchManifest.get<PatchesResponse>();
 	} catch (json::exception &e) {
-		Status(L"Update failed: Couldn't parse patch manifest: %S", e.what());
+		wchar_t *what = NULL;
+		UTF8ToWidePtr(what, e.what());
+		Status(L"Update failed: Couldn't parse patch manifest: %s", what ? what : L"<encoding error>");
+		free(what);
 		return false;
 	}
 

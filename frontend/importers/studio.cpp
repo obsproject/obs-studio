@@ -143,27 +143,23 @@ void TranslateOSStudio(Json &res)
 
 static string CheckPath(const string &path, const string &rootDir)
 {
-	char root[512];
-	*root = 0;
-	size_t rootLen = os_get_abs_path(rootDir.c_str(), root, sizeof(root));
+	BPtr<char> root = os_get_abs_path_ptr(rootDir.c_str());
 
-	char absPath[512];
-	*absPath = 0;
-	size_t len = os_get_abs_path((rootDir + path).c_str(), absPath, sizeof(absPath));
+	BPtr<char> absPath = os_get_abs_path_ptr((rootDir + path).c_str());
 
-	if (len == 0) {
+	if (!absPath || !*absPath.Get()) {
 		return path;
 	}
 
-	if (strstr(absPath, root) != absPath) {
+	if (strstr(absPath.Get(), root) != absPath.Get()) {
 		return path;
 	}
 
-	if (*(absPath + rootLen) != QDir::separator().toLatin1()) {
+	if (*(absPath.Get() + strlen(root)) != QDir::separator().toLatin1()) {
 		return path;
 	}
 
-	return absPath;
+	return string(absPath.Get());
 }
 
 void TranslatePaths(Json &res, const string &rootDir)

@@ -481,13 +481,16 @@ static int libsrt_setup(URLContext *h, const char *uri)
 		hints.ai_flags |= AI_PASSIVE;
 	ret = getaddrinfo(hostname[0] ? hostname : NULL, portstr, &hints, &ai);
 	if (ret) {
-		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt]: Failed to resolve hostname %s: %s", hostname,
 #ifdef _WIN32
-		     gai_strerrorA(ret)
+		char *strerror = NULL;
+		os_wcs_to_utf8_ptr(gai_strerrorW(ret), 0, &strerror);
+		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt]: Failed to resolve hostname %s: %s", hostname,
+		     strerror);
+		bfree(strerror);
 #else
-		     gai_strerror(ret)
+		blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt]: Failed to resolve hostname %s: %s", hostname,
+		     gai_strerror(ret));
 #endif
-		);
 		s->last_error.obs_output_error_number = OBS_OUTPUT_BAD_PATH;
 		return AVERROR(EIO);
 	}
