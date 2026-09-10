@@ -1195,6 +1195,8 @@ static inline void obs_free_hotkeys(void)
 	bfree(hotkeys->push_to_talk);
 	bfree(hotkeys->sceneitem_show);
 	bfree(hotkeys->sceneitem_hide);
+	bfree(hotkeys->monitor_on);
+	bfree(hotkeys->monitor_off);
 
 	obs_hotkey_name_map_free();
 

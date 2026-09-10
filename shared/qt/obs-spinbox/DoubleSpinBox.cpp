@@ -122,7 +122,7 @@ void DoubleSpinBox::mousePressEvent(QMouseEvent *event)
 
 	// Mouse button was pressed and is not over the spinbox buttons, forward event to the lineEdit.
 	QRect lineEditRect = lineEdit()->geometry();
-	mouseDragYOffset = ((double)height() / 2) - event->position().y();
+	mouseDragYOffset = (static_cast<double>(height()) / 2) - event->position().y();
 
 	if (!lineEditRect.contains(event->pos())) {
 		QPointF localPos = event->pos() - lineEditRect.topLeft();
@@ -205,7 +205,7 @@ void DoubleSpinBox::wheelEvent(QWheelEvent *event)
 
 void DoubleSpinBox::clampCursorPosition()
 {
-	QSignalBlocker block(lineEdit());
+	QSignalBlocker block{lineEdit()};
 
 	if (suffix().isEmpty() && prefix().isEmpty()) {
 		return;

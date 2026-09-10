@@ -17,10 +17,10 @@
 
 #include <Idian/StateEventFilter.hpp>
 #include <Idian/Utils.hpp>
+
 #include <QAbstractButton>
 #include <QFocusEvent>
-#include <QStyleOptionButton>
-#include <QTimer>
+#include <QLabel>
 
 namespace idian {
 StateEventFilter::StateEventFilter(idian::Utils *utils, QWidget *target) : QObject(target), target(target), utils(utils)
@@ -102,7 +102,13 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 
 	if (updateIconColors) {
 		// Delay icon update
-		QTimer::singleShot(0, this, [this, widget]() { utils->applyColorToIcon(widget); });
+		if (QLabel *label = qobject_cast<QLabel *>(widget)) {
+			QMetaObject::invokeMethod(
+				this, [this, label]() { utils->applyColorToIcon(label); }, Qt::QueuedConnection);
+		} else if (QAbstractButton *button = qobject_cast<QAbstractButton *>(widget)) {
+			QMetaObject::invokeMethod(
+				this, [this, button]() { utils->applyColorToIcon(button); }, Qt::QueuedConnection);
+		}
 	}
 
 	return QObject::eventFilter(obj, event);

@@ -133,6 +133,7 @@ static const char *wgc_whole_match_classes[] = {
 	"OfficeApp-Frame",        /* Microsoft 365 Software */
 	"WindowsWebview2Wrapper", /* Construct 3 Games */
 	"SDL_app",
+	"WINDOWSCLIENT", /* Roblox */
 	NULL,
 };
 

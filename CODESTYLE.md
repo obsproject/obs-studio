@@ -214,7 +214,7 @@ Some additional notes:
 > [!IMPORTANT]
 > The “`static`” keyword is one of the more confusing aspects of modern C++, particularly compared to C. The meaning of the keyword changes depending on whether it is used for a function, a global variable, a function-scope variable, a class method, or a class member.
 >
-> In general limit its use in C++ code to describe “storage duration” of variables or for class methods (e.g. factory methods). Use thread-safe functions to initialize a function-local static variable or class member (to prevent possible race conditions when the variable is initialized). Also be mindful of the “Static Initialization Order Fiasco”. Otherwise all the common established pitfalls and issues of global variables apply.
+> In general limit its use in C++ code to describe “storage duration” of variables or for class methods (e.g. factory methods). Be mindful that even though since C++11 function-local static variables are initialized non-concurrently, this does not make consecutive _access_ of the object thread-safe as well. Also be mindful of the “Static Initialization Order Fiasco”. Otherwise all the common established pitfalls and issues of global variables apply.
 >
 > `constexpr` definitions do not need to use the static keyword. `constexpr` implies const and const implies static storage duration by default.
 >
