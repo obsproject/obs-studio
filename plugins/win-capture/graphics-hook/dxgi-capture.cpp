@@ -305,7 +305,7 @@ static HRESULT STDMETHODCALLTYPE hook_present1(IDXGISwapChain1 *swap, UINT sync_
 
 bool hook_dxgi(void)
 {
-	HMODULE dxgi_module = get_system_module("dxgi.dll");
+	HMODULE dxgi_module = get_system_module(L"dxgi.dll");
 	if (!dxgi_module) {
 		hlog_verbose("Failed to find dxgi.dll. Skipping hook attempt.");
 		return false;

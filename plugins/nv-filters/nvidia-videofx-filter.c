@@ -261,13 +261,20 @@ static bool nvvfx_filter_create_internal(struct nvvfx_data *filter)
 		log_nverror_destroy(filter, vfxErr);
 
 	if (id == S_FX_AIGS || id == S_FX_BG_BLUR) {
-		char buffer[MAX_PATH];
-		char modelDir[MAX_PATH];
+		wchar_t buffer[MAX_PATH];
+		wchar_t modelDir[MAX_PATH];
 		nvvfx_get_sdk_path(buffer, MAX_PATH);
-		size_t max_len = sizeof(buffer) / sizeof(char);
-		snprintf(modelDir, max_len, "%s\\models", buffer);
-		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY, modelDir);
+		int ret = _snwprintf(modelDir, _countof(buffer), L"%s\\models", buffer);
+		if (ret < 0 || ret >= MAX_PATH) {
+			return false;
+		}
+
+		char *modelDirUtf8;
+		os_wcs_to_utf8_ptr(modelDir, wcslen(modelDir), &modelDirUtf8);
+
+		vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY, modelDirUtf8);
 		vfxErr = NvVFX_SetCudaStream(filter->handle, NVVFX_CUDA_STREAM, filter->stream);
+		bfree(modelDirUtf8);
 		if (NVCV_SUCCESS != vfxErr)
 			log_nverror_destroy(filter, vfxErr);
 	}

@@ -45,11 +45,11 @@ void OBSLogViewer::on_showStartup_clicked(bool checked)
 
 void OBSLogViewer::InitLog()
 {
-	char logDir[512];
+	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
 	std::string path;
 
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs")) {
-		path += logDir;
+	if (logDir.Get()) {
+		path += logDir.Get();
 		path += "/";
 		path += App()->GetCurrentLog();
 	}
@@ -114,14 +114,14 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 
 void OBSLogViewer::on_openButton_clicked()
 {
-	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0) {
+	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
+	if (!logDir || !*logDir.Get()) {
 		return;
 	}
 
 	const char *log = App()->GetCurrentLog();
 
-	std::string path = logDir;
+	std::string path = logDir.Get();
 	path += "/";
 	path += log;
 

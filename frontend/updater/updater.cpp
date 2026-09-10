@@ -1568,7 +1568,8 @@ static bool Update(wchar_t *cmdLine)
 			continue;
 		}
 
-		char outputPath[MAX_PATH];
+		// UTF-16 code unit converted to UTF-8 is 3 bytes at most
+		char outputPath[MAX_PATH * 3];
 		if (!WideToUTF8Buf(outputPath, update.outputPath.c_str())) {
 			continue;
 		}
