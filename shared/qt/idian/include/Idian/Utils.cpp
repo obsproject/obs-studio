@@ -26,6 +26,76 @@
 #include <QStyleOptionFrame>
 
 namespace idian {
+void Utils::polishChildren(QWidget *widget)
+{
+	for (QWidget *child : widget->findChildren<QWidget *>()) {
+		repolish(child);
+	}
+}
+
+void Utils::repolish(QWidget *widget)
+{
+	widget->style()->polish(widget);
+}
+
+void Utils::addClass(QWidget *widget, const QString &classname)
+{
+	if (!classNameIsValid(classname)) {
+		return;
+	}
+
+	QVariant current = widget->property("class");
+
+	QStringList classList = current.toString().split(" ");
+	if (classList.contains(classname)) {
+		return;
+	}
+
+	classList.removeDuplicates();
+	classList.removeAll("");
+	classList.append(classname);
+
+	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+	widget->setProperty("class", newClasses);
+
+	repolish(widget);
+}
+
+void Utils::removeClass(QWidget *widget, const QString &classname)
+{
+	if (!classNameIsValid(classname)) {
+		return;
+	}
+
+	QVariant current = widget->property("class");
+	if (current.isNull()) {
+		return;
+	}
+
+	QStringList classList = current.toString().split(" ");
+	if (!classList.contains(classname, Qt::CaseSensitive)) {
+		return;
+	}
+
+	classList.removeDuplicates();
+	classList.removeAll("");
+	classList.removeAll(classname);
+
+	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+	widget->setProperty("class", newClasses);
+
+	repolish(widget);
+}
+
+void Utils::toggleClass(QWidget *widget, const QString &classname, bool toggle)
+{
+	if (toggle) {
+		addClass(widget, classname);
+	} else {
+		removeClass(widget, classname);
+	}
+}
+
 void Utils::applyColorToIcon(QAbstractButton *button)
 {
 	if (button && !button->icon().isNull()) {
@@ -71,6 +141,6 @@ QPixmap Utils::recolorPixmap(const QPixmap &src, const QColor &color)
 // Widgets can then be styled via CSS class-style rules like .hover.
 void Utils::applyStateStylingEventFilter(QWidget *widget)
 {
-	widget->installEventFilter(new StateEventFilter(this, widget));
+	widget->installEventFilter(new StateEventFilter(widget));
 }
 } // namespace idian

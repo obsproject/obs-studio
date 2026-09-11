@@ -35,7 +35,7 @@ class RowList;
 class RowInfo;
 
 // Row widget containing one or more controls
-class Row : public QFrame, public Utils {
+class Row : public QFrame {
 	Q_OBJECT
 
 public:

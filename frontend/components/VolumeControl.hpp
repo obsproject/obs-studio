@@ -66,8 +66,6 @@ public:
 	};
 
 private:
-	std::unique_ptr<idian::Utils> utils;
-
 	OBSWeakSource weakSource_;
 	const char *uuid;
 	std::vector<OBSSignal> obsSignals;

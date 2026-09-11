@@ -27,7 +27,7 @@
 #include <Idian/moc_Row.cpp>
 
 namespace idian {
-Row::Row(QWidget *parent) : QFrame(parent), Utils(this)
+Row::Row(QWidget *parent) : QFrame(parent)
 {
 	rowLayout = new QHBoxLayout(this);
 	rowLayout->setContentsMargins(0, 0, 0, 0);
@@ -49,7 +49,7 @@ void Row::setBuddy(QWidget *widget)
 void Row::setChangeCursor(bool change)
 {
 	changeCursor = change;
-	Utils::toggleClass("cursor-pointer", change);
+	Utils::toggleClass(this, "cursor-pointer", change);
 }
 
 void Row::enterEvent(QEnterEvent *event)
@@ -98,7 +98,7 @@ void Row::connectBuddyWidget(QWidget *widget)
 {
 	setAttribute(Qt::WA_Hover, true);
 	setFocusPolicy(Qt::StrongFocus);
-	applyStateStylingEventFilter(this);
+	Utils::applyStateStylingEventFilter(this);
 
 	// If element is a ToggleSwitch and checkable, forward clicks to the widget
 	ToggleSwitch *obsToggle = qobject_cast<ToggleSwitch *>(widget);
