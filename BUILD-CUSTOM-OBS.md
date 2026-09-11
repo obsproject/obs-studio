@@ -21,14 +21,31 @@ remain available. Native window decorations and OBS preview rendering are retain
 Run `build-windows.bat` from a Command Prompt on Windows x64. It initializes
 submodules, configures the repository's `windows-x64` preset, builds Release,
 and installs the executable with its plugins and runtime files into
-`build_x64/install`. The resulting executable is
-`build_x64/install/bin/64bit/obs64.exe`. Keep the whole install folder together.
-This creates a runnable application folder, not a setup installer.
+`build_x64/install`. It then creates a **setup installer EXE** in the `dist`
+folder beside the batch file: **OBS-Nova-Setup-&lt;version&gt;-x64.exe**. Give that
+single setup EXE to other people; they do not need the repository, Git, Visual
+Studio, CMake, ATL or Inno Setup. A SHA-256 checksum file is written alongside it.
+
+The installer targets Windows 10 (build 19044+) and Windows 11 on x64-compatible
+PCs with hardware/drivers supported by OBS. It does not run on macOS, Linux or
+32-bit Windows. It installs OBS Nova under Program Files, creates a Start menu
+shortcut and optional desktop shortcut, and supports removal through Windows
+Installed Apps. It embeds the Microsoft x64 and x86 C++ runtimes, plugins,
+Qt, browser files and application data, so the destination PC does not need
+internet to obtain those dependencies. Installation requires administrator
+approval. OBS hardware and streaming-service requirements still apply.
+
+The build PC also needs Inno Setup 6.7 or later. If it is missing, the launcher
+offers to install the pinned, checksum- and signature-verified official 6.7.3
+compiler. This compiler is not installed on destination PCs. Inno Setup's
+[licensing terms](https://jrsoftware.org/isdl.php) apply to its use.
+The generated setup EXE is unsigned unless you arrange code signing separately.
 
 **GitHub Download ZIP is supported.** Extract the complete ZIP and double-click
 `build-windows.bat`. The launcher creates a full checkout of this fork's latest
-`master` under `build-source`, including submodules. ZIP builds produce
-`build-source/build_x64/install/bin/64bit/obs64.exe`. Your extracted files are
+`master` under `build-source`, including submodules. ZIP builds place the setup
+EXE in the original extracted folder's `dist` directory. The raw application
+also remains in `build-source/build_x64/install/bin/64bit/obs64.exe`. Your extracted files are
 left intact; edits made only to those extracted files are not compiled. Repeat
 runs update the managed checkout with a fast-forward pull. If it has local
 changes, a different remote or a different branch, the launcher stops without
@@ -58,6 +75,8 @@ Use `--no-pause` for automation; this also disables interactive installation
 prompts. `--check` never installs components or clones source. Failures return a
 nonzero exit code. Keep both included helpers, `scripts/Build-Nova.ps1` and
 `scripts/Build-Nova.Support.ps1`, with the batch file.
+The packaging files `scripts/Package-Nova.ps1` and `scripts/installer/Nova.iss`
+are also required and included in the repository.
 
 Launcher regression checks run with Windows PowerShell using
 `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/tests/Build-Nova.Tests.ps1`.
@@ -77,6 +96,7 @@ The combined action requests recording once the stream start is accepted. It
 does not guarantee both outputs succeed: existing OBS output errors still apply.
 If streaming is active, the button starts recording without stopping streaming.
 
-Validation: source whitespace, UI XML, localization references, and patch
-application were checked. A full OBS build and live output tests have not yet
-been performed in the development environment.
+Validation: source checks and launcher regression tests passed. The installer
+definition compiled with Inno Setup 6.7.3 using an isolated test payload. That
+fixture is not a distributable OBS build. A full OBS build, clean-PC installation,
+upgrade/uninstall and live output tests remain outstanding.

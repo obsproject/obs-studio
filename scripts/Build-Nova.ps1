@@ -3,6 +3,7 @@ param([switch] $Check, [switch] $NonInteractive)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
+$distributionPath = Join-Path $projectRoot 'dist'
 $transcribing = $false
 $result = 1
 . (Join-Path $PSScriptRoot 'Build-Nova.Support.ps1')
@@ -97,6 +98,7 @@ try {
     if ($missing.Count) {
         throw ("Build prerequisites are missing:`n`n - " + ($missing -join "`n`n - "))
     }
+    $installerCompiler = Get-NovaInstallerCompiler $projectRoot -NonInteractive:$NonInteractive -Check:$Check
 
     # CMake's dependency setup also invokes Git by name.
     $env:PATH = "$(Split-Path -Parent $git);$(Split-Path -Parent $cmake);$env:PATH"
@@ -132,7 +134,12 @@ try {
         $executable = Join-Path $installPath 'bin\64bit\obs64.exe'
         if (!(Test-Path -LiteralPath $executable)) { throw "Expected executable was not found: $executable" }
         Write-Host "`nReady: $executable"
-        Write-Host 'Keep the entire build_x64\install folder together; OBS needs its DLLs and data.'
+        Write-Host 'Packaging the distributable Windows setup EXE...'
+        $packageScript = Join-Path $projectRoot 'scripts\Package-Nova.ps1'
+        Invoke-BuildCommand "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" @(
+            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $packageScript,
+            '-InstallPath', $installPath, '-OutputPath', $distributionPath,
+            '-CompilerPath', $installerCompiler, '-VisualStudio', $visualStudio)
     }
     $result = 0
 } catch {
