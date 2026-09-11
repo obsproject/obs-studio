@@ -1,10 +1,11 @@
 [CmdletBinding()]
-param([switch] $Check)
+param([switch] $Check, [switch] $NonInteractive)
 
 $ErrorActionPreference = 'Stop'
 $projectRoot = Split-Path -Parent $PSScriptRoot
 $transcribing = $false
 $result = 1
+. (Join-Path $PSScriptRoot 'Build-Nova.Support.ps1')
 
 function Find-Executable {
     param([string] $Name, [string[]] $Candidates)
@@ -52,11 +53,18 @@ try {
     if (!$visualStudio) {
         $missing += 'Open Visual Studio Installer. Install/Modify Visual Studio 2026 or Build Tools 2026 and select Desktop development with C++ (MSVC x64/x86 tools).'
     } else {
-        $toolsVersionFile = Join-Path $visualStudio 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt'
-        $toolsVersion = (Get-Content -LiteralPath $toolsVersionFile -Raw).Trim()
-        $atlHeader = Join-Path $visualStudio "VC\Tools\MSVC\$toolsVersion\atlmfc\include\atlcomcli.h"
-        if (!(Test-Path -LiteralPath $atlHeader)) {
-            $missing += 'In Visual Studio Installer > Modify > Individual components, install C++ ATL for latest build tools (x86 and x64). OBS DirectShow capture requires atlcomcli.h and atlstr.h.'
+        if (!(Test-NovaAtl $visualStudio)) {
+            if (!$Check -and !$NonInteractive) {
+                Write-Host 'OBS needs the C++ ATL component for video capture. It is not installed.'
+                $answer = Read-Host 'Install C++ ATL now using Visual Studio Installer? [y/N]'
+                if ($answer -match '^(y|yes)$') {
+                    $channel = & $vswhere -path $visualStudio -property channelId
+                    Install-NovaAtl $visualStudio (Join-Path (Split-Path -Parent $vswhere) 'setup.exe') $channel
+                }
+            }
+            if (!(Test-NovaAtl $visualStudio)) {
+                $missing += 'C++ ATL is missing. Run build-windows.bat normally and choose Y to install it, or add C++ ATL (x86 and x64) through Visual Studio Installer.'
+            }
         }
     }
 
@@ -84,9 +92,8 @@ try {
     if (!(Test-Path -LiteralPath (Join-Path $kitsRoot 'Include\10.0.26100.0\um\Windows.h'))) {
         $missing += 'In Visual Studio Installer > Individual components, install Windows SDK 10.0.26100.0 (required by this fork).'
     }
-    if (!(Test-Path -LiteralPath (Join-Path $projectRoot '.git'))) {
-        $missing += 'Use a Git clone, not GitHub Download ZIP. Run: git clone --recursive https://github.com/Kryptographer/obs-studio.git'
-    }
+    $fromArchive = !(Test-Path -LiteralPath (Join-Path $projectRoot '.git'))
+    if ($fromArchive) { Write-Host 'ZIP download supported: a complete checkout will be created in build-source when building.' }
     if ($missing.Count) {
         throw ("Build prerequisites are missing:`n`n - " + ($missing -join "`n`n - "))
     }
@@ -99,6 +106,8 @@ try {
     if ($Check) {
         Write-Host 'Prerequisite checks passed. Run build-windows.bat without --check to build.'
     } else {
+        $projectRoot = Initialize-NovaSource $projectRoot $git
+        Set-Location -LiteralPath $projectRoot
         $shallow = & $git rev-parse --is-shallow-repository
         if ($LASTEXITCODE -ne 0) { throw 'Cannot read Git repository metadata.' }
         if ($shallow -eq 'true') {
