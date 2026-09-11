@@ -4,6 +4,8 @@
 
 #include <QFrame>
 #include <QDateTime>
+#include <QElapsedTimer>
+#include <QLabel>
 #include <QList>
 #include <QPointer>
 #include <QScopedPointer>
@@ -24,7 +26,12 @@ class OBSBasicControls : public QFrame {
 QList<QDateTime> scheduledStarts;
 	QDateTime lastScheduleCheck = QDateTime::currentDateTimeUtc();
 	bool SaveSchedule();
-	void OpenSchedule();
+	QLabel *sessionTime = nullptr;
+	QLabel *sessionStatus = nullptr;
+	QElapsedTimer sessionClock;
+	bool sessionStreaming = false;
+	bool sessionRecording = false;
+	void UpdateSession();
 	void CheckSchedule();
 
 private slots:
@@ -56,6 +63,9 @@ private slots:
 	void EnableBroadcastFlow(bool enabled);
 	void EnableReplayBufferButtons(bool enabled);
 	void EnableVirtualCamButtons();
+
+public slots:
+	void OpenSchedule();
 
 public:
 	OBSBasicControls(OBSBasic *main);

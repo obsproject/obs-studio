@@ -17,6 +17,62 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 {
 	/* Create UI elements */
 	ui->setupUi(this);
+	ui->buttonsVLayout->setSpacing(8);
+	ui->buttonsVLayout->setContentsMargins(12, 12, 12, 12);
+	ui->recordStreamButton->setText(QTStr("Nova.StreamRecord"));
+	ui->scheduleButton->setText(QTStr("Nova.Scheduler"));
+	ui->recordStreamButton->setMinimumHeight(42);
+	ui->streamButton->setMinimumHeight(36);
+	ui->recordButton->setMinimumHeight(36);
+	ui->buttonsVLayout->removeWidget(ui->scheduleButton);
+	ui->buttonsVLayout->insertWidget(ui->buttonsVLayout->indexOf(ui->modeSwitch), ui->scheduleButton);
+
+	auto *session = new QFrame(this);
+	session->setObjectName("novaSession");
+	auto *sessionLayout = new QVBoxLayout(session);
+	sessionLayout->setContentsMargins(14, 16, 14, 16);
+	sessionLayout->setSpacing(10);
+	auto *caption = new QLabel(QTStr("Nova.Session"), session);
+	caption->setObjectName("novaEyebrow");
+	sessionTime = new QLabel("00:00:00", session);
+	sessionTime->setObjectName("novaSessionTime");
+	sessionStatus = new QLabel(QTStr("Nova.Ready"), session);
+	sessionStatus->setWordWrap(true);
+	sessionLayout->addWidget(caption);
+	sessionLayout->addWidget(sessionTime);
+	sessionLayout->addWidget(sessionStatus);
+	ui->buttonsVLayout->insertWidget(0, session);
+	auto *sessionTimer = new QTimer(this);
+	connect(sessionTimer, &QTimer::timeout, this, [this] {
+		if (!sessionClock.isValid() || (!sessionStreaming && !sessionRecording))
+			return;
+		const qint64 seconds = sessionClock.elapsed() / 1000;
+		sessionTime->setText(QString("%1:%2:%3")
+			.arg(seconds / 3600, 2, 10, QLatin1Char('0'))
+			.arg((seconds / 60) % 60, 2, 10, QLatin1Char('0'))
+			.arg(seconds % 60, 2, 10, QLatin1Char('0')));
+	});
+	sessionTimer->start(250);
+	connect(main, &OBSBasic::StreamingStarted, this, [this](bool withDelay) {
+		if (!withDelay) {
+			sessionStreaming = true;
+			UpdateSession();
+		}
+	});
+	connect(main, &OBSBasic::StreamingStopped, this, [this](bool withDelay) {
+		if (!withDelay) {
+			sessionStreaming = false;
+			UpdateSession();
+		}
+	});
+	connect(main, &OBSBasic::RecordingStarted, this, [this] {
+		sessionRecording = true;
+		UpdateSession();
+	});
+	connect(main, &OBSBasic::RecordingStopped, this, [this] {
+		sessionRecording = false;
+		UpdateSession();
+	});
 	connect(ui->recordStreamButton, &QPushButton::clicked, this, &OBSBasicControls::RecordStreamButtonClicked);
 	connect(ui->scheduleButton, &QPushButton::clicked, this, &OBSBasicControls::OpenSchedule);
 	const char *saved = config_get_string(App()->GetUserConfig(), "OutputSchedule", "Starts");
@@ -412,4 +468,18 @@ void OBSBasicControls::OpenSchedule()
 	layout->addWidget(buttons);
 	dialog.resize(560, 420);
 	dialog.exec();
+}
+
+void OBSBasicControls::UpdateSession()
+{
+	const bool active = sessionStreaming || sessionRecording;
+	if (active && !sessionClock.isValid()) {
+		sessionClock.start();
+		sessionTime->setText("00:00:00");
+	} else if (!active) {
+		sessionClock.invalidate();
+	}
+	sessionStatus->setText(QTStr(sessionStreaming && sessionRecording ? "Nova.LiveRecording"
+				   : sessionStreaming ? "Nova.Live"
+				   : sessionRecording ? "Nova.Recording" : "Nova.Ready"));
 }

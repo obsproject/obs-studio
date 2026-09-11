@@ -1,5 +1,23 @@
 # Build OBS with Record + Stream and scheduling
 
+## Nova interface
+
+The Nova style follows the supplied dark green and lime studio mockup. It adds
+a native studio header, a Broadcast dock on the right with an elapsed session
+timer, and Studio Tools shortcuts beside the bottom Mixer and Transitions docks.
+Scenes and Sources stay on the left. Preview content remains your actual scene.
+The timer measures wall-clock time while either output is active, including
+recording pauses; it is not the duration of the recorded file. It resets when
+a new session starts after both outputs have stopped.
+
+On an existing installation, choose **View > Apply Nova studio layout** to apply
+the theme and reset dock positions. This also resets custom dock positions, like
+OBS's Reset Docks command. Fresh configurations use Nova by default. To change
+only colors, choose **Settings > Appearance > Yami > Nova**. Existing themes
+remain available. Native window decorations and OBS preview rendering are retained.
+
+## Windows build
+
 Run `build-windows.bat` from a Command Prompt on Windows x64. It initializes
 submodules, configures the repository's `windows-x64` preset, builds Release,
 and installs the executable with its plugins and runtime files into

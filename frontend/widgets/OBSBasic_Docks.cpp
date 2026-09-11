@@ -90,10 +90,17 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 
-	QList<QDockWidget *> bottomDocks{ui->mixerDock, ui->transitionsDock, controlsDock};
+	QList<QDockWidget *> bottomDocks{ui->mixerDock, ui->transitionsDock};
+	if (auto *tools = findChild<QDockWidget *>("novaToolsDock")) {
+		tools->setVisible(true);
+		bottomDocks.append(tools);
+	}
+	setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+	setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
+	resizeDocks({controlsDock}, {std::min(width() * 22 / 100, 300)}, Qt::Horizontal);
 
 	resizeDocks(bottomDocks, {bottomDocksHeight, bottomDocksHeight, bottomDocksHeight}, Qt::Vertical);
-	resizeDocks(bottomDocks, {cx * 45 / 100, cx * 14 / 100, cx * 16 / 100}, Qt::Horizontal);
+	resizeDocks(bottomDocks, {cx * 42 / 100, cx * 27 / 100, cx * 31 / 100}, Qt::Horizontal);
 
 	int sideDockWidth = std::min(width() * 30 / 100, 280);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
