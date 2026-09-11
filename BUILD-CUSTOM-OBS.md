@@ -25,13 +25,21 @@ and installs the executable with its plugins and runtime files into
 `build_x64/install/bin/64bit/obs64.exe`. Keep the whole install folder together.
 This creates a runnable application folder, not a setup installer.
 
-Install Git and CMake on PATH, plus Visual Studio 2026 with **Desktop development
+Install Git and CMake, plus Visual Studio 2026 with **Desktop development
 with C++** and Windows SDK **10.0.26100.0**. CMake must support the
 **Visual Studio 18 2026** generator used by this fork's `CMakePresets.json`.
 The first build needs internet access and sufficient disk space for OBS and its
-dependencies. The batch file stops on the first failed command and returns a
-nonzero exit code. `build-windows.bat --check` checks command availability and
-that CMake can read the presets; it does not verify the compiler or compile OBS.
+dependencies. The launcher also finds Git/CMake in their standard installation
+folders and CMake bundled with Visual Studio Build Tools, even when not on PATH.
+It fetches history and official OBS release tags when needed for version detection.
+Use a Git clone of the whole repository; GitHub's Download ZIP omits submodules.
+
+Double-click `build-windows.bat`. The window now stays open on success or failure,
+and diagnostics are saved in `build-windows.log` beside the batch file. Share the
+last error from that log if a build fails. `build-windows.bat --check` validates
+the installed compiler component, SDK, CMake generator and preset without building.
+Use `--no-pause` for automation; failures still return a nonzero exit code.
+The batch file requires the included `scripts/Build-Nova.ps1` helper.
 
 The Controls dock includes **Record + Stream** and **Schedule Record + Stream**.
 The scheduler saves multiple one-time starts in local time. OBS must remain open

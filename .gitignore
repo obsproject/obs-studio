@@ -32,6 +32,9 @@
 !COPYING
 !INSTALL
 !README.rst
+!/build-windows.bat
+!/BUILD-CUSTOM-OBS.md
+!/scripts
 
 # Exclude lock files
 *.lock.json

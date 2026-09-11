@@ -1,59 +1,37 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-pushd "%~dp0"
-if errorlevel 1 exit /b 1
-
-where git >nul 2>nul
-if errorlevel 1 (
-    echo ERROR: Install Git for Windows and add it to PATH.
-    goto failure
+set "NOVA_CHECK="
+set "NOVA_NO_PAUSE="
+:arguments
+if "%~1"=="" goto run
+if /i "%~1"=="--check" (
+    set "NOVA_CHECK=-Check"
+    shift
+    goto arguments
 )
-where cmake >nul 2>nul
-if errorlevel 1 (
-    echo ERROR: Install CMake with Visual Studio 18 2026 support and add it to PATH.
-    echo Also install Visual Studio 2026 Desktop development with C++
-    echo and Windows SDK 10.0.26100.0, as required by CMakePresets.json.
-    goto failure
+if /i "%~1"=="--no-pause" (
+    set "NOVA_NO_PAUSE=1"
+    shift
+    goto arguments
 )
+echo Usage: build-windows.bat [--check] [--no-pause]
+set "NOVA_RESULT=2"
+goto finish
 
-echo Checking the Windows x64 build preset...
-call cmake --list-presets
-if errorlevel 1 goto failure
-if /i "%~1"=="--check" goto success
-if not "%~1"=="" (
-    echo Usage: build-windows.bat [--check]
-    goto failure
-)
-
-echo Initializing OBS submodules...
-call git submodule update --init --recursive
-if errorlevel 1 goto failure
-
-echo Configuring OBS. The first build downloads dependencies and needs internet access.
-call cmake --preset windows-x64
-if errorlevel 1 goto failure
-
-echo Building the Release executable...
-call cmake --build --preset windows-x64 --config Release --parallel
-if errorlevel 1 goto failure
-
-echo Collecting the executable, plugins and runtime dependencies...
-call cmake --install build_x64 --config Release --prefix "%~dp0build_x64\install"
-if errorlevel 1 goto failure
-if not exist "%~dp0build_x64\install\bin\64bit\obs64.exe" (
-    echo ERROR: Build completed but the expected installed executable was not found.
-    goto failure
-)
-
+:run
+echo OBS Nova Windows build
+echo A build log will be saved beside this batch file as build-windows.log.
 echo.
-echo Ready: "%~dp0build_x64\install\bin\64bit\obs64.exe"
-echo Keep the entire build_x64\install folder together; OBS needs its DLLs and data.
-:success
-popd
-exit /b 0
+if not exist "%~dp0scripts\Build-Nova.ps1" (
+    echo ERROR: scripts\Build-Nova.ps1 is missing. Download or pull the entire repository.
+    set "NOVA_RESULT=1"
+    goto finish
+)
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoLogo -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\Build-Nova.ps1" %NOVA_CHECK%
+set "NOVA_RESULT=%ERRORLEVEL%"
 
-:failure
+:finish
 echo.
-echo Build stopped. Fix the error above, then run this batch file again.
-popd
-exit /b 1
+if not "%NOVA_RESULT%"=="0" echo Build stopped. Read the error above or open build-windows.log.
+if not defined NOVA_NO_PAUSE pause
+exit /b %NOVA_RESULT%
