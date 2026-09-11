@@ -2506,7 +2506,7 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://injest.streamway.in/LiveApp"
+                    "url": "rtmps://injest.streamway.in:443/live"
                 },
                 {
                     "name": "Backup",
