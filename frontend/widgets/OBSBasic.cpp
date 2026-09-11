@@ -298,6 +298,10 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	controlsDock->setWidget(controls);
 
 	connect(controls, &OBSBasicControls::StreamButtonClicked, this, &OBSBasic::StreamActionTriggered);
+	connect(controls, &OBSBasicControls::RecordStreamButtonClicked, this,
+		[this] { StartRecordingAndStreaming(); });
+	connect(controls, &OBSBasicControls::ScheduledStart, this,
+		[this] { StartRecordingAndStreaming(true); });
 
 	connect(controls, &OBSBasicControls::StartStreamMenuActionClicked, this, &OBSBasic::StartStreaming);
 	connect(controls, &OBSBasicControls::StopStreamMenuActionClicked, this, &OBSBasic::StopStreaming);

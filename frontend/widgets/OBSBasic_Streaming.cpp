@@ -80,7 +80,8 @@ void OBSBasic::StartStreaming()
 		sysTrayStream->setText("Basic.Main.PreparingStream");
 	}
 
-	auto finish_stream_setup = [&](bool setupStreamingResult) {
+	const bool startRecording = recordWithStream;
+	auto finish_stream_setup = [&, startRecording](bool setupStreamingResult) {
 		if (!setupStreamingResult) {
 			DisplayStreamStartError();
 			return;
@@ -108,7 +109,7 @@ void OBSBasic::StartStreaming()
 
 		bool recordWhenStreaming =
 			config_get_bool(App()->GetUserConfig(), "BasicWindow", "RecordWhenStreaming");
-		if (recordWhenStreaming) {
+		if (recordWhenStreaming || startRecording) {
 			StartRecording();
 		}
 
@@ -476,4 +477,31 @@ bool OBSBasic::StreamingActive()
 		return false;
 	}
 	return outputHandler->StreamingActive();
+}
+
+void OBSBasic::StartRecordingAndStreaming(bool scheduled)
+{
+	if (!loaded || !outputHandler || disableOutputsRef || streamingStarting || streamingStopping ||
+	    recordingStopping || (setupStreamingGuard.valid() &&
+				 setupStreamingGuard.wait_for(std::chrono::seconds(0)) != std::future_status::ready)) {
+		blog(LOG_WARNING, "Record + Stream skipped: outputs are not ready");
+		return;
+	}
+	if (outputHandler->StreamingActive()) {
+		StartRecording();
+		return;
+	}
+	// Unattended starts cannot complete an interactive broadcast setup.
+	if (scheduled && auth && auth->broadcastFlow() &&
+	    ((!broadcastActive && !broadcastReady) || !autoStartBroadcast)) {
+		blog(LOG_WARNING, "Scheduled Record + Stream skipped: configure an auto-start broadcast first");
+		ShowStatusBarMessage(QTStr("Basic.Main.Schedule.BroadcastRequired"));
+		return;
+	}
+	recordWithStream = true;
+	if (scheduled)
+		StartStreaming();
+	else
+		StreamActionTriggered();
+	recordWithStream = false;
 }

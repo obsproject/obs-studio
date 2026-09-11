@@ -3,6 +3,8 @@
 #include "ui_OBSBasicControls.h"
 
 #include <QFrame>
+#include <QDateTime>
+#include <QList>
 #include <QPointer>
 #include <QScopedPointer>
 
@@ -18,6 +20,12 @@ class OBSBasicControls : public QFrame {
 	QScopedPointer<QMenu> streamButtonMenu;
 	QPointer<QAction> startStreamAction;
 	QPointer<QAction> stopStreamAction;
+
+QList<QDateTime> scheduledStarts;
+	QDateTime lastScheduleCheck = QDateTime::currentDateTimeUtc();
+	bool SaveSchedule();
+	void OpenSchedule();
+	void CheckSchedule();
 
 private slots:
 	void StreamingPreparing();
@@ -55,6 +63,8 @@ public:
 
 signals:
 	void StreamButtonClicked();
+	void RecordStreamButtonClicked();
+	void ScheduledStart();
 	void BroadcastButtonClicked();
 	void RecordButtonClicked();
 	void PauseRecordButtonClicked();

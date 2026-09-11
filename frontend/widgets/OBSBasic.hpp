@@ -1377,10 +1377,12 @@ private:
 	std::shared_future<void> setupStreamingGuard;
 	bool streamingStopping = false;
 	bool streamingStarting = false;
+	bool recordWithStream = false;
 
 public slots:
 	void DisplayStreamStartError();
 	void StartStreaming();
+	void StartRecordingAndStreaming(bool scheduled = false);
 	void StopStreaming();
 	void ForceStopStreaming();
 
