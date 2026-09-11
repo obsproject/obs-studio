@@ -85,12 +85,25 @@ detection, installer arguments, restart and failure results using simulated Git
 and installer calls. They do not install software or build OBS.
 
 The Controls dock includes **Record + Stream** and **Schedule Record + Stream**.
-The scheduler saves multiple one-time starts in local time. OBS must remain open
-and the computer awake. Starts use the current profile and scene. Configure
-streaming and recording beforehand; broadcast services require a prepared
-broadcast with auto-start enabled. Starts missed by 60 seconds or more are
-skipped. Use the individual output buttons to stop. Recurrence and scheduled
-stops are not included.
+The scheduler has a month calendar with highlighted dates and a daily agenda.
+Create named one-time, daily, or weekly schedules with any combination of weekday
+checkboxes. Set a starting date, a 24-hour start time and an optional inclusive
+end date. Select a schedule to edit it, uncheck Schedule enabled to pause it,
+then click Save schedule. Changes are saved immediately after Save; closing or
+switching schedules prompts before discarding edits. Delete removes the whole
+recurrence. Existing future one-time schedules are migrated automatically.
+
+Times follow the computer's local timezone. OBS must remain open and the computer
+awake. Starts use the current profile and scene. Configure streaming and recording
+beforehand; broadcast services require a prepared broadcast with auto-start enabled.
+Starts missed by 60 seconds or more are skipped. A spring-forward time that does
+not exist is skipped; the next valid recurrence still runs. A repeated fall-back
+time runs once. Simultaneous schedules trigger one combined output start. Use
+the individual output buttons to stop; scheduled stops are not included.
+
+The EXE, installer and Windows shortcuts use the Nova icon from the obsolete
+Kryptographer/obs repository. Only its icon asset was reused; see
+`frontend/cmake/windows/NOVA-ICON.md` for the source commit and embedded sizes.
 
 The combined action requests recording once the stream start is accepted. It
 does not guarantee both outputs succeed: existing OBS output errors still apply.
@@ -100,3 +113,8 @@ Validation: source checks and launcher regression tests passed. The installer
 definition compiled with Inno Setup 6.7.3 using an isolated test payload. That
 fixture is not a distributable OBS build. A full OBS build, clean-PC installation,
 upgrade/uninstall and live output tests remain outstanding.
+
+Scheduler validation: the standalone C++/Qt model tests and native dialog smoke
+test pass. They cover recurrence boundaries, end dates, disabled entries, persistence,
+missed starts, clock rollback, DST, and creating a weekday schedule through the UI.
+The dialog was also rendered with Windows fonts for visual inspection.

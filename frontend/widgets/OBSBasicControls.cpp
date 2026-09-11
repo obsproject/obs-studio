@@ -1,15 +1,13 @@
 #include "OBSBasicControls.hpp"
 #include "OBSBasic.hpp"
+#include "OutputScheduleDialog.hpp"
 #include "qt-wrappers.hpp"
 
-#include <QDateTimeEdit>
-#include <QDialogButtonBox>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QLabel>
-#include <QListWidget>
 #include <QTimer>
-#include <algorithm>
+#include <QSet>
 
 #include "moc_OBSBasicControls.cpp"
 
@@ -75,12 +73,31 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	});
 	connect(ui->recordStreamButton, &QPushButton::clicked, this, &OBSBasicControls::RecordStreamButtonClicked);
 	connect(ui->scheduleButton, &QPushButton::clicked, this, &OBSBasicControls::OpenSchedule);
-	const char *saved = config_get_string(App()->GetUserConfig(), "OutputSchedule", "Starts");
-	const auto entries = QJsonDocument::fromJson(saved ? QByteArray(saved) : QByteArray()).array();
-	for (const auto &entry : entries) {
-		const auto time = QDateTime::fromString(entry.toString(), Qt::ISODateWithMs);
-		if (time.isValid() && time > lastScheduleCheck && !scheduledStarts.contains(time))
-			scheduledStarts.append(time.toUTC());
+	const char *saved = config_get_string(App()->GetUserConfig(), "OutputSchedule", "EntriesV2");
+	if (saved) {
+		const auto entries = QJsonDocument::fromJson(QByteArray(saved)).array();
+		QSet<QString> ids;
+		for (const auto &value : entries) {
+			const auto entry = OutputSchedule::FromJson(value.toObject());
+			if (entry.IsValid() && !ids.contains(entry.id)) {
+				schedules.append(entry);
+				ids.insert(entry.id);
+			}
+		}
+	} else {
+		// Migrate the original UTC one-time starts without changing their instant.
+		const char *legacy = config_get_string(App()->GetUserConfig(), "OutputSchedule", "Starts");
+		const auto entries = QJsonDocument::fromJson(legacy ? QByteArray(legacy) : QByteArray()).array();
+		for (const auto &value : entries) {
+			const auto date = QDateTime::fromString(value.toString(), Qt::ISODateWithMs).toLocalTime();
+			if (!date.isValid() || date <= lastScheduleCheck)
+				continue;
+			OutputSchedule entry;
+			entry.name = QTStr("Scheduler.Migrated");
+			entry.firstDate = date.date();
+			entry.time = date.time();
+			schedules.append(entry);
+		}
 	}
 	auto *scheduleTimer = new QTimer(this);
 	connect(scheduleTimer, &QTimer::timeout, this, &OBSBasicControls::CheckSchedule);
@@ -370,15 +387,18 @@ void OBSBasicControls::EnableVirtualCamButtons()
 bool OBSBasicControls::SaveSchedule()
 {
 	QJsonArray entries;
-	std::sort(scheduledStarts.begin(), scheduledStarts.end());
-	for (const auto &time : scheduledStarts)
-		entries.append(time.toUTC().toString(Qt::ISODateWithMs));
+	for (const auto &entry : schedules)
+		entries.append(entry.ToJson());
 	const auto json = QJsonDocument(entries).toJson(QJsonDocument::Compact);
-	const char *oldValue = config_get_string(App()->GetUserConfig(), "OutputSchedule", "Starts");
+	const char *oldValue = config_get_string(App()->GetUserConfig(), "OutputSchedule", "EntriesV2");
+	const bool hadValue = oldValue != nullptr;
 	const QByteArray previous = oldValue ? QByteArray(oldValue) : QByteArray();
-	config_set_string(App()->GetUserConfig(), "OutputSchedule", "Starts", json.constData());
+	config_set_string(App()->GetUserConfig(), "OutputSchedule", "EntriesV2", json.constData());
 	if (config_save_safe(App()->GetUserConfig(), "tmp", nullptr) != 0) {
-		config_set_string(App()->GetUserConfig(), "OutputSchedule", "Starts", previous.constData());
+		if (hadValue)
+			config_set_string(App()->GetUserConfig(), "OutputSchedule", "EntriesV2", previous.constData());
+		else
+			config_remove_value(App()->GetUserConfig(), "OutputSchedule", "EntriesV2");
 		blog(LOG_ERROR, "Unable to save output schedule");
 		return false;
 	}
@@ -388,86 +408,25 @@ bool OBSBasicControls::SaveSchedule()
 void OBSBasicControls::CheckSchedule()
 {
 	const auto now = QDateTime::currentDateTimeUtc();
-	bool changed = false;
-	bool due = false;
-	for (auto it = scheduledStarts.begin(); it != scheduledStarts.end();) {
-		if (*it <= now) {
-			// Expired starts are consumed, never replayed after a long sleep.
-			due |= *it > lastScheduleCheck && it->secsTo(now) < 60;
-			it = scheduledStarts.erase(it);
-			changed = true;
-		} else {
-			++it;
-		}
-	}
+	// Only dispatch recent occurrences; do not replay days missed while asleep.
+	const bool due = ConsumeDueOutputSchedules(schedules, lastScheduleCheck, now);
 	lastScheduleCheck = now;
-	// Persist consumption before dispatch: modal output errors may reenter the event loop.
-	if (changed && SaveSchedule() && due)
+	// Save all simultaneous occurrences before dispatch, including modal reentry.
+	if (due && SaveSchedule())
 		emit ScheduledStart();
 }
 
 void OBSBasicControls::OpenSchedule()
 {
-	QDialog dialog(this);
-	dialog.setWindowTitle(QTStr("Basic.Main.Schedule"));
-	auto *layout = new QVBoxLayout(&dialog);
-	auto *help = new QLabel(QTStr("Basic.Main.Schedule.Help"), &dialog);
-	help->setWordWrap(true);
-	layout->addWidget(help);
-	auto *list = new QListWidget(&dialog);
-	layout->addWidget(list);
-	auto refresh = [this, list] {
-		list->clear();
-		for (const auto &time : scheduledStarts) {
-			auto *item = new QListWidgetItem(time.toLocalTime().toString("yyyy-MM-dd HH:mm:ss t"), list);
-			item->setData(Qt::UserRole, time);
-		}
-	};
-	refresh();
-	auto *date = new QDateTimeEdit(QDateTime::currentDateTime().addSecs(300), &dialog);
-	date->setDisplayFormat("yyyy-MM-dd HH:mm:ss");
-	date->setCalendarPopup(true);
-	layout->addWidget(date);
-	auto *add = new QPushButton(QTStr("Basic.Main.Schedule.Add"), &dialog);
-	auto *remove = new QPushButton(QTStr("Basic.Main.Schedule.Remove"), &dialog);
-	layout->addWidget(add);
-	layout->addWidget(remove);
-	connect(add, &QPushButton::clicked, &dialog, [&, this] {
-		const auto time = date->dateTime().toUTC();
-		if (!time.isValid() || time <= QDateTime::currentDateTimeUtc() || scheduledStarts.contains(time)) {
-			QMessageBox::warning(&dialog, dialog.windowTitle(), QTStr("Basic.Main.Schedule.Invalid"));
-			return;
-		}
-		const auto previous = scheduledStarts;
-		scheduledStarts.append(time);
+	ShowOutputScheduleDialog(this, schedules, [this](const QList<OutputSchedule> &updated) {
+		const auto previous = schedules;
+		schedules = updated;
 		if (!SaveSchedule()) {
-			scheduledStarts = previous;
-			QMessageBox::warning(&dialog, dialog.windowTitle(), QTStr("Basic.Main.Schedule.SaveFailed"));
+			schedules = previous;
+			return false;
 		}
-		refresh();
-	});
-	connect(remove, &QPushButton::clicked, &dialog, [&, this] {
-		if (auto *item = list->currentItem()) {
-			const auto previous = scheduledStarts;
-			scheduledStarts.removeAll(item->data(Qt::UserRole).toDateTime());
-			if (!SaveSchedule()) {
-				scheduledStarts = previous;
-				QMessageBox::warning(&dialog, dialog.windowTitle(), QTStr("Basic.Main.Schedule.SaveFailed"));
-			}
-			refresh();
-		}
-	});
-	QTimer refreshTimer;
-	connect(&refreshTimer, &QTimer::timeout, &dialog, [refresh, list, this] {
-		if (list->count() != scheduledStarts.size())
-			refresh();
-	});
-	refreshTimer.start(1000);
-	auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
-	connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-	layout->addWidget(buttons);
-	dialog.resize(560, 420);
-	dialog.exec();
+		return true;
+	}, [](const char *key) { return QTStr(key); });
 }
 
 void OBSBasicControls::UpdateSession()

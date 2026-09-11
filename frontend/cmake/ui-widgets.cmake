@@ -46,6 +46,9 @@ target_sources(
     widgets/OBSBasic_YouTube.cpp
     widgets/OBSBasicControls.cpp
     widgets/OBSBasicControls.hpp
+    widgets/OutputScheduleDialog.cpp
+    widgets/OutputScheduleDialog.hpp
+    utility/OutputSchedule.hpp
     widgets/OBSBasicPreview.cpp
     widgets/OBSBasicPreview.hpp
     widgets/OBSBasicStats.cpp

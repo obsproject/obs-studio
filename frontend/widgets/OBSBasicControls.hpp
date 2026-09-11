@@ -11,6 +11,7 @@
 #include <QScopedPointer>
 
 #include <memory>
+#include <utility/OutputSchedule.hpp>
 
 class OBSBasic;
 
@@ -23,7 +24,7 @@ class OBSBasicControls : public QFrame {
 	QPointer<QAction> startStreamAction;
 	QPointer<QAction> stopStreamAction;
 
-QList<QDateTime> scheduledStarts;
+	QList<OutputSchedule> schedules;
 	QDateTime lastScheduleCheck = QDateTime::currentDateTimeUtc();
 	bool SaveSchedule();
 	QLabel *sessionTime = nullptr;

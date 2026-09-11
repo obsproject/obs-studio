@@ -126,3 +126,30 @@ QListWidget#scenes::item {
 QListWidget#scenes::item:selected { border: 1px solid #51643c; background: #2a3522; }
 QMenuBar { background: #111510; border-bottom: 1px solid #30382c; }
 QStatusBar { background: #111510; border-top: 1px solid #30382c; }
+
+QDialog#novaScheduler QListWidget {
+    background: #111510;
+    border: 1px solid #30382c;
+    border-radius: 8px;
+    padding: 4px;
+}
+QListWidget#scheduleList::item, QListWidget#scheduleAgenda::item {
+    padding: 8px;
+    margin: 2px;
+    border-radius: 6px;
+}
+QDialog#novaScheduler QLineEdit, QDialog#novaScheduler QDateTimeEdit {
+    min-height: 26px;
+    padding: 4px;
+}
+QDialog#novaScheduler QCheckBox { spacing: 6px; padding: 4px 0; }
+QPushButton#saveSchedule {
+    background: #d5ee88;
+    color: #10160b;
+    border: 1px solid #d5ee88;
+    border-radius: 6px;
+    font-weight: bold;
+    padding: 6px 10px;
+}
+QPushButton#saveSchedule:hover { background: #e2f5ad; }
+QPushButton#saveSchedule:focus { border: 2px solid #ffffff; }

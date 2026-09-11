@@ -30,6 +30,7 @@ OutputBaseFilename=OBS-Nova-Setup-{#AppVersion}-x64
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+SetupIconFile=..\..\frontend\cmake\windows\nova.ico
 LicenseFile=..\..\frontend\data\license\gplv2.txt
 UninstallDisplayIcon={app}\bin\64bit\obs64.exe
 CloseApplications=yes
