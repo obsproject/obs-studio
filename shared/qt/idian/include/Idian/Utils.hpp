@@ -17,6 +17,7 @@
 
 #pragma once
 
+#include <QPointer>
 #include <QRegularExpression>
 #include <QStyle>
 #include <QWidget>
@@ -38,7 +39,12 @@ class Utils : public QObject {
 	}
 
 public:
-	Utils(QObject *parent = nullptr) {};
+	Utils();
+
+	bool isPolishPending{false};
+	std::list<QPointer<QWidget>> widgetPolishQueue;
+	void addToPolishQueue(QWidget *widget);
+	void processPolishQueue();
 
 	// Force all children widgets to repaint
 	static void polishChildren(QWidget *widget);
