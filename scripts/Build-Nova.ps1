@@ -51,6 +51,13 @@ try {
     }
     if (!$visualStudio) {
         $missing += 'Open Visual Studio Installer. Install/Modify Visual Studio 2026 or Build Tools 2026 and select Desktop development with C++ (MSVC x64/x86 tools).'
+    } else {
+        $toolsVersionFile = Join-Path $visualStudio 'VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt'
+        $toolsVersion = (Get-Content -LiteralPath $toolsVersionFile -Raw).Trim()
+        $atlHeader = Join-Path $visualStudio "VC\Tools\MSVC\$toolsVersion\atlmfc\include\atlcomcli.h"
+        if (!(Test-Path -LiteralPath $atlHeader)) {
+            $missing += 'In Visual Studio Installer > Modify > Individual components, install C++ ATL for latest build tools (x86 and x64). OBS DirectShow capture requires atlcomcli.h and atlstr.h.'
+        }
     }
 
     $cmakeCandidates = @("$env:ProgramFiles\CMake\bin\cmake.exe")

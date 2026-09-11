@@ -28,6 +28,9 @@ This creates a runnable application folder, not a setup installer.
 Install Git and CMake, plus Visual Studio 2026 with **Desktop development
 with C++** and Windows SDK **10.0.26100.0**. CMake must support the
 **Visual Studio 18 2026** generator used by this fork's `CMakePresets.json`.
+Also select **C++ ATL for latest build tools (x86 and x64)** under the installer's
+Individual components tab. Without ATL, DirectShow capture fails on missing
+`atlcomcli.h` / `atlstr.h` headers. The launcher checks for this before building.
 The first build needs internet access and sufficient disk space for OBS and its
 dependencies. The launcher also finds Git/CMake in their standard installation
 folders and CMake bundled with Visual Studio Build Tools, even when not on PATH.
