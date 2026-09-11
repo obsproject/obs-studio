@@ -23,7 +23,7 @@
 
 namespace idian {
 
-class CheckBox : public QCheckBox, public Utils {
+class CheckBox : public QCheckBox {
 	Q_OBJECT;
 
 public:

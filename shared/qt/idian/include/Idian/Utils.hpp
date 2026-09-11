@@ -27,7 +27,8 @@ class QLabel;
 namespace idian {
 
 // Helpers for OBS Idian widgets
-class Utils {
+class Utils : public QObject {
+	Q_OBJECT
 
 	static bool classNameIsValid(const QString &name)
 	{
@@ -37,92 +38,28 @@ class Utils {
 	}
 
 public:
-	QWidget *parent = nullptr;
-
-	Utils(QWidget *w) { parent = w; }
+	Utils(QObject *parent = nullptr) {};
 
 	// Force all children widgets to repaint
-	void polishChildren() { polishChildren(parent); }
-	static void polishChildren(QWidget *widget)
-	{
-		for (QWidget *child : widget->findChildren<QWidget *>()) {
-			repolish(child);
-		}
-	}
+	static void polishChildren(QWidget *widget);
 
-	void repolish() { repolish(parent); }
-	static void repolish(QWidget *widget) { widget->style()->polish(widget); }
+	static void repolish(QWidget *widget);
 
 	// Adds a style class to the widget
-	void addClass(const QString &classname) { addClass(parent, classname); }
-	static void addClass(QWidget *widget, const QString &classname)
-	{
-		if (!classNameIsValid(classname)) {
-			return;
-		}
-
-		QVariant current = widget->property("class");
-
-		QStringList classList = current.toString().split(" ");
-		if (classList.contains(classname)) {
-			return;
-		}
-
-		classList.removeDuplicates();
-		classList.removeAll("");
-		classList.append(classname);
-
-		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
-		widget->setProperty("class", newClasses);
-
-		repolish(widget);
-	}
+	static void addClass(QWidget *widget, const QString &classname);
 
 	// Removes a style class from a widget
-	void removeClass(const QString &classname) { removeClass(parent, classname); }
-	static void removeClass(QWidget *widget, const QString &classname)
-	{
-		if (!classNameIsValid(classname)) {
-			return;
-		}
-
-		QVariant current = widget->property("class");
-		if (current.isNull()) {
-			return;
-		}
-
-		QStringList classList = current.toString().split(" ");
-		if (!classList.contains(classname, Qt::CaseSensitive)) {
-			return;
-		}
-
-		classList.removeDuplicates();
-		classList.removeAll("");
-		classList.removeAll(classname);
-
-		QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
-		widget->setProperty("class", newClasses);
-
-		repolish(widget);
-	}
+	static void removeClass(QWidget *widget, const QString &classname);
 
 	// Forces the addition or removal of a style class from a widget
-	void toggleClass(const QString &classname, bool toggle) { toggleClass(parent, classname, toggle); }
-	static void toggleClass(QWidget *widget, const QString &classname, bool toggle)
-	{
-		if (toggle) {
-			addClass(widget, classname);
-		} else {
-			removeClass(widget, classname);
-		}
-	}
+	static void toggleClass(QWidget *widget, const QString &classname, bool toggle);
 
 	static void applyColorToIcon(QAbstractButton *button);
 	static void applyColorToIcon(QLabel *label);
 
 	static QPixmap recolorPixmap(const QPixmap &src, const QColor &color);
 
-	void applyStateStylingEventFilter(QWidget *widget);
+	static void applyStateStylingEventFilter(QWidget *widget);
 };
 
 } // namespace idian

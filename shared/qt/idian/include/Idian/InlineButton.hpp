@@ -26,7 +26,7 @@ class QPixmap;
 namespace idian {
 class Utils;
 
-class InlineButton : public QPushButton, public Utils {
+class InlineButton : public QPushButton {
 	Q_OBJECT
 
 public:

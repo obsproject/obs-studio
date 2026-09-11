@@ -18,7 +18,7 @@
 #include <Idian/InlineButton.hpp>
 
 namespace idian {
-InlineButton::InlineButton(QWidget *parent) : QPushButton(parent), Utils(this)
+InlineButton::InlineButton(QWidget *parent) : QPushButton(parent)
 {
 	Utils::applyStateStylingEventFilter(this);
 }
