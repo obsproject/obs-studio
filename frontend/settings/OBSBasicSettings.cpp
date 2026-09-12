@@ -1945,9 +1945,9 @@ OBSPropertiesView *OBSBasicSettings::CreateEncoderPropertyView(const char *encod
 		const std::filesystem::path jsonFilePath = currentProfile.path / std::filesystem::u8path(path);
 
 		if (!jsonFilePath.empty()) {
-			obs_data_t *data = obs_data_create_from_json_file_safe(jsonFilePath.u8string().c_str(), "bak");
+			OBSDataAutoRelease data =
+				obs_data_create_from_json_file_safe(jsonFilePath.u8string().c_str(), "bak");
 			obs_data_apply(settings, data);
-			obs_data_release(data);
 		}
 	}
 
