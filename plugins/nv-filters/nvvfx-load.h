@@ -37,13 +37,11 @@ extern "C" {
 #endif           // _WIN32 or linux
 #endif           //NvCV_API
 
-#define CUDARTAPI
-
 #ifdef LIBNVVFX_ENABLED
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
-static HMODULE nv_cudart = NULL;
-static HMODULE nv_cuda = NULL;
+static HMODULE nv_greenscreen = NULL;
+static HMODULE nv_blur = NULL;
 
 //! Status codes returned from APIs.
 typedef enum NvCV_Status {
@@ -392,142 +390,6 @@ typedef NvCV_Status NvCV_API (*NvCVImage_FromD3DColorSpace_t)(DXGI_COLOR_SPACE_T
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3D11Texture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3DTexture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 
-/* cuda runtime */
-typedef enum cudaError {
-	cudaSuccess = 0,
-	cudaErrorInvalidValue = 1,
-	cudaErrorMemoryAllocation = 2,
-	cudaErrorInitializationError = 3,
-	cudaErrorCudartUnloading = 4,
-	cudaErrorProfilerDisabled = 5,
-	cudaErrorProfilerNotInitialized = 6,
-	cudaErrorProfilerAlreadyStarted = 7,
-	cudaErrorProfilerAlreadyStopped = 8,
-	cudaErrorInvalidConfiguration = 9,
-	cudaErrorInvalidPitchValue = 12,
-	cudaErrorInvalidSymbol = 13,
-	cudaErrorInvalidHostPointer = 16,
-	cudaErrorInvalidDevicePointer = 17,
-	cudaErrorInvalidTexture = 18,
-	cudaErrorInvalidTextureBinding = 19,
-	cudaErrorInvalidChannelDescriptor = 20,
-	cudaErrorInvalidMemcpyDirection = 21,
-	cudaErrorAddressOfConstant = 22,
-	cudaErrorTextureFetchFailed = 23,
-	cudaErrorTextureNotBound = 24,
-	cudaErrorSynchronizationError = 25,
-	cudaErrorInvalidFilterSetting = 26,
-	cudaErrorInvalidNormSetting = 27,
-	cudaErrorMixedDeviceExecution = 28,
-	cudaErrorNotYetImplemented = 31,
-	cudaErrorMemoryValueTooLarge = 32,
-	cudaErrorStubLibrary = 34,
-	cudaErrorInsufficientDriver = 35,
-	cudaErrorCallRequiresNewerDriver = 36,
-	cudaErrorInvalidSurface = 37,
-	cudaErrorDuplicateVariableName = 43,
-	cudaErrorDuplicateTextureName = 44,
-	cudaErrorDuplicateSurfaceName = 45,
-	cudaErrorDevicesUnavailable = 46,
-	cudaErrorIncompatibleDriverContext = 49,
-	cudaErrorMissingConfiguration = 52,
-	cudaErrorPriorLaunchFailure = 53,
-	cudaErrorLaunchMaxDepthExceeded = 65,
-	cudaErrorLaunchFileScopedTex = 66,
-	cudaErrorLaunchFileScopedSurf = 67,
-	cudaErrorSyncDepthExceeded = 68,
-	cudaErrorLaunchPendingCountExceeded = 69,
-	cudaErrorInvalidDeviceFunction = 98,
-	cudaErrorNoDevice = 100,
-	cudaErrorInvalidDevice = 101,
-	cudaErrorDeviceNotLicensed = 102,
-	cudaErrorSoftwareValidityNotEstablished = 103,
-	cudaErrorStartupFailure = 127,
-	cudaErrorInvalidKernelImage = 200,
-	cudaErrorDeviceUninitialized = 201,
-	cudaErrorMapBufferObjectFailed = 205,
-	cudaErrorUnmapBufferObjectFailed = 206,
-	cudaErrorArrayIsMapped = 207,
-	cudaErrorAlreadyMapped = 208,
-	cudaErrorNoKernelImageForDevice = 209,
-	cudaErrorAlreadyAcquired = 210,
-	cudaErrorNotMapped = 211,
-	cudaErrorNotMappedAsArray = 212,
-	cudaErrorNotMappedAsPointer = 213,
-	cudaErrorECCUncorrectable = 214,
-	cudaErrorUnsupportedLimit = 215,
-	cudaErrorDeviceAlreadyInUse = 216,
-	cudaErrorPeerAccessUnsupported = 217,
-	cudaErrorInvalidPtx = 218,
-	cudaErrorInvalidGraphicsContext = 219,
-	cudaErrorNvlinkUncorrectable = 220,
-	cudaErrorJitCompilerNotFound = 221,
-	cudaErrorUnsupportedPtxVersion = 222,
-	cudaErrorJitCompilationDisabled = 223,
-	cudaErrorInvalidSource = 300,
-	cudaErrorFileNotFound = 301,
-	cudaErrorSharedObjectSymbolNotFound = 302,
-	cudaErrorSharedObjectInitFailed = 303,
-	cudaErrorOperatingSystem = 304,
-	cudaErrorInvalidResourceHandle = 400,
-	cudaErrorIllegalState = 401,
-	cudaErrorSymbolNotFound = 500,
-	cudaErrorNotReady = 600,
-	cudaErrorIllegalAddress = 700,
-	cudaErrorLaunchOutOfResources = 701,
-	cudaErrorLaunchTimeout = 702,
-	cudaErrorLaunchIncompatibleTexturing = 703,
-	cudaErrorPeerAccessAlreadyEnabled = 704,
-	cudaErrorPeerAccessNotEnabled = 705,
-	cudaErrorSetOnActiveProcess = 708,
-	cudaErrorContextIsDestroyed = 709,
-	cudaErrorAssert = 710,
-	cudaErrorTooManyPeers = 711,
-	cudaErrorHostMemoryAlreadyRegistered = 712,
-	cudaErrorHostMemoryNotRegistered = 713,
-	cudaErrorHardwareStackError = 714,
-	cudaErrorIllegalInstruction = 715,
-	cudaErrorMisalignedAddress = 716,
-	cudaErrorInvalidAddressSpace = 717,
-	cudaErrorInvalidPc = 718,
-	cudaErrorLaunchFailure = 719,
-	cudaErrorCooperativeLaunchTooLarge = 720,
-	cudaErrorNotPermitted = 800,
-	cudaErrorNotSupported = 801,
-	cudaErrorSystemNotReady = 802,
-	cudaErrorSystemDriverMismatch = 803,
-	cudaErrorCompatNotSupportedOnDevice = 804,
-	cudaErrorStreamCaptureUnsupported = 900,
-	cudaErrorStreamCaptureInvalidated = 901,
-	cudaErrorStreamCaptureMerge = 902,
-	cudaErrorStreamCaptureUnmatched = 903,
-	cudaErrorStreamCaptureUnjoined = 904,
-	cudaErrorStreamCaptureIsolation = 905,
-	cudaErrorStreamCaptureImplicit = 906,
-	cudaErrorCapturedEvent = 907,
-	cudaErrorStreamCaptureWrongThread = 908,
-	cudaErrorTimeout = 909,
-	cudaErrorGraphExecUpdateFailure = 910,
-	cudaErrorUnknown = 999,
-	cudaErrorApiFailureBase = 10000
-} cudaError;
-
-typedef enum cudaMemcpyKind {
-	cudaMemcpyHostToHost = 0,     /**< Host   -> Host */
-	cudaMemcpyHostToDevice = 1,   /**< Host   -> Device */
-	cudaMemcpyDeviceToHost = 2,   /**< Device -> Host */
-	cudaMemcpyDeviceToDevice = 3, /**< Device -> Device */
-	cudaMemcpyDefault = 4
-} cudaMemcpyKind;
-
-typedef enum cudaError cudaError_t;
-
-typedef cudaError_t CUDARTAPI (*cudaMalloc_t)(void **devPtr, size_t size);
-typedef cudaError_t CUDARTAPI (*cudaStreamSynchronize_t)(CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaFree_t)(void *devPtr);
-typedef cudaError_t CUDARTAPI (*cudaMemsetAsync_t)(void *devPtr, int value, size_t count, CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaMemcpy_t)(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind);
-
 /* NVVFX */
 static NvVFX_GetVersion_t NvVFX_GetVersion = NULL;
 static NvVFX_CreateEffect_t NvVFX_CreateEffect = NULL;
@@ -569,38 +431,17 @@ static NvCVImage_Init_t NvCVImage_Init = NULL;
 static NvCVImage_InitView_t NvCVImage_InitView = NULL;
 static NvCVImage_Alloc_t NvCVImage_Alloc = NULL;
 static NvCVImage_Realloc_t NvCVImage_Realloc = NULL;
-static NvCVImage_Dealloc_t NvCVImage_Dealloc = NULL;
 static NvCVImage_Create_t NvCVImage_Create = NULL;
 static NvCVImage_Destroy_t NvCVImage_Destroy = NULL;
-static NvCVImage_ComponentOffsets_t NvCVImage_ComponentOffsets = NULL;
 static NvCVImage_Transfer_t NvCVImage_Transfer = NULL;
-static NvCVImage_TransferRect_t NvCVImage_TransferRect = NULL;
-static NvCVImage_TransferFromYUV_t NvCVImage_TransferFromYUV = NULL;
-static NvCVImage_TransferToYUV_t NvCVImage_TransferToYUV = NULL;
 static NvCVImage_MapResource_t NvCVImage_MapResource = NULL;
 static NvCVImage_UnmapResource_t NvCVImage_UnmapResource = NULL;
-static NvCVImage_Composite_t NvCVImage_Composite = NULL;
-static NvCVImage_CompositeRect_t NvCVImage_CompositeRect = NULL;
-static NvCVImage_CompositeOverConstant_t NvCVImage_CompositeOverConstant = NULL;
-static NvCVImage_FlipY_t NvCVImage_FlipY = NULL;
-static NvCVImage_GetYUVPointers_t NvCVImage_GetYUVPointers = NULL;
 /* nvcvimage  D3D*/
-static NvCVImage_ToD3DFormat_t NvCVImage_ToD3DFormat = NULL;
-static NvCVImage_FromD3DFormat_t NvCVImage_FromD3DFormat = NULL;
-static NvCVImage_ToD3DColorSpace_t NvCVImage_ToD3DColorSpace = NULL;
-static NvCVImage_FromD3DColorSpace_t NvCVImage_FromD3DColorSpace = NULL;
 static NvCVImage_InitFromD3D11Texture_t NvCVImage_InitFromD3D11Texture = NULL;
 /* error codes */
 static NvCV_GetErrorStringFromCode_t NvCV_GetErrorStringFromCode = NULL;
 
-/* cuda runtime */
-static cudaMalloc_t cudaMalloc = NULL;
-static cudaStreamSynchronize_t cudaStreamSynchronize = NULL;
-static cudaFree_t cudaFree = NULL;
-static cudaMemcpy_t cudaMemcpy = NULL;
-static cudaMemsetAsync_t cudaMemsetAsync = NULL;
-
-static inline void release_nv_vfx()
+static inline void release_vfx_lib(void)
 {
 	NvVFX_CreateEffect = NULL;
 	NvVFX_CudaStreamCreate = NULL;
@@ -638,32 +479,26 @@ static inline void release_nv_vfx()
 		nv_videofx = NULL;
 	}
 	NvCVImage_Alloc = NULL;
-	NvCVImage_ComponentOffsets = NULL;
-	NvCVImage_Composite = NULL;
-	NvCVImage_CompositeRect = NULL;
-	NvCVImage_CompositeOverConstant = NULL;
 	NvCVImage_Create = NULL;
-	NvCVImage_Dealloc = NULL;
 	NvCVImage_Destroy = NULL;
 	NvCVImage_Init = NULL;
 	NvCVImage_InitView = NULL;
 	NvCVImage_Realloc = NULL;
 	NvCVImage_Transfer = NULL;
-	NvCVImage_TransferRect = NULL;
-	NvCVImage_TransferFromYUV = NULL;
-	NvCVImage_TransferToYUV = NULL;
 	NvCVImage_MapResource = NULL;
 	NvCVImage_UnmapResource = NULL;
 	NvCVImage_InitFromD3D11Texture = NULL;
-	NvCVImage_FlipY = NULL;
-	NvCVImage_GetYUVPointers = NULL;
-	NvCVImage_ToD3DFormat = NULL;
-	NvCVImage_FromD3DFormat = NULL;
-	NvCVImage_ToD3DColorSpace = NULL;
-	NvCVImage_FromD3DColorSpace = NULL;
 	if (nv_cvimage) {
 		FreeLibrary(nv_cvimage);
 		nv_cvimage = NULL;
+	}
+	if (nv_greenscreen) {
+		FreeLibrary(nv_greenscreen);
+		nv_greenscreen = NULL;
+	}
+	if (nv_blur) {
+		FreeLibrary(nv_blur);
+		nv_blur = NULL;
 	}
 }
 
@@ -688,31 +523,39 @@ static inline bool nvvfx_get_sdk_path(char *buffer, const size_t len)
 	return true;
 }
 
-static inline bool load_nv_vfx_libs()
+static inline bool load_vfx_module(HMODULE *module, const char *sdk_path, const char *filename)
 {
-	char sdkPath[MAX_PATH];
-	char effectsPath[MAX_PATH];
-	char imagePath[MAX_PATH];
+	char path[MAX_PATH];
 
-	if (!nvvfx_get_sdk_path(sdkPath, MAX_PATH)) {
+	if (_snprintf_s(path, _countof(path), _TRUNCATE, "%s\\%s", sdk_path, filename) == -1)
+		return false;
+
+	*module = LoadLibraryExA(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	return *module != NULL;
+}
+
+static inline bool load_nv_vfx_libs(unsigned int version)
+{
+	char sdk_path[MAX_PATH];
+
+	if (!nvvfx_get_sdk_path(sdk_path, MAX_PATH))
+		return false;
+
+	if (!load_vfx_module(&nv_cvimage, sdk_path, "NVCVImage.dll") ||
+	    !load_vfx_module(&nv_videofx, sdk_path, "NVVideoEffects.dll")) {
+		release_vfx_lib();
 		return false;
 	}
 
-	if (_snprintf_s(effectsPath, _countof(effectsPath), _TRUNCATE, "%s\\NVVideoEffects.dll", sdkPath) == -1) {
+	if (version < MIN_ARM_VFX_SDK_VERSION)
+		return true;
+
+	if (!load_vfx_module(&nv_greenscreen, sdk_path, "nvVFXGreenScreen.dll") ||
+	    !load_vfx_module(&nv_blur, sdk_path, "nvVFXBackgroundBlur.dll")) {
+		release_vfx_lib();
 		return false;
 	}
-
-	if (_snprintf_s(imagePath, _countof(imagePath), _TRUNCATE, "%s\\NVCVImage.dll", sdkPath) == -1) {
-		return false;
-	}
-
-	nv_videofx =
-		LoadLibraryExA(effectsPath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-
-	nv_cvimage =
-		LoadLibraryExA(imagePath, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
-
-	return !!nv_videofx && !!nv_cvimage;
+	return true;
 }
 
 static unsigned int get_lib_version(void)

@@ -284,6 +284,7 @@ OBS::ItemPasteType OBSBasic::getItemPasteType()
 		return OBS::ItemPasteType::Invalid;
 	}
 
+	bool allowPastingReference = true;
 	bool allowPastingDuplicate = true;
 	for (size_t i = clipboard.size(); i > 0; i--) {
 		const size_t idx = i - 1;
@@ -296,6 +297,19 @@ OBS::ItemPasteType OBSBasic::getItemPasteType()
 		if (allowPastingDuplicate && obs_source_get_output_flags(strong) & OBS_SOURCE_DO_NOT_DUPLICATE) {
 			allowPastingDuplicate = false;
 		}
+
+		if (allowPastingReference && obs_source_is_group(strong)) {
+			allowPastingReference = false;
+		}
 	}
-	return allowPastingDuplicate ? OBS::ItemPasteType::Both : OBS::ItemPasteType::Reference;
+
+	if (allowPastingReference && allowPastingDuplicate) {
+		return OBS::ItemPasteType::Both;
+	} else if (allowPastingReference) {
+		return OBS::ItemPasteType::Reference;
+	} else if (allowPastingDuplicate) {
+		return OBS::ItemPasteType::Duplicate;
+	}
+
+	return OBS::ItemPasteType::Invalid;
 }
