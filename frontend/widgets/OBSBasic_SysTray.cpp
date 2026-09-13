@@ -27,10 +27,10 @@ void OBSBasic::SystemTrayInit()
 	QIcon trayIconFile = QIcon(":/res/images/obs_macos.svg");
 	trayIconFile.setIsMask(true);
 #else
-	QIcon trayIconFile = QIcon(":/res/images/obs.png");
+	QIcon trayIconFile = QIcon(":/res/images/nova.png");
 #endif
-	trayIcon = new QSystemTrayIcon(QIcon::fromTheme("obs-tray", trayIconFile), this);
-	trayIcon->setToolTip("OBS Studio");
+	trayIcon = new QSystemTrayIcon(trayIconFile, this);
+	trayIcon->setToolTip("OBS Nova");
 
 	trayMenu = new QMenu(this);
 

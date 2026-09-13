@@ -24,6 +24,7 @@ target_sources(
     widgets/OBSBasic_Dropfiles.cpp
     widgets/OBSBasic_Hotkeys.cpp
     widgets/OBSBasic_Icons.cpp
+    widgets/OBSBasic_Layout.cpp
     widgets/OBSBasic_MainControls.cpp
     widgets/OBSBasic_OutputHandler.cpp
     widgets/OBSBasic_Preview.cpp
@@ -46,6 +47,10 @@ target_sources(
     widgets/OBSBasic_YouTube.cpp
     widgets/OBSBasicControls.cpp
     widgets/OBSBasicControls.hpp
+    widgets/OutputScheduleDialog.cpp
+    widgets/OutputScheduleDialog.hpp
+    utility/OutputSchedule.hpp
+    utility/PreviewLayout.hpp
     widgets/OBSBasicPreview.cpp
     widgets/OBSBasicPreview.hpp
     widgets/OBSBasicStats.cpp

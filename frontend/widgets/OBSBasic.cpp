@@ -57,6 +57,9 @@
 #include <qt-wrappers.hpp>
 
 #include <QActionGroup>
+#include <QToolBar>
+#include <QLabel>
+#include <QHBoxLayout>
 #include <QThread>
 #include <QWidgetAction>
 
@@ -293,11 +296,15 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	OBSBasicControls *controls = new OBSBasicControls(this);
 	controlsDock = new OBSDock(this);
 	controlsDock->setObjectName(QString::fromUtf8("controlsDock"));
-	controlsDock->setWindowTitle(QTStr("Basic.Main.Controls"));
+	controlsDock->setWindowTitle(QTStr("Nova.Broadcast"));
 	/* Parenting is done there so controls will be deleted alongside controlsDock */
 	controlsDock->setWidget(controls);
 
 	connect(controls, &OBSBasicControls::StreamButtonClicked, this, &OBSBasic::StreamActionTriggered);
+	connect(controls, &OBSBasicControls::RecordStreamButtonClicked, this,
+		[this] { StartRecordingAndStreaming(); });
+	connect(controls, &OBSBasicControls::ScheduledStart, this,
+		[this] { StartRecordingAndStreaming(true); });
 
 	connect(controls, &OBSBasicControls::StartStreamMenuActionClicked, this, &OBSBasic::StartStreaming);
 	connect(controls, &OBSBasicControls::StopStreamMenuActionClicked, this, &OBSBasic::StopStreaming);
@@ -352,6 +359,73 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(ui->transitionDuration, &QSpinBox::valueChanged, this,
 		[this](int value) { SetTransitionDuration(value); });
 
+	// Native toolbar spans the preview and docks without becoming scene content.
+	auto *novaHeader = new QToolBar(QTStr("Nova.Studio"), this);
+	novaHeader->setObjectName("novaHeader");
+	novaHeader->setMovable(false);
+	novaHeader->setFloatable(false);
+	auto *header = new QWidget(novaHeader);
+	header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+	auto *headerLayout = new QHBoxLayout(header);
+	headerLayout->setContentsMargins(18, 10, 18, 10);
+	headerLayout->setSpacing(24);
+	auto *brand = new QLabel("nova", header);
+	brand->setObjectName("novaBrand");
+	auto *heading = new QLabel(QTStr("Nova.Studio"), header);
+	heading->setObjectName("novaHeading");
+	headerLayout->addWidget(brand);
+	headerLayout->addWidget(heading);
+	headerLayout->addStretch(1);
+	auto *context = new QLabel(header);
+	context->setTextFormat(Qt::PlainText);
+	context->setObjectName("novaContext");
+	context->setWordWrap(true);
+	headerLayout->addWidget(context);
+	auto *headerSettings = new QPushButton(QTStr("Settings"), header);
+	connect(headerSettings, &QPushButton::clicked, this, &OBSBasic::on_action_Settings_triggered);
+	headerLayout->addWidget(headerSettings);
+	novaHeader->addWidget(header);
+	addToolBar(Qt::TopToolBarArea, novaHeader);
+	auto *contextTimer = new QTimer(this);
+	connect(contextTimer, &QTimer::timeout, this, [context] {
+		const char *collection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
+		const char *profile = config_get_string(App()->GetUserConfig(), "Basic", "Profile");
+		context->setText(QTStr("Nova.Context").arg(QString::fromUtf8(collection ? collection : ""),
+							QString::fromUtf8(profile ? profile : "")));
+	});
+	contextTimer->start(1000);
+
+	auto *studioTools = new OBSDock(this);
+	studioTools->setObjectName("novaToolsDock");
+	studioTools->setWindowTitle(QTStr("Nova.Tools"));
+	auto *toolsWidget = new QWidget(studioTools);
+	auto *toolsLayout = new QVBoxLayout(toolsWidget);
+	toolsLayout->setContentsMargins(10, 10, 10, 10);
+	toolsLayout->setSpacing(8);
+	auto *studioShortcut = new QPushButton(QTStr("Nova.StudioShortcut"), toolsWidget);
+	studioShortcut->setObjectName("novaToolCard");
+	studioShortcut->setMinimumHeight(52);
+	studioShortcut->setCheckable(true);
+	connect(studioShortcut, &QPushButton::clicked, this, &OBSBasic::TogglePreviewProgramMode);
+	connect(this, &OBSBasic::PreviewProgramModeChanged, studioShortcut, &QPushButton::setChecked);
+	auto *schedulerShortcut = new QPushButton(QTStr("Nova.SchedulerShortcut"), toolsWidget);
+	schedulerShortcut->setObjectName("novaToolCard");
+	schedulerShortcut->setMinimumHeight(52);
+	connect(schedulerShortcut, &QPushButton::clicked, controls, &OBSBasicControls::OpenSchedule);
+	toolsLayout->addWidget(studioShortcut);
+	toolsLayout->addWidget(schedulerShortcut);
+	toolsLayout->addStretch(1);
+	studioTools->setWidget(toolsWidget);
+	AddDockWidget(studioTools, Qt::BottomDockWidgetArea);
+
+	auto *novaLayoutAction = ui->viewMenu->addAction(QTStr("Nova.ApplyLayout"));
+	connect(novaLayoutAction, &QAction::triggered, this, [this] {
+		if (App()->SetTheme("com.kryptographer.Nova")) {
+			config_set_string(App()->GetUserConfig(), "Appearance", "Theme", "com.kryptographer.Nova");
+			on_resetDocks_triggered(true);
+		}
+	});
+
 	/* Main window default layout */
 	setDockCornersVertical(true);
 
@@ -361,7 +435,11 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	splitDockWidget(ui->scenesDock, ui->sourcesDock, Qt::Vertical);
 	int sideDockWidth = std::min(width() * 30 / 100, 320);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
-	addDockWidget(Qt::BottomDockWidgetArea, controlsDock);
+	addDockWidget(Qt::RightDockWidgetArea, controlsDock);
+	splitDockWidget(ui->mixerDock, ui->transitionsDock, Qt::Horizontal);
+	splitDockWidget(ui->transitionsDock, studioTools, Qt::Horizontal);
+	setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+	setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
 
 	startingDockLayout = saveState();
 
@@ -414,6 +492,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	connect(windowHandle(), &QWindow::screenChanged, this, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, this, displayResize);
+
+	/* View > Preview Size menu and screen-size-aware dock sizing */
+	SetupPreviewLayoutControls();
 
 	/* TODO: Move these into window-basic-preview */
 	/* Preview Scaling label */
@@ -1252,6 +1333,12 @@ void OBSBasic::OBSInit()
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState)) {
 			on_resetDocks_triggered(true);
+		} else {
+			/* Saved dock sizes are absolute pixels; re-apply the
+			 * preview's share of the window so the layout fits
+			 * this screen instead of the one it was saved on. */
+			LoadPreviewShare();
+			SchedulePreviewLayoutUpdate(true);
 		}
 	}
 
@@ -1885,6 +1972,7 @@ void OBSBasic::saveAll()
 	if (isVisible()) {
 		config_set_string(App()->GetUserConfig(), "BasicWindow", "geometry",
 				  saveGeometry().toBase64().constData());
+		SavePreviewShare();
 	}
 
 	std::call_once(saveOnceFlag, [this]() {

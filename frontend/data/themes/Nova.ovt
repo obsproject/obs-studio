@@ -1,0 +1,156 @@
+/* Nova studio: a botanical dark variant of the maintained Yami base. */
+@OBSThemeMeta {
+    name: 'Nova';
+    id: 'com.kryptographer.Nova';
+    extends: 'com.obsproject.Yami';
+    author: 'Kryptographer';
+    dark: 'true';
+}
+
+@OBSThemeVars {
+    --grey1: #59634f;
+    --grey2: #46513e;
+    --grey3: #36412f;
+    --grey4: #2c3428;
+    --grey5: #242b20;
+    --grey6: #191e18;
+    --grey7: #111510;
+    --grey8: #0c100c;
+    --white1: #edf1df;
+    --white2: #e1e8cf;
+    --white3: #c7d2b3;
+    --white4: #afbd99;
+    --white5: #a1ad94;
+    --primary: #465837;
+    --primary_light: #566d40;
+    --primary_lighter: #d5ee88;
+    --primary_dark: #2b3822;
+    --primary_darker: #20291b;
+    --bg_window: #111510;
+    --bg_base: #191e18;
+    --bg_preview: #0c100c;
+    --border_color: #30382c;
+    --border_radius: 6px;
+    --border_radius_large: 10px;
+    --input_bg: #11170e;
+    --input_border: #404c35;
+    --button_bg: #242c20;
+    --button_border: #404c35;
+    --button_bg_hover: #34412a;
+    --button_bg_down: #1b2416;
+    --list_item_bg_selected: #2a3522;
+    --list_item_bg_hover: #232d1e;
+    --scrollbar_size: 8px;
+    --scrollbar_handle: #48523e;
+}
+
+/* Drag these handles to resize the preview and the docks around it. */
+QMainWindow::separator {
+    background: #232b21;
+    width: 8px;
+    height: 8px;
+}
+QMainWindow::separator:hover { background: #566d40; }
+QDockWidget {
+    background: #191e18;
+    border: 1px solid #30382c;
+    border-radius: 10px;
+    titlebar-close-icon: url(theme:Dark/close.svg);
+}
+QDockWidget::title {
+    background: #191e18;
+    padding: 12px;
+    border-bottom: 1px solid #30382c;
+    text-align: left;
+}
+QFrame#controlsFrame, QWidget#previewContainer {
+    background: #191e18;
+    border-radius: 10px;
+}
+QToolBar#novaHeader {
+    background: #111510;
+    border: none;
+    spacing: 12px;
+}
+QLabel#novaBrand {
+    color: #d5ee88;
+    font-size: 26px;
+    font-weight: bold;
+    padding-right: 12px;
+}
+QLabel#novaHeading {
+    font-size: 24px;
+    font-weight: bold;
+    color: #edf1df;
+}
+QLabel#novaContext { color: #b9c6a5; font-size: 11px; }
+QFrame#novaSession {
+    background: #222b1c;
+    border: 1px solid #3a472f;
+    border-radius: 9px;
+}
+QFrame#novaSession QLabel { background: transparent; border: none; }
+QLabel#novaEyebrow { color: #c1d19e; font-size: 10px; font-weight: bold; }
+QLabel#novaSessionTime { color: #edf1df; font-size: 32px; font-weight: normal; }
+QPushButton#recordStreamButton {
+    background: #d5ee88;
+    color: #10160b;
+    border: 1px solid #d5ee88;
+    border-radius: 8px;
+    font-weight: bold;
+    text-align: left;
+    padding: 4px 14px;
+}
+QPushButton#recordStreamButton:hover { background: #e2f5ad; }
+QPushButton#recordStreamButton:pressed { background: #b7d36e; }
+QPushButton#recordStreamButton:disabled { background: #3b4630; color: #a1ad94; border-color: #46513e; }
+QPushButton#recordStreamButton:focus { border: 2px solid #ffffff; }
+QPushButton#streamButton, QPushButton#recordButton, QPushButton#scheduleButton {
+    text-align: left;
+    padding-left: 12px;
+    border-radius: 7px;
+}
+QPushButton#novaToolCard {
+    background: #222b1c;
+    border: 1px solid #3a472f;
+    border-radius: 9px;
+    text-align: left;
+    padding: 8px 14px;
+}
+QPushButton#novaToolCard:hover, QPushButton#novaToolCard:checked { background: #34412a; }
+QPushButton#novaToolCard:focus { border-color: #d5ee88; }
+QListWidget#scenes::item {
+    padding: 12px 10px;
+    margin: 3px 6px;
+    border-radius: 7px;
+}
+QListWidget#scenes::item:selected { border: 1px solid #51643c; background: #2a3522; }
+QMenuBar { background: #111510; border-bottom: 1px solid #30382c; }
+QStatusBar { background: #111510; border-top: 1px solid #30382c; }
+
+QDialog#novaScheduler QListWidget {
+    background: #111510;
+    border: 1px solid #30382c;
+    border-radius: 8px;
+    padding: 4px;
+}
+QListWidget#scheduleList::item, QListWidget#scheduleAgenda::item {
+    padding: 8px;
+    margin: 2px;
+    border-radius: 6px;
+}
+QDialog#novaScheduler QLineEdit, QDialog#novaScheduler QDateTimeEdit {
+    min-height: 26px;
+    padding: 4px;
+}
+QDialog#novaScheduler QCheckBox { spacing: 6px; padding: 4px 0; }
+QPushButton#saveSchedule {
+    background: #d5ee88;
+    color: #10160b;
+    border: 1px solid #d5ee88;
+    border-radius: 6px;
+    font-weight: bold;
+    padding: 6px 10px;
+}
+QPushButton#saveSchedule:hover { background: #e2f5ad; }
+QPushButton#saveSchedule:focus { border: 2px solid #ffffff; }

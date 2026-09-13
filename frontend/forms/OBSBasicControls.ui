@@ -45,6 +45,16 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QPushButton" name="recordStreamButton">
+        <property name="text"><string>Basic.Main.RecordStream</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="scheduleButton">
+        <property name="text"><string>Basic.Main.Schedule</string></property>
+       </widget>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="horizontalLayout_7">
         <item>
          <widget class="QPushButton" name="streamButton">

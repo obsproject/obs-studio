@@ -3,10 +3,15 @@
 #include "ui_OBSBasicControls.h"
 
 #include <QFrame>
+#include <QDateTime>
+#include <QElapsedTimer>
+#include <QLabel>
+#include <QList>
 #include <QPointer>
 #include <QScopedPointer>
 
 #include <memory>
+#include <utility/OutputSchedule.hpp>
 
 class OBSBasic;
 
@@ -18,6 +23,17 @@ class OBSBasicControls : public QFrame {
 	QScopedPointer<QMenu> streamButtonMenu;
 	QPointer<QAction> startStreamAction;
 	QPointer<QAction> stopStreamAction;
+
+	QList<OutputSchedule> schedules;
+	QDateTime lastScheduleCheck = QDateTime::currentDateTimeUtc();
+	bool SaveSchedule();
+	QLabel *sessionTime = nullptr;
+	QLabel *sessionStatus = nullptr;
+	QElapsedTimer sessionClock;
+	bool sessionStreaming = false;
+	bool sessionRecording = false;
+	void UpdateSession();
+	void CheckSchedule();
 
 private slots:
 	void StreamingPreparing();
@@ -49,12 +65,17 @@ private slots:
 	void EnableReplayBufferButtons(bool enabled);
 	void EnableVirtualCamButtons();
 
+public slots:
+	void OpenSchedule();
+
 public:
 	OBSBasicControls(OBSBasic *main);
 	inline ~OBSBasicControls() {}
 
 signals:
 	void StreamButtonClicked();
+	void RecordStreamButtonClicked();
+	void ScheduledStart();
 	void BroadcastButtonClicked();
 	void RecordButtonClicked();
 	void PauseRecordButtonClicked();
