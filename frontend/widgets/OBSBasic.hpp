@@ -327,6 +327,7 @@ protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void changeEvent(QEvent *event) override;
+	virtual void resizeEvent(QResizeEvent *event) override;
 
 signals:
 	void mainWindowClosed();
@@ -466,6 +467,29 @@ private slots:
 	void on_sideDocks_toggled(bool side);
 
 	void RepairCustomExtraDockName();
+
+	/* -------------------------------------
+	 * MARK: - OBSBasic_Layout
+	 * -------------------------------------
+	 */
+private:
+	bool previewLayoutPending = false;
+	bool restorePreviewShare = false;
+	double savedPreviewHeightShare = 0.0;
+	double savedPreviewWidthShare = 0.0;
+
+	void SetupPreviewLayoutControls();
+	void SchedulePreviewLayoutUpdate(bool restoreSavedShare);
+	void UpdatePreviewLayout();
+	void LoadPreviewShare();
+	void SavePreviewShare();
+
+public:
+	/* Share of the window (0.3 to 0.9) the preview area should occupy. */
+	void SetPreviewShare(double heightShare, double widthShare);
+	void AdjustPreviewShare(double delta);
+	double PreviewHeightShare() const;
+	double PreviewWidthShare() const;
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_Dropfiles

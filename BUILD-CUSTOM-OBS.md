@@ -16,6 +16,22 @@ OBS's Reset Docks command. Fresh configurations use Nova by default. To change
 only colors, choose **Settings > Appearance > Yami > Nova**. Existing themes
 remain available. Native window decorations and OBS preview rendering are retained.
 
+### Preview size and screen sizes
+
+The preview keeps its share of the window on any screen. OBS stores dock sizes
+in pixels, so a layout saved on a large monitor used to squeeze the preview when
+the window opened on a smaller screen. Nova now remembers how much of the window
+the preview occupied, re-applies that share after the saved layout is restored,
+and trims the docks whenever a resize or monitor change would leave the preview
+under about a third of the window height or 40% of its width.
+
+To adjust the preview yourself, drag the handles between the preview and the
+docks (they highlight in green), or use **View > Preview Size**: *Larger* and
+*Smaller* step the preview, *Compact*, *Balanced* and *Large* are presets, and
+*Studio Header* hides the header to give the preview the full height. Docks can
+still be dragged, floated or closed from the **Docks** menu. The chosen size is
+saved with the window layout.
+
 ## Windows build
 
 Run `build-windows.bat` from a Command Prompt on Windows x64. It initializes

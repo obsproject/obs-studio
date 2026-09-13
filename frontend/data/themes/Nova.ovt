@@ -44,12 +44,13 @@
     --scrollbar_handle: #48523e;
 }
 
+/* Drag these handles to resize the preview and the docks around it. */
 QMainWindow::separator {
-    background: #111510;
-    width: 10px;
-    height: 10px;
+    background: #232b21;
+    width: 8px;
+    height: 8px;
 }
-QMainWindow::separator:hover { background: #465837; }
+QMainWindow::separator:hover { background: #566d40; }
 QDockWidget {
     background: #191e18;
     border: 1px solid #30382c;

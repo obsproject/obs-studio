@@ -367,7 +367,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	auto *header = new QWidget(novaHeader);
 	header->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	auto *headerLayout = new QHBoxLayout(header);
-	headerLayout->setContentsMargins(18, 14, 18, 14);
+	headerLayout->setContentsMargins(18, 10, 18, 10);
 	headerLayout->setSpacing(24);
 	auto *brand = new QLabel("nova", header);
 	brand->setObjectName("novaBrand");
@@ -400,17 +400,17 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	studioTools->setWindowTitle(QTStr("Nova.Tools"));
 	auto *toolsWidget = new QWidget(studioTools);
 	auto *toolsLayout = new QVBoxLayout(toolsWidget);
-	toolsLayout->setContentsMargins(12, 12, 12, 12);
-	toolsLayout->setSpacing(10);
+	toolsLayout->setContentsMargins(10, 10, 10, 10);
+	toolsLayout->setSpacing(8);
 	auto *studioShortcut = new QPushButton(QTStr("Nova.StudioShortcut"), toolsWidget);
 	studioShortcut->setObjectName("novaToolCard");
-	studioShortcut->setMinimumHeight(64);
+	studioShortcut->setMinimumHeight(52);
 	studioShortcut->setCheckable(true);
 	connect(studioShortcut, &QPushButton::clicked, this, &OBSBasic::TogglePreviewProgramMode);
 	connect(this, &OBSBasic::PreviewProgramModeChanged, studioShortcut, &QPushButton::setChecked);
 	auto *schedulerShortcut = new QPushButton(QTStr("Nova.SchedulerShortcut"), toolsWidget);
 	schedulerShortcut->setObjectName("novaToolCard");
-	schedulerShortcut->setMinimumHeight(64);
+	schedulerShortcut->setMinimumHeight(52);
 	connect(schedulerShortcut, &QPushButton::clicked, controls, &OBSBasicControls::OpenSchedule);
 	toolsLayout->addWidget(studioShortcut);
 	toolsLayout->addWidget(schedulerShortcut);
@@ -492,6 +492,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 
 	connect(windowHandle(), &QWindow::screenChanged, this, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, this, displayResize);
+
+	/* View > Preview Size menu and screen-size-aware dock sizing */
+	SetupPreviewLayoutControls();
 
 	/* TODO: Move these into window-basic-preview */
 	/* Preview Scaling label */
@@ -1330,6 +1333,12 @@ void OBSBasic::OBSInit()
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState)) {
 			on_resetDocks_triggered(true);
+		} else {
+			/* Saved dock sizes are absolute pixels; re-apply the
+			 * preview's share of the window so the layout fits
+			 * this screen instead of the one it was saved on. */
+			LoadPreviewShare();
+			SchedulePreviewLayoutUpdate(true);
 		}
 	}
 
@@ -1963,6 +1972,7 @@ void OBSBasic::saveAll()
 	if (isVisible()) {
 		config_set_string(App()->GetUserConfig(), "BasicWindow", "geometry",
 				  saveGeometry().toBase64().constData());
+		SavePreviewShare();
 	}
 
 	std::call_once(saveOnceFlag, [this]() {

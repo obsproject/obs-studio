@@ -105,6 +105,12 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	int sideDockWidth = std::min(width() * 30 / 100, 280);
 	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
 
+	/* Forget any saved preview share; the reset layout defines the new one
+	 * and the deferred update keeps the preview above its minimum size. */
+	savedPreviewHeightShare = 0.0;
+	savedPreviewWidthShare = 0.0;
+	SchedulePreviewLayoutUpdate(false);
+
 	activateWindow();
 }
 
