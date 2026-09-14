@@ -124,9 +124,47 @@ static const char *get_method_name(int method)
 	return method_name;
 }
 
-static bool GetMonitorTarget(LPCWSTR device, DISPLAYCONFIG_TARGET_DEVICE_NAME *target)
+/* A GDI display (\\.\DISPLAYn) can have more than one monitor device
+ * attached to it: a cloned output, or a monitor that is connected but
+ * disabled, keeps a device entry on the display it was last part of.
+ * Taking index 0 blindly then yields the wrong (or an empty) device id,
+ * and two displays can end up sharing the same id, so the capture always
+ * resolves to the first of them. Prefer the attached device that is
+ * active; fall back to index 0 only when none is. */
+static bool GetActiveMonitorDevice(LPCSTR gdi_device, DISPLAY_DEVICEA *device)
+{
+	DISPLAY_DEVICEA candidate;
+	bool have_first = false;
+
+	for (DWORD i = 0;; ++i) {
+		candidate.cb = sizeof(candidate);
+		if (!EnumDisplayDevicesA(gdi_device, i, &candidate, EDD_GET_DEVICE_INTERFACE_NAME))
+			break;
+
+		if (!have_first) {
+			*device = candidate;
+			have_first = true;
+		}
+
+		if ((candidate.StateFlags & DISPLAY_DEVICE_ACTIVE) && candidate.DeviceID[0]) {
+			*device = candidate;
+			return true;
+		}
+	}
+
+	return have_first;
+}
+
+static bool GetMonitorTarget(LPCWSTR device, LPCSTR device_id, DISPLAYCONFIG_TARGET_DEVICE_NAME *target)
 {
 	bool found = false;
+	wchar_t *wanted_path = NULL;
+
+	/* When the display is cloned, more than one active path shares the
+	 * same source. Prefer the target that is the monitor device we chose,
+	 * so the friendly name and the id describe the same physical monitor. */
+	if (device_id && device_id[0])
+		os_utf8_to_wcs_ptr(device_id, 0, &wanted_path);
 
 	UINT32 numPath, numMode;
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath, &numMode) == ERROR_SUCCESS) {
@@ -148,12 +186,22 @@ static bool GetMonitorTarget(LPCWSTR device, DISPLAYCONFIG_TARGET_DEVICE_NAME *t
 				source.header.id = path->sourceInfo.id;
 				if (DisplayConfigGetDeviceInfo(&source.header) == ERROR_SUCCESS &&
 				    wcscmp(device, source.viewGdiDeviceName) == 0) {
-					target->header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
-					target->header.size = sizeof(*target);
-					target->header.adapterId = path->sourceInfo.adapterId;
-					target->header.id = path->targetInfo.id;
-					found = DisplayConfigGetDeviceInfo(&target->header) == ERROR_SUCCESS;
-					break;
+					DISPLAYCONFIG_TARGET_DEVICE_NAME candidate;
+					candidate.header.type = DISPLAYCONFIG_DEVICE_INFO_GET_TARGET_NAME;
+					candidate.header.size = sizeof(candidate);
+					candidate.header.adapterId = path->sourceInfo.adapterId;
+					candidate.header.id = path->targetInfo.id;
+					if (DisplayConfigGetDeviceInfo(&candidate.header) != ERROR_SUCCESS)
+						continue;
+
+					const bool exact = wanted_path &&
+							   _wcsicmp(wanted_path, candidate.monitorDevicePath) == 0;
+					if (!found || exact) {
+						*target = candidate;
+						found = true;
+					}
+					if (exact || !wanted_path)
+						break;
 				}
 			}
 		}
@@ -162,16 +210,17 @@ static bool GetMonitorTarget(LPCWSTR device, DISPLAYCONFIG_TARGET_DEVICE_NAME *t
 		bfree(paths);
 	}
 
+	bfree(wanted_path);
 	return found;
 }
 
-static void GetMonitorName(HMONITOR handle, char *name, size_t count)
+static void GetMonitorName(HMONITOR handle, LPCSTR device_id, char *name, size_t count)
 {
 	MONITORINFOEXW mi;
 	DISPLAYCONFIG_TARGET_DEVICE_NAME target;
 
 	mi.cbSize = sizeof(mi);
-	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi) && GetMonitorTarget(mi.szDevice, &target)) {
+	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi) && GetMonitorTarget(mi.szDevice, device_id, &target)) {
 		char *friendly_name;
 		os_wcs_to_utf8_ptr(target.monitorFriendlyDeviceName, 0, &friendly_name);
 
@@ -194,13 +243,12 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM 
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
 		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+		if (GetActiveMonitorDevice(mi.szDevice, &device)) {
 			match = strcmp(monitor->device_id, device.DeviceID) == 0;
 			if (match) {
 				strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
 				strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
-				GetMonitorName(handle, monitor->name, _countof(monitor->name));
+				GetMonitorName(handle, device.DeviceID, monitor->name, _countof(monitor->name));
 				monitor->rect = *rect;
 				monitor->handle = handle;
 			}
@@ -224,7 +272,7 @@ static BOOL CALLBACK enum_monitor_fallback(HMONITOR handle, HDC hdc, LPRECT rect
 		match = strcmp(monitor->device_id, mi.szDevice) == 0;
 		if (match) {
 			strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
-			GetMonitorName(handle, monitor->name, _countof(monitor->name));
+			GetMonitorName(handle, NULL, monitor->name, _countof(monitor->name));
 			monitor->rect = *rect;
 			monitor->handle = handle;
 		}
@@ -729,12 +777,15 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 	UNUSED_PARAMETER(hdc);
 	UNUSED_PARAMETER(rect);
 
-	char monitor_name[64];
-	GetMonitorName(handle, monitor_name, sizeof(monitor_name));
-
 	MONITORINFOEXA mi;
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
+		DISPLAY_DEVICEA device;
+		const bool have_device = GetActiveMonitorDevice(mi.szDevice, &device);
+
+		char monitor_name[64];
+		GetMonitorName(handle, have_device ? device.DeviceID : NULL, monitor_name, sizeof(monitor_name));
+
 		obs_property_t *monitor_list = (obs_property_t *)param;
 		struct dstr monitor_desc = {0};
 		dstr_printf(&monitor_desc, "%s: %dx%d @ %d,%d", monitor_name, mi.rcMonitor.right - mi.rcMonitor.left,
@@ -742,9 +793,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 		if (mi.dwFlags == MONITORINFOF_PRIMARY)
 			dstr_catf(&monitor_desc, " (%s)", TEXT_PRIMARY_MONITOR);
 
-		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+		if (have_device) {
 			obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceID);
 		} else {
 			blog(LOG_WARNING,
@@ -755,7 +804,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 
 		dstr_free(&monitor_desc);
 	} else {
-		blog(LOG_WARNING, "[duplicator-monitor-capture] GetMonitorInfo failed for monitor: %s", monitor_name);
+		blog(LOG_WARNING, "[duplicator-monitor-capture] GetMonitorInfo failed for a monitor");
 	}
 
 	return TRUE;
