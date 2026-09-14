@@ -386,12 +386,20 @@
         },
         {
             "name": "Velora.tv",
+            "common": true,
+            "stream_key_link": "https://velora.tv/settings/streaming",
             "servers": [
                 {
-                    "name": "Velora.tv Main Server"
+                    "name": "Velora.tv Main Server",
                     "url": "rtmp://rtmp.velora.tv/live"
                 }
             ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 10000,
+                "max audio bitrate": 192
+
+            },
             "supported video codecs": [
                 "h264"
             ]
