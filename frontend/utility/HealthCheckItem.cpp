@@ -58,13 +58,13 @@ QString HealthCheckItem::statusText(HealthStatus status)
 {
 	switch (status) {
 	case HealthStatus::Valid:
-		return QTStr("HealthCheck.Status.Valid");
+		return QTStr("Status.Valid");
 	case HealthStatus::Warning:
-		return QTStr("HealthCheck.Status.Warning");
+		return QTStr("Status.Warning");
 	case HealthStatus::Critical:
-		return QTStr("HealthCheck.Status.Critical");
+		return QTStr("Status.Critical");
 	default:
-		return QTStr("HealthCheck.Status.Invalid");
+		return QTStr("Status.Invalid");
 	}
 }
 } // namespace OBS
