@@ -17,11 +17,13 @@
 
 #include "NoticeLabel.hpp"
 
+#include <Idian/Utils.hpp>
+
 namespace OBS {
-NoticeLabel::NoticeLabel(QWidget *parent) : QLabel(parent), idian::Utils(this)
+NoticeLabel::NoticeLabel(QWidget *parent) : QLabel(parent)
 {
 	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	idian::Utils::addClass("text-bold");
+	idian::Utils::addClass(this, "text-bold");
 }
 
 NoticeLabel::NoticeLabel(QWidget *parent, NoticeStyle style) : NoticeLabel(parent)
@@ -41,22 +43,22 @@ void NoticeLabel::applyStyle(NoticeStyle style, bool enable)
 {
 	switch (style) {
 	case NoticeStyle::Primary:
-		idian::Utils::toggleClass("primary", enable);
+		idian::Utils::toggleClass(this, "primary", enable);
 		break;
 	case NoticeStyle::Secondary:
-		idian::Utils::toggleClass("secondary", enable);
+		idian::Utils::toggleClass(this, "secondary", enable);
 		break;
 	case NoticeStyle::Info:
-		idian::Utils::toggleClass("info", enable);
+		idian::Utils::toggleClass(this, "info", enable);
 		break;
 	case NoticeStyle::Success:
-		idian::Utils::toggleClass("success", enable);
+		idian::Utils::toggleClass(this, "success", enable);
 		break;
 	case NoticeStyle::Warning:
-		idian::Utils::toggleClass("warning", enable);
+		idian::Utils::toggleClass(this, "warning", enable);
 		break;
 	case NoticeStyle::Danger:
-		idian::Utils::toggleClass("danger", enable);
+		idian::Utils::toggleClass(this, "danger", enable);
 		break;
 	default:
 		break;

@@ -17,14 +17,12 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-
 #include <QLabel>
 
 namespace OBS {
 enum class NoticeStyle { None, Primary, Secondary, Info, Success, Warning, Danger };
 
-class NoticeLabel : public QLabel, public idian::Utils {
+class NoticeLabel : public QLabel {
 	Q_OBJECT
 
 public:

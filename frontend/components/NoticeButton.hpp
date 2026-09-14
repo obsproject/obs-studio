@@ -22,7 +22,7 @@
 #include <QPushButton>
 
 namespace OBS {
-class NoticeButton : public QPushButton, public idian::Utils {
+class NoticeButton : public QPushButton {
 	Q_OBJECT
 
 public:
@@ -34,6 +34,6 @@ public:
 	void applyStyle(NoticeStyle style, bool enable);
 
 protected:
-	NoticeStyle currentStyle = NoticeStyle::None;
+	NoticeStyle currentStyle;
 };
 } // namespace OBS
