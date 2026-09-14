@@ -389,7 +389,7 @@
             "servers": [
                 {
                     "name": "Velora.tv Main Server"
-                    "url": "rtmp://publish.velora.tv/live"
+                    "url": "rtmp://rtmp.velora.tv/live"
                 }
             ],
             "supported video codecs": [
