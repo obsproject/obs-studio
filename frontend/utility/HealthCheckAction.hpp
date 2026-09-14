@@ -21,6 +21,8 @@
 
 namespace OBS {
 class HealthCheckItem;
+
+// When a HealthCheckItem has an action, a button will be shown in the health check dialog.
 class HealthCheckAction : public QObject {
 
 public:
@@ -30,15 +32,20 @@ public:
 		PassKey() = default;
 	};
 
+	// This class must be instantiated through `HealthCheckItem::createAction()`.
 	HealthCheckAction(PassKey, QObject *parent);
 	~HealthCheckAction() = default;
 
 	HealthCheckAction(const HealthCheckAction &) = delete;
+	HealthCheckAction(HealthCheckAction &&) = delete;
 	HealthCheckAction &operator=(const HealthCheckAction &) = delete;
+	HealthCheckAction &operator=(HealthCheckAction &&) = delete;
 
+	// Text displayed for a widget representing this action.
 	void setText(QString text);
 	const QString &text();
 
+	// The function that is called when the action is triggered.
 	void setCallback(std::function<void()> func);
 
 private:

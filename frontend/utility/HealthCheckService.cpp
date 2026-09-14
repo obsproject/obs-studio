@@ -18,19 +18,15 @@
 #include "HealthCheckService.hpp"
 
 #include <OBSApp.hpp>
-#include <dialogs/HealthCheckDialog.hpp>
+#include <utility/HealthCheckItem.hpp>
 
 namespace OBS {
-HealthCheckService::HealthCheckService(QObject *parent) : QObject(parent) {}
+HealthCheckService::HealthCheckService(QObject *parent) : QObject(parent), globalStatus(HealthStatus::Valid) {}
 
 void HealthCheckService::registerItem(HealthCheckItem *item)
 {
-	if (!item) {
-		return;
-	}
-
 	QString id = item->id();
-	registry[id] = QPointer<HealthCheckItem>(item);
+	registry.emplace(id, item);
 
 	connect(item, &QObject::destroyed, this, [this, id]() { unregisterItem(id); });
 	connect(item, &HealthCheckItem::statusChanged, this, [this, item]() {
@@ -113,6 +109,21 @@ void HealthCheckService::refreshGlobalStatus()
 
 HealthCheckItem *HealthCheckService::createItem(QObject *parent, QString id, QString title)
 {
+	if (parent == nullptr) {
+		throw std::invalid_argument("HealthCheckItem: parent cannot be null");
+	}
+
+	if (id.isEmpty() || id.isNull()) {
+		throw std::invalid_argument("HealthCheckItem: id cannot be empty");
+	}
+
+	auto existingItem = registry.find(id);
+	if (existingItem != registry.end()) {
+		assert("HealthCheckService: Id '%s' already exists.");
+		blog(LOG_WARNING, "HealthCheckService: Id '%s' already exists.", id.toUtf8().constData());
+		return existingItem->second;
+	}
+
 	auto *item = new HealthCheckItem(HealthCheckItem::PassKey{}, parent, id, title);
 	registerItem(item);
 

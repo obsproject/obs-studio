@@ -17,17 +17,16 @@
 
 #pragma once
 
-#include <utility/HealthCheckItem.hpp>
-
 #include <QObject>
 #include <QPointer>
 
 #include <vector>
 #include <mutex>
 
-class HealthCheckDialog;
-
 namespace OBS {
+class HealthCheckItem;
+enum class HealthStatus;
+
 class HealthCheckService : public QObject {
 	Q_OBJECT
 
@@ -38,21 +37,31 @@ public:
 	HealthCheckService(const HealthCheckService &) = delete;
 	HealthCheckService &operator=(const HealthCheckService &) = delete;
 
-	void registerItem(HealthCheckItem *item);
-	void unregisterItem(const QString &id);
-
 	std::vector<QPointer<HealthCheckItem>> getInvalidItems();
 	int getInvalidCount() { return totalInvalidCount; }
 
 	HealthStatus getGlobalStatus();
 
+	// Processes all item entries to determine the current 'worst' status amongst them.
+	// The result is emitted via the `globalStatusChanged()` signal.
 	void refreshGlobalStatus();
 
+	// Creates a new entry in the health check service.
+	// Title cannot be changed after creation and should be a general name for the issue being tracked.
+	// Items will be shown in the health check dialog whenever their status is not `Valid`.
 	HealthCheckItem *createItem(QObject *parent, QString id, QString title);
 
 private:
-	int totalInvalidCount;
-	HealthStatus globalStatus{HealthStatus::Valid};
+	int totalInvalidCount{0};
+	HealthStatus globalStatus;
+
+	// Registers an item with the service and sets up the relevant event slots.
+	// Emits the `itemListChanged()` signal
+	void registerItem(HealthCheckItem *item);
+
+	// Removes an item from the service.
+	// Emits the `itemListChanged()` signal
+	void unregisterItem(const QString &id);
 
 	std::unordered_map<QString, QPointer<HealthCheckItem>> registry;
 

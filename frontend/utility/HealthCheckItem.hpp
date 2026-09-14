@@ -31,7 +31,10 @@ enum class HealthStatus { Valid, Warning, Critical };
 class HealthCheckService;
 class HealthCheckAction;
 
-// Created via HealthCheckService::createItem().
+// Represents a single diagnostic entry within the health check system.
+// An item should have it's status and description updated whenever there are changes related to this entry.
+// If the issue can be resolved automatically or the user can be shown where to resolve it, set up an action via
+// `createAction()` to be shown in the UI.
 class HealthCheckItem : public QObject {
 	Q_OBJECT
 
@@ -42,31 +45,49 @@ public:
 		PassKey() = default;
 	};
 
+	// This class must be instantiated through `HealthCheckService::createItem()`.
 	HealthCheckItem(PassKey, QObject *parent, QString id, QString title);
 	~HealthCheckItem() = default;
 
 	HealthCheckItem(const HealthCheckItem &) = delete;
+	HealthCheckItem(const HealthCheckItem &&) = delete;
 	HealthCheckItem &operator=(const HealthCheckItem &) = delete;
+	HealthCheckItem &operator=(HealthCheckItem &&) = delete;
 
 	const QString &id() const { return id_; }
 	const QString &title() const { return title_; }
 
+	// Updates the description for this item when shown in the UI.
+	// Emits the `statusChanged()` signal.
 	void setMessage(QString message);
 	const QString &message() const { return message_; }
 
+	// Updates the status of the item.
+	// Emits the `statusChanged()` signal.
 	void setStatus(HealthStatus status);
+
+	// Updates the status of the item as well as the description.
+	// Emits the `statusChanged()` signal.
 	void setStatus(HealthStatus status, QString message);
+
 	const HealthStatus &status() const { return status_; }
+
+	// Returns a localized string representing this items current `status`.
 	QString statusText() const;
 
-	static QString statusText(HealthStatus status);
-
-	HealthCheckAction *action() { return action_; }
+	// Creates and associates a new action with this health check item.
+	// The action should be configured by calling `setText()` and `setCallback()`.
 	HealthCheckAction *createAction()
 	{
+		if (action()) {
+			assert("HealthCheckItem: Tried to create an action for an item that already has one.");
+			return action_;
+		}
+
 		action_ = new HealthCheckAction(HealthCheckAction::PassKey{}, this);
 		return action_;
 	};
+	HealthCheckAction *action() { return action_; }
 
 private:
 	QString id_{""};
@@ -75,6 +96,7 @@ private:
 	QString message_{""};
 
 	HealthStatus status_ = HealthStatus::Valid;
+	static QString statusText(HealthStatus status);
 
 	QPointer<HealthCheckAction> action_;
 
