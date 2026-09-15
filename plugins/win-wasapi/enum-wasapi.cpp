@@ -1,10 +1,11 @@
 #include "enum-wasapi.hpp"
 
 #include <util/base.h>
+#include <util/bmem.h>
 #include <util/platform.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
-#include <util/windows/CoTaskMemPtr.hpp>
+#include <util/windows/device-enum.h>
 
 using namespace std;
 
@@ -59,26 +60,22 @@ static void GetWASAPIAudioDevices_(vector<AudioDeviceInfo> &devices, bool input)
 
 	for (UINT i = 0; i < count; i++) {
 		ComPtr<IMMDevice> device;
-		CoTaskMemPtr<WCHAR> w_id;
 		AudioDeviceInfo info;
-		size_t len, size;
 
 		res = collection->Item(i, device.Assign());
 		if (FAILED(res)) {
 			continue;
 		}
 
-		res = device->GetId(&w_id);
-		if (FAILED(res) || !w_id || !*w_id) {
+		char *id = get_audio_device_id(device);
+		if (!id) {
 			continue;
 		}
 
 		info.name = GetDeviceName(device);
 
-		len = wcslen(w_id);
-		size = os_wcs_to_utf8(w_id, len, nullptr, 0) + 1;
-		info.id.resize(size);
-		os_wcs_to_utf8(w_id, len, &info.id[0], size);
+		info.id = id;
+		bfree(id);
 
 		devices.push_back(info);
 	}

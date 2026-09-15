@@ -9,6 +9,7 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/CoTaskMemPtr.hpp>
+#include <util/windows/device-enum.h>
 #include <util/windows/win-version.h>
 #include <util/windows/window-helpers.h>
 #include <util/threading.h>
@@ -487,6 +488,12 @@ WASAPISource::~WASAPISource()
 
 WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 {
+	char *id = get_audio_device_id_from_id(obs_data_get_string(settings, OPT_DEVICE_ID));
+	if (id) {
+		obs_data_set_string(settings, OPT_DEVICE_ID, id);
+		bfree(id);
+	}
+
 	WASAPISource::UpdateParams params;
 	params.device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
 	params.useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
