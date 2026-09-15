@@ -55,6 +55,7 @@
 #include <obs-nix-platform.h>
 #endif
 #include <qt-wrappers.hpp>
+#include <util/windows/device-enum.h>
 
 #include <QActionGroup>
 #include <QThread>
@@ -865,6 +866,19 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(activeConfiguration, "Video", "HdrNominalPeakLevel", 1000);
 
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceId", "default");
+#ifdef _WIN32
+	const char *monitoringId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceId");
+	const char *stableId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceStableId");
+	char *resolvedId = nullptr;
+	char *resolvedStableId = nullptr;
+	if (get_audio_device_ids(monitoringId, stableId, &resolvedId, &resolvedStableId)) {
+		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceId", resolvedId);
+		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceStableId",
+				  resolvedStableId ? resolvedStableId : "");
+	}
+	bfree(resolvedStableId);
+	bfree(resolvedId);
+#endif
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceName",
 				  Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
 				      ".Default"));
