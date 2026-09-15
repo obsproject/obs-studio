@@ -1227,10 +1227,25 @@ static void PopulateMonitorIds(HMONITOR handle, char *id, char *alt_id, size_t c
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
 		strcpy_s(alt_id, capacity, mi.szDevice);
+		/* A display can have more than one monitor device attached
+		 * (cloned, or connected but disabled). Log the active one, as
+		 * Display Capture resolves it, instead of whatever sits at
+		 * index 0. */
 		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			strcpy_s(id, capacity, device.DeviceID);
+		bool have_id = false;
+		for (DWORD i = 0;; ++i) {
+			device.cb = sizeof(device);
+			if (!EnumDisplayDevicesA(mi.szDevice, i, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+				break;
+			}
+			if (!have_id) {
+				strcpy_s(id, capacity, device.DeviceID);
+				have_id = true;
+			}
+			if ((device.StateFlags & DISPLAY_DEVICE_ACTIVE) && device.DeviceID[0]) {
+				strcpy_s(id, capacity, device.DeviceID);
+				break;
+			}
 		}
 	}
 }
