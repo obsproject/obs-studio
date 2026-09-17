@@ -17,7 +17,10 @@
 
 #include "OBSIdianPlayground.hpp"
 
+#include <Idian/CollapsibleGroup.hpp>
 #include <Idian/Idian.hpp>
+#include <Idian/ListHeader.hpp>
+#include <Idian/RowInfo.hpp>
 
 #include <QTimer>
 
@@ -31,7 +34,9 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 
 	setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Minimum);
 
-	Group *test;
+	QLayout *contents = ui->scrollAreaWidgetContents->layout();
+
+	RowList *rowList;
 	Row *tmp;
 
 	ComboBox *cbox = new ComboBox;
@@ -39,31 +44,29 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	cbox->addItem("Test 2");
 
 	// Group box 1
-	test = new Group(this);
+	rowList = new RowList(this);
 
 	tmp = new Row();
-	tmp->setTitle("Row with a dropdown");
-	tmp->setSuffix(cbox);
-	test->properties()->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Row with a dropdown"));
+	tmp->addBuddy(cbox);
+	rowList->addRow(tmp);
 
 	cbox = new ComboBox;
 	cbox->addItem("Test 3");
 	cbox->addItem("Test 4");
 	tmp = new Row();
-	tmp->setTitle("Row with a dropdown");
-	tmp->setDescription("And a subtitle!");
-	tmp->setSuffix(cbox);
-	test->properties()->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Row with a dropdown", "And a subtitle!"));
+	tmp->addBuddy(cbox);
+	rowList->addRow(tmp);
 
 	tmp = new Row();
-	tmp->setTitle("Toggle Switch");
-	tmp->setSuffix(new ToggleSwitch());
-	test->properties()->addRow(tmp);
-	ui->scrollAreaWidgetContents->layout()->addWidget(test);
+	tmp->addWidget(new RowInfo(tmp, "Toggle Switch"));
+	tmp->addBuddy(new ToggleSwitch());
+	rowList->addRow(tmp);
+	contents->addWidget(rowList);
 
 	tmp = new Row();
-	tmp->setTitle("Delayed toggle switch");
-	tmp->setDescription("The state can be set separately");
+	tmp->addWidget(new RowInfo(tmp, "Delayed toggle switch", "The state can be set separately"));
 	auto tswitch = new ToggleSwitch;
 	tswitch->setDelayed(true);
 	connect(tswitch, &ToggleSwitch::pendingChecked, this, [=]() {
@@ -74,64 +77,65 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 		// Do async disable stuff, then set toggle status when complete
 		QTimer::singleShot(1000, [=]() { tswitch->setStatus(false); });
 	});
-	tmp->setSuffix(tswitch);
-	test->properties()->addRow(tmp);
+	tmp->addBuddy(tswitch);
+	rowList->addRow(tmp);
 
 	// Group box 2
-	test = new Group();
-	test->setTitle("Just a few checkboxes");
+	contents->addWidget(new ListHeader(rowList, "Just a few checkboxes"));
+	rowList = new RowList();
 
 	tmp = new Row();
-	tmp->setTitle("Box 1");
-	tmp->setPrefix(new CheckBox);
-	test->properties()->addRow(tmp);
+	tmp->addBuddy(new CheckBox);
+	tmp->addWidget(new RowInfo(tmp, "Box 1"));
+	rowList->addRow(tmp);
 
 	tmp = new Row();
-	tmp->setTitle("Box 2");
-	tmp->setPrefix(new CheckBox);
-	test->properties()->addRow(tmp);
+	tmp->addBuddy(new CheckBox);
+	tmp->addWidget(new RowInfo(tmp, "Box 2"));
+	rowList->addRow(tmp);
 
-	ui->scrollAreaWidgetContents->layout()->addWidget(test);
+	ui->scrollAreaWidgetContents->layout()->addWidget(rowList);
 
 	// Group box 2
-	test = new Group();
-	test->setTitle("Another Group");
-	test->setDescription("With a subtitle");
+	rowList = new RowList();
+	contents->addWidget(new ListHeader(rowList, "Another Group", "With a subtitle"));
 
 	tmp = new Row();
-	tmp->setTitle("Placeholder");
-	tmp->setSuffix(new ToggleSwitch);
-	test->properties()->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Placeholder"));
+	tmp->addBuddy(new ToggleSwitch);
+	rowList->addRow(tmp);
 
-	CollapsibleRow *tmp2 = new CollapsibleRow(this);
-	tmp2->setTitle("A Collapsible row!");
+	CollapsibleGroup *tmp2 = new CollapsibleGroup(this);
+	tmp2->row()->layout()->insertWidget(0, new RowInfo(tmp, "A Collapsible row!"));
 	tmp2->setCheckable(true);
-	test->addRow(tmp2);
+	rowList->addRow(tmp2);
 
 	tmp = new Row();
-	tmp->setTitle("Spin box demo");
-	tmp->setSuffix(new DoubleSpinBox());
-	tmp2->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Spin box demo"));
+	tmp->addBuddy(new DoubleSpinBox());
+	tmp2->list()->addRow(tmp);
 
 	tmp = new Row();
-	tmp->setTitle("Just another placeholder");
-	tmp->setSuffix(new ToggleSwitch(true));
-	tmp2->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Just another placeholder"));
+	tmp->addBuddy(new ToggleSwitch(true));
+	tmp2->list()->addRow(tmp);
 
 	tmp = new Row();
-	tmp->setTitle("Placeholder 2");
-	tmp->setSuffix(new ToggleSwitch);
-	test->properties()->addRow(tmp);
+	tmp->addWidget(new RowInfo(tmp, "Placeholder 2"));
+	tmp->addBuddy(new ToggleSwitch);
+	rowList->addRow(tmp);
 
 	ui->scrollAreaWidgetContents->setContentsMargins(0, 0, 0, 0);
 	ui->scrollAreaWidgetContents->layout()->setContentsMargins(0, 0, 0, 0);
-	ui->scrollAreaWidgetContents->layout()->addWidget(test);
+	ui->scrollAreaWidgetContents->layout()->addWidget(rowList);
 	ui->scrollAreaWidgetContents->layout()->setAlignment(Qt::AlignTop | Qt::AlignHCenter);
 
 	// Test Checkable Group
-	Group *test2 = new Group();
-	test2->setTitle("Checkable Group");
-	test2->setDescription("Description goes here");
-	test2->setCheckable(true);
+	auto *test2 = new RowList(this);
+
+	auto *header = new ListHeader(this, "Checkable Group", "Description goes here");
+	header->setCheckable(true);
+	test2->addHeader(header);
+
 	ui->scrollAreaWidgetContents->layout()->addWidget(test2);
 }

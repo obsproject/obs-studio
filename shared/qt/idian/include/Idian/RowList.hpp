@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2019 by Dillon Pentz <dillon@vodbox.io>
+    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,40 +17,39 @@
 
 #pragma once
 
-#include "ui_OBSMissingFiles.h"
+#include <Idian/Row.hpp>
+#include <Idian/Utils.hpp>
 
-#include <obs.hpp>
+#include <QFrame>
+#include <QLayout>
+#include <QWidget>
 
-#include <QDialog>
-#include <QPointer>
-
-class MissingFilesModel;
-
-class OBSMissingFiles : public QDialog {
+namespace idian {
+class RowList : public QFrame {
 	Q_OBJECT
-	Q_PROPERTY(QIcon warningIcon READ GetWarningIcon WRITE SetWarningIcon DESIGNABLE true)
-
-	QPointer<MissingFilesModel> filesModel;
-	std::unique_ptr<Ui::OBSMissingFiles> ui;
 
 public:
-	explicit OBSMissingFiles(obs_missing_files_t *files, QWidget *parent = nullptr);
-	virtual ~OBSMissingFiles() override;
+	RowList(QWidget *parent = nullptr);
 
-	void addMissingFile(const char *originalPath, const char *sourceName);
-
-	QIcon GetWarningIcon();
-	void SetWarningIcon(const QIcon &icon);
+	void addHeader(QWidget *widget);
+	void addRow(QWidget *row);
+	void clear();
 
 private:
-	void saveFiles();
-	void browseFolders();
+	QWidget *first = nullptr;
+	QWidget *last = nullptr;
 
-	obs_missing_files_t *fileStore;
-
-public slots:
-	void dataChanged();
-
-signals:
-	void allFilesResolved();
+	QVBoxLayout *layout;
+	QVBoxLayout *rowLayout;
 };
+
+// Spacer with only cosmetic functionality
+class RowListSpacer : public QFrame {
+	Q_OBJECT
+public:
+	RowListSpacer(QWidget *parent = nullptr) : QFrame(parent)
+	{
+		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	}
+};
+} // namespace idian

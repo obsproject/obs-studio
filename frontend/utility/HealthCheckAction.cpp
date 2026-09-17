@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,16 +15,30 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include "HealthCheckAction.hpp"
 
-// Idian - A family of custom widgets for OBS implementing the "Yami" UI design.
-//
-// (OBS Idian, get it?)
+namespace OBS {
+HealthCheckAction::HealthCheckAction(PassKey, QObject *parent) : QObject(parent) {}
 
-#include <Idian/CheckBox.hpp>
-#include <Idian/ComboBox.hpp>
-#include <Idian/DoubleSpinBox.hpp>
-#include <Idian/RowList.hpp>
-#include <Idian/Row.hpp>
-#include <Idian/SpinBox.hpp>
-#include <Idian/ToggleSwitch.hpp>
+void HealthCheckAction::setText(QString text)
+{
+	text_ = text;
+}
+
+const QString &HealthCheckAction::text()
+{
+	return text_;
+}
+
+void HealthCheckAction::setCallback(std::function<void()> func)
+{
+	callback = func;
+}
+
+void HealthCheckAction::trigger()
+{
+	if (callback) {
+		callback();
+	}
+}
+} // namespace OBS

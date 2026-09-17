@@ -17,10 +17,7 @@
 
 #pragma once
 
-#include <Idian/ComboBox.hpp>
-#include <Idian/DoubleSpinBox.hpp>
-#include <Idian/PropertiesList.hpp>
-#include <Idian/SpinBox.hpp>
+#include <Idian/RowInfo.hpp>
 #include <Idian/ToggleSwitch.hpp>
 #include <Idian/Utils.hpp>
 
@@ -33,52 +30,37 @@
 #include <QWidget>
 
 namespace idian {
-
-// Base class mostly so adding stuff to a list is easier
-class GenericRow : public QFrame, public Utils {
-	Q_OBJECT
-
-public:
-	GenericRow(QWidget *parent = nullptr) : QFrame(parent), Utils(this)
-	{
-		setAttribute(Qt::WA_Hover, true);
-
-		applyStateStylingEventFilter(this);
-		setAccessibleName("");
-	};
-
-	virtual void setTitle(const QString &title) = 0;
-	virtual void setDescription(const QString &description) = 0;
-};
+class ExpandButton;
+class RowList;
+class RowInfo;
 
 // Row widget containing one or more controls
-class Row : public GenericRow {
+class Row : public QFrame, public Utils {
 	Q_OBJECT
 
 public:
 	Row(QWidget *parent = nullptr);
 
-	void setPrefix(QWidget *w, bool autoConnect = true);
-	void setSuffix(QWidget *w, bool autoConnect = true);
-
-	bool hasPrefix() { return prefix_; }
-	bool hasSuffix() { return suffix_; }
-
-	QWidget *prefix() const { return prefix_; }
-	QWidget *suffix() const { return suffix_; }
-
-	void setPrefixEnabled(bool enabled);
-	void setSuffixEnabled(bool enabled);
-
-	virtual void setTitle(const QString &title) override;
-	virtual void setDescription(const QString &description) override;
-
-	void showTitle(bool visible);
-	void showDescription(bool visible);
-
-	void setBuddy(QWidget *w);
-
 	void setChangeCursor(bool change);
+
+	QHBoxLayout *layout() { return rowLayout; }
+
+	// Convenience function to add a widget to the rows layout.
+	void addWidget(QWidget *widget) { layout()->addWidget(widget); }
+
+	// Convenience function to add a widget to the rows layout and then set it as the buddy.
+	void addBuddy(QWidget *widget)
+	{
+		layout()->addWidget(widget);
+		setBuddy(widget);
+	}
+
+	// Sets this widget as the buddy of the Row.
+	// The idian StateEventFilter on Row means certain style-able classes are applied to it based on interaction
+	// events. The buddy widget will be repolished when these events happen. This allows the buddy widget to be
+	// styled differently based on the state of the row. For certain widgets, a slot will also be triggered
+	// on the buddy widget.
+	void setBuddy(QWidget *w);
 
 signals:
 	void clicked();
@@ -88,96 +70,13 @@ protected:
 	void leaveEvent(QEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
 	void keyReleaseEvent(QKeyEvent *) override;
-	bool hasDescription() const { return descriptionLabel != nullptr; }
 
 private:
-	QGridLayout *layout;
-
-	QVBoxLayout *labelLayout = nullptr;
-
-	QLabel *nameLabel = nullptr;
-	QLabel *descriptionLabel = nullptr;
-
-	QWidget *prefix_ = nullptr;
-	QWidget *suffix_ = nullptr;
+	QHBoxLayout *rowLayout;
 
 	QWidget *buddyWidget = nullptr;
 
 	void connectBuddyWidget(QWidget *widget);
 	bool changeCursor = false;
 };
-
-// Collapsible row expand button
-class ExpandButton : public QAbstractButton, public Utils {
-	Q_OBJECT
-
-private:
-	QPixmap extendDown;
-	QPixmap extendUp;
-
-	friend class CollapsibleRow;
-
-protected:
-	explicit ExpandButton(QWidget *parent = nullptr);
-
-	void paintEvent(QPaintEvent *) override;
-};
-
-class RowFrame : protected QFrame, protected Utils {
-	Q_OBJECT
-
-signals:
-	void clicked();
-
-protected:
-	explicit RowFrame(QWidget *parent = nullptr);
-
-	void enterEvent(QEnterEvent *) override;
-	void leaveEvent(QEvent *) override;
-
-private:
-	friend class CollapsibleRow;
-};
-
-// Collapsible Generic OBS property container
-class CollapsibleRow : public GenericRow {
-	Q_OBJECT
-
-public:
-	CollapsibleRow(QWidget *parent = nullptr);
-
-	void setCheckable(bool check);
-	bool isCheckable() { return checkable; }
-
-	void setChecked(bool checked);
-	bool isChecked() { return toggleSwitch->isChecked(); };
-
-	virtual void setTitle(const QString &title) override;
-	virtual void setDescription(const QString &description) override;
-
-	void addRow(GenericRow *actionRow);
-
-signals:
-	void toggled(bool checked);
-
-private:
-	void toggleVisibility();
-
-	QPixmap extendDown;
-	QPixmap extendUp;
-
-	QVBoxLayout *layout;
-	RowFrame *rowWidget;
-	QHBoxLayout *rowLayout;
-
-	Row *actionRow;
-	QFrame *expandFrame;
-	QHBoxLayout *btnLayout;
-	ExpandButton *expandButton;
-	PropertiesList *propertyList;
-
-	ToggleSwitch *toggleSwitch = nullptr;
-	bool checkable = false;
-};
-
 } // namespace idian

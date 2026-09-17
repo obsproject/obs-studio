@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2019 by Dillon Pentz <dillon@vodbox.io>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,40 +17,28 @@
 
 #pragma once
 
-#include "ui_OBSMissingFiles.h"
+#include <QAbstractButton>
 
-#include <obs.hpp>
+class QPixmap;
 
-#include <QDialog>
-#include <QPointer>
+namespace idian {
+class Utils;
 
-class MissingFilesModel;
-
-class OBSMissingFiles : public QDialog {
+class ExpandButton : public QAbstractButton {
 	Q_OBJECT
-	Q_PROPERTY(QIcon warningIcon READ GetWarningIcon WRITE SetWarningIcon DESIGNABLE true)
-
-	QPointer<MissingFilesModel> filesModel;
-	std::unique_ptr<Ui::OBSMissingFiles> ui;
 
 public:
-	explicit OBSMissingFiles(obs_missing_files_t *files, QWidget *parent = nullptr);
-	virtual ~OBSMissingFiles() override;
+	explicit ExpandButton(QWidget *parent = nullptr);
 
-	void addMissingFile(const char *originalPath, const char *sourceName);
-
-	QIcon GetWarningIcon();
-	void SetWarningIcon(const QIcon &icon);
+protected:
+	void paintEvent(QPaintEvent *) override;
 
 private:
-	void saveFiles();
-	void browseFolders();
+	Utils *widgetUtils;
 
-	obs_missing_files_t *fileStore;
+	QPixmap extendDown;
+	QPixmap extendUp;
 
-public slots:
-	void dataChanged();
-
-signals:
-	void allFilesResolved();
+	friend class CollapsibleGroup;
 };
+} // namespace idian
