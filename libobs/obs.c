@@ -1808,13 +1808,16 @@ bool obs_enum_service_types(size_t idx, const char **id)
 
 void obs_enter_graphics(void)
 {
-	if (obs->video.graphics)
+	/* obs_shutdown() frees the core and nulls this global; a caller that
+	 * races shutdown (e.g. a Qt DeferredDelete processed after
+	 * applicationShutdown() has already run) must not dereference it. */
+	if (obs && obs->video.graphics)
 		gs_enter_context(obs->video.graphics);
 }
 
 void obs_leave_graphics(void)
 {
-	if (obs->video.graphics)
+	if (obs && obs->video.graphics)
 		gs_leave_context();
 }
 
