@@ -70,6 +70,7 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include "Windows.h"
+#include <util/windows/device-enum.h>
 #endif
 
 #include "moc_OBSBasic.cpp"
@@ -865,6 +866,14 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(activeConfiguration, "Video", "HdrNominalPeakLevel", 1000);
 
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceId", "default");
+#ifdef _WIN32
+	const char *monitoringId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceId");
+	char *resolvedId = get_audio_device_id_from_id(monitoringId);
+	if (resolvedId) {
+		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceId", resolvedId);
+		bfree(resolvedId);
+	}
+#endif
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceName",
 				  Str("Basic.Settings.Advanced.Audio.MonitoringDevice"
 				      ".Default"));

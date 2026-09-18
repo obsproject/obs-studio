@@ -1,4 +1,5 @@
 #include "../../obs-internal.h"
+#include "../../util/windows/device-enum.h"
 
 #include "wasapi-output.h"
 
@@ -39,8 +40,7 @@ static bool get_device_info(obs_enum_audio_device_cb cb, void *data, IMMDeviceCo
 	IMMDevice *device = NULL;
 	PROPVARIANT name_var;
 	char utf8_name[512];
-	WCHAR *w_id = NULL;
-	char utf8_id[512];
+	char *id = NULL;
 	bool cont = true;
 	HRESULT hr;
 
@@ -49,8 +49,8 @@ static bool get_device_info(obs_enum_audio_device_cb cb, void *data, IMMDeviceCo
 		goto fail;
 	}
 
-	hr = device->lpVtbl->GetId(device, &w_id);
-	if (FAILED(hr)) {
+	id = get_audio_device_id(device);
+	if (!id) {
 		goto fail;
 	}
 
@@ -65,17 +65,15 @@ static bool get_device_info(obs_enum_audio_device_cb cb, void *data, IMMDeviceCo
 		goto fail;
 	}
 
-	os_wcs_to_utf8(w_id, 0, utf8_id, 512);
 	os_wcs_to_utf8(name_var.pwszVal, 0, utf8_name, 512);
 
-	cont = cb(data, utf8_name, utf8_id);
+	cont = cb(data, utf8_name, id);
 	PropVariantClear(&name_var);
 
 fail:
 	safe_release(store);
 	safe_release(device);
-	if (w_id)
-		CoTaskMemFree(w_id);
+	bfree(id);
 	return cont;
 }
 
@@ -167,7 +165,11 @@ bool devices_match(const char *id1, const char *id2)
 		id2 = default_id;
 	}
 
-	match = strcmp(id1, id2) == 0;
+	char *resolved_id1 = get_audio_device_id_from_id(id1);
+	char *resolved_id2 = get_audio_device_id_from_id(id2);
+	match = strcmp(resolved_id1 ? resolved_id1 : id1, resolved_id2 ? resolved_id2 : id2) == 0;
+	bfree(resolved_id1);
+	bfree(resolved_id2);
 	bfree(default_id);
 
 	return match;
