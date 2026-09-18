@@ -575,8 +575,17 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t j = 0; j < obs->video.mixes.num; j++) {
-		struct obs_view *view = obs->video.mixes.array[j]->view;
-		if (!view)
+		struct obs_core_video_mix *mix = obs->video.mixes.array[j];
+		struct obs_view *view = mix->view;
+		bool duplicate_view = false;
+
+		for (size_t k = 0; k < j; k++) {
+			if (obs->video.mixes.array[k]->view == view) {
+				duplicate_view = true;
+				break;
+			}
+		}
+		if (!view || duplicate_view)
 			continue;
 
 		pthread_mutex_lock(&view->channels_mutex);
@@ -592,7 +601,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in, uint6
 				continue;
 
 			/* first, add top - level sources as root_nodes */
-			if (obs->video.mixes.array[j]->mix_audio)
+			if (mix->mix_audio)
 				da_push_back(audio->root_nodes, &source);
 
 			/* Build audio tree, tag duplicate individual sources */
