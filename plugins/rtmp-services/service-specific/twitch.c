@@ -42,7 +42,8 @@ void twitch_ingests_refresh(int seconds)
 
 void load_twitch_data(void)
 {
-	struct ingest def = {.name = bstrdup("Default"), .url = bstrdup("rtmp://live.twitch.tv/app")};
+	struct ingest def = {.name = bstrdup("Default"),
+			     .url = bstrdup("rtmp://ingest.global-contribute.live-video.net/app")};
 	load_service_data(&twitch, "twitch_ingests.json", &def);
 }
 
