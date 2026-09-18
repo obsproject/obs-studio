@@ -182,6 +182,17 @@ static void GetMonitorName(HMONITOR handle, char *name, size_t count)
 	}
 }
 
+static bool get_active_display_device(LPCSTR device_name, DISPLAY_DEVICEA *device)
+{
+	for (DWORD i = 0;; i++) {
+		device->cb = sizeof(*device);
+		if (!EnumDisplayDevicesA(device_name, i, device, EDD_GET_DEVICE_INTERFACE_NAME))
+			return false;
+		if (device->StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP)
+			return true;
+	}
+}
+
 static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM param)
 {
 	UNUSED_PARAMETER(hdc);
@@ -194,8 +205,7 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM 
 	mi.cbSize = sizeof(mi);
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
 		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+		if (get_active_display_device(mi.szDevice, &device)) {
 			match = strcmp(monitor->device_id, device.DeviceID) == 0;
 			if (match) {
 				strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
@@ -743,8 +753,7 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 			dstr_catf(&monitor_desc, " (%s)", TEXT_PRIMARY_MONITOR);
 
 		DISPLAY_DEVICEA device;
-		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+		if (get_active_display_device(mi.szDevice, &device)) {
 			obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceID);
 		} else {
 			blog(LOG_WARNING,
