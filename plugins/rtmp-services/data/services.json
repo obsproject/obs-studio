@@ -3417,6 +3417,28 @@
                 "keyint": 1,
                 "max video bitrate": 6000
             }
+        },
+        {
+            "name": "sendifai",
+            "more_info_link": "https://www.sendifai.com/live",
+            "stream_key_link": "https://www.sendifai.com/live/channels",
+            "servers": [
+                {
+                    "name": "London (4K)",
+                    "url": "rtmp://live.sendifai.com/obs"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max fps": 60,
+                "max video bitrate": 80000,
+                "max audio bitrate": 320,
+                "bframes": 2
+            }
         }
     ]
 }
