@@ -19,6 +19,14 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQT
 
 OBSBasicPreview::~OBSBasicPreview()
 {
+	/* If libobs has already been shut down (a Qt DeferredDelete for this
+	 * widget can be processed after obs_shutdown() has run, depending on
+	 * event-loop timing), the graphics subsystem and every resource below
+	 * is already gone; entering graphics would dereference the freed core. */
+	if (!obs_initialized()) {
+		return;
+	}
+
 	obs_enter_graphics();
 
 	if (overflow) {

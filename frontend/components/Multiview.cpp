@@ -19,6 +19,14 @@ Multiview::~Multiview()
 		}
 	}
 
+	/* Same shutdown-order hazard as OBSBasicPreview::~OBSBasicPreview():
+	 * a Multiview can outlive obs_shutdown() (it's owned by an
+	 * OBSProjector window, which is Qt-parented and can be torn down by
+	 * a DeferredDelete after the core is gone). */
+	if (!obs_initialized()) {
+		return;
+	}
+
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(actionSafeMargin);
 	gs_vertexbuffer_destroy(graphicsSafeMargin);

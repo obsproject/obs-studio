@@ -53,12 +53,22 @@ ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(so
 
 ScreenshotObj::~ScreenshotObj()
 {
-	obs_enter_graphics();
-	gs_stagesurface_destroy(stagesurf);
-	gs_texrender_destroy(texrender);
-	obs_leave_graphics();
+	/* Same shutdown-order hazard as OBSBasicPreview::~OBSBasicPreview():
+	 * muxFile() runs on a background thread and queues onFinished() (which
+	 * calls deleteLater()) via a QueuedConnection, so this destructor can
+	 * run after obs_shutdown() if that lands late enough in shutdown.
+	 * obs_remove_tick_callback() also dereferences the core directly (it
+	 * has no null check of its own), so it needs the same guard as the
+	 * graphics calls -- and there's nothing to remove from once the core
+	 * that owned the tick-callback list is already gone. */
+	if (obs_initialized()) {
+		obs_enter_graphics();
+		gs_stagesurface_destroy(stagesurf);
+		gs_texrender_destroy(texrender);
+		obs_leave_graphics();
 
-	obs_remove_tick_callback(renderTick, this);
+		obs_remove_tick_callback(renderTick, this);
+	}
 }
 
 void ScreenshotObj::renderScreenshot()
