@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "importers.hpp"
+#include <cstdint>
 
 using namespace std;
 using namespace json11;
@@ -268,7 +269,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json in_settings = source["settings"];
 		Json in_sync = source["syncOffset"];
 
-		int sync = (int)(in_sync["sec"].number_value() * 1000000000 + in_sync["nsec"].number_value());
+		int64_t sync = static_cast<int64_t>(in_sync["sec"].int_value()) * 1000000000LL +
+			       in_sync["nsec"].int_value();
 
 		double vol = source["volume"].number_value();
 		bool muted = source["muted"].bool_value();
@@ -306,7 +308,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 						   {"id", type},
 						   {"sl_id", sl_id},
 						   {"settings", out_settings},
-						   {"sync", sync},
+						   {"sync", static_cast<double>(sync)},
 						   {"volume", vol},
 						   {"muted", muted},
 						   {"name", out_name},
