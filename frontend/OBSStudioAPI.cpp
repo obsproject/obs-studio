@@ -11,6 +11,7 @@ extern volatile bool recording_active;
 extern volatile bool recording_paused;
 extern volatile bool replaybuf_active;
 extern volatile bool virtualcam_active;
+extern bool safe_mode;
 
 template<typename T>
 inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
@@ -718,6 +719,11 @@ bool OBSStudioAPI::obs_frontend_can_paste_sceneitem(bool duplicate)
 void OBSStudioAPI::obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
 {
 	main->pasteSceneItem(scene, duplicate);
+}
+
+bool OBSStudioAPI::obs_frontend_is_safe_mode_enabled()
+{
+	return safe_mode;
 }
 
 void OBSStudioAPI::on_load(obs_data_t *settings)
