@@ -461,6 +461,7 @@ struct obs_core_audio {
 	struct deque tasks;
 
 	struct obs_source *monitoring_duplicating_source;
+	struct monitoring_mix_data *monitoring_mix;
 };
 
 /* user sources, output channels, and displays */
@@ -995,6 +996,7 @@ struct obs_source {
 	enum obs_monitoring_type monitoring_type;
 	bool monitoring_enabled;
 	obs_hotkey_pair_id monitor_on_off_key;
+	struct monitoring_mix_source *monitoring_mix_source;
 
 	/* media action queue */
 	DARRAY(struct media_action) media_actions;

@@ -118,6 +118,7 @@ target_sources(
     util/serializer.h
     util/source-profiler.c
     util/source-profiler.h
+    util/spsc-fifo.h
     util/sse-intrin.h
     util/task.c
     util/task.h
@@ -216,6 +217,8 @@ target_sources(
     graphics/vec4.c
     graphics/vec4.h
 )
+
+target_sources(libobs PRIVATE audio-monitoring/monitoring-mix.c audio-monitoring/monitoring-mix.h)
 
 # Temporarily disables deprecation warnings while obs_data_autoselect_* is deprecated.
 if(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
