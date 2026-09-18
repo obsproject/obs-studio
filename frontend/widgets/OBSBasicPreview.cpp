@@ -1784,6 +1784,7 @@ static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot, float pixelRa
 	gs_matrix_translate3f(0.0f, -HANDLE_RADIUS * 2 / 3, 0.0f);
 
 	gs_load_vertexbuffer(circle);
+	gs_load_indexbuffer(nullptr);
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
@@ -2099,6 +2100,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *, obs_sceneitem_t *item, voi
 	gs_technique_begin_pass(tech, 0);
 
 	gs_load_vertexbuffer(main->box);
+	gs_load_indexbuffer(nullptr);
 	gs_effect_set_vec4(colParam, &red);
 
 	if (selected) {
@@ -2170,6 +2172,7 @@ bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2, g
 
 	gs_effect_set_vec4(colParam, &fillColor);
 	gs_load_vertexbuffer(rectFill);
+	gs_load_indexbuffer(nullptr);
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_effect_set_vec4(colParam, &borderColor);
