@@ -622,6 +622,7 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.latency = ui->latencyBox->currentData().toString();
 	broadcast.auto_start = ui->checkAutoStart->isChecked();
 	broadcast.auto_stop = ui->checkAutoStop->isChecked();
+	broadcast.use_obs_captions = ui->checkCaptions->isChecked();
 	broadcast.dvr = ui->checkDVR->isChecked();
 	broadcast.schedul_for_later = ui->checkScheduledLater->isChecked();
 	broadcast.projection = ui->check360Video->isChecked() ? "360" : "rectangular";
@@ -643,6 +644,7 @@ void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 	config_set_bool(main->activeConfiguration, "YouTube", "MadeForKids", broadcast.made_for_kids);
 	config_set_bool(main->activeConfiguration, "YouTube", "AutoStart", broadcast.auto_start);
 	config_set_bool(main->activeConfiguration, "YouTube", "AutoStop", broadcast.auto_start);
+	config_set_bool(main->activeConfiguration, "YouTube", "UseOBSCaptions", broadcast.use_obs_captions);
 	config_set_bool(main->activeConfiguration, "YouTube", "DVR", broadcast.dvr);
 	config_set_bool(main->activeConfiguration, "YouTube", "ScheduleForLater", broadcast.schedul_for_later);
 	config_set_string(main->activeConfiguration, "YouTube", "Projection", QT_TO_UTF8(broadcast.projection));
@@ -671,6 +673,9 @@ void OBSYoutubeActions::LoadSettings()
 	const char *latency = config_get_string(main->activeConfiguration, "YouTube", "Latency");
 	index = ui->latencyBox->findData(latency);
 	ui->latencyBox->setCurrentIndex(index);
+
+	bool obsCaptions = config_get_bool(main->activeConfiguration, "YouTube", "UseOBSCaptions");
+	ui->checkCaptions->setChecked(obsCaptions);
 
 	bool dvr = config_get_bool(main->activeConfiguration, "YouTube", "DVR");
 	ui->checkDVR->setChecked(dvr);
