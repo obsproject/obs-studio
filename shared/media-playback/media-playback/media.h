@@ -31,7 +31,9 @@ extern "C" {
 
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
+#include <libavfilter/avfilter.h>
 #include <libswscale/swscale.h>
+#include <util/deque.h>
 #include <util/threading.h>
 
 #ifdef _MSC_VER
@@ -53,6 +55,33 @@ struct mp_media {
 	char *ffmpeg_options;
 	int buffering;
 	int speed;
+
+	/* Pitch-preserving speed: when speed != 100, decoded audio is
+	 * time-stretched with atempo and output at its real sample rate,
+	 * instead of being played back at a scaled sample rate (which would
+	 * shift the pitch along with the tempo).
+	 *
+	 * atempo holds audio back, so decoded audio is fed to it
+	 * tempo_lookahead_ns ahead of its pts, and what it outputs waits in
+	 * tempo_queue until it's due, the same way decoded frames wait. */
+	bool tempo_failed;
+	AVFilterGraph *tempo_graph;
+	AVFilterContext *tempo_src;
+	AVFilterContext *tempo_sink;
+	AVFrame *tempo_frame;
+	AVChannelLayout tempo_ch_layout;
+	enum AVSampleFormat tempo_format;
+	int tempo_sample_rate;
+	int64_t tempo_in_samples;
+	int64_t tempo_out_samples;
+	int64_t tempo_anchor_pts;
+	int64_t tempo_out_end_pts;
+	int64_t tempo_lookahead_ns;
+	int tempo_lookahead_rate;
+	int tempo_max_frame_samples;
+	struct deque tempo_queue;
+	int64_t tempo_sent_end_pts;
+	bool tempo_sent;
 
 	enum AVPixelFormat scale_format;
 	struct SwsContext *swscale;

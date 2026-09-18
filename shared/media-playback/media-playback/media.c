@@ -23,6 +23,9 @@
 #include "closest-format.h"
 
 #include <libavdevice/avdevice.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
+#include <libavutil/channel_layout.h>
 #include <libavutil/imgutils.h>
 
 static int64_t base_sys_ts = 0;
@@ -305,7 +308,574 @@ bool mp_media_prepare_frames(mp_media_t *m)
 	return true;
 }
 
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR 2000000000LL
+
+/* ------------------------------------------------------------------------- */
+/* Pitch-preserving speed                                                    */
+
+struct mp_tempo_frame {
+	AVFrame *frame;
+	int64_t pts;
+};
+
+/* added to the filter's worst-case delay to cover rounding */
+#define TEMPO_LOOKAHEAD_MARGIN 2000000LL
+
+static inline bool mp_media_use_tempo(mp_media_t *m)
+{
+	return m->speed != 100 && !m->tempo_failed;
+}
+
+static inline int64_t tempo_samples_to_ns(int64_t samples, int rate)
+{
+	return av_rescale(samples, 1000000000, rate);
+}
+
+/* media time spanned by audio fed to the filter, at the scaled speed */
+static inline int64_t mp_media_tempo_fed_ns(mp_media_t *m, int64_t samples)
+{
+	return av_rescale(samples, 100000000000LL, (int64_t)m->tempo_sample_rate * m->speed);
+}
+
+/* atempo holds samples back, so its output isn't aligned with its input. The
+ * output is laid out from the media time the filter's input started at: once
+ * the frame at pts is fed, that's pts minus what was fed before it. Deriving
+ * it again for every frame keeps gaps or jumps in the source timestamps. */
+static inline int64_t mp_media_tempo_anchor(mp_media_t *m, int64_t pts)
+{
+	return pts - mp_media_tempo_fed_ns(m, m->tempo_in_samples);
+}
+
+static void mp_media_tempo_free_graph(mp_media_t *m)
+{
+	avfilter_graph_free(&m->tempo_graph);
+	m->tempo_src = NULL;
+	m->tempo_sink = NULL;
+	av_frame_free(&m->tempo_frame);
+	av_channel_layout_uninit(&m->tempo_ch_layout);
+	m->tempo_format = AV_SAMPLE_FMT_NONE;
+	m->tempo_sample_rate = 0;
+	m->tempo_in_samples = 0;
+	m->tempo_out_samples = 0;
+	m->tempo_anchor_pts = 0;
+	m->tempo_out_end_pts = 0;
+}
+
+static void mp_media_tempo_clear_queue(mp_media_t *m)
+{
+	struct mp_tempo_frame chunk = {0};
+
+	while (m->tempo_queue.size) {
+		deque_pop_front(&m->tempo_queue, &chunk, sizeof(chunk));
+		av_frame_free(&chunk.frame);
+	}
+}
+
+/* Drops the audio in progress, for when the timeline is interrupted. */
+static void mp_media_tempo_reset(mp_media_t *m)
+{
+	mp_media_tempo_free_graph(m);
+	mp_media_tempo_clear_queue(m);
+	m->tempo_sent = false;
+}
+
+static void mp_media_tempo_free(mp_media_t *m)
+{
+	mp_media_tempo_reset(m);
+	deque_free(&m->tempo_queue);
+}
+
+/* atempo accepts factors in [0.5, 100], so speeds below 50% are reached by
+ * chaining 0.5x stages ahead of a final stage that is in range. Returns the
+ * number of stages, and the final stage's factor in percent. */
+static int mp_media_tempo_stages(int speed, int *last_percent)
+{
+	int stages = 1;
+
+	while (speed < 50) {
+		speed *= 2;
+		stages++;
+	}
+
+	*last_percent = speed;
+	return stages;
+}
+
+/* Factors are written as integer ratios so the description doesn't depend on
+ * the C locale's decimal separator. */
+static void mp_media_tempo_build_chain(char *chain, size_t size, int speed)
+{
+	int last_percent;
+	int stages = mp_media_tempo_stages(speed, &last_percent);
+	size_t len = 0;
+
+	chain[0] = '\0';
+	for (int i = 1; i < stages && len < size; i++)
+		len += snprintf(chain + len, size - len, "atempo=1/2,");
+	if (len < size)
+		snprintf(chain + len, size - len, "atempo=%d/100", last_percent);
+}
+
+/* atempo works on overlapping windows of rate / 24 samples, rounded up to a
+ * power of two, and moves its output half a window at a time */
+static inline int mp_media_tempo_window(int rate)
+{
+	int window = rate / 24;
+	int power_of_two = 1 << av_log2(window);
+
+	return power_of_two < window ? power_of_two * 2 : power_of_two;
+}
+
+/* Audio is fed to the filter at most this many samples at a time, as the
+ * filter holds back more when given larger frames. */
+static inline int mp_media_tempo_slice(int rate)
+{
+	return FFMAX(mp_media_tempo_window(rate) / 2, 1);
+}
+
+/* Upper bound, in ns of media time, on how much audio the atempo chain holds
+ * back (fed to it but not output yet). atempo moves its output W / 2 samples
+ * at a time (W being its window size), and only passes output on once it has
+ * filled a frame of round(input frame / tempo) samples. Each stage therefore
+ * holds back less than W / tempo + W / 2 + output frame - 1 samples, and every
+ * later stage stretches what the earlier ones hold back. */
+static int64_t mp_media_tempo_max_delay_ns(int speed, int rate, int max_frame_samples)
+{
+	int window_samples = mp_media_tempo_window(rate);
+	int last_percent;
+	int stages = mp_media_tempo_stages(speed, &last_percent);
+	double frame_samples = max_frame_samples;
+	double delay_samples = 0.0;
+
+	for (int i = 0; i < stages; i++) {
+		double tempo = i + 1 < stages ? 0.5 : last_percent / 100.0;
+
+		frame_samples = (double)(int64_t)(0.5 + frame_samples / tempo);
+		delay_samples =
+			delay_samples / tempo + window_samples / tempo + window_samples / 2 + frame_samples - 1.0;
+	}
+
+	return (int64_t)(delay_samples * 1000000000.0 / rate) + 1;
+}
+
+static void mp_media_tempo_raise_lookahead(mp_media_t *m, int64_t lookahead_ns)
+{
+	/* the bound stays well below this at any speed; it only keeps a filter
+	 * that stops producing output from having the whole file decoded */
+	int64_t max_lookahead_ns = MAX_TS_VAR * 100 / m->speed;
+
+	if (lookahead_ns > max_lookahead_ns)
+		lookahead_ns = max_lookahead_ns;
+	if (lookahead_ns > m->tempo_lookahead_ns)
+		m->tempo_lookahead_ns = lookahead_ns;
+}
+
+/* How far ahead of its pts decoded audio is fed to the tempo filter, so that
+ * the filtered audio is ready by the time it's due. 0 if audio isn't fed
+ * ahead. Updated for the frame that's waiting, as larger frames make the
+ * filter hold more back. */
+static int64_t mp_media_tempo_update_lookahead(mp_media_t *m)
+{
+	const AVFrame *f = m->a.frame;
+
+	if (!m->has_audio || !m->a.frame_ready || m->full_decode || !mp_media_use_tempo(m))
+		return 0;
+
+	if (f->sample_rate != m->tempo_lookahead_rate) {
+		m->tempo_lookahead_rate = f->sample_rate;
+		m->tempo_max_frame_samples = 0;
+	}
+
+	int frame_samples = FFMIN(f->nb_samples, mp_media_tempo_slice(f->sample_rate));
+
+	if (frame_samples > m->tempo_max_frame_samples) {
+		int64_t delay_ns = mp_media_tempo_max_delay_ns(m->speed, f->sample_rate, frame_samples);
+
+		m->tempo_max_frame_samples = frame_samples;
+		mp_media_tempo_raise_lookahead(m, delay_ns + TEMPO_LOOKAHEAD_MARGIN);
+	}
+
+	return m->tempo_lookahead_ns;
+}
+
+static bool mp_media_tempo_init(mp_media_t *m, const AVFrame *f)
+{
+	AVFilterInOut *outputs = avfilter_inout_alloc();
+	AVFilterInOut *inputs = avfilter_inout_alloc();
+	AVChannelLayout layout = {0};
+	char layout_name[128];
+	char chain[128];
+	char args[256];
+	int ret = AVERROR(ENOMEM);
+
+	mp_media_tempo_free_graph(m);
+
+	m->tempo_graph = avfilter_graph_alloc();
+	m->tempo_frame = av_frame_alloc();
+	if (!outputs || !inputs || !m->tempo_graph || !m->tempo_frame)
+		goto fail;
+
+	m->tempo_graph->nb_threads = 1;
+
+	/* abuffer needs a concrete layout, so use the default one for the
+	 * channel count when the decoder doesn't report an order */
+	if (f->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+		av_channel_layout_default(&layout, f->ch_layout.nb_channels);
+	else if ((ret = av_channel_layout_copy(&layout, &f->ch_layout)) < 0)
+		goto fail;
+	av_channel_layout_describe(&layout, layout_name, sizeof(layout_name));
+
+	snprintf(args, sizeof(args), "time_base=1/%d:sample_rate=%d:sample_fmt=%s:channel_layout=%s", f->sample_rate,
+		 f->sample_rate, av_get_sample_fmt_name(f->format), layout_name);
+
+	ret = avfilter_graph_create_filter(&m->tempo_src, avfilter_get_by_name("abuffer"), "in", args, NULL,
+					   m->tempo_graph);
+	if (ret < 0)
+		goto fail;
+
+	ret = avfilter_graph_create_filter(&m->tempo_sink, avfilter_get_by_name("abuffersink"), "out", NULL, NULL,
+					   m->tempo_graph);
+	if (ret < 0)
+		goto fail;
+
+	outputs->name = av_strdup("in");
+	outputs->filter_ctx = m->tempo_src;
+	outputs->pad_idx = 0;
+	outputs->next = NULL;
+
+	inputs->name = av_strdup("out");
+	inputs->filter_ctx = m->tempo_sink;
+	inputs->pad_idx = 0;
+	inputs->next = NULL;
+
+	mp_media_tempo_build_chain(chain, sizeof(chain), m->speed);
+
+	ret = avfilter_graph_parse_ptr(m->tempo_graph, chain, &inputs, &outputs, NULL);
+	if (ret < 0)
+		goto fail;
+
+	ret = avfilter_graph_config(m->tempo_graph, NULL);
+	if (ret < 0)
+		goto fail;
+
+	ret = av_channel_layout_copy(&m->tempo_ch_layout, &f->ch_layout);
+	if (ret < 0)
+		goto fail;
+
+	m->tempo_format = f->format;
+	m->tempo_sample_rate = f->sample_rate;
+
+	av_channel_layout_uninit(&layout);
+	avfilter_inout_free(&inputs);
+	avfilter_inout_free(&outputs);
+	return true;
+
+fail:
+	blog(LOG_WARNING, "MP: Failed to create tempo filter, speed will change pitch: %s", av_err2str(ret));
+	av_channel_layout_uninit(&layout);
+	avfilter_inout_free(&inputs);
+	avfilter_inout_free(&outputs);
+	mp_media_tempo_free_graph(m);
+	return false;
+}
+
+/* Queues filtered audio. The output is laid out from tempo_anchor_pts, at the
+ * real sample rate. */
+static void mp_media_tempo_push(mp_media_t *m, AVFrame *f)
+{
+	struct mp_tempo_frame chunk = {0};
+
+	chunk.frame = f;
+	chunk.pts = m->tempo_anchor_pts + tempo_samples_to_ns(m->tempo_out_samples, f->sample_rate);
+	deque_push_back(&m->tempo_queue, &chunk, sizeof(chunk));
+
+	m->tempo_out_samples += f->nb_samples;
+	m->tempo_out_end_pts = m->tempo_anchor_pts + tempo_samples_to_ns(m->tempo_out_samples, f->sample_rate);
+}
+
+/* Moves the filter's output to the queue. */
+static int mp_media_tempo_receive(mp_media_t *m)
+{
+	for (;;) {
+		AVFrame *out = av_frame_alloc();
+		int ret;
+
+		if (!out)
+			return AVERROR(ENOMEM);
+
+		ret = av_buffersink_get_frame(m->tempo_sink, out);
+		if (ret < 0) {
+			av_frame_free(&out);
+			return ret == AVERROR(EAGAIN) || ret == AVERROR_EOF ? 0 : ret;
+		}
+
+		mp_media_tempo_push(m, out);
+	}
+}
+
+/* atempo's output doesn't end exactly where its input ends at the scaled
+ * speed: it can be a few ms short or long. Trim or pad it so the audio ends
+ * where the media timeline says it does; otherwise the audio that follows
+ * (e.g. the next loop) is snapped against it by the source's timestamp
+ * smoothing, shifting it against the video. */
+static void mp_media_tempo_fix_length(mp_media_t *m)
+{
+	const int silence_chunk_samples = 1024;
+	int rate = av_buffersink_get_sample_rate(m->tempo_sink);
+	int64_t wanted_samples =
+		av_rescale(m->tempo_in_samples, 100LL * rate, (int64_t)m->speed * m->tempo_sample_rate);
+	int64_t diff_samples = wanted_samples - m->tempo_out_samples;
+
+	/* too long: shorten what's still queued */
+	while (diff_samples < 0 && m->tempo_queue.size) {
+		struct mp_tempo_frame chunk = {0};
+
+		deque_peek_back(&m->tempo_queue, &chunk, sizeof(chunk));
+		if (-diff_samples < chunk.frame->nb_samples) {
+			chunk.frame->nb_samples += (int)diff_samples;
+			diff_samples = 0;
+		} else {
+			deque_pop_back(&m->tempo_queue, NULL, sizeof(chunk));
+			diff_samples += chunk.frame->nb_samples;
+			av_frame_free(&chunk.frame);
+		}
+	}
+
+	/* too short: pad with silence */
+	while (diff_samples > 0) {
+		AVFrame *f = av_frame_alloc();
+		int samples = (int)(diff_samples < silence_chunk_samples ? diff_samples : silence_chunk_samples);
+
+		if (!f)
+			break;
+
+		f->format = av_buffersink_get_format(m->tempo_sink);
+		f->sample_rate = rate;
+		f->nb_samples = samples;
+		if (av_buffersink_get_ch_layout(m->tempo_sink, &f->ch_layout) < 0 || av_frame_get_buffer(f, 0) < 0) {
+			av_frame_free(&f);
+			break;
+		}
+		av_samples_set_silence(f->extended_data, 0, samples, f->ch_layout.nb_channels, f->format);
+
+		mp_media_tempo_push(m, f);
+		diff_samples -= samples;
+	}
+}
+
+/* Once the audio has run out, moves what the filter still holds to the queue
+ * and releases the filter. */
+static void mp_media_tempo_drain(mp_media_t *m)
+{
+	if (!m->tempo_graph)
+		return;
+
+	if (av_buffersrc_add_frame_flags(m->tempo_src, NULL, 0) >= 0 && mp_media_tempo_receive(m) >= 0)
+		mp_media_tempo_fix_length(m);
+
+	mp_media_tempo_free_graph(m);
+}
+
+static int mp_media_tempo_feed(mp_media_t *m, const AVFrame *f, int sample_offset, int sample_count)
+{
+	AVFrame *in = m->tempo_frame;
+	int ret;
+
+	if (sample_offset == 0 && sample_count == f->nb_samples) {
+		ret = av_frame_ref(in, f);
+	} else {
+		in->format = f->format;
+		in->sample_rate = f->sample_rate;
+		in->nb_samples = sample_count;
+		ret = av_channel_layout_copy(&in->ch_layout, &f->ch_layout);
+		if (ret >= 0)
+			ret = av_frame_get_buffer(in, 0);
+		if (ret >= 0)
+			ret = av_samples_copy(in->extended_data, f->extended_data, 0, sample_offset, sample_count,
+					      f->ch_layout.nb_channels, f->format);
+	}
+
+	if (ret >= 0) {
+		in->pts = m->tempo_in_samples + sample_offset;
+		if (in->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC) {
+			int channels = in->ch_layout.nb_channels;
+			av_channel_layout_uninit(&in->ch_layout);
+			av_channel_layout_default(&in->ch_layout, channels);
+		}
+		ret = av_buffersrc_add_frame_flags(m->tempo_src, in, 0);
+	}
+
+	av_frame_unref(in);
+	return ret;
+}
+
+/* Feeds a decoded frame to the filter. Returns false if that failed, in which
+ * case the tempo path is turned off and the frame should be output the
+ * regular (pitch-shifting) way. */
+static bool mp_media_tempo_process(mp_media_t *m, const AVFrame *f, int64_t pts)
+{
+	bool needs_new_graph = !m->tempo_graph || f->format != m->tempo_format ||
+			       f->sample_rate != m->tempo_sample_rate ||
+			       av_channel_layout_compare(&f->ch_layout, &m->tempo_ch_layout) != 0;
+	int slice_samples = mp_media_tempo_slice(f->sample_rate);
+	int ret = 0;
+
+	if (needs_new_graph) {
+		/* the filter is set up for the previous format, so finish
+		 * what it holds, laid out against this frame like any other
+		 * frame would, before starting over with the new one */
+		if (m->tempo_graph)
+			m->tempo_anchor_pts = mp_media_tempo_anchor(m, pts);
+		mp_media_tempo_drain(m);
+
+		if (!mp_media_tempo_init(m, f)) {
+			m->tempo_failed = true;
+			return false;
+		}
+	}
+
+	m->tempo_anchor_pts = mp_media_tempo_anchor(m, pts);
+
+	for (int offset = 0; ret >= 0 && offset < f->nb_samples; offset += slice_samples)
+		ret = mp_media_tempo_feed(m, f, offset, FFMIN(slice_samples, f->nb_samples - offset));
+	if (ret >= 0)
+		ret = mp_media_tempo_receive(m);
+
+	if (ret < 0) {
+		blog(LOG_WARNING, "MP: Failed to filter audio, speed will change pitch: %s", av_err2str(ret));
+		mp_media_tempo_free_graph(m);
+		m->tempo_failed = true;
+		return false;
+	}
+
+	m->tempo_in_samples += f->nb_samples;
+
+	int rate = av_buffersink_get_sample_rate(m->tempo_sink);
+	int64_t fed_end_pts = m->tempo_anchor_pts + mp_media_tempo_fed_ns(m, m->tempo_in_samples);
+	m->tempo_out_end_pts = m->tempo_anchor_pts + tempo_samples_to_ns(m->tempo_out_samples, rate);
+
+	/* the look-ahead comes from atempo's worst case, but make sure it
+	 * always covers what the filter actually holds back */
+	mp_media_tempo_raise_lookahead(m, fed_end_pts - m->tempo_out_end_pts + TEMPO_LOOKAHEAD_MARGIN);
+	return true;
+}
+
+static inline bool mp_media_tempo_due(mp_media_t *m, int64_t pts)
+{
+	if (m->full_decode || pts <= m->next_pts_ns)
+		return true;
+
+	/* the video frame this pass output, if any, is the one the clock sits
+	 * on: it was output just before this, so it's no longer ready */
+	bool clock_at_video = m->has_video && !m->v.frame_ready && m->v.frame_pts == m->next_pts_ns;
+
+	/* like decoded frames, audio far ahead of the clock goes out right
+	 * away, but only at a video frame, which is the only time the regular
+	 * path can see audio that far ahead. Otherwise, long frames at low
+	 * speeds or a timestamp jump would have audio fed or sent early at the
+	 * tempo path's own wake-ups. */
+	return clock_at_video && pts - m->next_pts_ns > MAX_TS_VAR;
+}
+
+static void mp_media_tempo_send(mp_media_t *m, const AVFrame *f, int64_t pts)
+{
+	struct obs_source_audio audio = {0};
+
+	for (size_t i = 0; i < MAX_AV_PLANES; i++)
+		audio.data[i] = f->data[i];
+
+	/* the samples are already time-stretched, so they play at their real
+	 * rate */
+	audio.samples_per_sec = f->sample_rate;
+	audio.speakers = convert_speaker_layout(f->ch_layout.nb_channels);
+	audio.format = convert_sample_format(f->format);
+	audio.frames = f->nb_samples;
+	audio.timestamp = m->full_decode ? pts : m->base_ts + pts - m->start_ts + m->play_sys_ts - base_sys_ts;
+
+	if (audio.format == AUDIO_FORMAT_UNKNOWN)
+		return;
+
+	/* the cache takes the length of the last audio it gets from here,
+	 * which is no longer the length of the last decoded frame */
+	if (m->full_decode)
+		m->a.last_duration = tempo_samples_to_ns(f->nb_samples, f->sample_rate);
+
+	m->a_cb(m->opaque, &audio);
+}
+
+/* Sends the queued audio that's due. */
+static void mp_media_tempo_send_due(mp_media_t *m)
+{
+	struct mp_tempo_frame chunk = {0};
+
+	while (m->tempo_queue.size) {
+		deque_peek_front(&m->tempo_queue, &chunk, sizeof(chunk));
+		if (!mp_media_tempo_due(m, chunk.pts))
+			break;
+
+		deque_pop_front(&m->tempo_queue, NULL, sizeof(chunk));
+		if (m->a_cb)
+			mp_media_tempo_send(m, chunk.frame, chunk.pts);
+
+		m->tempo_sent_end_pts =
+			chunk.pts + tempo_samples_to_ns(chunk.frame->nb_samples, chunk.frame->sample_rate);
+		m->tempo_sent = true;
+		av_frame_free(&chunk.frame);
+	}
+}
+
+/* Media time of the first audio that hasn't been sent to the source. */
+static bool mp_media_audio_pending_pts(mp_media_t *m, int64_t *pts)
+{
+	if (m->tempo_queue.size) {
+		struct mp_tempo_frame chunk = {0};
+
+		deque_peek_front(&m->tempo_queue, &chunk, sizeof(chunk));
+		*pts = chunk.pts;
+		return true;
+	}
+	if (m->tempo_graph) {
+		/* audio the filter holds back, which is laid out against the
+		 * next frame once that is fed */
+		int64_t anchor = m->a.frame_ready ? mp_media_tempo_anchor(m, m->a.frame_pts) : m->tempo_anchor_pts;
+		int rate = av_buffersink_get_sample_rate(m->tempo_sink);
+
+		*pts = anchor + tempo_samples_to_ns(m->tempo_out_samples, rate);
+		return true;
+	}
+	if (m->a.frame_ready) {
+		*pts = m->a.frame_pts;
+		return true;
+	}
+
+	return false;
+}
+
+/* ------------------------------------------------------------------------- */
+
+/* Earliest media time of what's waiting to be output: where the clock starts
+ * after the timeline is reset. */
 static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
+{
+	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
+	int64_t audio_pts = 0;
+
+	if (m->has_video && m->v.frame_ready) {
+		if (m->v.frame_pts < min_next_ns)
+			min_next_ns = m->v.frame_pts;
+	}
+	if (m->has_audio && mp_media_audio_pending_pts(m, &audio_pts)) {
+		if (audio_pts < min_next_ns)
+			min_next_ns = audio_pts;
+	}
+
+	return min_next_ns;
+}
+
+/* Media time at which something next needs to happen: a frame being output,
+ * filtered audio being sent, or decoded audio being fed to the tempo filter. */
+static inline int64_t mp_media_get_next_event_pts(mp_media_t *m)
 {
 	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
 
@@ -313,9 +883,23 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 		if (m->v.frame_pts < min_next_ns)
 			min_next_ns = m->v.frame_pts;
 	}
+	if (m->tempo_queue.size) {
+		struct mp_tempo_frame chunk = {0};
+
+		deque_peek_front(&m->tempo_queue, &chunk, sizeof(chunk));
+		if (chunk.pts < min_next_ns)
+			min_next_ns = chunk.pts;
+	}
 	if (m->has_audio && m->a.frame_ready) {
-		if (m->a.frame_pts < min_next_ns)
-			min_next_ns = m->a.frame_pts;
+		int64_t lookahead_ns = mp_media_tempo_update_lookahead(m);
+		int64_t feed_pts = m->a.frame_pts - lookahead_ns;
+
+		/* feeding ahead doesn't move the clock back: audio that's
+		 * already due to be fed is fed right away */
+		if (lookahead_ns && feed_pts < m->next_pts_ns)
+			feed_pts = m->a.frame_pts < m->next_pts_ns ? m->a.frame_pts : m->next_pts_ns;
+		if (feed_pts < min_next_ns)
+			min_next_ns = feed_pts;
 	}
 
 	return min_next_ns;
@@ -324,17 +908,21 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 static inline int64_t mp_media_get_base_pts(mp_media_t *m)
 {
 	int64_t base_ts = 0;
+	int64_t audio_end = m->a.next_pts;
+
+	/* with the tempo filter, only audio that has been sent counts */
+	if (m->tempo_sent)
+		audio_end = m->tempo_sent_end_pts;
+	else if (m->tempo_graph || m->tempo_queue.size)
+		mp_media_audio_pending_pts(m, &audio_end);
 
 	if (m->has_video && m->v.next_pts > base_ts)
 		base_ts = m->v.next_pts;
-	if (m->has_audio && m->a.next_pts > base_ts)
-		base_ts = m->a.next_pts;
+	if (m->has_audio && audio_end > base_ts)
+		base_ts = audio_end;
 
 	return base_ts;
 }
-
-/* maximum timestamp variance in nanoseconds */
-#define MAX_TS_VAR 2000000000LL
 
 static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 {
@@ -348,6 +936,29 @@ void mp_media_next_audio(mp_media_t *m)
 	struct mp_decode *d = &m->a;
 	struct obs_source_audio audio = {0};
 	AVFrame *f = d->frame;
+
+	mp_media_tempo_send_due(m);
+
+	if (mp_media_use_tempo(m)) {
+		int64_t feed_pts = d->frame_pts - mp_media_tempo_update_lookahead(m);
+
+		if (!d->frame_ready || !mp_media_tempo_due(m, feed_pts))
+			return;
+
+		if (!m->a_cb) {
+			d->frame_ready = false;
+			return;
+		}
+
+		if (mp_media_tempo_process(m, f, d->frame_pts)) {
+			d->frame_ready = false;
+			mp_media_tempo_send_due(m);
+			return;
+		}
+
+		/* the tempo filter failed, the frame goes out the regular way
+		 * once it's due */
+	}
 
 	if (!mp_media_can_play_frame(m, d))
 		return;
@@ -369,6 +980,7 @@ void mp_media_next_audio(mp_media_t *m)
 	if (audio.format == AUDIO_FORMAT_UNKNOWN)
 		return;
 
+	m->tempo_sent = false;
 	m->a_cb(m->opaque, &audio);
 }
 
@@ -497,13 +1109,17 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 
 static void mp_media_calc_next_ns(mp_media_t *m)
 {
-	int64_t min_next_ns = mp_media_get_next_min_pts(m);
-	int64_t delta = min_next_ns - m->next_pts_ns;
+	int64_t min_next_ns;
+	int64_t delta;
 
 	if (m->seek_next_ts) {
+		/* the clock starts over at the new position */
+		min_next_ns = mp_media_get_next_min_pts(m);
 		delta = 0;
 		m->seek_next_ts = false;
 	} else {
+		min_next_ns = mp_media_get_next_event_pts(m);
+		delta = min_next_ns - m->next_pts_ns;
 #ifdef _DEBUG
 		assert(delta >= 0);
 #endif
@@ -546,6 +1162,9 @@ static void seek_to(mp_media_t *m, int64_t pos)
 	}
 	if (m->has_audio && m->is_local_file)
 		mp_decode_flush(&m->a);
+
+	/* the timeline restarts, so drop any audio held for the old position */
+	mp_media_tempo_reset(m);
 }
 
 bool mp_media_reset(mp_media_t *m)
@@ -620,8 +1239,15 @@ bool mp_media_eof(mp_media_t *m)
 {
 	bool v_ended = !m->has_video || !m->v.frame_ready;
 	bool a_ended = !m->has_audio || !m->a.frame_ready;
-	bool eof = v_ended && a_ended;
 
+	/* once the audio has run out, flush what the tempo filter still holds;
+	 * the audio isn't over until everything queued has been sent */
+	if (m->has_audio && m->a.eof && !m->a.frame_ready)
+		mp_media_tempo_drain(m);
+	if (m->tempo_queue.size)
+		a_ended = false;
+
+	bool eof = v_ended && a_ended;
 	if (eof) {
 		bool looping;
 
@@ -933,6 +1559,7 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	mp_media_tempo_free(media);
 	for (size_t i = 0; i < media->packet_pool.num; i++)
 		av_packet_free(&media->packet_pool.array[i]);
 	da_free(media->packet_pool);
@@ -1000,7 +1627,17 @@ void mp_media_stop(mp_media_t *m)
 
 int64_t mp_media_get_current_time(mp_media_t *m)
 {
-	return mp_media_get_base_pts(m) * (int64_t)m->speed / 100000000LL;
+	/* this isn't called from the media thread, so it can't look at the
+	 * tempo queue; only the end of the audio sent so far is used */
+	int64_t base_ts = 0;
+	int64_t audio_end = m->tempo_sent ? m->tempo_sent_end_pts : m->a.next_pts;
+
+	if (m->has_video && m->v.next_pts > base_ts)
+		base_ts = m->v.next_pts;
+	if (m->has_audio && audio_end > base_ts)
+		base_ts = audio_end;
+
+	return base_ts * (int64_t)m->speed / 100000000LL;
 }
 
 int64_t mp_media_get_frames(mp_media_t *m)

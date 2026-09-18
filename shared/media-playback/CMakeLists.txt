@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-find_package(FFmpeg REQUIRED avcodec avdevice avutil avformat)
+find_package(
+  FFmpeg
+  REQUIRED avcodec avdevice avfilter avutil avformat
+)
 
 add_library(media-playback INTERFACE)
 add_library(OBS::media-playback ALIAS media-playback)
@@ -21,4 +24,7 @@ target_sources(
 
 target_include_directories(media-playback INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}")
 
-target_link_libraries(media-playback INTERFACE FFmpeg::avcodec FFmpeg::avdevice FFmpeg::avutil FFmpeg::avformat)
+target_link_libraries(
+  media-playback
+  INTERFACE FFmpeg::avcodec FFmpeg::avdevice FFmpeg::avfilter FFmpeg::avutil FFmpeg::avformat
+)
