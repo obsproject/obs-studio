@@ -581,6 +581,9 @@ static void set_output_error(struct rtmp_stream *stream)
 		}
 	}
 
+	if (stream->rtmp.last_error_description[0])
+		msg = stream->rtmp.last_error_description;
+
 	if (msg)
 		obs_output_set_last_error(stream->output, msg);
 }
@@ -1219,8 +1222,10 @@ static int try_connect(struct rtmp_stream *stream)
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
 
-	if (!RTMP_ConnectStream(&stream->rtmp, 0))
+	if (!RTMP_ConnectStream(&stream->rtmp, 0)) {
+		set_output_error(stream);
 		return OBS_OUTPUT_INVALID_STREAM;
+	}
 
 	char ip_address[INET6_ADDRSTRLEN] = {0};
 	netif_addr_to_str(&stream->rtmp.m_sb.sb_addr, ip_address, INET6_ADDRSTRLEN);

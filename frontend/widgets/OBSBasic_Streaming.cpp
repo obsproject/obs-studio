@@ -315,6 +315,7 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		break;
 
 	case OBS_OUTPUT_INVALID_STREAM:
+		use_last_error = true;
 		errorDescription = Str("Output.ConnectFail.InvalidStream");
 		break;
 
