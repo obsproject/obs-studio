@@ -85,6 +85,15 @@ float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawSrgbDecompressPremultiplied(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb *= (rgba.a > 0.) ? (1. / rgba.a) : 0.;
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb *= rgba.a;
+	return rgba;
+}
+
 float4 PSDrawSrgbDecompressMultiply(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
@@ -204,6 +213,15 @@ technique DrawSrgbDecompress
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawSrgbDecompress(vert_in);
+	}
+}
+
+technique DrawSrgbDecompressPremultiplied
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgbDecompressPremultiplied(vert_in);
 	}
 }
 

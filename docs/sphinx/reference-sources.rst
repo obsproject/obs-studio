@@ -178,6 +178,9 @@ Source Definition Structure (obs_source_info)
 
    - **OBS_SOURCE_REQUIRES_CANVAS** - Source type requires a canvas.
 
+   - **OBS_SOURCE_INITIAL_BLEND_METHOD_SRGB_OFF** - Source type prefers
+     newly created scene items to use the nonlinear (SRGB_OFF) blending method.
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
