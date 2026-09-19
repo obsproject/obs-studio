@@ -258,14 +258,15 @@ static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotke
 	bfree(plat);
 }
 
-static bool obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
+static enum obs_hotkey_platform_pressed_state
+obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	UNUSED_PARAMETER(context);
 	UNUSED_PARAMETER(key);
 	// This function is only used by the hotkey thread for capturing out of
 	// focus hotkey triggers. Since wayland never delivers key events when out
-	// of focus we leave this blank intentionally.
-	return false;
+	// of focus we report that the state cannot be queried.
+	return OBS_HOTKEY_PLATFORM_UNKNOWN;
 }
 
 static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
