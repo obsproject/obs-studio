@@ -1,0 +1,44 @@
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+/* White balance matrix */
+uniform float4x4 color_matrix;
+
+sampler_state textureSampler {
+    Filter   = Linear;
+    AddressU = Clamp;
+    AddressV = Clamp;
+};
+
+struct VertData {
+    float4 pos : POSITION;
+    float2 uv : TEXCOORD0;
+};
+
+VertData VSDefault(VertData vert_in)
+{
+    VertData vert_out;
+    vert_out.pos = mul(float4(vert_in.pos.xyz, 1.0), ViewProj);
+    vert_out.uv = vert_in.uv;
+    return vert_out;
+}
+
+float4 PSColorFilterRGBA(VertData vert_in) : TARGET
+{
+    /* Get the current pixel */
+    float4 currentPixel = image.Sample(textureSampler, vert_in.uv);
+    
+    /* Apply white balance correction */
+    currentPixel = mul(color_matrix, currentPixel);
+
+    return currentPixel;
+}
+
+technique Draw
+{
+    pass
+    {
+        vertex_shader = VSDefault(vert_in);
+        pixel_shader = PSColorFilterRGBA(vert_in);
+    }
+}
