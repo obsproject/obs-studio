@@ -36,8 +36,8 @@ goto checkAdmin
 
 :install32DLL
 	echo Installing 32-bit Virtual Cam...
-	if exist "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll" (
-		regsvr32.exe /i /s "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"
+	if exist "%~dp0\data\core\win-dshow\obs-virtualcam-module32.dll" (
+		regsvr32.exe /i /s "%~dp0\data\core\win-dshow\obs-virtualcam-module32.dll"
 	) else (
 		regsvr32.exe /i /s obs-virtualcam-module32.dll
 	)
@@ -54,8 +54,8 @@ goto checkAdmin
 
 :install64DLL
 	echo Installing 64-bit Virtual Cam...
-	if exist "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll" (
-		regsvr32.exe /i /s "%~dp0\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"
+	if exist "%~dp0\data\core\win-dshow\obs-virtualcam-module64.dll" (
+		regsvr32.exe /i /s "%~dp0\data\core\win-dshow\obs-virtualcam-module64.dll"
 	) else (
 		regsvr32.exe /i /s obs-virtualcam-module64.dll
 	)
