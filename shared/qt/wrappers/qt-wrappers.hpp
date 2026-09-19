@@ -22,6 +22,7 @@
 #include <QWidget>
 #include <QWindow>
 #include <QThread>
+#include <QCollator>
 #include <obs.hpp>
 
 #include <functional>
@@ -99,3 +100,25 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path, QString exte
 void TruncateLabel(QLabel *label, QString newText, int length = MAX_LABEL_LENGTH);
 
 void RefreshToolBarStyling(QToolBar *toolBar);
+
+template<typename T, typename Callback> void NaturalSort(QList<T> &list, Callback extractor, bool reverse = false)
+{
+	QCollator collator(QLocale::system());
+	collator.setNumericMode(true);
+	collator.setCaseSensitivity(Qt::CaseInsensitive);
+
+	if (reverse) {
+		std::sort(list.begin(), list.end(), [&collator, &extractor](const T &a, const T &b) {
+			return collator.compare(extractor(a), extractor(b)) > 0;
+		});
+	} else {
+		std::sort(list.begin(), list.end(), [&collator, &extractor](const T &a, const T &b) {
+			return collator.compare(extractor(a), extractor(b)) < 0;
+		});
+	}
+}
+
+template<typename T> void NaturalSort(QList<T> &list, bool reverse = false)
+{
+	NaturalSort(list, [](const T &item) { return item; }, reverse);
+}
