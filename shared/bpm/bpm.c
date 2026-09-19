@@ -1,4 +1,5 @@
 #include "obs.h"
+#include "obs-avc.h"
 #include "bpm-internal.h"
 
 static void render_metrics_time(struct metrics_time *m_time)
@@ -415,10 +416,19 @@ static bool process_metrics(obs_output_t *output, struct encoder_packet *out, st
 				 * A slightly modified SEI for HEVC and a metadata OBU for AV1.
 				 */
 				if (avc) {
-					/* TODO: SEI should come after AUD/SPS/PPS,
-					 * but before any VCL */
-					da_push_back_array(out_data, nal_start, 4);
-					da_push_back_array(out_data, data, size);
+					/* Find the first VCL NAL to insert SEIs at the correct location. */
+					const uint8_t *first_vcl_nal =
+						obs_avc_find_first_vcl_nal(out_data.array, out_data.num);
+
+					if (first_vcl_nal != NULL) {
+						size_t idx = first_vcl_nal - out_data.array;
+						da_insert_array(out_data, idx, nal_start, 4);
+						da_insert_array(out_data, idx + 4, data, size);
+					} else {
+						/* Fallback: Just insert at end */
+						da_push_back_array(out_data, nal_start, 4);
+						da_push_back_array(out_data, data, size);
+					}
 #ifdef ENABLE_HEVC
 				} else if (hevc) {
 					/* Only first NAL (VPS/PPS/SPS) should use the 4 byte
