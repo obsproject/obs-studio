@@ -309,7 +309,7 @@ obs_property_t *obs_properties_get(obs_properties_t *props, const char *name)
 
 	/* Recursively check groups as well, if any */
 	HASH_ITER (hh, props->properties, property, tmp) {
-		if (property->type != OBS_PROPERTY_GROUP)
+		if (property->type != OBS_PROPERTY_GROUP || obs_property_group_type(property) == OBS_GROUP_SUB)
 			continue;
 
 		obs_properties_t *group = obs_property_group_content(property);
@@ -349,25 +349,45 @@ void obs_properties_remove_by_name(obs_properties_t *props, const char *name)
 		return;
 
 	HASH_ITER (hh, props->properties, cur, tmp) {
-		if (cur->type != OBS_PROPERTY_GROUP)
+		if (cur->type != OBS_PROPERTY_GROUP || obs_property_group_type(cur) == OBS_GROUP_SUB)
 			continue;
 
 		obs_properties_remove_by_name(obs_property_group_content(cur), name);
 	}
 }
 
-typedef DARRAY(struct obs_property *) obs_property_da_t;
+struct obs_propert_setting {
+	struct obs_property *property;
+	obs_data_t *settings;
+};
 
-void obs_properties_apply_settings_internal(obs_properties_t *props, obs_property_da_t *properties_with_callback)
+typedef DARRAY(struct obs_propert_setting) obs_property_setting_da_t;
+
+void obs_properties_apply_settings_internal(obs_properties_t *props, obs_data_t *settings,
+					    obs_property_setting_da_t *properties_with_callback)
 {
 	struct obs_property *p = props->properties;
 
 	while (p) {
 		if (p->type == OBS_PROPERTY_GROUP) {
-			obs_properties_apply_settings_internal(obs_property_group_content(p), properties_with_callback);
+			if (obs_property_group_type(p) == OBS_GROUP_SUB) {
+				obs_data_t *sub_settings = obs_data_get_obj(settings, p->name);
+				if (!sub_settings) {
+					sub_settings = obs_data_create();
+					obs_data_set_obj(settings, p->name, sub_settings);
+				}
+				obs_properties_apply_settings_internal(obs_property_group_content(p), sub_settings,
+								       properties_with_callback);
+				obs_data_release(sub_settings);
+			} else {
+				obs_properties_apply_settings_internal(obs_property_group_content(p), settings,
+								       properties_with_callback);
+			}
 		}
-		if (p->modified || p->modified2)
-			da_push_back((*properties_with_callback), &p);
+		if (p->modified || p->modified2) {
+			struct obs_propert_setting ps = {.property = p, .settings = settings};
+			da_push_back((*properties_with_callback), &ps);
+		}
 
 		p = p->hh.next;
 	}
@@ -378,17 +398,18 @@ void obs_properties_apply_settings(obs_properties_t *props, obs_data_t *settings
 	if (!props)
 		return;
 
-	obs_property_da_t properties_with_callback;
+	obs_property_setting_da_t properties_with_callback;
 	da_init(properties_with_callback);
 
-	obs_properties_apply_settings_internal(props, &properties_with_callback);
+	obs_properties_apply_settings_internal(props, settings, &properties_with_callback);
 
 	while (properties_with_callback.num > 0) {
-		struct obs_property *p = *(struct obs_property **)da_end(properties_with_callback);
+		struct obs_propert_setting setting = *(struct obs_propert_setting *)da_end(properties_with_callback);
+		struct obs_property *p = setting.property;
 		if (p->modified)
-			p->modified(props, p, settings);
+			p->modified(props, p, setting.settings);
 		else if (p->modified2)
-			p->modified2(p->priv, props, p, settings);
+			p->modified2(p->priv, props, p, setting.settings);
 		da_pop_back(properties_with_callback);
 	}
 
@@ -477,7 +498,7 @@ static inline bool contains_prop(struct obs_properties *props, const char *name)
 		return false;
 
 	HASH_ITER (hh, props->properties, p, tmp) {
-		if (p->type != OBS_PROPERTY_GROUP)
+		if (p->type != OBS_PROPERTY_GROUP || obs_property_group_type(p) == OBS_GROUP_SUB)
 			continue;
 		if (contains_prop(obs_property_group_content(p), name))
 			return true;
@@ -744,7 +765,7 @@ obs_property_t *obs_properties_add_group(obs_properties_t *props, const char *na
 		return NULL;
 
 	/* Prevent duplicate properties */
-	if (check_property_group_duplicates(props, group))
+	if (type != OBS_GROUP_SUB && check_property_group_duplicates(props, group))
 		return NULL;
 
 	obs_property_t *p = new_prop(props, name, desc, OBS_PROPERTY_GROUP);
@@ -1393,7 +1414,7 @@ struct media_frames_per_second obs_property_frame_rate_fps_range_max(obs_propert
 enum obs_group_type obs_property_group_type(obs_property_t *p)
 {
 	struct group_data *data = get_type_data(p, OBS_PROPERTY_GROUP);
-	return data ? data->type : OBS_COMBO_INVALID;
+	return data ? data->type : OBS_GROUP_INVALID;
 }
 
 obs_properties_t *obs_property_group_content(obs_property_t *p)

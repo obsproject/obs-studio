@@ -610,9 +610,10 @@ Property Enumeration Functions
 
   :return: One of the following values:
 
-            - OBS_COMBO_INVALID
+            - OBS_GROUP_INVALID
             - OBS_GROUP_NORMAL
             - OBS_GROUP_CHECKABLE
+            - OBS_GROUP_SUB
 
 ---------------------
 
