@@ -822,21 +822,6 @@
             ]
         },
         {
-            "name": "Meridix Live Sports Platform",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://publish.meridix.com/live"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 3500
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "SOOP",
             "alt_names": [
                 "AfreecaTV",
@@ -874,24 +859,6 @@
                 "profile": "baseline",
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "ePlay",
-            "servers": [
-                {
-                    "name": "ePlay Primary",
-                    "url": "rtmp://live.eplay.link/origin"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 7500,
-                "max audio bitrate": 192
             },
             "supported video codecs": [
                 "h264"
