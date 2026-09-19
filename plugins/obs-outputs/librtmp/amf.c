@@ -304,6 +304,21 @@ AMF_EncodeNamedBoolean(char *output, char *outend, const AVal *strName, int bVal
     return AMF_EncodeBoolean(output, outend, bVal);
 }
 
+char *
+AMF_EncodeNamedObjectStart(char *output, char *outend, const AVal *strName)
+{
+    if (output+2+1+strName->av_len > outend)
+        return NULL;
+    output = AMF_EncodeInt16(output, outend, strName->av_len);
+
+    memcpy(output, strName->av_val, strName->av_len);
+    output += strName->av_len;
+
+    *output++ = AMF_OBJECT;
+
+    return output;
+}
+
 void
 AMFProp_GetName(AMFObjectProperty *prop, AVal *name)
 {
