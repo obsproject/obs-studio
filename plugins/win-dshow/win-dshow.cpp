@@ -52,6 +52,7 @@ using namespace DShow;
 #define DEACTIVATE_WNS    "deactivate_when_not_showing"
 #define AUTOROTATION      "autorotation"
 #define HW_DECODE         "hw_decode"
+#define VIDEO_PROPERTIES  "video_device_controls"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -212,6 +213,9 @@ struct DShowInput {
 	CriticalSection mutex;
 	vector<Action> actions;
 
+	OBSData videoProperties;
+	string videoPropertiesDeviceId;
+
 	inline void QueueAction(Action action)
 	{
 		CriticalScope scope(mutex);
@@ -246,6 +250,9 @@ struct DShowInput {
 		if (!activated_event) {
 			throw "Failed to create activated_event";
 		}
+
+		OBSDataAutoRelease saved = obs_data_get_obj(settings, VIDEO_PROPERTIES);
+		videoProperties = saved;
 
 		thread = CreateThread(nullptr, 0, DShowThread, this, 0, nullptr);
 		if (!thread) {
@@ -288,6 +295,8 @@ struct DShowInput {
 
 	bool UpdateVideoConfig(obs_data_t *settings);
 	bool UpdateAudioConfig(obs_data_t *settings);
+	void SaveVideoProperties();
+	void UpdateVideoProperties();
 	void SetActive(bool active);
 	inline enum video_colorspace GetColorSpace(obs_data_t *settings) const;
 	inline enum video_range_type GetColorRange(obs_data_t *settings) const;
@@ -368,6 +377,7 @@ void DShowInput::DShowLoop()
 
 		case Action::ConfigVideo:
 			device.OpenDialog(nullptr, DialogType::ConfigVideo);
+			SaveVideoProperties();
 			break;
 
 		case Action::ConfigAudio:
@@ -1120,8 +1130,83 @@ inline enum video_range_type DShowInput::GetColorRange(obs_data_t *settings) con
 	return VIDEO_RANGE_DEFAULT;
 }
 
+static bool ReadVideoPropertyValue(obs_data_t *data, const char *name, long &value)
+{
+	obs_data_item_t *item = obs_data_item_byname(data, name);
+	const bool integer = obs_data_item_numtype(item) == OBS_DATA_NUM_INT;
+	const long long number = integer ? obs_data_item_get_int(item) : 0;
+	obs_data_item_release(&item);
+	if (!integer || number < numeric_limits<long>::min() || number > numeric_limits<long>::max()) {
+		return false;
+	}
+	value = static_cast<long>(number);
+	return true;
+}
+
+static constexpr struct {
+	VideoPropertyType type;
+	const char *prefix;
+} videoPropertyGroups[] = {{VideoPropertyType::CameraControl, "CameraControl."},
+			   {VideoPropertyType::VideoProcAmp, "VideoProcAmp."}};
+
+void DShowInput::SaveVideoProperties()
+{
+	if (videoPropertiesDeviceId.empty()) {
+		return;
+	}
+
+	OBSDataAutoRelease snapshot = obs_data_create();
+	if (videoPropertiesDeviceId == obs_data_get_string(videoProperties, "device_id")) {
+		obs_data_apply(snapshot, videoProperties);
+	}
+	obs_data_set_string(snapshot, "device_id", videoPropertiesDeviceId.c_str());
+	bool captured = false;
+	for (const auto &group : videoPropertyGroups) {
+		vector<VideoDeviceProperty> properties;
+		device.GetVideoProperties(group.type, properties);
+		for (const auto &property : properties) {
+			OBSDataAutoRelease item = obs_data_create();
+			obs_data_set_int(item, "val", property.val);
+			obs_data_set_int(item, "flags", property.flags);
+			obs_data_set_obj(snapshot, (group.prefix + to_string(property.property)).c_str(), item);
+			captured = true;
+		}
+	}
+	if (captured) {
+		CriticalScope scope(mutex);
+		videoProperties = snapshot;
+	}
+}
+
+void DShowInput::UpdateVideoProperties()
+{
+	if (videoPropertiesDeviceId != obs_data_get_string(videoProperties, "device_id")) {
+		SaveVideoProperties();
+		return;
+	}
+
+	for (const auto &group : videoPropertyGroups) {
+		vector<VideoDeviceProperty> supported;
+		vector<VideoDeviceProperty> properties;
+		device.GetVideoProperties(group.type, supported);
+		for (auto property : supported) {
+			OBSDataAutoRelease item = obs_data_get_obj(
+				videoProperties, (group.prefix + to_string(property.property)).c_str());
+			if (ReadVideoPropertyValue(item, "val", property.val) &&
+			    ReadVideoPropertyValue(item, "flags", property.flags)) {
+				properties.push_back(property);
+			}
+		}
+		if (!properties.empty() && !device.SetVideoProperties(group.type, properties)) {
+			blog(LOG_WARNING, "%s: Some saved video device controls could not be restored",
+			     obs_source_get_name(source));
+		}
+	}
+}
+
 inline bool DShowInput::Activate(obs_data_t *settings)
 {
+	videoPropertiesDeviceId.clear();
 	if (!device.ResetGraph()) {
 		obs_source_set_audio_active(source, false);
 		return false;
@@ -1146,6 +1231,13 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 
 	if (device.Start() != Result::Success) {
 		return false;
+	}
+
+	if (!videoConfig.path.empty()) {
+		DStr encodedId;
+		EncodeDeviceId(encodedId, videoConfig.name.c_str(), videoConfig.path.c_str());
+		videoPropertiesDeviceId = encodedId;
+		UpdateVideoProperties();
 	}
 
 	cs = GetColorSpace(settings);
@@ -1184,6 +1276,7 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 
 inline void DShowInput::Deactivate()
 {
+	videoPropertiesDeviceId.clear();
 	device.ResetGraph();
 	obs_source_output_video2(source, nullptr);
 }
@@ -1227,6 +1320,15 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 	DShowInput *input = reinterpret_cast<DShowInput *>(data);
 	if (input->active) {
 		input->QueueActivate(settings);
+	}
+}
+
+static void SaveDShowInput(void *data, obs_data_t *settings)
+{
+	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	CriticalScope scope(input->mutex);
+	if (input->videoProperties) {
+		obs_data_set_obj(settings, VIDEO_PROPERTIES, input->videoProperties);
 	}
 }
 
@@ -2089,6 +2191,7 @@ void RegisterDShowSource()
 	info.update = UpdateDShowInput;
 	info.get_defaults = GetDShowDefaults;
 	info.get_properties = GetDShowProperties;
+	info.save = SaveDShowInput;
 	info.icon_type = OBS_ICON_TYPE_CAMERA;
 	obs_register_source(&info);
 }
