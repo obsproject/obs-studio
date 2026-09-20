@@ -17,55 +17,39 @@
 
 #pragma once
 
-#include <Idian/PropertiesList.hpp>
 #include <Idian/Row.hpp>
-#include <Idian/ToggleSwitch.hpp>
+#include <Idian/Utils.hpp>
 
-#include <QLabel>
+#include <QFrame>
 #include <QLayout>
-#include <QMouseEvent>
 #include <QWidget>
 
 namespace idian {
-
-class Group : public QFrame, public Utils {
+class RowList : public QFrame {
 	Q_OBJECT
 
 public:
-	Group(QWidget *parent = nullptr);
+	RowList(QWidget *parent = nullptr);
 
-	PropertiesList *properties() const { return propertyList; }
-
-	void addRow(GenericRow *row) const;
-
-	void setTitle(QString name);
-	void setDescription(QString desc);
-
-	void showTitle(bool visible);
-	void showDescription(bool visible);
-
-	void setCheckable(bool check);
-	bool isCheckable() { return checkable; }
+	void addHeader(QWidget *widget);
+	void addRow(QWidget *row);
+	void clear();
 
 private:
-	QVBoxLayout *layout = nullptr;
+	QWidget *first = nullptr;
+	QWidget *last = nullptr;
 
-	QWidget *headerContainer = nullptr;
-	QHBoxLayout *headerLayout = nullptr;
-	QWidget *labelContainer = nullptr;
-	QVBoxLayout *labelLayout = nullptr;
-	QWidget *controlContainer = nullptr;
-	QVBoxLayout *controlLayout = nullptr;
+	QVBoxLayout *layout;
+	QVBoxLayout *rowLayout;
+};
 
-	QWidget *contentsContainer = nullptr;
-	QVBoxLayout *contentsLayout = nullptr;
-
-	QLabel *nameLabel = nullptr;
-	QLabel *descriptionLabel = nullptr;
-
-	PropertiesList *propertyList = nullptr;
-
-	ToggleSwitch *toggleSwitch = nullptr;
-	bool checkable = false;
+// Spacer with only cosmetic functionality
+class RowListSpacer : public QFrame {
+	Q_OBJECT
+public:
+	RowListSpacer(QWidget *parent = nullptr) : QFrame(parent)
+	{
+		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	}
 };
 } // namespace idian

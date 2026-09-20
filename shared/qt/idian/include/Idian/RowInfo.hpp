@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,24 +17,35 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-#include <QObject>
+#include <QWidget>
 
-class QWidget;
+class QLabel;
+class QVBoxLayout;
 
 namespace idian {
-class StateEventFilter : public QObject {
+
+class RowInfo : public QWidget {
 	Q_OBJECT
 
 public:
-	explicit StateEventFilter(QWidget *parent);
+	RowInfo(QWidget *parent);
+	RowInfo(QWidget *parent, QString title);
+	RowInfo(QWidget *parent, QString title, QString description);
+	~RowInfo() = default;
 
-	bool eventFilter(QObject *obj, QEvent *event);
+	void setTitle(const QString &title);
+	void setDescription(const QString &description);
 
-public slots:
-	void updateCheckedState(bool checked);
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
+	QLabel *title() { return nameLabel; }
+	QLabel *description() { return descriptionLabel; }
 
 private:
-	QWidget *target;
+	QVBoxLayout *layout_ = nullptr;
+
+	QLabel *nameLabel = nullptr;
+	QLabel *descriptionLabel = nullptr;
 };
 } // namespace idian

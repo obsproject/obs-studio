@@ -35,8 +35,7 @@ QColor blendColors(const QColor &color1, const QColor &color2, float ratio)
 ToggleSwitch::ToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
 	  animHandle(new QPropertyAnimation(this, "xpos", this)),
-	  animBgColor(new QPropertyAnimation(this, "blend", this)),
-	  Utils(this)
+	  animBgColor(new QPropertyAnimation(this, "blend", this))
 {
 	Utils::applyStateStylingEventFilter(this);
 
@@ -49,6 +48,8 @@ ToggleSwitch::ToggleSwitch(QWidget *parent)
 	setAccessibleName("ToggleSwitch");
 
 	installEventFilter(this);
+
+	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
 	connect(this, &ToggleSwitch::clicked, this, &ToggleSwitch::onClicked);
 
@@ -102,7 +103,7 @@ void ToggleSwitch::updateBackgroundColor()
 void ToggleSwitch::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::EnabledChange) {
-		Utils::toggleClass("disabled", !isEnabled());
+		Utils::toggleClass(this, "disabled", !isEnabled());
 		updateBackgroundColor();
 	}
 }

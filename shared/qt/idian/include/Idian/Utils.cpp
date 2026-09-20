@@ -26,6 +26,108 @@
 #include <QStyleOptionFrame>
 
 namespace idian {
+Q_GLOBAL_STATIC(Utils, utils);
+
+Utils::Utils() : QObject(nullptr) {}
+
+void Utils::addToPolishQueue(QWidget *widget)
+{
+	widgetPolishQueue.push_back(widget);
+
+	if (isPolishPending) {
+		return;
+	}
+
+	isPolishPending = true;
+
+	QMetaObject::invokeMethod(this, &Utils::processPolishQueue, Qt::QueuedConnection);
+}
+
+void Utils::processPolishQueue()
+{
+	widgetPolishQueue.sort();
+	widgetPolishQueue.unique();
+
+	for (QPointer<QWidget> widget : widgetPolishQueue) {
+		if (widget) {
+			widget->style()->polish(widget);
+		}
+	}
+
+	isPolishPending = false;
+	widgetPolishQueue.clear();
+}
+
+void Utils::polishChildren(QWidget *widget)
+{
+	for (QWidget *child : widget->findChildren<QWidget *>()) {
+		repolish(child);
+	}
+}
+
+void Utils::repolish(QWidget *widget)
+{
+	utils->addToPolishQueue(widget);
+}
+
+void Utils::addClass(QWidget *widget, const QString &classname)
+{
+	if (!classNameIsValid(classname)) {
+		return;
+	}
+
+	QVariant current = widget->property("class");
+
+	QStringList classList = current.toString().split(" ");
+	if (classList.contains(classname)) {
+		return;
+	}
+
+	classList.removeDuplicates();
+	classList.removeAll("");
+	classList.append(classname);
+
+	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+	widget->setProperty("class", newClasses);
+
+	repolish(widget);
+}
+
+void Utils::removeClass(QWidget *widget, const QString &classname)
+{
+	if (!classNameIsValid(classname)) {
+		return;
+	}
+
+	QVariant current = widget->property("class");
+	if (current.isNull()) {
+		return;
+	}
+
+	QStringList classList = current.toString().split(" ");
+	if (!classList.contains(classname, Qt::CaseSensitive)) {
+		return;
+	}
+
+	classList.removeDuplicates();
+	classList.removeAll("");
+	classList.removeAll(classname);
+
+	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
+	widget->setProperty("class", newClasses);
+
+	repolish(widget);
+}
+
+void Utils::toggleClass(QWidget *widget, const QString &classname, bool toggle)
+{
+	if (toggle) {
+		addClass(widget, classname);
+	} else {
+		removeClass(widget, classname);
+	}
+}
+
 void Utils::applyColorToIcon(QAbstractButton *button)
 {
 	if (button && !button->icon().isNull()) {
@@ -66,8 +168,11 @@ QPixmap Utils::recolorPixmap(const QPixmap &src, const QColor &color)
 	return QPixmap::fromImage(img);
 }
 
+// Updates the dynamic property 'class' on a widget with values in response to certain interaction events.
+// Ex. `hover` when the widget is hovered.
+// Widgets can then be styled via CSS class-style rules like .hover.
 void Utils::applyStateStylingEventFilter(QWidget *widget)
 {
-	widget->installEventFilter(new StateEventFilter(this, widget));
+	widget->installEventFilter(new StateEventFilter(widget));
 }
 } // namespace idian

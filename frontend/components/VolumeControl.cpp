@@ -51,8 +51,6 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	  contextMenu(nullptr),
 	  QFrame(parent)
 {
-	utils = std::make_unique<idian::Utils>(this);
-
 	uuid = obs_source_get_uuid(source);
 
 	mainLayout = new QBoxLayout(QBoxLayout::LeftToRight, this);
@@ -62,21 +60,21 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 
 	categoryLabel = new QLabel("Active");
 	categoryLabel->setAlignment(Qt::AlignCenter);
-	utils->addClass(categoryLabel, "mixer-category");
-	utils->addClass(categoryLabel, "text-tiny");
+	idian::Utils::addClass(categoryLabel, "mixer-category");
+	idian::Utils::addClass(categoryLabel, "text-tiny");
 
 	nameButton = new VolumeName(source, this);
 	nameButton->setMaximumWidth(280);
-	utils->addClass(nameButton, "text-small");
-	utils->addClass(nameButton, "mixer-name");
+	idian::Utils::addClass(nameButton, "text-small");
+	idian::Utils::addClass(nameButton, "mixer-name");
 
 	muteButton = new QPushButton(this);
 	muteButton->setCheckable(true);
-	utils->addClass(muteButton, "btn-mute");
+	idian::Utils::addClass(muteButton, "btn-mute");
 
 	monitorButton = new QPushButton(this);
 	monitorButton->setCheckable(true);
-	utils->addClass(monitorButton, "btn-monitor");
+	idian::Utils::addClass(monitorButton, "btn-monitor");
 
 	volumeLabel = new QLabel(this);
 	volumeLabel->setIndent(0);
@@ -89,8 +87,8 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
 
-	utils->applyStateStylingEventFilter(muteButton);
-	utils->applyStateStylingEventFilter(monitorButton);
+	idian::Utils::applyStateStylingEventFilter(muteButton);
+	idian::Utils::applyStateStylingEventFilter(monitorButton);
 
 	volumeMeter = new VolumeMeter(this, source);
 
@@ -641,11 +639,11 @@ void VolumeControl::updateCategoryLabel()
 	bool styleUnassigned = mixerStatus().has(VolumeControl::MixerStatus::Unassigned);
 	bool stylePreviewed = mixerStatus().has(VolumeControl::MixerStatus::Preview);
 
-	utils->toggleClass("volume-pinned", stylePinned);
-	utils->toggleClass("volume-inactive", styleInactive);
-	utils->toggleClass("volume-preview", styleInactive && stylePreviewed);
-	utils->toggleClass("volume-hidden", styleHidden && !stylePinned);
-	utils->toggleClass("volume-unassigned", styleUnassigned);
+	idian::Utils::toggleClass(this, "volume-pinned", stylePinned);
+	idian::Utils::toggleClass(this, "volume-inactive", styleInactive);
+	idian::Utils::toggleClass(this, "volume-preview", styleInactive && stylePreviewed);
+	idian::Utils::toggleClass(this, "volume-hidden", styleHidden && !stylePinned);
+	idian::Utils::toggleClass(this, "volume-unassigned", styleUnassigned);
 
 	categoryLabel->setText(labelText);
 	categoryLabel->setAlignment(Qt::AlignCenter);
@@ -803,10 +801,10 @@ void VolumeControl::processMixerState()
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
-	utils->toggleClass(muteButton, "checked", showAsMuted);
-	utils->toggleClass(monitorButton, "checked", showAsMonitored);
+	idian::Utils::toggleClass(muteButton, "checked", showAsMuted);
+	idian::Utils::toggleClass(monitorButton, "checked", showAsMonitored);
 
-	utils->toggleClass(muteButton, "mute-warning", showWarningIcon);
+	idian::Utils::toggleClass(muteButton, "mute-warning", showWarningIcon);
 
 	style()->polish(muteButton);
 	style()->polish(monitorButton);

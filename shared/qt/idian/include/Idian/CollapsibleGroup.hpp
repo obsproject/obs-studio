@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,24 +17,49 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-#include <QObject>
+#include <QFrame>
 
-class QWidget;
+class QPixmap;
+class QVBoxLayout;
 
 namespace idian {
-class StateEventFilter : public QObject {
+class Row;
+class RowInfo;
+class ExpandButton;
+class RowList;
+class ToggleSwitch;
+
+class CollapsibleGroup : public QFrame {
 	Q_OBJECT
 
 public:
-	explicit StateEventFilter(QWidget *parent);
+	CollapsibleGroup(QWidget *parent = nullptr);
 
-	bool eventFilter(QObject *obj, QEvent *event);
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
 
-public slots:
-	void updateCheckedState(bool checked);
+	void setChecked(bool checked);
+	bool isChecked();
 
-private:
-	QWidget *target;
+	void setExpanded(bool expand = true);
+
+	Row *row() { return rowWidget; }
+	RowList *list() { return propertyList; }
+
+protected:
+	void toggleVisibility();
+
+	QVBoxLayout *mainLayout;
+
+	Row *rowWidget;
+	ExpandButton *expandButton;
+
+	RowList *propertyList;
+
+	ToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
+
+signals:
+	void toggled(bool checked);
 };
 } // namespace idian

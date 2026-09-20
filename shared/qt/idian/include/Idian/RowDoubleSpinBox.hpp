@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,24 +17,26 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-#include <QObject>
-
-class QWidget;
+#include <QFrame>
+#include <QLayout>
+#include <QPushButton>
+#include <QSpinBox>
 
 namespace idian {
-class StateEventFilter : public QObject {
-	Q_OBJECT
+
+class RowDoubleSpinBox : public QFrame {
+	Q_OBJECT;
 
 public:
-	explicit StateEventFilter(QWidget *parent);
+	RowDoubleSpinBox(QWidget *parent = nullptr);
 
-	bool eventFilter(QObject *obj, QEvent *event);
-
-public slots:
-	void updateCheckedState(bool checked);
+	QDoubleSpinBox *spinBox() const { return sbox; }
 
 private:
-	QWidget *target;
+	QHBoxLayout *layout;
+	QPushButton *decr;
+	QPushButton *incr;
+	QDoubleSpinBox *sbox;
 };
+
 } // namespace idian

@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,26 +15,32 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#pragma once
+#include <Idian/RowSpinBox.hpp>
 
-#include <Idian/Utils.hpp>
-#include <QObject>
+#include <Idian/moc_RowSpinBox.cpp>
 
-class QWidget;
+using idian::RowSpinBox;
 
-namespace idian {
-class StateEventFilter : public QObject {
-	Q_OBJECT
+RowSpinBox::RowSpinBox(QWidget *parent) : QFrame(parent)
+{
+	layout = new QHBoxLayout();
+	setLayout(layout);
 
-public:
-	explicit StateEventFilter(QWidget *parent);
+	layout->setContentsMargins(0, 0, 0, 0);
 
-	bool eventFilter(QObject *obj, QEvent *event);
+	decr = new QPushButton("-");
+	decr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(decr);
 
-public slots:
-	void updateCheckedState(bool checked);
+	sbox = new QSpinBox();
+	sbox->setObjectName("obsSpinBox");
+	sbox->setButtonSymbols(QAbstractSpinBox::NoButtons);
+	layout->addWidget(sbox);
 
-private:
-	QWidget *target;
-};
-} // namespace idian
+	incr = new QPushButton("+");
+	incr->setObjectName("obsSpinBoxButton");
+	layout->addWidget(incr);
+
+	connect(decr, &QPushButton::pressed, sbox, &QSpinBox::stepDown);
+	connect(incr, &QPushButton::pressed, sbox, &QSpinBox::stepUp);
+}

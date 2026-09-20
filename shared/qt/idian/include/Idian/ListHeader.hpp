@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2023 by Dennis Sädtler <dennis@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -17,24 +17,43 @@
 
 #pragma once
 
-#include <Idian/Utils.hpp>
-#include <QObject>
+#include <Idian/RowList.hpp>
+#include <Idian/ToggleSwitch.hpp>
 
-class QWidget;
+#include <QLabel>
+#include <QLayout>
+#include <QMouseEvent>
+#include <QWidget>
 
 namespace idian {
-class StateEventFilter : public QObject {
+
+class ListHeader : public QFrame {
 	Q_OBJECT
 
 public:
-	explicit StateEventFilter(QWidget *parent);
+	ListHeader(QWidget *parent = nullptr);
+	ListHeader(QWidget *parent, QString title);
+	ListHeader(QWidget *parent, QString title, QString description);
 
-	bool eventFilter(QObject *obj, QEvent *event);
+	void setTitle(QString name);
+	void setDescription(QString desc);
 
-public slots:
-	void updateCheckedState(bool checked);
+	void showTitle(bool visible);
+	void showDescription(bool visible);
+
+	void setCheckable(bool check);
+	bool isCheckable() { return checkable; }
 
 private:
-	QWidget *target;
+	QHBoxLayout *layout_ = nullptr;
+
+	QLabel *nameLabel = nullptr;
+	QLabel *descriptionLabel = nullptr;
+
+	ToggleSwitch *toggleSwitch = nullptr;
+	bool checkable = false;
+
+signals:
+	void toggled(bool enable);
 };
 } // namespace idian
