@@ -241,18 +241,15 @@
     --separator_hover: var(--white1);
 
     --action_row_base: calc(var(--input_height_base) * 0.75);
-    --action_row_height: calc(var(--action_row_base) + calc(var(--action_row_padding) * 2px));
-    --action_row_border: 3px;
     --action_row_input_width: calc(var(--action_row_base) * 4);
-    --action_row_collapse: calc(var(--action_row_base) + var(--padding_large));
-    --action_row_padding: calc(var(--padding_large) * 1.5);
+    --action_row_padding: calc(var(--padding_large) * 1.2);
     --action_row_padding_x: calc(var(--action_row_padding) * 2);
     --action_row_padding_nested: calc(var(--action_row_padding_x) * 1.5);
 
     --toggle_border: 1;
     --toggle_margin: 3;
-    --toggle_width: calc(var(--action_row_base) * 1.8);
-    --toggle_height: calc(var(--action_row_base) * 0.9);
+    --toggle_width: calc(var(--action_row_base) * 1.6);
+    --toggle_height: calc(var(--action_row_base) * 0.8);
     --toggle_handle: calc(calc(calc(var(--toggle_height) * 0.9) - calc(var(--toggle_border) * 2)) - var(--toggle_margin));
     --toggle_radius: calc(var(--toggle_height) / 2);
 
@@ -2529,14 +2526,15 @@ idian--ListHeader {
     min-width: 300px;
 }
 
-idian--ListHeader .title {
+idian--RowList .title {
     font-weight: bold;
-    padding: var(--padding_large) 0;
+    padding: 0;
 }
 
-idian--ListHeader .description {
+idian--RowList .description {
+    font-size: var(--font_small);
     color: var(--text_muted);
-    padding: var(--spacing_small) 0;
+    padding: 0;
 }
 
 idian--RowList {
@@ -2547,9 +2545,9 @@ idian--RowList {
 
 idian--Row {
     background: var(--grey5);
-    margin: 0;
     padding: var(--action_row_padding) var(--action_row_padding_x);
     border-radius: var(--border_radius);
+    border: var(--input_border_width) solid var(--border_color);
 }
 
 idian--Row.keyFocus {
@@ -2574,11 +2572,6 @@ idian--RowList idian--Row.first {
 idian--RowList idian--Row.last {
     border-bottom-left-radius: var(--border_radius);
     border-bottom-right-radius: var(--border_radius);
-}
-
-idian--RowInfo QLabel.description {
-    font-size: var(--font_small);
-    color: var(--text_muted);
 }
 
 idian--ToggleSwitch {
@@ -2768,7 +2761,7 @@ idian--Row idian--InlineButton {
     min-width: var(--input_height);
     min-height: var(--input_height);
     border-radius: var(--border_radius);
-    padding: var(--padding_large);
+    padding: var(--padding_base);
     margin: 0 var(--spacing_base);
     
     border: var(--highlight_width) solid transparent;
