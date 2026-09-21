@@ -310,24 +310,12 @@ void PluginManager::open()
 	auto main = OBSBasic::Get();
 	PluginManagerWindow pluginManagerWindow(modules_, failedModules_, main);
 
-	if (loadState_ == State::PartialFailure) {
-		pluginManagerWindow.setPage(PluginManagerWindow::Page::Failure);
-	}
-
 	auto result = pluginManagerWindow.exec();
 	if (result == QDialog::Accepted) {
-		modules_ = pluginManagerWindow.result();
+		modules_ = pluginManagerWindow.getModules();
 		saveModules_();
 
-		bool changed = false;
-
-		for (auto const &moduleInfo : modules_) {
-			if (moduleInfo.enabled != moduleInfo.enabledAtLaunch) {
-				changed = true;
-				break;
-			}
-		}
-
+		bool changed = pluginManagerWindow.isEnabledPluginsChanged();
 		if (changed) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(main, QTStr("Restart"), QTStr("NeedsRestart"));
