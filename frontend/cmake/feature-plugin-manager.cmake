@@ -11,6 +11,8 @@ set(OBS_PLATFORM_PLUGIN_DATA_PATH "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_DATAR
 target_sources(
   obs-studio
   PRIVATE
+    plugin-manager/InstalledPluginRow.cpp
+    plugin-manager/InstalledPluginRow.hpp
     plugin-manager/PluginManager.cpp
     plugin-manager/PluginManager.hpp
     plugin-manager/PluginManagerWindow.cpp
