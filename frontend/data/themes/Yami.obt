@@ -111,9 +111,6 @@
     --primary_dark: var(--blue4);
     --primary_darker: var(--blue5);
 
-    --warning: var(--yellow3);
-    --danger: var(--red3);
-
     --text: var(--white1);
     --text_light: var(--white1);
     --text_muted: var(--white5);
@@ -303,6 +300,30 @@
     background-color: var(--bg_base);
 }
 
+.bg-primary {
+    background-color: var(--primary);
+}
+
+.bg-secondary {
+    background-color: var(--teal3);
+}
+
+.bg-info {
+    background-color: var(--grey8);
+}
+
+.bg-warning {
+    background-color: var(--yellow6);
+}
+
+.bg-danger {
+    background-color: var(--red6);
+}
+
+.bg-success {
+    background-color: var(--green6);
+}
+
 .text-title {
     font-size: var(--font_large);
     font-weight: bold;
@@ -342,15 +363,35 @@
 }
 
 .text-warning {
-    color: var(--warning);
+    color: var(--yellow3);
 }
 
 .text-danger {
-    color: var(--danger);
+    color: var(--red3);
 }
 
 .text-success {
     color: var(--green3);
+}
+
+.bg-secondary.text-secondary {
+    color: var(--teal1);
+}
+
+.bg-info.text-info {
+    color: var(--text_light);
+}
+
+.bg-warning.text-warning {
+    color: var(--yellow1);
+}
+
+.bg-danger.text-danger {
+    color: var(--red1);
+}
+
+.bg-success.text-success {
+    color: var(--green1);
 }
 
 .frame-notice {
@@ -2515,6 +2556,13 @@ SourceSelectButton:pressed,
 SourceSelectButton:pressed:hover {
     background-color: var(--button_bg_down);
     border-color: var(--button_border);
+}
+
+InfoChip {
+    font-size: var(--font_small);
+    font-weight: bold;
+    padding: 0 var(--padding_large);
+    border-radius: var(--border_radius);
 }
 
 /* Idian Widgets */
