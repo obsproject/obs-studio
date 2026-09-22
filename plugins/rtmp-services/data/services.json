@@ -2236,8 +2236,12 @@
                     "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
-                    "name": "New York, US",
-                    "url": "rtmps://stream.ewr.irl.run/ingest"
+                    "name": "Chicago, US",
+                    "url": "rtmps://stream.ord.irl.run/ingest"
+                },
+                {
+                    "name": "Ashburn, US",
+                    "url": "rtmps://stream.iad.irl.run/ingest"
                 },
                 {
                     "name": "Miami, US",
@@ -2254,6 +2258,10 @@
                 {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Seoul, SK",
+                    "url": "rtmps://stream.icn.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
