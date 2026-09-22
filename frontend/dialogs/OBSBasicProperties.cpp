@@ -63,9 +63,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		resize(cx, cy);
 	}
 
-	/* The OBSData constructor increments the reference once */
-	obs_data_release(oldSettings);
-
 	OBSDataAutoRelease nd_settings = obs_source_get_settings(source);
 	obs_data_apply(oldSettings, nd_settings);
 
