@@ -308,24 +308,31 @@ void PluginManager::disableModules_()
 void PluginManager::open()
 {
 	auto main = OBSBasic::Get();
-	PluginManagerWindow pluginManagerWindow(modules_, failedModules_, main);
+	auto *pluginManagerWindow = new PluginManagerWindow(modules_, failedModules_, main);
 
-	auto result = pluginManagerWindow.exec();
-	if (result == QDialog::Accepted) {
-		modules_ = pluginManagerWindow.getModules();
-		saveModules_();
+	QObject::connect(pluginManagerWindow, &QDialog::finished, pluginManagerWindow,
+			 [this, pluginManagerWindow, main](int result) {
+				 if (result == QDialog::Accepted) {
+					 modules_ = pluginManagerWindow->getModules();
+					 saveModules_();
 
-		bool changed = pluginManagerWindow.isEnabledPluginsChanged();
-		if (changed) {
-			QMessageBox::StandardButton button =
-				OBSMessageBox::question(main, QTStr("Restart"), QTStr("NeedsRestart"));
+					 bool changed = pluginManagerWindow->isEnabledPluginsChanged();
+					 if (changed) {
+						 QMessageBox::StandardButton button = OBSMessageBox::question(
+							 main, QTStr("Restart"), QTStr("NeedsRestart"));
 
-			if (button == QMessageBox::Yes) {
-				restart = true;
-				main->close();
-			}
-		}
-	}
+						 if (button == QMessageBox::Yes) {
+							 restart = true;
+							 main->close();
+						 }
+					 }
+				 }
+
+				 pluginManagerWindow->deleteLater();
+			 });
+
+	pluginManagerWindow->setModal(true);
+	pluginManagerWindow->show();
 }
 
 }; // namespace OBS
