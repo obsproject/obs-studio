@@ -1115,7 +1115,7 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 
 		if (enc->first_packet) {
 			NV_ENC_SEQUENCE_PARAM_PAYLOAD payload = {0};
-			uint8_t buf[256];
+			uint8_t buf[NV_MAX_SEQ_HDR_LEN];
 			uint32_t size = 0;
 
 			payload.version = NV_ENC_SEQUENCE_PARAM_PAYLOAD_VER;
