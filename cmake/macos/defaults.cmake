@@ -44,7 +44,7 @@ set(OBS_LIBRARY_DESTINATION "lib")
 set(OBS_INCLUDE_DESTINATION "include/obs")
 set(OBS_CMAKE_DESTINATION "lib/cmake")
 
-# Fix uninitialised variable warnings
+# Fix uninitialized variable warnings
 set(OBS_EXECUTABLE_DESTINATION "bin")
 set(OBS_SCRIPT_PLUGIN_PATH "")
 
