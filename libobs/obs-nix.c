@@ -443,7 +443,7 @@ void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 	hotkeys_vtable = NULL;
 }
 
-bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
+enum obs_hotkey_platform_pressed_state obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
 	return hotkeys_vtable->is_pressed(context, key);
 }

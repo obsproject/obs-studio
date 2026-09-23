@@ -1077,15 +1077,19 @@ static bool key_pressed(xcb_connection_t *connection, obs_hotkeys_platform_t *co
 	return pressed;
 }
 
-static bool obs_nix_x11_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
+static enum obs_hotkey_platform_pressed_state obs_nix_x11_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
+										      obs_key_t key)
 {
 	xcb_connection_t *conn = XGetXCBConnection(context->display);
+	bool pressed;
 
 	if (key >= OBS_KEY_MOUSE1 && key <= OBS_KEY_MOUSE29) {
-		return mouse_button_pressed(conn, context, key);
+		pressed = mouse_button_pressed(conn, context, key);
 	} else {
-		return key_pressed(conn, context, key);
+		pressed = key_pressed(conn, context, key);
 	}
+
+	return pressed ? OBS_HOTKEY_PLATFORM_PRESSED : OBS_HOTKEY_PLATFORM_NOT_PRESSED;
 }
 
 static bool get_key_translation(struct dstr *dstr, xcb_keycode_t keycode)
