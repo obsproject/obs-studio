@@ -1390,6 +1390,9 @@ void OBSBasic::OBSInit()
 		QString failed_msg = QTStr("PluginsFailedToLoad.Text").arg(failed_plugins);
 		OBSMessageBox::warning(this, QTStr("PluginsFailedToLoad.Title"), failed_msg);
 	}
+
+	/* Repolish the application to clear widget layout inconsistencies */
+	qApp->setStyleSheet(qApp->styleSheet());
 }
 
 void OBSBasic::OnFirstLoad()
