@@ -356,6 +356,74 @@
     color: var(--green3);
 }
 
+/* Color styles */
+QWidget.primary {
+    background: var(--blue5);
+    border: 1px solid var(--blue3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.secondary {
+    background: var(--teal5);
+    border: 1px solid var(--teal3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.info {
+    background: var(--grey8);
+    border: 1px solid var(--grey6);
+    border-radius: var(--border_radius);
+}
+
+QWidget.success {
+    background: var(--green5);
+    border: 1px solid var(--green3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.warning {
+    background: var(--yellow5);
+    border: 1px solid var(--yellow3);
+    border-radius: var(--border_radius);
+}
+
+QWidget.danger {
+    background: var(--red5);
+    border: 1px solid var(--red3);
+    border-radius: var(--border_radius);
+}
+
+QPushButton.primary:hover {
+    background-color: var(--blue4);
+    border-color: var(--blue2);
+}
+
+QPushButton.secondary:hover {
+    background-color: var(--teal4);
+    border-color: var(--teal2);
+}
+
+QPushButton.info:hover {
+    background-color: var(--grey7);
+    border-color: var(--grey4);
+}
+
+QPushButton.success:hover {
+    background-color: var(--green4);
+    border-color: var(--green2);
+}
+
+QPushButton.warning:hover {
+    background-color: var(--yellow4);
+    border-color: var(--yellow2);
+}
+
+QPushButton.danger:hover {
+    background-color: var(--red4);
+    border-color: var(--red2);
+}
+
+
 .frame-notice {
     background: var(--grey8);
     border: 1px solid var(--grey6);
@@ -943,6 +1011,15 @@ StatusBarWidget > QFrame {
     border: 0px solid var(--border_color);
     border-left-width: 1px;
     padding: 0px var(--padding_xlarge) var(--padding_small);
+}
+
+StatusBarWidget #healthFrame {
+    border-left-width: 0px;
+    border-right-width: 1px;
+}
+
+StatusBarWidget QPushButton {
+    padding: 0px var(--padding_xlarge);
 }
 
 /* Group Box */
@@ -2843,4 +2920,21 @@ AlignmentSelector::indicator:disabled {
 
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
+}
+
+HealthCheckWidget idian--RowList {
+    border-radius: 0;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+HealthCheckWidget idian--RowList idian--Row {
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+}
+
+HealthCheckStatusLabel {
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    padding: var(--padding_large) var(--padding_xlarge);
+    font-weight: bold;
 }
