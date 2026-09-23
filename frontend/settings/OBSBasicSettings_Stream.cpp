@@ -13,6 +13,9 @@
 
 #include <QUuid>
 
+#include <algorithm>
+#include <vector>
+
 static const QUuid &CustomServerUUID()
 {
 	static const QUuid uuid = QUuid::fromString(QT_UTF8("{241da255-70f2-4bbb-bef7-509695bf8e65}"));
@@ -167,7 +170,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 		if (idx == -1) {
 			if (service && *service) {
-				ServiceItemData newService(ServiceItemData::Type::RtmpCommon, service, service);
+				ServiceItemData newService{ServiceItemData::Type::RtmpCommon, service, service};
 				ui->service->insertItem(1, service, QVariant::fromValue(newService));
 			}
 			idx = 1;
@@ -190,8 +193,8 @@ void OBSBasicSettings::LoadStream1Settings()
 			if (!display_name) {
 				display_name = type;
 			}
-			ServiceItemData newService(ServiceItemData::Type::CustomServiceType, QString(type),
-						   QT_UTF8(display_name));
+			ServiceItemData newService{ServiceItemData::Type::CustomServiceType, QString(type),
+						   QT_UTF8(display_name)};
 			ui->service->insertItem(1, QT_UTF8(display_name), QVariant::fromValue(newService));
 			idx = 1;
 		}
@@ -525,65 +528,70 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	obs_property_t *prop = obs_properties_get(props, "show_all");
 	obs_property_modified(prop, settings);
 
-	ui->service->blockSignals(true);
-	ui->service->clear();
+	std::vector<ServiceItemData> items;
 
-	QStringList names;
+	items.push_back(ServiceItemData{ServiceItemData::Type::Custom, QString(),
+					QTStr("Basic.AutoConfig.StreamPage.Service.Custom")});
+
+	std::vector<ServiceItemData> common_services;
 
 	obs_property_t *services = obs_properties_get(props, "service");
 	size_t services_count = obs_property_list_item_count(services);
 	for (size_t i = 0; i < services_count; i++) {
-		const char *name = obs_property_list_item_string(services, i);
-		names.push_back(name);
+		QString name = QT_UTF8(obs_property_list_item_string(services, i));
+		common_services.push_back(ServiceItemData{ServiceItemData::Type::RtmpCommon, name, name});
 	}
 
+	// The curated list has a deliberate order, only the full list is sorted alphabetically.
 	if (showAll) {
-		names.sort(Qt::CaseInsensitive);
+		std::sort(common_services.begin(), common_services.end(),
+			  [](const ServiceItemData &lhs, const ServiceItemData &rhs) {
+				  return lhs.displayName.compare(rhs.displayName, Qt::CaseInsensitive) < 0;
+			  });
 	}
 
-	// Add rtmp_common services with ServiceItemData
-	for (QString &name : names) {
-		ServiceItemData data(ServiceItemData::Type::RtmpCommon, name, name);
-		ui->service->addItem(name, QVariant::fromValue(data));
-	}
+	items.insert(items.end(), common_services.begin(), common_services.end());
 
-	// Enumerate all available service types loaded in OBS
+	// Offer every registered service type whose protocol has a registered output.
 	size_t idx = 0;
 	const char *service_id;
 	while (obs_enum_service_types(idx++, &service_id)) {
-		// Skip rtmp_common and rtmp_custom as they're handled separately
+		// Both are already represented by the entries added above.
 		if (strcmp(service_id, "rtmp_common") == 0 || strcmp(service_id, "rtmp_custom") == 0) {
 			continue;
 		}
 
-		// Get the display name for the service
+		// The protocol can only be queried from an instance of the service.
+		OBSServiceAutoRelease temp_service = obs_service_create(service_id, "temp", nullptr, nullptr);
+		if (!temp_service) {
+			continue;
+		}
+
+		const char *protocol = obs_service_get_protocol(temp_service);
+		if (!protocol || !obs_is_output_protocol_registered(protocol)) {
+			continue;
+		}
+
 		const char *display_name = obs_service_get_display_name(service_id);
 		if (!display_name) {
 			display_name = service_id;
 		}
 
-		// Check if the service has a registered protocol
-		OBSServiceAutoRelease temp_service = obs_service_create(service_id, "temp", nullptr, nullptr);
-		if (temp_service) {
-			const char *protocol = obs_service_get_protocol(temp_service);
-			if (protocol && obs_is_output_protocol_registered(protocol)) {
-				// Add the service to the dropdown with ServiceItemData
-				ServiceItemData data(ServiceItemData::Type::CustomServiceType, QString(service_id),
-						     QT_UTF8(display_name));
-				ui->service->addItem(QT_UTF8(display_name), QVariant::fromValue(data));
-			}
-		}
+		items.push_back(ServiceItemData{ServiceItemData::Type::CustomServiceType, QT_UTF8(service_id),
+						QT_UTF8(display_name)});
 	}
 
 	if (!showAll) {
-		ServiceItemData showAllData(ServiceItemData::Type::ShowAll);
-		ui->service->addItem(QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
-				     QVariant::fromValue(showAllData));
+		items.push_back(ServiceItemData{ServiceItemData::Type::ShowAll, QString(),
+						QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll")});
 	}
 
-	ServiceItemData customData(ServiceItemData::Type::Custom);
-	ui->service->insertItem(0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
-				QVariant::fromValue(customData));
+	ui->service->blockSignals(true);
+	ui->service->clear();
+
+	for (const ServiceItemData &item : items) {
+		ui->service->addItem(item.displayName, QVariant::fromValue(item));
+	}
 
 	if (!lastService.isEmpty()) {
 		int idx = ui->service->findText(lastService);

@@ -24,6 +24,8 @@
 
 #include <QPointer>
 
+#include <functional>
+
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
 #define VOLUME_METER_DECAY_SLOW 8.57
@@ -40,6 +42,7 @@ std::string DeserializeConfigText(const char *value);
 // Structured data for service dropdown items
 struct ServiceItemData {
 	enum class Type {
+		Invalid,          // Zero-initialised value, does not map to any item
 		Custom,           // rtmp_custom service
 		ShowAll,          // "Show All" option in dropdown
 		RtmpCommon,       // Standard rtmp_common service (Twitch, YouTube, etc.)
@@ -47,11 +50,13 @@ struct ServiceItemData {
 	};
 
 	Type type;
-	QString serviceId;   // Service ID: for RtmpCommon this is the service name,
-			     // for CustomServiceType this is the service type ID (e.g., "whip_custom")
-	QString displayName; // Human-readable display name
+	// Service ID: for RtmpCommon this is the service name, for CustomServiceType
+	// this is the service type ID (e.g., "whip_custom")
+	QString serviceId;
+	// Human-readable display name
+	QString displayName;
 
-	ServiceItemData() : type(Type::Custom) {}
+	ServiceItemData() : type(Type::Invalid) {}
 
 	ServiceItemData(Type t, const QString &id = QString(), const QString &name = QString())
 		: type(t),
