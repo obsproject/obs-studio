@@ -17,7 +17,11 @@
         "YOUTUBE_CLIENTID": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID}"},
         "YOUTUBE_CLIENTID_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_CLIENTID_HASH}"},
         "YOUTUBE_SECRET": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET}"},
-        "YOUTUBE_SECRET_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET_HASH}"}
+        "YOUTUBE_SECRET_HASH": {"type": "STRING", "value": "$penv{YOUTUBE_SECRET_HASH}"},
+        "X_CLIENTID": {"type": "STRING", "value": "$penv{X_CLIENTID}"},
+        "X_CLIENTID_HASH": {"type": "STRING", "value": "$penv{X_CLIENTID_HASH}"},
+        "X_SECRET": {"type": "STRING", "value": "$penv{X_SECRET}"},
+        "X_SECRET_HASH": {"type": "STRING", "value": "$penv{X_SECRET_HASH}"}
       }
     },
     {

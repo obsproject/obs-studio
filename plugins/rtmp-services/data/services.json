@@ -1179,11 +1179,129 @@
             ]
         },
         {
-            "name": "Twitter",
+            "name": "X",
             "common": true,
+            "stream_key_link": "https://x.com/i/live-studio",
+            "alt_names": [
+                "X (Twitter)",
+                "X Live Studio"
+            ],
+            "servers": [
+                {
+                    "name": "US West: California (RTMPS)",
+                    "url": "rtmps://ca.pscp.tv:443/x"
+                },
+                {
+                    "name": "US West: Oregon (RTMPS)",
+                    "url": "rtmps://or.pscp.tv:443/x"
+                },
+                {
+                    "name": "US East: Virginia (RTMPS)",
+                    "url": "rtmps://va.pscp.tv:443/x"
+                },
+                {
+                    "name": "South America: Brazil (RTMPS)",
+                    "url": "rtmps://br.pscp.tv:443/x"
+                },
+                {
+                    "name": "EU West: France (RTMPS)",
+                    "url": "rtmps://fr.pscp.tv:443/x"
+                },
+                {
+                    "name": "EU West: Ireland (RTMPS)",
+                    "url": "rtmps://ie.pscp.tv:443/x"
+                },
+                {
+                    "name": "EU Central: Germany (RTMPS)",
+                    "url": "rtmps://de.pscp.tv:443/x"
+                },
+                {
+                    "name": "Asia/Pacific: Australia (RTMPS)",
+                    "url": "rtmps://au.pscp.tv:443/x"
+                },
+                {
+                    "name": "Asia/Pacific: India (RTMPS)",
+                    "url": "rtmps://in.pscp.tv:443/x"
+                },
+                {
+                    "name": "Asia/Pacific: Japan (RTMPS)",
+                    "url": "rtmps://jp.pscp.tv:443/x"
+                },
+                {
+                    "name": "Asia/Pacific: Korea (RTMPS)",
+                    "url": "rtmps://kr.pscp.tv:443/x"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore (RTMPS)",
+                    "url": "rtmps://sg.pscp.tv:443/x"
+                },
+                {
+                    "name": "US West: California",
+                    "url": "rtmp://ca.pscp.tv:80/x"
+                },
+                {
+                    "name": "US West: Oregon",
+                    "url": "rtmp://or.pscp.tv:80/x"
+                },
+                {
+                    "name": "US East: Virginia",
+                    "url": "rtmp://va.pscp.tv:80/x"
+                },
+                {
+                    "name": "South America: Brazil",
+                    "url": "rtmp://br.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU West: France",
+                    "url": "rtmp://fr.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU West: Ireland",
+                    "url": "rtmp://ie.pscp.tv:80/x"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "url": "rtmp://de.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Australia",
+                    "url": "rtmp://au.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: India",
+                    "url": "rtmp://in.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Japan",
+                    "url": "rtmp://jp.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Korea",
+                    "url": "rtmp://kr.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore",
+                    "url": "rtmp://sg.pscp.tv:80/x"
+                }
+            ],
+            "recommended": {
+                "keyint": 3,
+                "max video bitrate": 12000,
+                "max audio bitrate": 128,
+                "max fps": 60
+            },
+            "supported video codecs": [
+                "h264"
+            ]
+        },
+        {
+            "name": "Twitter (Legacy)",
+            "common": false,
             "stream_key_link": "https://studio.twitter.com/producer/sources",
             "alt_names": [
-                "Twitter / Periscope"
+                "Twitter",
+                "Twitter / Periscope",
+                "Periscope"
             ],
             "servers": [
                 {

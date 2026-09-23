@@ -100,6 +100,9 @@ extern void RegisterRestreamAuth();
 #ifdef YOUTUBE_ENABLED
 extern void RegisterYoutubeAuth();
 #endif
+#ifdef X_ENABLED
+extern void RegisterXAuth();
+#endif
 
 struct QCef;
 
@@ -244,6 +247,9 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 #endif
 #ifdef YOUTUBE_ENABLED
 	RegisterYoutubeAuth();
+#endif
+#ifdef X_ENABLED
+	RegisterXAuth();
 #endif
 
 	setAcceptDrops(true);

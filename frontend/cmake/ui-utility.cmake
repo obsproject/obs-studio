@@ -41,8 +41,11 @@ target_sources(
     utility/PreviewProgramSizeObserver.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
+    utility/CurlPublicRedirect.cpp
+    utility/CurlPublicRedirect.hpp
     utility/RemoteTextThread.cpp
     utility/RemoteTextThread.hpp
+    utility/XBroadcastLogic.hpp
     utility/RemuxEntryPathItemDelegate.cpp
     utility/RemuxEntryPathItemDelegate.hpp
     utility/RemuxQueueModel.cpp

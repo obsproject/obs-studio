@@ -17,6 +17,8 @@
 
 #include "RemoteTextThread.hpp"
 
+#include "CurlPublicRedirect.hpp"
+
 #include <OBSApp.hpp>
 
 #include <qt-wrappers.hpp>
@@ -123,7 +125,7 @@ static size_t header_write(char *ptr, size_t size, size_t nmemb, vector<string> 
 
 bool GetRemoteFile(const char *url, std::string &str, std::string &error, long *responseCode, const char *contentType,
 		   std::string request_type, const char *postData, std::vector<std::string> extraHeaders,
-		   std::string *signature, int timeoutSec, bool fail_on_error, int postDataSize)
+		   std::string *signature, int timeoutSec, bool fail_on_error, int postDataSize, bool followRedirects)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -138,6 +140,33 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error, long *
 	if (contentType) {
 		contentTypeString += "Content-Type: ";
 		contentTypeString += contentType;
+	}
+
+	// Region lookup follows a cross-host 307. The public target must not
+	// receive the bearer token, so this path follows Location by hand.
+	if (followRedirects) {
+		std::vector<std::string> redirectHeaders;
+		redirectHeaders.push_back(versionString);
+		if (!contentTypeString.empty()) {
+			redirectHeaders.push_back(contentTypeString);
+		}
+		for (const std::string &extra : extraHeaders) {
+			redirectHeaders.push_back(extra);
+		}
+		const ObsPublicGetResult got = obs_curl_get_follow_public(url, redirectHeaders, timeoutSec);
+		str = got.body;
+		if (responseCode) {
+			*responseCode = got.status;
+		}
+		if (!got.transportOk) {
+			error = got.error;
+			return false;
+		}
+		if (fail_on_error && got.status >= 400) {
+			error = std::to_string(got.status);
+			return false;
+		}
+		return true;
 	}
 
 	Curl curl{curl_easy_init(), curl_deleter};

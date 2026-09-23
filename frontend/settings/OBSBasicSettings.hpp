@@ -218,6 +218,14 @@ private:
 	QString FindProtocol();
 	void UpdateServerList();
 	void UpdateKeyLink();
+#ifdef X_ENABLED
+	QPushButton *xGetStreamKeyButton = nullptr;
+	QLabel *xStatusLabel = nullptr;
+	void EnsureXStreamControls();
+	void UpdateXStreamControls();
+	void ApplyXIngestToForm(const QString &ingest, const QString &key);
+	void XGetStreamKeyClicked();
+#endif
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
 	void UpdateMoreInfoLink();

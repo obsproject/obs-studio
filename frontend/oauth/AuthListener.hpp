@@ -18,7 +18,10 @@ protected:
 	void NewConnection();
 
 public:
-	explicit AuthListener(QObject *parent = 0);
+	// port 0 asks the OS for an ephemeral port. YouTube relies on that.
+	// X passes XOAuthRedirectPort because the app registration is fixed.
+	static constexpr quint16 EphemeralPort = 0;
+	explicit AuthListener(QObject *parent = nullptr, quint16 port = EphemeralPort);
 	quint16 GetPort();
 	void SetState(QString state);
 };

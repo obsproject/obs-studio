@@ -9,6 +9,9 @@
 #ifdef YOUTUBE_ENABLED
 #include <utility/YoutubeApiWrappers.hpp>
 #endif
+#ifdef X_ENABLED
+#include <utility/XApiWrappers.hpp>
+#endif
 #include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
@@ -307,6 +310,18 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 			}
 		}
 #endif
+#ifdef X_ENABLED
+		if (IsXService(a->service())) {
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+			auto *xAuth = dynamic_cast<XApiWrappers *>(a);
+			if (xAuth && !xAuth->Username().isEmpty()) {
+				ui->connectedAccountText->setText(QTStr("X.Auth.Connected").arg(xAuth->Username()));
+			} else {
+				ui->connectedAccountText->setText(QTStr("X.Auth.SignedIn"));
+			}
+		}
+#endif
 	}
 
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
@@ -413,6 +428,24 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
 		return;
+	}
+#endif
+#ifdef X_ENABLED
+	{
+		OAuthStreamKey *x = reinterpret_cast<OAuthStreamKey *>(auth.get());
+		if (x && IsXService(service) && IsXService(x->service())) {
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+			ui->connectAccount2->setVisible(false);
+			ui->disconnectAccount->setVisible(true);
+			auto *xAuth = dynamic_cast<XApiWrappers *>(x);
+			if (xAuth && !xAuth->Username().isEmpty()) {
+				ui->connectedAccountText->setText(QTStr("X.Auth.Connected").arg(xAuth->Username()));
+			} else {
+				ui->connectedAccountText->setText(QTStr("X.Auth.SignedIn"));
+			}
+			return;
+		}
 	}
 #endif
 
@@ -527,7 +560,7 @@ void AutoConfigStreamPage::ServiceChanged()
 
 	if (main->auth) {
 		auto system_auth_service = main->auth->service();
-		bool service_check = service.find(system_auth_service) != std::string::npos;
+		bool service_check = Auth::ServiceMatches(service, system_auth_service);
 #ifdef YOUTUBE_ENABLED
 		service_check = service_check ? service_check
 					      : IsYouTubeService(system_auth_service) && IsYouTubeService(service);

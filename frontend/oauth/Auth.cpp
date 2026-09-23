@@ -20,7 +20,7 @@ void Auth::RegisterAuth(const Def &d, create_cb create)
 std::shared_ptr<Auth> Auth::Create(const std::string &service)
 {
 	for (auto &a : authDefs) {
-		if (service.find(a.def.service) != std::string::npos) {
+		if (ServiceMatches(service, a.def.service)) {
 			return a.create();
 		}
 	}
@@ -31,7 +31,7 @@ std::shared_ptr<Auth> Auth::Create(const std::string &service)
 Auth::Type Auth::AuthType(const std::string &service)
 {
 	for (auto &a : authDefs) {
-		if (service.find(a.def.service) != std::string::npos) {
+		if (ServiceMatches(service, a.def.service)) {
 			return a.def.type;
 		}
 	}
@@ -42,7 +42,7 @@ Auth::Type Auth::AuthType(const std::string &service)
 bool Auth::External(const std::string &service)
 {
 	for (auto &a : authDefs) {
-		if (service.find(a.def.service) != std::string::npos) {
+		if (ServiceMatches(service, a.def.service)) {
 			return a.def.externalOAuth;
 		}
 	}

@@ -2,6 +2,8 @@
 
 #include <QObject>
 
+#include <string>
+
 class Auth : public QObject {
 	Q_OBJECT
 
@@ -49,6 +51,19 @@ public:
 	static std::shared_ptr<Auth> Create(const std::string &service);
 	static Type AuthType(const std::string &service);
 	static bool External(const std::string &service);
+
+	// "Restream" must still match "Restream.io". A one-character id such as
+	// "X" must not match unrelated services such as "XLoveCam.com".
+	static bool ServiceMatches(const std::string &selected, const std::string &registered)
+	{
+		if (selected == registered) {
+			return true;
+		}
+		if (registered.size() < 3) {
+			return false;
+		}
+		return selected.find(registered) != std::string::npos;
+	}
 	static void Load();
 	static void Save();
 

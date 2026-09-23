@@ -206,6 +206,7 @@ QString YoutubeAuth::GenerateState()
 std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &service)
 {
 	QString auth_code;
+	// Ephemeral port. X is the service that must listen on 127.0.0.1:42813.
 	AuthListener server;
 
 	auto it = std::find_if(youtubeServices.begin(), youtubeServices.end(),

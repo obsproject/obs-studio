@@ -32,6 +32,7 @@ add_subdirectory(plugins)
 
 add_subdirectory(test/test-input)
 
+enable_testing()
 add_subdirectory(frontend)
 
 message_configuration()

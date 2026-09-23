@@ -29,7 +29,7 @@ void OAuth::RegisterOAuth(const Def &d, create_cb create, login_cb login, delete
 std::shared_ptr<Auth> OAuth::Login(QWidget *parent, const std::string &service)
 {
 	for (auto &a : loginCBs) {
-		if (service.find(a.def.service) != std::string::npos) {
+		if (Auth::ServiceMatches(service, a.def.service)) {
 			return a.login(parent, service);
 		}
 	}
@@ -40,7 +40,7 @@ std::shared_ptr<Auth> OAuth::Login(QWidget *parent, const std::string &service)
 void OAuth::DeleteCookies(const std::string &service)
 {
 	for (auto &a : loginCBs) {
-		if (service.find(a.def.service) != std::string::npos) {
+		if (Auth::ServiceMatches(service, a.def.service)) {
 			a.delete_cookies();
 		}
 	}

@@ -26,11 +26,11 @@ static const QString responseTemplate = "<center>"
 					"</center>"
 					"<center><p style=\"font-family:verdana; font-size:13pt\">%1</p></center>";
 
-AuthListener::AuthListener(QObject *parent) : QObject(parent)
+AuthListener::AuthListener(QObject *parent, quint16 port) : QObject(parent)
 {
 	server = new QTcpServer(this);
 	connect(server, &QTcpServer::newConnection, this, &AuthListener::NewConnection);
-	if (!server->listen(QHostAddress::LocalHost, 0)) {
+	if (!server->listen(QHostAddress::LocalHost, port)) {
 		blog(LOG_DEBUG, "Server could not start");
 		emit fail();
 	} else {

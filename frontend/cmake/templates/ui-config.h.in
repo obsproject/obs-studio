@@ -13,4 +13,9 @@
 #define YOUTUBE_CLIENTID_HASH 0x@YOUTUBE_CLIENTID_HASH@
 #define YOUTUBE_SECRET_HASH   0x@YOUTUBE_SECRET_HASH@
 
+#define X_CLIENTID      "@X_CLIENTID@"
+#define X_SECRET        "@X_SECRET@"
+#define X_CLIENTID_HASH 0x@X_CLIENTID_HASH@
+#define X_SECRET_HASH   0x@X_SECRET_HASH@
+
 #define DEFAULT_THEME "com.obsproject.Yami.Original"

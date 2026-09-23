@@ -66,6 +66,7 @@ endif()
 include(cmake/feature-twitch.cmake)
 include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
+include(cmake/feature-x.cmake)
 include(cmake/feature-whatsnew.cmake)
 include(cmake/feature-idian-playground.cmake)
 
@@ -118,3 +119,12 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Header Files" FILES ${ta
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" PREFIX "Qt Files" FILES ${target_qt_sources})
 
 set_target_properties_obs(obs-studio PROPERTIES FOLDER frontend OUTPUT_NAME "$<IF:$<PLATFORM_ID:Windows>,obs64,obs>")
+
+# Offline checks for the X livestream connector. This target is not part of the
+# obs-studio dependency chain, so a missing plugin build can still compile it.
+add_executable(obs-x-livestream-tests x-tests/test_x_livestream.cpp utility/CurlPublicRedirect.cpp)
+target_include_directories(obs-x-livestream-tests PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+target_link_libraries(obs-x-livestream-tests PRIVATE Qt::Core CURL::libcurl OBS::json11)
+target_compile_definitions(obs-x-livestream-tests PRIVATE "OBS_SOURCE_DIR=\"${CMAKE_SOURCE_DIR}\"")
+target_compile_features(obs-x-livestream-tests PRIVATE cxx_std_17)
+add_test(NAME obs-x-livestream-tests COMMAND obs-x-livestream-tests)

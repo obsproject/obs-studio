@@ -24,6 +24,9 @@
 #include <docks/YouTubeAppDock.hpp>
 #include <utility/YoutubeApiWrappers.hpp>
 #endif
+#ifdef X_ENABLED
+#include <utility/XApiWrappers.hpp>
+#endif
 
 #include <qt-wrappers.hpp>
 
@@ -264,6 +267,37 @@ void OBSBasic::StreamingStart()
 	}
 #endif
 
+#ifdef X_ENABLED
+	if (auth && IsXService(auth->service())) {
+		auto *xAuth = dynamic_cast<XApiWrappers *>(auth.get());
+		if (xAuth && xAuth->HasPendingPublish()) {
+			bool published = false;
+			QString detail;
+			auto publish = [&]() {
+				published = xAuth->PublishPendingBroadcast();
+				if (!published) {
+					detail = xAuth->LastError();
+				}
+			};
+			ExecThreadedWithoutBlocking(publish, QTStr("X.Actions.GoLive.Title"),
+						    QTStr("X.Actions.GoLive.Text"));
+			if (!published) {
+				if (detail.isEmpty()) {
+					detail = QTStr("X.Actions.Error.Api").arg(QStringLiteral("go live"));
+				}
+				OBSMessageBox::warning(this, QTStr("Output.BroadcastStartFailed"),
+						       QTStr("X.Actions.GoLiveFailed").arg(detail), true);
+				if (XStopOutputAfterPublishFailure(published)) {
+					blog(LOG_WARNING,
+					     "X publish failed. Stopping RTMP so OBS does not keep pushing without a live broadcast.");
+					QMetaObject::invokeMethod(this, &OBSBasic::ForceStopStreaming,
+								  Qt::QueuedConnection);
+				}
+			}
+		}
+	}
+#endif
+
 	OnEvent(OBS_FRONTEND_EVENT_STREAMING_STARTED);
 
 	OnActivate();
@@ -364,6 +398,19 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		youtubeAppDock->IngestionStopped();
 	}
 #endif
+#ifdef X_ENABLED
+	if (auth && IsXService(auth->service())) {
+		auto *xAuth = dynamic_cast<XApiWrappers *>(auth.get());
+		if (xAuth && !xAuth->EndPublishedBroadcast()) {
+			QString detail = xAuth->LastError();
+			if (detail.isEmpty()) {
+				detail = QTStr("X.Actions.Error.Api").arg(QStringLiteral("end"));
+			}
+			OBSMessageBox::warning(this, QTStr("Output.BroadcastStopFailed"),
+					       QTStr("X.Actions.EndFailed").arg(detail), true);
+		}
+	}
+#endif
 
 	blog(LOG_INFO, STREAMING_STOP);
 
@@ -423,6 +470,32 @@ void OBSBasic::StreamActionTriggered()
 		}
 
 		Auth *auth = GetAuth();
+
+		OBSDataAutoRelease xSettings = obs_service_get_settings(service);
+		const char *serviceName = obs_data_get_string(xSettings, "service");
+		const char *streamKey = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
+#ifdef X_ENABLED
+		if (serviceName && IsXService(serviceName)) {
+			auto *xAuth = dynamic_cast<XApiWrappers *>(auth);
+			const bool authHasKey = xAuth && !xAuth->key().empty();
+			bool serviceHasKey = streamKey && *streamKey;
+			const XStartKeyAction keyAction = XPlanStartKey(serviceHasKey, authHasKey);
+			if (keyAction == XStartKeyAction::ApplyThenRecheck && xAuth) {
+				xAuth->ApplyIngestToService();
+				streamKey = obs_service_get_connect_info(service, OBS_SERVICE_CONNECT_INFO_STREAM_KEY);
+				serviceHasKey = streamKey && *streamKey;
+			}
+			if (XStartBlockedAfterApply(keyAction, serviceHasKey)) {
+				OBSMessageBox::warning(this, QTStr("Basic.Settings.Stream.MissingSettingAlert"),
+						       QTStr("X.Settings.NeedKey"));
+				on_action_Settings_triggered();
+				return;
+			}
+		}
+#else
+		UNUSED_PARAMETER(serviceName);
+		UNUSED_PARAMETER(streamKey);
+#endif
 
 		auto action = (auth && auth->external()) ? StreamSettingsAction::ContinueStream
 							 : UIValidation::StreamSettingsConfirmation(this, service);
