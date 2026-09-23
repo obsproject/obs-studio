@@ -227,7 +227,6 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "output": "ffmpeg_hls_muxer",
                 "max video bitrate": 51000,
                 "max audio bitrate": 160
             }
@@ -2660,8 +2659,7 @@
                 "max fps": 60,
                 "max video bitrate": 9000,
                 "max audio bitrate": 512,
-                "x264opts": "scenecut=0",
-                "output": "rtmp_output"
+                "x264opts": "scenecut=0"
             }
         },
         {

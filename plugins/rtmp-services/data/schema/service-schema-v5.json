@@ -117,15 +117,6 @@
                                 "description": "Additional x264 encoder options. Space-separated.",
                                 "pattern": "^(\\S+=\\S+\\s*)+$"
                             },
-                            "output": {
-                                "type": "string",
-                                "description": "OBS output module used. Unused since OBS Studio 30, kept for backward compatibility.",
-                                "enum": [
-                                    "rtmp_output",
-                                    "ffmpeg_hls_muxer",
-                                    "ffmpeg_mpegts_muxer"
-                                ]
-                            },
                             "profile": {
                                 "type": "string",
                                 "description": "H.264 Profile.",
@@ -230,11 +221,6 @@
                         "$comment": "Require protocol field if not an RTMP(S) URL",
                         "if": { "not": { "properties": { "servers": { "items": { "properties": { "url": { "format": "uri", "pattern": "^rtmps?://" } } } } } } },
                         "then": { "required": ["protocol"] }
-                    },
-                    {
-                        "$comment": "Require recommended output field if protocol field is not RTMP(S)",
-                        "if": { "required": ["protocol"], "properties": { "protocol": { "pattern": "^(HLS|SRT|RIST|WHIP)$" } } },
-                        "then": { "properties": { "recommended": { "required": ["output"] } } }
                     }
                 ]
             },
