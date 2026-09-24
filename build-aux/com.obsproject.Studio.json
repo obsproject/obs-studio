@@ -1,7 +1,7 @@
 {
     "id": "com.obsproject.Studio",
     "runtime": "org.freedesktop.Platform",
-    "runtime-version": "25.08",
+    "runtime-version": "26.08",
     "sdk": "org.freedesktop.Sdk",
     "command": "obs",
     "finish-args": [
@@ -31,7 +31,7 @@
         },
         "org.freedesktop.LinuxAudio.Plugins": {
             "directory": "extensions/Plugins",
-            "version": "25.08",
+            "version": "26.08",
             "add-ld-path": "lib",
             "merge-dirs": "vst",
             "subdirectories": true,
@@ -49,8 +49,8 @@
                 {
                     "type": "file",
                     "dest-filename": "base.tar.xz",
-                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-07-15/flatpak-base-x86_64-2026-07-15.tar.xz",
-                    "sha256": "396522a370529c31bbec6de810aff8bd5ba4eef103b2218954ffa5d8847dc943"
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-09-24/flatpak-base-x86_64-2026-09-24.tar.xz",
+                    "sha256": "480a98e55b51566603b6ea0ee28dbeddaefc1e172d18fb72f16ab9d941794c79"
                 }
             ]
         },
@@ -64,8 +64,8 @@
                 {
                     "type": "file",
                     "dest-filename": "devel.tar.xz",
-                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-07-15/flatpak-devel-x86_64-2026-07-15.tar.xz",
-                    "sha256": "2499b622f450f3ae6ea7e9d893d8063cdacd8aa2089ecd4b8462d16e970fbc43"
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-09-24/flatpak-devel-x86_64-2026-09-24.tar.xz",
+                    "sha256": "c15e10e46054150d927bd81880dfbcc71641658395b84cdaad3f572920481f4a"
                 }
             ]
         },
@@ -82,8 +82,8 @@
                 {
                     "type": "file",
                     "dest-filename": "devtools.tar.xz",
-                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-07-15/flatpak-devtools-x86_64-2026-07-15.tar.xz",
-                    "sha256": "557e5cf96a7118f1377b7eabe402621908f7ba6a9bc93fbb134ebc175d31a5d9"
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-09-24/flatpak-devtools-x86_64-2026-09-24.tar.xz",
+                    "sha256": "f5ba4578cade6bfd3670340e7eeb0f31876b39e29bc978b5ed47da7de03ffc70"
                 }
             ]
         },
@@ -97,8 +97,8 @@
                 {
                     "type": "file",
                     "dest-filename": "qt.tar.xz",
-                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-07-15/flatpak-qt-x86_64-2026-07-15.tar.xz",
-                    "sha256": "231c5671173f7b6d33df457eb6991c5b6a76bccc59545b7e32d56f0e87b97872"
+                    "url": "https://github.com/obsproject/obs-deps-buildstream/releases/download/2026-09-24/flatpak-qt-x86_64-2026-09-24.tar.xz",
+                    "sha256": "7a4060cab48798e13be0eb9aa967dd3cb6f94209c6594eacccf3223c5c91e3de"
                 }
             ]
         },
@@ -132,6 +132,7 @@
             "builddir": true,
             "config-opts": [
                 "-DCMAKE_BUILD_TYPE=RelWithDebInfo",
+                "-DCMAKE_INCLUDE_PATH=/app/include;/usr/include",
                 "-DENABLE_FLATPAK=ON",
                 "-DENABLE_WAYLAND=ON",
                 "-DENABLE_BROWSER=ON",
