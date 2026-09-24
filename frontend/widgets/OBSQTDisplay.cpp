@@ -102,8 +102,8 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags) : QWidget(par
 		obs_display_resize(display, size.width(), size.height());
 	};
 
-	connect(windowHandle(), &QWindow::visibleChanged, windowVisible);
-	connect(windowHandle(), &QWindow::screenChanged, screenChanged);
+	connect(windowHandle(), &QWindow::visibleChanged, this, windowVisible);
+	connect(windowHandle(), &QWindow::screenChanged, this, screenChanged);
 
 	windowHandle()->installEventFilter(new SurfaceEventFilter(this));
 }
@@ -130,14 +130,17 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 
 void OBSQTDisplay::CreateDisplay()
 {
-	if (display)
+	if (display) {
 		return;
+	}
 
-	if (destroying)
+	if (destroying) {
 		return;
+	}
 
-	if (!windowHandle()->isExposed())
+	if (!windowHandle()->isExposed()) {
 		return;
+	}
 
 	QSize size = GetPixelSize(this);
 
@@ -147,8 +150,9 @@ void OBSQTDisplay::CreateDisplay()
 	info.format = GS_BGRA;
 	info.zsformat = GS_ZS_NONE;
 
-	if (!QTToGSWindow(windowHandle(), info.window))
+	if (!QTToGSWindow(windowHandle(), info.window)) {
 		return;
+	}
 
 	display = obs_display_create(&info, backgroundColor);
 
@@ -205,12 +209,14 @@ QPaintEngine *OBSQTDisplay::paintEngine() const
 
 void OBSQTDisplay::OnMove()
 {
-	if (display)
+	if (display) {
 		obs_display_update_color_space(display);
+	}
 }
 
 void OBSQTDisplay::OnDisplayChange()
 {
-	if (display)
+	if (display) {
 		obs_display_update_color_space(display);
+	}
 }

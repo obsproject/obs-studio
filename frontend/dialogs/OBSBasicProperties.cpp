@@ -59,8 +59,9 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
 
-	if (cx > 400 && cy > 400)
+	if (cx > 400 && cy > 400) {
 		resize(cx, cy);
+	}
 
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
@@ -76,7 +77,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	ui->propertiesLayout->addWidget(view);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		connect(view, &OBSPropertiesView::PropertiesRefreshed, this, &OBSBasicProperties::AddPreviewButton);
+		ui->transitionButton->setVisible(true);
+		connect(ui->transitionButton, &QPushButton::clicked, this,
+			&OBSBasicProperties::previewTransitionClicked);
+	} else {
+		ui->transitionButton->setVisible(false);
 	}
 
 	view->show();
@@ -103,7 +108,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	if (drawable_preview && drawable_type) {
 		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDrawCallback);
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDrawCallback);
 
 	} else if (type == OBS_SOURCE_TYPE_TRANSITION) {
 		sourceA = obs_source_create_private("scene", "sourceA", nullptr);
@@ -128,7 +133,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		obs_source_inc_active(sourceClone);
 		obs_transition_set(sourceClone, sourceA);
 
-		auto updateCallback = [=]() {
+		auto updateCallback = [this]() {
 			OBSDataAutoRelease settings = obs_source_get_settings(source);
 			obs_source_update(sourceClone, settings);
 
@@ -139,14 +144,16 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 			direction = true;
 		};
 
-		connect(view, &OBSPropertiesView::Changed, updateCallback);
+		connect(view, &OBSPropertiesView::Changed, this, updateCallback);
 
 		ui->preview->show();
-		connect(ui->preview, &OBSQTDisplay::DisplayCreated, addTransitionDrawCallback);
+		connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addTransitionDrawCallback);
 
 	} else {
 		ui->preview->hide();
 	}
+
+	connect(ui->defaultsButton, &QPushButton::clicked, this, &OBSBasicProperties::restoreDefaultsClicked);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -157,37 +164,6 @@ OBSBasicProperties::~OBSBasicProperties()
 	obs_source_dec_showing(source);
 	main->SaveProject();
 	main->UpdateContextBarDeferred(true);
-}
-
-void OBSBasicProperties::AddPreviewButton()
-{
-	QPushButton *playButton = new QPushButton(QTStr("PreviewTransition"), this);
-	VScrollArea *area = view;
-	area->widget()->layout()->addWidget(playButton);
-
-	playButton->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-	auto play = [=]() {
-		OBSSource start;
-		OBSSource end;
-
-		if (direction) {
-			start = sourceA;
-			end = sourceB;
-		} else {
-			start = sourceB;
-			end = sourceA;
-		}
-
-		obs_transition_set(sourceClone, start);
-		obs_transition_start(sourceClone, OBS_TRANSITION_MODE_AUTO, main->GetTransitionDuration(), end);
-		direction = !direction;
-
-		start = nullptr;
-		end = nullptr;
-	};
-
-	connect(playButton, &QPushButton::clicked, play);
 }
 
 static obs_source_t *CreateLabel(const char *name, size_t h)
@@ -251,24 +227,6 @@ static void CreateTransitionScene(OBSSource scene, const char *text, uint32_t co
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
 }
 
-void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
-{
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "close");
-}
-
-void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
-{
-	const char *name = calldata_string(params, "new_name");
-	QString title = QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name));
-
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), "setWindowTitle", Q_ARG(QString, title));
-}
-
-void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
-{
-	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, "ReloadProperties");
-}
-
 static bool ConfirmReset(QWidget *parent)
 {
 	QMessageBox::StandardButton button;
@@ -277,6 +235,61 @@ static bool ConfirmReset(QWidget *parent)
 					 QMessageBox::Yes | QMessageBox::No);
 
 	return button == QMessageBox::Yes;
+}
+
+void OBSBasicProperties::restoreDefaultsClicked()
+{
+	if (!ConfirmReset(this)) {
+		return;
+	}
+
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	obs_data_clear(settings);
+
+	if (!view->DeferUpdate()) {
+		obs_source_update(source, nullptr);
+	}
+
+	view->ReloadProperties();
+}
+
+void OBSBasicProperties::previewTransitionClicked()
+{
+	OBSSource start;
+	OBSSource end;
+
+	if (direction) {
+		start = sourceA;
+		end = sourceB;
+	} else {
+		start = sourceB;
+		end = sourceA;
+	}
+
+	obs_transition_set(sourceClone, start);
+	obs_transition_start(sourceClone, OBS_TRANSITION_MODE_AUTO, main->GetTransitionDuration(), end);
+	direction = !direction;
+
+	start = nullptr;
+	end = nullptr;
+}
+
+void OBSBasicProperties::SourceRemoved(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), &OBSBasicProperties::close);
+}
+
+void OBSBasicProperties::SourceRenamed(void *data, calldata_t *params)
+{
+	const char *name = calldata_string(params, "new_name");
+	QString title = QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name));
+
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data), &OBSBasicProperties::setWindowTitle, title);
+}
+
+void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
+{
+	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, &OBSPropertiesView::ReloadProperties);
 }
 
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
@@ -309,38 +322,29 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		std::string undo_data(obs_data_get_json(oldSettings));
 		std::string redo_data(obs_data_get_json(new_settings));
 
-		if (undo_data.compare(redo_data) != 0)
+		if (undo_data.compare(redo_data) != 0) {
 			main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo,
 						undo_redo, undo_data, redo_data);
+		}
 
 		acceptClicked = true;
 		close();
 
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			view->UpdateSettings();
+		}
 
 	} else if (val == QDialogButtonBox::RejectRole) {
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			obs_data_apply(settings, oldSettings);
-		else
+		} else {
 			obs_source_update(source, oldSettings);
+		}
 
 		close();
-
-	} else if (val == QDialogButtonBox::ResetRole) {
-		if (!ConfirmReset(this))
-			return;
-
-		OBSDataAutoRelease settings = obs_source_get_settings(source);
-		obs_data_clear(settings);
-
-		if (!view->DeferUpdate())
-			obs_source_update(source, nullptr);
-
-		view->ReloadProperties();
 	}
 }
 
@@ -348,8 +352,9 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->source)
+	if (!window->source) {
 		return;
+	}
 
 	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
 	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
@@ -380,8 +385,9 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx, uint32_t
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->sourceClone)
+	if (!window->sourceClone) {
 		return;
+	}
 
 	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
 	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
@@ -430,8 +436,9 @@ void OBSBasicProperties::reject()
 void OBSBasicProperties::closeEvent(QCloseEvent *event)
 {
 	QDialog::closeEvent(event);
-	if (event->isAccepted())
+	if (event->isAccepted()) {
 		Cleanup();
+	}
 }
 
 bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, qintptr *)
@@ -481,8 +488,9 @@ bool OBSBasicProperties::ConfirmQuit()
 	switch (button) {
 	case QMessageBox::Save:
 		acceptClicked = true;
-		if (view->DeferUpdate())
+		if (view->DeferUpdate()) {
 			view->UpdateSettings();
+		}
 		// Do nothing because the settings are already updated
 		break;
 	case QMessageBox::Discard:

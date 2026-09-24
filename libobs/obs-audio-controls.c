@@ -328,7 +328,7 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
 	const __m128 p3 = _mm_set_ps(-0.103943f, 0.233872f, 0.935489f, -0.155915f);
 
 	__m128 work = previous_samples;
-	__m128 peak = previous_samples;
+	__m128 peak = abs_ps(previous_samples);
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
 		__m128 new_work = _mm_load_ps(&samples[i]);
 		__m128 intrp_samples;
@@ -365,7 +365,7 @@ static float get_true_peak(__m128 previous_samples, const float *samples, size_t
  */
 static float get_sample_peak(__m128 previous_samples, const float *samples, size_t nr_samples)
 {
-	__m128 peak = previous_samples;
+	__m128 peak = abs_ps(previous_samples);
 	for (size_t i = 0; (i + 3) < nr_samples; i += 4) {
 		__m128 new_work = _mm_load_ps(&samples[i]);
 		peak = _mm_max_ps(peak, abs_ps(new_work));

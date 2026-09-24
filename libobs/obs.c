@@ -27,7 +27,6 @@ struct obs_core *obs = NULL;
 
 static THREAD_LOCAL bool is_ui_thread = false;
 
-extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
 static inline void make_video_info(struct video_output_info *vi, struct obs_video_info *ovi)
@@ -645,10 +644,14 @@ static int obs_init_video_mix(struct obs_video_info *ovi, struct obs_core_video_
 
 	gs_enter_context(obs->video.graphics);
 
-	if (video->gpu_conversion && !obs_init_gpu_conversion(video))
+	if (video->gpu_conversion && !obs_init_gpu_conversion(video)) {
+		gs_leave_context();
 		return OBS_VIDEO_FAIL;
-	if (!obs_init_textures(video))
+	}
+	if (!obs_init_textures(video)) {
+		gs_leave_context();
 		return OBS_VIDEO_FAIL;
+	}
 
 	gs_leave_context();
 
@@ -675,8 +678,10 @@ static bool restore_canvases(void)
 		obs_canvas_t *canvas = (obs_canvas_t *)ctx;
 		if (canvas->flags & MAIN)
 			continue;
+		if (!obs_canvas_has_valid_video_info(canvas))
+			continue;
 
-		if (!obs_canvas_reset_video_internal(canvas, NULL)) {
+		if (!obs_canvas_reset_video_internal(canvas, &canvas->ovi)) {
 			blog(LOG_ERROR, "Failed restoring video mix for canvas '%s'", canvas->context.name);
 			success = false;
 		}
@@ -880,6 +885,22 @@ static void obs_free_graphics(void)
 	}
 }
 
+void set_monitoring_duplication_source(void *param)
+{
+	obs_source_t *src = param;
+	struct obs_core_audio *audio = &obs->audio;
+
+	audio->monitoring_duplicating_source = src;
+}
+
+static void apply_monitoring_deduplication(void *ignored, calldata_t *cd)
+{
+	UNUSED_PARAMETER(ignored);
+	obs_source_t *src = calldata_ptr(cd, "source");
+
+	obs_queue_task(OBS_TASK_AUDIO, set_monitoring_duplication_source, src, false);
+}
+
 static void set_audio_thread(void *unused);
 
 static bool obs_init_audio(struct audio_output_info *ai)
@@ -899,7 +920,10 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
-	audio->monitoring_duplication_prevented_on_prev_tick = false;
+	audio->monitoring_duplicating_source = NULL;
+
+	signal_handler_add(obs->signals, "void deduplication_changed(ptr source)");
+	signal_handler_connect(obs->signals, "deduplication_changed", apply_monitoring_deduplication, NULL);
 
 	errorcode = audio_output_open(&audio->audio, ai);
 	if (errorcode == AUDIO_OUTPUT_SUCCESS)
@@ -1174,6 +1198,8 @@ static inline void obs_free_hotkeys(void)
 	bfree(hotkeys->push_to_talk);
 	bfree(hotkeys->sceneitem_show);
 	bfree(hotkeys->sceneitem_hide);
+	bfree(hotkeys->monitor_on);
+	bfree(hotkeys->monitor_off);
 
 	obs_hotkey_name_map_free();
 
@@ -1240,7 +1266,8 @@ static bool obs_init(const char *locale, const char *module_config_path, profile
 	obs_register_source(&scene_info);
 	obs_register_source(&group_info);
 	obs_register_source(&audio_line_info);
-	add_default_module_paths();
+
+	obs->core_modules_loaded = false;
 	return true;
 }
 
@@ -1435,11 +1462,6 @@ void obs_shutdown(void)
 		bfree(obs->disabled_modules.array[i]);
 	}
 	da_free(obs->disabled_modules);
-
-	for (size_t i = 0; i < obs->core_modules.num; i++) {
-		bfree(obs->core_modules.array[i]);
-	}
-	da_free(obs->core_modules);
 
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
@@ -2333,7 +2355,12 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data, bool is_priva
 			obs_source_set_audio_mixers(source, 0x3F);
 		}
 	}
-	obs_source_set_monitoring_type(source, (enum obs_monitoring_type)monitoring_type);
+
+	obs_data_set_default_bool(source_data, "monitoring", false);
+	if (prev_ver < MAKE_SEMANTIC_VERSION(33, 0, 0)) {
+		obs_data_set_bool(source_data, "monitoring", monitoring_type != OBS_MONITORING_TYPE_NONE);
+	}
+	obs_source_set_monitoring_enabled(source, obs_data_get_bool(source_data, "monitoring"));
 
 	obs_data_release(source->private_settings);
 	source->private_settings = obs_data_get_obj(source_data, "private_settings");
@@ -2435,7 +2462,7 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	uint64_t ptm_delay = obs_source_get_push_to_mute_delay(source);
 	bool push_to_talk = obs_source_push_to_talk_enabled(source);
 	uint64_t ptt_delay = obs_source_get_push_to_talk_delay(source);
-	int m_type = (int)obs_source_get_monitoring_type(source);
+	bool monitoring = obs_source_get_monitoring_enabled(source);
 	int di_mode = (int)obs_source_get_deinterlace_mode(source);
 	int di_order = (int)obs_source_get_deinterlace_field_order(source);
 	obs_canvas_t *canvas = obs_source_get_canvas(source);
@@ -2471,7 +2498,9 @@ obs_data_t *obs_save_source(obs_source_t *source)
 	obs_data_set_obj(source_data, "hotkeys", hotkey_data);
 	obs_data_set_int(source_data, "deinterlace_mode", di_mode);
 	obs_data_set_int(source_data, "deinterlace_field_order", di_order);
-	obs_data_set_int(source_data, "monitoring_type", m_type);
+	obs_data_set_int(source_data, "monitoring_type",
+			 monitoring ? (int)OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT : (int)OBS_MONITORING_TYPE_NONE);
+	obs_data_set_int(source_data, "monitoring_enabled", monitoring);
 
 	if (canvas) {
 		obs_data_set_string(source_data, "canvas_uuid", obs_canvas_get_uuid(canvas));
@@ -2947,6 +2976,18 @@ void obs_reset_audio_monitoring(void)
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 }
 
+static bool check_all_aoc_sources(void *param, obs_source_t *src)
+{
+	UNUSED_PARAMETER(param);
+	if (src->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t *settings = obs_source_get_settings(src);
+		const char *device_id = obs_data_get_string(settings, "device_id");
+		obs_source_audio_output_capture_device_changed(src, device_id);
+		obs_data_release(settings);
+	}
+	return true;
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
@@ -2967,10 +3008,13 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 
 	obs->audio.monitoring_device_name = bstrdup(name);
 	obs->audio.monitoring_device_id = bstrdup(id);
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 	obs_reset_audio_monitoring();
 
-	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+	/* Check all Audio Output Capture sources for monitoring duplication. */
+	obs_enum_sources(check_all_aoc_sources, NULL);
+
 	return true;
 }
 

@@ -218,10 +218,11 @@ void RemuxQueueModel::checkInputPath(int row)
 	} else {
 		entry.sourcePath = QDir::toNativeSeparators(entry.sourcePath);
 		QFileInfo fileInfo(entry.sourcePath);
-		if (fileInfo.exists())
+		if (fileInfo.exists()) {
 			entry.state = RemuxEntryState::Ready;
-		else
+		} else {
 			entry.state = RemuxEntryState::InvalidPath;
+		}
 
 		QString newExt = ".mp4";
 		QString suffix = fileInfo.suffix();
@@ -230,13 +231,15 @@ void RemuxQueueModel::checkInputPath(int row)
 			newExt = ".remuxed." + suffix;
 		}
 
-		if (entry.state == RemuxEntryState::Ready)
+		if (entry.state == RemuxEntryState::Ready) {
 			entry.targetPath = QDir::toNativeSeparators(fileInfo.path() + QDir::separator() +
 								    fileInfo.completeBaseName() + newExt);
+		}
 	}
 
-	if (entry.state == RemuxEntryState::Ready && isProcessing)
+	if (entry.state == RemuxEntryState::Ready && isProcessing) {
 		entry.state = RemuxEntryState::Pending;
+	}
 
 	emit dataChanged(index(row, 0), index(row, RemuxEntryColumn::Count));
 }
@@ -296,20 +299,23 @@ void RemuxQueueModel::clearFinished()
 bool RemuxQueueModel::canClearFinished() const
 {
 	bool canClearFinished = false;
-	for (const RemuxQueueEntry &entry : queue)
+	for (const RemuxQueueEntry &entry : queue) {
 		if (entry.state == RemuxEntryState::Complete) {
 			canClearFinished = true;
 			break;
 		}
+	}
 
 	return canClearFinished;
 }
 
 void RemuxQueueModel::beginProcessing()
 {
-	for (RemuxQueueEntry &entry : queue)
-		if (entry.state == RemuxEntryState::Ready)
+	for (RemuxQueueEntry &entry : queue) {
+		if (entry.state == RemuxEntryState::Ready) {
 			entry.state = RemuxEntryState::Pending;
+		}
+	}
 
 	// Signal that the insertion point no longer exists.
 	beginRemoveRows(QModelIndex(), queue.length(), queue.length());
@@ -366,10 +372,11 @@ void RemuxQueueModel::finishEntry(bool success)
 	for (int row = 0; row < queue.length(); row++) {
 		RemuxQueueEntry &entry = queue[row];
 		if (entry.state == RemuxEntryState::InProgress) {
-			if (success)
+			if (success) {
 				entry.state = RemuxEntryState::Complete;
-			else
+			} else {
 				entry.state = RemuxEntryState::Error;
+			}
 
 			QModelIndex index = this->index(row, RemuxEntryColumn::State);
 			emit dataChanged(index, index);

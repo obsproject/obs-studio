@@ -25,6 +25,7 @@
 @interface OBSUpdateDelegate : NSObject <SPUUpdaterDelegate> {
 }
 @property (copy) NSString *_Nonnull branch;
+@property (copy) NSString *_Nullable feedUrl;
 @property (nonatomic) SPUStandardUpdaterController *_Nonnull updaterController;
 
 - (nonnull NSSet<NSString *> *)allowedChannelsForUpdater:(nonnull SPUUpdater *)updater;
@@ -33,5 +34,5 @@
                       ofObject:(id _Nullable)object
                         change:(NSDictionary<NSKeyValueChangeKey, id> *_Nullable)change
                        context:(void *_Nullable)context;
-
+- (nullable NSString *)feedURLStringForUpdater:(SPUUpdater *_Nullable)updater;
 @end

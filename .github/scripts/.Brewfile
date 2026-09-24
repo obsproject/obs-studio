@@ -1,4 +1,3 @@
-brew "ccache"
 brew "cmake"
 brew "git"
 brew "jq"

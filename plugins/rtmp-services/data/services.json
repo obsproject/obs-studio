@@ -355,24 +355,6 @@
             ]
         },
         {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -855,35 +837,18 @@
             ]
         },
         {
-            "name": "AfreecaTV",
+            "name": "SOOP",
             "alt_names": [
+                "AfreecaTV",
                 "아프리카TV",
-                "Afreeca.TV"
+                "Afreeca.TV",
+                "SOOP Korea",
+                "SOOP Global"
             ],
             "servers": [
                 {
-                    "name": "Asia : Korea",
-                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
-                },
-                {
-                    "name": "North America : US East",
-                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
-                },
-                {
-                    "name": "North America : US West",
-                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
-                },
-                {
-                    "name": "South America : Brazil",
-                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
-                },
-                {
-                    "name": "Europe : UK",
-                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
-                },
-                {
-                    "name": "Asia : Singapore",
-                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
+                    "name": "Default",
+                    "url": "rtmp://stream.soop.live/app/"
                 }
             ],
             "recommended": {
@@ -965,18 +930,6 @@
                 "profile": "main",
                 "max video bitrate": 3500
             },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Livestream",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
-                }
-            ],
             "supported video codecs": [
                 "h264"
             ]
@@ -1506,8 +1459,20 @@
             "name": "Piczel.tv",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://piczel.tv:1935/live"
+                    "name": "US East: 1",
+                    "url": "rtmp://boston.piczel.tv/live"
+                },
+                {
+                    "name": "US East: 2",
+                    "url": "rtmp://boston-2.piczel.tv/live"
+                },
+                {
+                    "name": "France",
+                    "url": "rtmp://france.piczel.tv/live"
+                },
+                {
+                    "name": "Brazil",
+                    "url": "rtmp://brazil.piczel.tv/live"
                 }
             ],
             "recommended": {
@@ -1515,41 +1480,6 @@
                 "max video bitrate": 2500,
                 "max audio bitrate": 256,
                 "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "STAGE TEN",
-            "servers": [
-                {
-                    "name": "STAGE TEN",
-                    "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "baseline",
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "DLive",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.dlive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
             },
             "supported video codecs": [
                 "h264"
@@ -1969,24 +1899,6 @@
             ]
         },
         {
-            "name": "OPENREC.tv - Premium member (プレミアム会員)",
-            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://a.station.openrec.tv:1935/live1"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
@@ -2022,10 +1934,6 @@
                 {
                     "name": "bintu-stream Asia South (ASS)",
                     "url": "rtmp://bintu-stream-ass.nanocosmos.de/live"
-                },
-                {
-                    "name": "bintu-stream Australia (AU)",
-                    "url": "rtmp://bintu-stream-au.nanocosmos.de/live"
                 },
                 {
                     "name": "bintu-vtrans Europe (EU)",
@@ -2116,18 +2024,6 @@
                 {
                     "name": "BoxCast",
                     "url": "rtmp://rtmp.boxcast.com/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Disciple Media",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ],
             "supported video codecs": [
@@ -2303,13 +2199,20 @@
             "stream_key_link": "https://whowatch.tv/publish",
             "servers": [
                 {
-                    "name": "default",
-                    "url": "rtmp://live.whowatch.tv/live/"
+                    "name": "Global - グローバル (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global - グローバル (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
                 }
             ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "recommended": {
+                "profile": "baseline",
                 "keyint": 2,
-                "max video bitrate": 1800,
+                "bframes": 0,
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
             },
             "supported video codecs": [
@@ -2333,8 +2236,12 @@
                     "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
-                    "name": "New York, US",
-                    "url": "rtmps://stream.ewr.irl.run/ingest"
+                    "name": "Chicago, US",
+                    "url": "rtmps://stream.ord.irl.run/ingest"
+                },
+                {
+                    "name": "Ashburn, US",
+                    "url": "rtmps://stream.iad.irl.run/ingest"
                 },
                 {
                     "name": "Miami, US",
@@ -2351,6 +2258,10 @@
                 {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Seoul, SK",
+                    "url": "rtmps://stream.icn.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
@@ -2526,6 +2437,8 @@
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
+            "multitrack_video_name": "시차없는 LIVE+ [화질 최적화]",
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "servers": [
                 {
                     "name": "Default",
@@ -2610,7 +2523,7 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://injest.streamway.in/LiveApp"
+                    "url": "rtmps://injest.streamway.in:443/live"
                 },
                 {
                     "name": "Backup",
@@ -2631,8 +2544,48 @@
             "stream_key_link": "https://playstudio.shareplay.tv/stream/settings",
             "servers": [
                 {
+                    "name": "Default (Auto Detect)",
+                    "url": "rtmp://stream.shareplay.tv"
+                },
+                {
                     "name": "Atlanta, Georgia, USA",
                     "url": "rtmp://live-us-atl-stream.shareplay.tv"
+                },
+                {
+                    "name": "Chicago, Illinois, USA",
+                    "url": "rtmp://live-us-ord-stream.shareplay.tv"
+                },
+                {
+                    "name": "Dallas, Texas, USA",
+                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
+                },
+                {
+                    "name": "Los Angeles, California, USA",
+                    "url": "rtmp://live-us-lax-stream.shareplay.tv"
+                },
+                {
+                    "name": "Seattle, Washington, USA",
+                    "url": "rtmp://live-us-sea-stream.shareplay.tv"
+                },
+                {
+                    "name": "Washington D.C., USA",
+                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
+                },
+                {
+                    "name": "Toronto, Canada",
+                    "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
+                },
+                {
+                    "name": "Paris, France",
+                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
+                },
+                {
+                    "name": "London, UK",
+                    "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
+                },
+                {
+                    "name": "Sydney, Australia",
+                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
                 }
             ],
             "supported video codecs": [
@@ -3349,13 +3302,16 @@
             }
         },
         {
-            "name": "Dolby Millicast",
+            "name": "Dolby OptiView Real-time",
+            "alt_names": [
+                "Dolby Millicast"
+            ],
             "common": false,
-            "more_info_link": "https://docs.optiview.dolby.com/millicast/using-obs/",
+            "more_info_link": "https://optiview.dolby.com/docs/millicast/using-obs/",
             "stream_key_link": "https://streaming.dolby.io",
             "multitrack_video_configuration_url": "https://director.millicast.com/api/multitrackvideo/configuration",
             "multitrack_video_name": "Enhanced Broadcasting",
-            "multitrack_video_learn_more_link": "https://docs.optiview.dolby.com/millicast/obs-enhanced-broadcasting-multitrack-video/",
+            "multitrack_video_learn_more_link": "https://optiview.dolby.com/docs/millicast/obs-enhanced-broadcasting-multitrack-video/",
             "servers": [
                 {
                     "name": "Global (RTMPS)",
@@ -3477,6 +3433,33 @@
             "recommended": {
                 "keyint": 1,
                 "max video bitrate": 6000
+            }
+        },
+        {
+            "name": "Spoon",
+            "servers": [
+                {
+                    "name": "Korea (RTMPS)",
+                    "url": "rtmps://kr-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Korea (RTMP)",
+                    "url": "rtmp://kr-rtmp.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMPS)",
+                    "url": "rtmps://jp-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMP)",
+                    "url": "rtmp://jp-rtmp.spooncast.net/live"
+                }
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "max audio bitrate": 96
             }
         }
     ]

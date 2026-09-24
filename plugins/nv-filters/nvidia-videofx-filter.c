@@ -48,7 +48,6 @@
 enum nvvfx_fx_id { S_FX_AIGS, S_FX_BLUR, S_FX_BG_BLUR };
 
 bool nvvfx_loaded = false;
-bool nvvfx_new_sdk = false;
 
 /* clang-format off */
 struct nvvfx_data {
@@ -68,7 +67,6 @@ struct nvvfx_data {
 	NvCVImage *BGR_src_img;     // src img in BGR on GPU
 	NvCVImage *A_dst_img;       // mask img on GPU
 	NvCVImage *dst_img;         // Greenscreen: alpha mask texture; blur: texture initialized from d3d11 (RGBA, chunky, u8)
-	NvCVImage *stage;           // used for transfer to texture
 	unsigned int version;
 	NvVFX_StateObjectHandle stateObjectHandle;
 
@@ -176,7 +174,6 @@ static void nvvfx_filter_actual_destroy(void *data)
 		NvCVImage_Destroy(filter->BGR_src_img);
 		NvCVImage_Destroy(filter->A_dst_img);
 		NvCVImage_Destroy(filter->dst_img);
-		NvCVImage_Destroy(filter->stage);
 		if (filter->filter_id != S_FX_AIGS) {
 			NvCVImage_Destroy(filter->blur_BGR_dst_img);
 			NvCVImage_Destroy(filter->RGBA_dst_img);
@@ -319,7 +316,6 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 		uint8_t minor = (filter->version >> 16) & 0x00ff;
 		uint8_t build = (filter->version >> 8) & 0x0000ff;
 		uint8_t revision = (filter->version >> 0) & 0x000000ff;
-		nvvfx_new_sdk = filter->version >= MIN_VFX_SDK_VERSION && nvvfx_new_sdk;
 	}
 #endif
 	/* 1. Create FX */
@@ -334,19 +330,18 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	bfree(effect_path);
 	if (filter->effect) {
 		if (id == S_FX_AIGS) {
-			filter->mask_param = gs_effect_get_param_by_name(filter->effect, "mask");
 			filter->threshold_param = gs_effect_get_param_by_name(filter->effect, "threshold");
 		} else {
 			filter->blur_param = gs_effect_get_param_by_name(filter->effect, "blurred");
 		}
+		filter->mask_param = gs_effect_get_param_by_name(filter->effect, "mask");
 		filter->image_param = gs_effect_get_param_by_name(filter->effect, "image");
-
 		filter->multiplier_param = gs_effect_get_param_by_name(filter->effect, "multiplier");
 	}
 	obs_leave_graphics();
 
 	/* 4. Allocate state for the AIGS & background blur */
-	if (nvvfx_new_sdk && id != S_FX_BLUR) {
+	if (get_lib_version() >= MIN_VFX_LOGGER_VERSION && id != S_FX_BLUR) {
 		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
 		if (NVCV_SUCCESS != vfxErr)
 			return log_nverror_destroy(filter, vfxErr);
@@ -363,7 +358,7 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	nvvfx_filter_update(filter, settings);
 
 	/* Setup NVIDIA logger */
-	if (nvvfx_new_sdk)
+	if (get_lib_version() >= MIN_VFX_LOGGER_VERSION)
 		vfxErr = NvVFX_ConfigureLogger(NVCV_LOG_ERROR, NULL, &nvvfx_logger_callback, filter);
 
 	return filter;
@@ -589,20 +584,13 @@ static void init_images(struct nvvfx_data *filter)
 		NvCVImage_Alloc(filter->A_dst_img, width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1);
 	}
 
-	/* 6. Create stage NvCVImage which will be used as buffer for transfer */
-	vfxErr = NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1, &filter->stage);
-	vfxErr = NvCVImage_Alloc(filter->stage, width, height, NVCV_RGBA, NVCV_U8, NVCV_CHUNKY, NVCV_GPU, 1);
-	if (vfxErr != NVCV_SUCCESS) {
-		goto fail;
-	}
-
-	/* 7. Init blur images */
+	/* 6. Init blur images */
 	if (filter->filter_id == S_FX_BLUR || filter->filter_id == S_FX_BG_BLUR) {
 		if (!init_blur_images(filter))
 			goto fail;
 	}
 
-	/* 8. Pass settings for AIGS (AI Greenscreen) FX */
+	/* 7. Pass settings for AIGS (AI Greenscreen) FX */
 	if (filter->filter_id == S_FX_BG_BLUR || filter->filter_id == S_FX_AIGS) {
 		NvVFX_SetImage(filter->handle, NVVFX_INPUT_IMAGE, filter->BGR_src_img);
 		NvVFX_SetImage(filter->handle, NVVFX_OUTPUT_IMAGE, filter->A_dst_img);
@@ -639,7 +627,7 @@ static bool process_texture(struct nvvfx_data *filter)
 	}
 
 	/* 2. Convert to BGR. */
-	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, filter->stage);
+	vfxErr = NvCVImage_Transfer(filter->src_img, filter->BGR_src_img, 1.0f, process_stream, NULL);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error converting src to BGR img; error %i: %s", vfxErr, errString);
@@ -661,49 +649,8 @@ static bool process_texture(struct nvvfx_data *filter)
 			if (vfxErr == NVCV_ERR_CUDA)
 				nvvfx_filter_reset(filter, NULL);
 		}
-	}
 
-	if (id != S_FX_AIGS) {
-		/* 4. BLUR FX */
-		/* 4a. Run BLUR FX except for AIGS */
-		vfxErr = NvVFX_Run(filter->handle_blur, SYNC);
-		if (vfxErr != NVCV_SUCCESS) {
-			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-			error("Error running the BLUR FX; error %i: %s", vfxErr, errString);
-			if (vfxErr == NVCV_ERR_CUDA)
-				nvvfx_filter_reset(filter, NULL);
-		}
-		/* 4b. Transfer blur result to an intermediate dst [RGBA, chunky, u8] */
-		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream,
-					    filter->stage);
-		if (vfxErr != NVCV_SUCCESS) {
-			error("Error transferring blurred to intermediate img [RGBA, chunky, u8], error %i, ", vfxErr);
-			goto fail;
-		}
-		/* 5. Map blur dst texture before transfer from dst img provided by FX */
-		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream);
-		if (vfxErr != NVCV_SUCCESS) {
-			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-			error("Error mapping resource for dst texture; error %i: %s", vfxErr, errString);
-			goto fail;
-		}
-
-		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream,
-					    filter->stage);
-		if (vfxErr != NVCV_SUCCESS) {
-			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-			error("Error transferring mask to alpha texture; error %i: %s ", vfxErr, errString);
-			goto fail;
-		}
-
-		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream);
-		if (vfxErr != NVCV_SUCCESS) {
-			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
-			error("Error unmapping resource for dst texture; error %i: %s", vfxErr, errString);
-			goto fail;
-		}
-	} else {
-		/* 4. Map dst texture before transfer from dst img provided by AIGS FX */
+		/* 4. Map dst alpha texture before transfer from dst img provided by AIGS FX */
 		vfxErr = NvCVImage_MapResource(filter->dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
@@ -711,7 +658,7 @@ static bool process_texture(struct nvvfx_data *filter)
 			goto fail;
 		}
 
-		vfxErr = NvCVImage_Transfer(filter->A_dst_img, filter->dst_img, 1.0f, filter->stream, filter->stage);
+		vfxErr = NvCVImage_Transfer(filter->A_dst_img, filter->dst_img, 1.0f, filter->stream, NULL);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error transferring mask to alpha texture; error %i: %s ", vfxErr, errString);
@@ -719,6 +666,45 @@ static bool process_texture(struct nvvfx_data *filter)
 		}
 
 		vfxErr = NvCVImage_UnmapResource(filter->dst_img, filter->stream);
+		if (vfxErr != NVCV_SUCCESS) {
+			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error unmapping resource for dst texture; error %i: %s", vfxErr, errString);
+			goto fail;
+		}
+	}
+	/* 5. BLUR FX */
+	if (id != S_FX_AIGS) {
+		/* 5a. Run BLUR FX except for AIGS */
+		vfxErr = NvVFX_Run(filter->handle_blur, SYNC);
+		if (vfxErr != NVCV_SUCCESS) {
+			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error running the BLUR FX; error %i: %s", vfxErr, errString);
+			if (vfxErr == NVCV_ERR_CUDA)
+				nvvfx_filter_reset(filter, NULL);
+		}
+		/* 5b. Transfer blur result to an intermediate dst [RGBA, chunky, u8] */
+		vfxErr = NvCVImage_Transfer(filter->blur_BGR_dst_img, filter->RGBA_dst_img, 1.0f, filter->stream, NULL);
+		if (vfxErr != NVCV_SUCCESS) {
+			error("Error transferring blurred to intermediate img [RGBA, chunky, u8], error %i, ", vfxErr);
+			goto fail;
+		}
+
+		/* 5c. Map blur dst texture before transfer from dst img provided by FX */
+		vfxErr = NvCVImage_MapResource(filter->blur_dst_img, filter->stream);
+		if (vfxErr != NVCV_SUCCESS) {
+			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error mapping resource for dst texture; error %i: %s", vfxErr, errString);
+			goto fail;
+		}
+
+		vfxErr = NvCVImage_Transfer(filter->RGBA_dst_img, filter->blur_dst_img, 1.0f, filter->stream, NULL);
+		if (vfxErr != NVCV_SUCCESS) {
+			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error transferring mask to alpha texture; error %i: %s ", vfxErr, errString);
+			goto fail;
+		}
+
+		vfxErr = NvCVImage_UnmapResource(filter->blur_dst_img, filter->stream);
 		if (vfxErr != NVCV_SUCCESS) {
 			const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error unmapping resource for dst texture; error %i: %s", vfxErr, errString);
@@ -835,16 +821,16 @@ static void draw_greenscreen_blur(struct nvvfx_data *filter, bool has_blur)
 	float multiplier;
 	const char *technique = get_tech_name_and_multiplier(gs_get_color_space(), source_space, &multiplier);
 	const enum gs_color_format format = gs_get_format_from_space(source_space);
+
 	if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
 							     OBS_ALLOW_DIRECT_RENDERING)) {
+		gs_effect_set_texture(filter->mask_param, filter->alpha_texture);
 		if (has_blur) {
 			gs_effect_set_texture_srgb(filter->blur_param, filter->blur_texture);
 		} else {
-			gs_effect_set_texture(filter->mask_param, filter->alpha_texture);
 			gs_effect_set_float(filter->threshold_param, min(filter->threshold, 0.95f));
 		}
 		gs_effect_set_texture_srgb(filter->image_param, gs_texrender_get_texture(filter->render));
-
 		gs_effect_set_float(filter->multiplier_param, multiplier);
 
 		gs_blend_state_push();
@@ -902,6 +888,12 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 	const enum gs_color_space source_space =
 		obs_source_get_color_space(target, OBS_COUNTOF(preferred_spaces), preferred_spaces);
 
+	enum nvvfx_fx_id id = filter->filter_id;
+	if (id == S_FX_BLUR && (source_space == GS_CS_709_EXTENDED || source_space == GS_CS_709_SCRGB)) {
+		obs_source_skip_video_filter(filter->context);
+		return;
+	}
+
 	if (filter->space != source_space) {
 		filter->space = source_space;
 		init_images(filter);
@@ -938,22 +930,15 @@ static void nvvfx_filter_render(void *data, gs_effect_t *effect, bool has_blur)
 
 			const char *tech_name = "ConvertUnorm";
 			float multiplier = 1.f;
-			if (!has_blur) {
-				switch (source_space) {
-				case GS_CS_709_EXTENDED:
-					tech_name = "ConvertUnormTonemap";
-					break;
-				case GS_CS_709_SCRGB:
-					tech_name = "ConvertUnormMultiplyTonemap";
-					multiplier = 80.0f / obs_get_video_sdr_white_level();
-				}
-			} else {
-				switch (source_space) {
-				case GS_CS_709_SCRGB:
-					tech_name = "ConvertUnormMultiply";
-					multiplier = 80.0f / obs_get_video_sdr_white_level();
-				}
+			switch (source_space) {
+			case GS_CS_709_EXTENDED:
+				tech_name = "ConvertUnormTonemap";
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "ConvertUnormMultiplyTonemap";
+				multiplier = 80.0f / obs_get_video_sdr_white_level();
 			}
+
 			gs_effect_set_texture_srgb(filter->image_param, gs_texrender_get_texture(render));
 			gs_effect_set_float(filter->multiplier_param, multiplier);
 
@@ -1100,7 +1085,6 @@ static void nvvfx_filter_defaults(obs_data_t *settings)
 
 bool load_nvidia_vfx(void)
 {
-	bool old_sdk_loaded = false;
 	unsigned int version = get_lib_version();
 	uint8_t major = (version >> 24) & 0xff;
 	uint8_t minor = (version >> 16) & 0x00ff;
@@ -1114,7 +1098,7 @@ bool load_nvidia_vfx(void)
 			     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated. Please update both audio & video SDK.");
 		}
 	}
-	if (!load_nv_vfx_libs()) {
+	if (!load_nv_vfx_libs(version)) {
 		blog(LOG_INFO, "[NVIDIA VIDEO FX]: FX disabled, redistributable not found or could not be loaded.");
 		return false;
 	}
@@ -1123,17 +1107,7 @@ bool load_nvidia_vfx(void)
 	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                               \
 		DWORD err = GetLastError();                                                              \
 		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		release_nv_vfx();                                                                        \
 		goto unload_everything;                                                                  \
-	}
-
-#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                                                \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                               \
-		DWORD err = GetLastError();                                                              \
-		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		nvvfx_new_sdk = false;                                                                   \
-	} else {                                                                                         \
-		nvvfx_new_sdk = true;                                                                    \
 	}
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_videofx, "NVVideoEffects.dll")
@@ -1166,42 +1140,20 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvVFX_AllocateState);
 	LOAD_SYM(NvVFX_DeallocateState);
 	LOAD_SYM(NvVFX_ResetState);
-	old_sdk_loaded = true;
+	LOAD_SYM(NvVFX_ConfigureLogger);
 #undef LOAD_SYM
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cvimage, "NVCVImage.dll")
 	LOAD_SYM(NvCV_GetErrorStringFromCode);
 	LOAD_SYM(NvCVImage_Init);
-	LOAD_SYM(NvCVImage_InitView);
 	LOAD_SYM(NvCVImage_Alloc);
 	LOAD_SYM(NvCVImage_Realloc);
-	LOAD_SYM(NvCVImage_Dealloc);
 	LOAD_SYM(NvCVImage_Create);
 	LOAD_SYM(NvCVImage_Destroy);
-	LOAD_SYM(NvCVImage_ComponentOffsets);
 	LOAD_SYM(NvCVImage_Transfer);
-	LOAD_SYM(NvCVImage_TransferRect);
-	LOAD_SYM(NvCVImage_TransferFromYUV);
-	LOAD_SYM(NvCVImage_TransferToYUV);
 	LOAD_SYM(NvCVImage_MapResource);
 	LOAD_SYM(NvCVImage_UnmapResource);
-	LOAD_SYM(NvCVImage_Composite);
-	LOAD_SYM(NvCVImage_CompositeRect);
-	LOAD_SYM(NvCVImage_CompositeOverConstant);
-	LOAD_SYM(NvCVImage_FlipY);
-	LOAD_SYM(NvCVImage_GetYUVPointers);
 	LOAD_SYM(NvCVImage_InitFromD3D11Texture);
-	LOAD_SYM(NvCVImage_ToD3DFormat);
-	LOAD_SYM(NvCVImage_FromD3DFormat);
-	LOAD_SYM(NvCVImage_ToD3DColorSpace);
-	LOAD_SYM(NvCVImage_FromD3DColorSpace);
-#undef LOAD_SYM
-
-#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
-	LOAD_SYM(NvVFX_ConfigureLogger);
-	if (!nvvfx_new_sdk) {
-		blog(LOG_INFO, "[NVIDIA VIDEO FX]: SDK loaded but old redistributable detected. Please upgrade.");
-	}
 #undef LOAD_SYM
 
 	int err;
@@ -1225,13 +1177,13 @@ bool load_nvidia_vfx(void)
 unload_everything:
 	nvvfx_loaded = false;
 	blog(LOG_INFO, "[NVIDIA VIDEO FX]: disabled, redistributable not found");
-	release_nv_vfx();
+	release_vfx_lib();
 	return false;
 }
 
 void unload_nvidia_vfx(void)
 {
-	release_nv_vfx();
+	release_vfx_lib();
 }
 
 struct obs_source_info nvidia_greenscreen_filter_info = {

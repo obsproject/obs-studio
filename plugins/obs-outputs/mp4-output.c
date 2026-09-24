@@ -51,6 +51,7 @@ struct mp4_output {
 	struct serializer serializer;
 
 	bool enable_bpm;
+	bool received_first_keyframe;
 
 	volatile bool active;
 	volatile bool stopping;
@@ -151,7 +152,7 @@ void mp4_pkt_callback(obs_output_t *output, struct encoder_packet *pkt, struct e
 
 		/* Video frames can be out of order (b-frames), so instead of using the video packet's dts_usec we need to calculate
 		 * the chapter DTS from the frame's PTS (for chapters DTS == PTS). */
-		int64_t chap_dts_usec = pkt->pts * 1000000 / pkt->timebase_den;
+		int64_t chap_dts_usec = (pkt->pts * 1000000 / pkt->timebase_den) - out->start_time;
 		int64_t chap_dts_msec = chap_dts_usec / 1000;
 		int64_t chap_dts_sec = chap_dts_msec / 1000;
 
@@ -348,8 +349,11 @@ static inline bool should_split(struct mp4_output *out, struct encoder_packet *p
 		return true;
 
 	/* reached maximum duration */
-	if (out->max_time > 0 && packet->dts_usec - out->start_time >= out->max_time)
-		return true;
+	if (out->max_time > 0) {
+		const int64_t current_runtime = packet->dts_usec - out->start_time;
+		/* Allow a small error in timestamps (up to 1 ms). */
+		return llabs(out->max_time - current_runtime) < 1000LL;
+	}
 
 	return false;
 }
@@ -530,6 +534,13 @@ static void mp4_output_packet(void *data, struct encoder_packet *packet)
 			mp4_output_actual_stop(out, 0);
 			goto unlock;
 		}
+	}
+
+	/* Correct start time for b-frames */
+	if (!out->received_first_keyframe && packet->type == OBS_ENCODER_VIDEO && packet->track_idx == 0 &&
+	    packet->keyframe) {
+		out->start_time = packet->dts_usec;
+		out->received_first_keyframe = true;
 	}
 
 	if (out->split_file_enabled) {

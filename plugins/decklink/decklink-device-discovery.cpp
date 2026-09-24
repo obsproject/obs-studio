@@ -6,17 +6,20 @@
 DeckLinkDeviceDiscovery::DeckLinkDeviceDiscovery()
 {
 	discovery.Set(CreateDeckLinkDiscoveryInstance());
-	if (discovery == nullptr)
+	if (discovery == nullptr) {
 		blog(LOG_INFO, "No blackmagic support");
+	}
 }
 
 DeckLinkDeviceDiscovery::~DeckLinkDeviceDiscovery(void)
 {
 	if (discovery != nullptr) {
-		if (initialized)
+		if (initialized) {
 			discovery->UninstallDeviceNotifications();
-		for (DeckLinkDevice *device : devices)
+		}
+		for (DeckLinkDevice *device : devices) {
 			device->Release();
+		}
 	}
 }
 
@@ -24,15 +27,18 @@ bool DeckLinkDeviceDiscovery::Init(void)
 {
 	HRESULT result = E_FAIL;
 
-	if (initialized)
+	if (initialized) {
 		return false;
+	}
 
-	if (discovery != nullptr)
+	if (discovery != nullptr) {
 		result = discovery->InstallDeviceNotifications(this);
+	}
 
 	initialized = result == S_OK;
-	if (!initialized)
+	if (!initialized) {
 		blog(LOG_DEBUG, "Failed to start search for DeckLink devices");
+	}
 
 	return initialized;
 }
@@ -66,8 +72,9 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceDiscovery::DeckLinkDeviceArrived(IDeckLi
 
 	devices.push_back(newDev);
 
-	for (DeviceChangeInfo &cb : callbacks)
+	for (DeviceChangeInfo &cb : callbacks) {
 		cb.callback(cb.param, newDev, true);
+	}
 
 	return S_OK;
 }
@@ -79,8 +86,9 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceDiscovery::DeckLinkDeviceRemoved(IDeckLi
 	for (size_t i = 0; i < devices.size(); i++) {
 		if (devices[i]->IsDevice(device)) {
 
-			for (DeviceChangeInfo &cb : callbacks)
+			for (DeviceChangeInfo &cb : callbacks) {
 				cb.callback(cb.param, devices[i], false);
+			}
 
 			devices[i]->Release();
 			devices.erase(devices.begin() + i);

@@ -27,16 +27,18 @@ static int hex_string_to_int(string str)
 {
 	int res = 0;
 
-	if (str[0] == '#')
+	if (str[0] == '#') {
 		str = str.substr(1);
+	}
 
 	for (size_t i = 0, l = str.size(); i < l; i++) {
 		res *= 16;
 
-		if (str[0] >= '0' && str[0] <= '9')
+		if (str[0] >= '0' && str[0] <= '9') {
 			res += str[0] - '0';
-		else
+		} else {
 			res += str[0] - 'A' + 10;
+		}
 
 		str = str.substr(1);
 	}
@@ -53,24 +55,27 @@ static Json::object parse_text(QString &config)
 	string err;
 	Json data = Json::parse(config.toStdString(), err);
 
-	if (err != "")
+	if (err != "") {
 		return Json::object{};
+	}
 
 	string outline = data["outline"].string_value();
 	int out = 0;
 
-	if (outline == "thick")
+	if (outline == "thick") {
 		out = 20;
-	else if (outline == "thicker")
+	} else if (outline == "thicker") {
 		out = 40;
-	else if (outline == "thinner")
+	} else if (outline == "thinner") {
 		out = 5;
-	else if (outline == "thin")
+	} else if (outline == "thin") {
 		out = 10;
+	}
 
 	string valign = data["vertAlign"].string_value();
-	if (valign == "middle")
+	if (valign == "middle") {
 		valign = "center";
+	}
 
 	Json font = Json::object{{"face", data["fontStyle"]}, {"size", 200}};
 
@@ -96,8 +101,9 @@ static Json::array parse_playlist(QString &playlist)
 		out.push_back(Json::object{{"value", path.toStdString()}});
 
 		int next = playlist.indexOf('|');
-		if (next == -1)
+		if (next == -1) {
 			break;
+		}
 
 		playlist = playlist.mid(next + 1);
 	}
@@ -114,8 +120,9 @@ static void parse_media_types(QDomNamedNodeMap &attr, Json::object &source, Json
 		settings["playlist"] = parse_playlist(playlist);
 
 		QString end_op = attr.namedItem("OpWhenFinished").nodeValue();
-		if (end_op == "2")
+		if (end_op == "2") {
 			settings["loop"] = true;
+		}
 	} else {
 		QString url = attr.namedItem("item").nodeValue();
 		int sep = url.indexOf("://");
@@ -149,22 +156,25 @@ static void parse_media_types(QDomNamedNodeMap &attr, Json::object &source, Json
 static Json::object parse_slideshow(QString &config)
 {
 	int start = config.indexOf("images\":[");
-	if (start == -1)
+	if (start == -1) {
 		return Json::object{};
+	}
 
 	config = config.mid(start + 8);
 	config.replace("\\\\", "/");
 
 	int end = config.indexOf(']');
-	if (end == -1)
+	if (end == -1) {
 		return Json::object{};
+	}
 
 	string arr = config.left(end + 1).toStdString();
 	string err;
 	Json::array files = Json::parse(arr, err).array_items();
 
-	if (err != "")
+	if (err != "") {
 		return Json::object{};
+	}
 
 	Json::array files_out = Json::array{};
 
@@ -178,8 +188,9 @@ static Json::object parse_slideshow(QString &config)
 
 	Json opt = Json::parse(options.toStdString(), err);
 
-	if (err != "")
+	if (err != "") {
 		return Json::object{};
+	}
 
 	return Json::object{{"randomize", opt["random"]},
 			    {"slide_time", opt["delay"].number_value() * 1000 + 700},
@@ -189,8 +200,9 @@ static Json::object parse_slideshow(QString &config)
 static bool source_name_exists(const string &name, const Json::array &sources)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
-		if (sources.at(i)["name"].string_value() == name)
+		if (sources.at(i)["name"].string_value() == name) {
 			return true;
+		}
 	}
 
 	return false;
@@ -199,8 +211,9 @@ static bool source_name_exists(const string &name, const Json::array &sources)
 static Json get_source_with_id(const string &src_id, const Json::array &sources)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
-		if (sources.at(i)["src_id"].string_value() == src_id)
+		if (sources.at(i)["src_id"].string_value() == src_id) {
 			return sources.at(i);
+		}
 	}
 
 	return nullptr;
@@ -227,8 +240,9 @@ static void parse_items(QDomNode &item, Json::array &items, Json::array &sources
 		}
 
 		name = attr.namedItem("cname").nodeValue().toStdString();
-		if (name.empty() || name[0] == '\0')
+		if (name.empty() || name[0] == '\0') {
 			name = attr.namedItem("name").nodeValue().toStdString();
+		}
 
 		temp_name = name;
 		while (source_name_exists(temp_name, sources)) {
@@ -394,8 +408,9 @@ static Json::object parse_scenes(QDomElement &scenes)
 			QString name = attr.namedItem("name").nodeValue();
 			QString id = attr.namedItem("id").nodeValue();
 
-			if (first.isEmpty())
+			if (first.isEmpty()) {
 				first = name;
+			}
 
 			Json out = Json::object{{"id", "scene"},
 						{"name", name.toStdString().c_str()},
@@ -429,13 +444,15 @@ static Json::object parse_scenes(QDomElement &scenes)
 
 int XSplitImporter::ImportScenes(const string &path, string &name, json11::Json &res)
 {
-	if (name == "")
+	if (name == "") {
 		name = "XSplit Import";
+	}
 
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
-	if (!file_data)
+	if (!file_data) {
 		return IMPORTER_FILE_WONT_OPEN;
+	}
 
 	QDomDocument doc;
 	doc.setContent(QString(file_data));
@@ -461,8 +478,9 @@ bool XSplitImporter::Check(const string &path)
 
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
-	if (!file_data)
+	if (!file_data) {
 		return false;
+	}
 
 	string pos = file_data.Get();
 
@@ -488,8 +506,9 @@ OBSImporterFiles XSplitImporter::FindFiles()
 	char dst[512];
 	int found = os_get_program_data_path(dst, 512, "SplitMediaLabs\\XSplit\\Presentation2.0\\");
 
-	if (found == -1)
+	if (found == -1) {
 		return res;
+	}
 
 	os_dir_t *dir = os_opendir(dst);
 	struct os_dirent *ent;
@@ -497,8 +516,9 @@ OBSImporterFiles XSplitImporter::FindFiles()
 	while ((ent = os_readdir(dir)) != NULL) {
 		string name = ent->d_name;
 
-		if (ent->directory || name[0] == '.')
+		if (ent->directory || name[0] == '.') {
 			continue;
+		}
 
 		if (name == "Placements.bpres") {
 			string str = dst + name;

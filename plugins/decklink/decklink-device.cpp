@@ -8,11 +8,13 @@ DeckLinkDevice::DeckLinkDevice(IDeckLink *device_) : device(device_) {}
 
 DeckLinkDevice::~DeckLinkDevice(void)
 {
-	for (DeckLinkDeviceMode *mode : inputModes)
+	for (DeckLinkDeviceMode *mode : inputModes) {
 		delete mode;
+	}
 
-	for (DeckLinkDeviceMode *mode : outputModes)
+	for (DeckLinkDeviceMode *mode : outputModes) {
 		delete mode;
+	}
 }
 
 ULONG DeckLinkDevice::AddRef()
@@ -23,8 +25,9 @@ ULONG DeckLinkDevice::AddRef()
 ULONG DeckLinkDevice::Release()
 {
 	long ret = os_atomic_dec_long(&refCount);
-	if (ret == 0)
+	if (ret == 0) {
 		delete this;
+	}
 	return ret;
 }
 
@@ -50,8 +53,9 @@ bool DeckLinkDevice::Init()
 			long long modeId = 1;
 
 			while (modeIterator->Next(&displayMode) == S_OK) {
-				if (displayMode == nullptr)
+				if (displayMode == nullptr) {
 					continue;
+				}
 
 				DeckLinkDeviceMode *mode = new DeckLinkDeviceMode(displayMode, modeId);
 				inputModes.push_back(mode);
@@ -79,8 +83,9 @@ bool DeckLinkDevice::Init()
 			long long modeId = 1;
 
 			while (modeIterator->Next(&displayMode) == S_OK) {
-				if (displayMode == nullptr)
+				if (displayMode == nullptr) {
 					continue;
+				}
 
 				DeckLinkDeviceMode *mode = new DeckLinkDeviceMode(displayMode, modeId);
 				outputModes.push_back(mode);
@@ -107,27 +112,31 @@ bool DeckLinkDevice::Init()
 	decklink_string_t decklinkModelName;
 	decklink_string_t decklinkDisplayName;
 
-	if (device->GetModelName(&decklinkModelName) != S_OK)
+	if (device->GetModelName(&decklinkModelName) != S_OK) {
 		return false;
+	}
 	DeckLinkStringToStdString(decklinkModelName, name);
 
-	if (device->GetDisplayName(&decklinkDisplayName) != S_OK)
+	if (device->GetDisplayName(&decklinkDisplayName) != S_OK) {
 		return false;
+	}
 	DeckLinkStringToStdString(decklinkDisplayName, displayName);
 
 	hash = displayName;
 
-	if (result != S_OK)
+	if (result != S_OK) {
 		return true;
+	}
 
 	int64_t channels;
 	/* Intensity Shuttle for Thunderbolt return 2; however, it supports 8 channels */
-	if (name == "Intensity Shuttle Thunderbolt")
+	if (name == "Intensity Shuttle Thunderbolt") {
 		maxChannel = 8;
-	else if (attributes->GetInt(BMDDeckLinkMaximumAudioChannels, &channels) == S_OK)
+	} else if (attributes->GetInt(BMDDeckLinkMaximumAudioChannels, &channels) == S_OK) {
 		maxChannel = (int32_t)channels;
-	else
+	} else {
 		maxChannel = 2;
+	}
 
 	/* http://forum.blackmagicdesign.com/viewtopic.php?f=12&t=33967
 	 * BMDDeckLinkTopologicalID for older devices
@@ -135,8 +144,9 @@ bool DeckLinkDevice::Init()
 
 	int64_t value;
 	if (attributes->GetInt(BMDDeckLinkPersistentID, &value) != S_OK &&
-	    attributes->GetInt(BMDDeckLinkTopologicalID, &value) != S_OK)
+	    attributes->GetInt(BMDDeckLinkTopologicalID, &value) != S_OK) {
 		return true;
+	}
 
 	std::ostringstream os;
 	os << value << "_" << name;
@@ -146,15 +156,17 @@ bool DeckLinkDevice::Init()
 
 bool DeckLinkDevice::GetInput(IDeckLinkInput **input)
 {
-	if (device->QueryInterface(IID_IDeckLinkInput, (void **)input) != S_OK)
+	if (device->QueryInterface(IID_IDeckLinkInput, (void **)input) != S_OK) {
 		return false;
+	}
 	return true;
 }
 
 bool DeckLinkDevice::GetOutput(IDeckLinkOutput **output)
 {
-	if (device->QueryInterface(IID_IDeckLinkOutput, (void **)output) != S_OK)
+	if (device->QueryInterface(IID_IDeckLinkOutput, (void **)output) != S_OK) {
 		return false;
+	}
 
 	return true;
 }

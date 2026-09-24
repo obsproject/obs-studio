@@ -1,0 +1,69 @@
+#include "color.effect"
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float multiplier;
+uniform float power;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertOut {
+	float2 uv  : TEXCOORD0;
+	float4 pos : POSITION;
+};
+
+struct FragData {
+	float2 uv  : TEXCOORD0;
+};
+
+VertOut VSSdrOnHdr(VertData v_in)
+{
+	VertOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSGammaSrgb(FragData f_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, f_in.uv);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSGammaPower(FragData f_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, f_in.uv);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	rgba.rgb = pow(rgba.rgb, power);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+technique GammaSrgb
+{
+	pass
+	{
+		vertex_shader = VSSdrOnHdr(v_in);
+		pixel_shader  = PSGammaSrgb(f_in);
+	}
+}
+
+technique GammaPower
+{
+	pass
+	{
+		vertex_shader = VSSdrOnHdr(v_in);
+		pixel_shader  = PSGammaPower(f_in);
+	}
+}

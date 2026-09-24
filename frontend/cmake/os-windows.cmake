@@ -6,9 +6,7 @@ if(NOT TARGET OBS::w32-pthreads)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
 endif()
 
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-find_package(MbedTLS REQUIRED)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
+find_package(MbedTLS 3...<4 REQUIRED)
 find_package(Detours REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 
@@ -25,6 +23,11 @@ target_sources(
     utility/AutoUpdateThread.cpp
     utility/AutoUpdateThread.hpp
     utility/CrashHandler_Windows.cpp
+    utility/NativeEventFilter_Windows.cpp
+    utility/WhatsNewBrowserInitThread.cpp
+    utility/WhatsNewBrowserInitThread.hpp
+    utility/WhatsNewInfoThread.cpp
+    utility/WhatsNewInfoThread.hpp
     utility/crypto-helpers-mbedtls.cpp
     utility/crypto-helpers.hpp
     utility/models/branches.hpp
@@ -33,10 +36,6 @@ target_sources(
     utility/system-info-windows.cpp
     utility/update-helpers.cpp
     utility/update-helpers.hpp
-    utility/WhatsNewBrowserInitThread.cpp
-    utility/WhatsNewBrowserInitThread.hpp
-    utility/WhatsNewInfoThread.cpp
-    utility/WhatsNewInfoThread.hpp
     utility/win-dll-blocklist.c
 )
 

@@ -56,6 +56,9 @@ NameDialog::NameDialog(QWidget *parent) : QDialog(parent)
 
 	connect(buttonbox, &QDialogButtonBox::accepted, this, &QDialog::accept);
 	connect(buttonbox, &QDialogButtonBox::rejected, this, &QDialog::reject);
+
+	label->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
+	adjustSize();
 }
 
 static bool IsWhitespace(char ch)
@@ -65,17 +68,20 @@ static bool IsWhitespace(char ch)
 
 static void CleanWhitespace(std::string &str)
 {
-	while (str.size() && IsWhitespace(str.back()))
+	while (str.size() && IsWhitespace(str.back())) {
 		str.erase(str.end() - 1);
-	while (str.size() && IsWhitespace(str.front()))
+	}
+	while (str.size() && IsWhitespace(str.front())) {
 		str.erase(str.begin());
+	}
 }
 
 bool NameDialog::AskForName(QWidget *parent, const QString &title, const QString &text, std::string &userTextInput,
 			    const QString &placeHolder, int maxSize)
 {
-	if (maxSize <= 0 || maxSize > 32767)
+	if (maxSize <= 0 || maxSize > 32767) {
 		maxSize = 170;
+	}
 
 	NameDialog dialog(parent);
 	dialog.setWindowTitle(title);

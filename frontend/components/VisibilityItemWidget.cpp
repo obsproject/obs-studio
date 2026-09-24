@@ -28,7 +28,14 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 
 	setLayout(itemLayout);
 
-	connect(vis, &QCheckBox::clicked, [this](bool visible) { obs_source_set_enabled(source, visible); });
+	connect(vis, &QCheckBox::clicked, this, [this](bool visible) {
+		obs_source_set_enabled(source, visible);
+		const char *filterName = obs_source_get_name(source);
+		obs_source_t *parent = obs_filter_get_parent(source);
+		const char *sourceName = obs_source_get_name(parent);
+		blog(LOG_INFO, "User set filter '%s' on source '%s' to %s", filterName, sourceName,
+		     visible ? "enabled" : "disabled");
+	});
 }
 
 void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
@@ -36,20 +43,22 @@ void VisibilityItemWidget::OBSSourceEnabled(void *param, calldata_t *data)
 	VisibilityItemWidget *window = static_cast<VisibilityItemWidget *>(param);
 	bool enabled = calldata_bool(data, "enabled");
 
-	QMetaObject::invokeMethod(window, "SourceEnabled", Q_ARG(bool, enabled));
+	QMetaObject::invokeMethod(window, &VisibilityItemWidget::SourceEnabled, enabled);
 }
 
 void VisibilityItemWidget::SourceEnabled(bool enabled)
 {
-	if (vis->isChecked() != enabled)
+	if (vis->isChecked() != enabled) {
 		vis->setChecked(enabled);
+	}
 }
 
 void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool selected_)
 {
 	/* Do not update unless the state has actually changed */
-	if (active_ == active && selected_ == selected)
+	if (active_ == active && selected_ == selected) {
 		return;
+	}
 
 	QPalette pal = vis->palette();
 	pal.setColor(QPalette::WindowText, color);

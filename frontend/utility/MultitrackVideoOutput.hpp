@@ -18,8 +18,6 @@ void StreamStopHandler(void *arg, calldata_t *data);
 void RecordingStartHandler(void *arg, calldata_t *data);
 void RecordingStopHandler(void *arg, calldata_t *);
 
-bool MultitrackVideoDeveloperModeEnabled();
-
 struct MultitrackVideoOutput {
 public:
 	void PrepareStreaming(QWidget *parent, const char *service_name, obs_service_t *service,
@@ -32,8 +30,6 @@ public:
 	signal_handler_t *StreamingSignalHandler();
 	void StartedStreaming();
 	void StopStreaming();
-	bool HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service,
-					bool &enableDynBitrate);
 
 	OBSOutputAutoRelease StreamingOutput()
 	{

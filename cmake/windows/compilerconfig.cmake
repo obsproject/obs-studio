@@ -92,6 +92,7 @@ add_link_options(
   $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/LTCG>
   $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/OPT:REF>
   $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/OPT:ICF>
+  $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/EMITTOOLVERSIONINFO:NO>
   /DEBUG
   /Brepro
 )

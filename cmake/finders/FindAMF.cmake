@@ -37,8 +37,7 @@ find_path(AMF_INCLUDE_DIR NAMES AMF/core/Factory.h PATHS /usr/include /usr/local
 
 if(EXISTS "${AMF_INCLUDE_DIR}/AMF/core/Version.h")
   file(
-    STRINGS
-    "${AMF_INCLUDE_DIR}/AMF/core/Version.h"
+    STRINGS "${AMF_INCLUDE_DIR}/AMF/core/Version.h"
     _version_string
     REGEX "^.*VERSION_(MAJOR|MINOR|RELEASE|BUILD_NUM)[ \t]+[0-9]+[ \t]*$"
   )

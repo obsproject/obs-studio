@@ -61,7 +61,7 @@ QWidget *MissingFilesPathItemDelegate::createEditor(QWidget *parent, const QStyl
 	browseButton->setSizePolicy(buttonSizePolicy);
 	layout->addWidget(browseButton);
 
-	container->connect(browseButton, &QToolButton::clicked, browseCallback);
+	connect(browseButton, &QToolButton::clicked, this, browseCallback);
 
 	QToolButton *clearButton = new QToolButton();
 	QIcon icon;
@@ -71,7 +71,7 @@ QWidget *MissingFilesPathItemDelegate::createEditor(QWidget *parent, const QStyl
 	clearButton->setSizePolicy(buttonSizePolicy);
 	layout->addWidget(clearButton);
 
-	container->connect(clearButton, &QToolButton::clicked, clearCallback);
+	connect(clearButton, &QToolButton::clicked, this, clearCallback);
 
 	container->setLayout(layout);
 	container->setFocusProxy(text);
@@ -128,8 +128,9 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 	QLineEdit *text = container->findChild<QLineEdit *>();
 
 	QString currentPath = text->text();
-	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0)
+	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0) {
 		currentPath = "";
+	}
 
 	bool isSet = false;
 
@@ -146,8 +147,9 @@ void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 		isSet = true;
 	}
 
-	if (isSet)
+	if (isSet) {
 		emit commitData(container);
+	}
 }
 
 void MissingFilesPathItemDelegate::handleClear(QWidget *container)

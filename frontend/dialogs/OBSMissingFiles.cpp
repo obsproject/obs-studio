@@ -66,8 +66,7 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 	connect(filesModel, &MissingFilesModel::dataChanged, this, &OBSMissingFiles::dataChanged);
 
 	QModelIndex index = filesModel->createIndex(0, 1);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
-				  Q_ARG(const QModelIndex &, index));
+	QMetaObject::invokeMethod(ui->tableView, &QTableView::setCurrentIndex, Qt::QueuedConnection, index);
 }
 
 OBSMissingFiles::~OBSMissingFiles()

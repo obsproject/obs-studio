@@ -61,6 +61,7 @@ runs:
         echo ::group::Install Dependencies
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew update
         brew install --quiet zsh
         echo ::endgroup::
 
@@ -99,7 +100,7 @@ runs:
         .github/scripts/Build-Windows.ps1 @BuildArgs
 
     - name: Create Summary 📊
-      if: contains(fromJSON('["Linux", "macOS"]'), runner.os)
+      if: runner.os == 'Linux'
       shell: zsh --no-rcs --errexit --pipefail {0}
       run: |
         : Create Summary 📊

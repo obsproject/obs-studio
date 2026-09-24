@@ -57,7 +57,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		forceStopStreamAction, &QAction::triggered, this,
 		[this]() { emit this->ForceStopStreamMenuActionClicked(); }, Qt::DirectConnection);
 
-	/* Set up default visibilty */
+	/* Set up default visibility */
 	ui->broadcastButton->setVisible(false);
 	ui->pauseRecordButton->setVisible(false);
 	ui->replayBufferButton->setVisible(false);
@@ -144,8 +144,9 @@ void OBSBasicControls::StreamingStopped(bool withDelay)
 	ui->streamButton->setText(QTStr("Basic.Main.StartStreaming"));
 
 	if (withDelay) {
-		if (!ui->streamButton->menu())
+		if (!ui->streamButton->menu()) {
 			ui->streamButton->setMenu(streamButtonMenu.get());
+		}
 
 		startStreamAction->setVisible(true);
 		stopStreamAction->setVisible(false);
@@ -167,8 +168,9 @@ void OBSBasicControls::BroadcastStreamActive()
 void OBSBasicControls::BroadcastStreamStarted(bool autoStop)
 {
 	ui->broadcastButton->setText(QTStr(autoStop ? "Basic.Main.AutoStopEnabled" : "Basic.Main.StopBroadcast"));
-	if (autoStop)
+	if (autoStop) {
 		ui->broadcastButton->setEnabled(false);
+	}
 
 	ui->broadcastButton->setProperty("broadcastState", "active");
 	ui->broadcastButton->style()->unpolish(ui->broadcastButton);

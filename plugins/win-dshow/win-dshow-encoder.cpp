@@ -93,8 +93,9 @@ inline bool DShowEncoder::Update(obs_data_t *settings)
 
 	double aspect = double(width) / double(height);
 
-	if (keyint_sec == 0)
+	if (keyint_sec == 0) {
 		keyint_sec = 2;
+	}
 	if (fabs(aspect - standardAspect) < fabs(aspect - wideAspect)) {
 		width = 1024;
 		height = 768;
@@ -140,8 +141,9 @@ static bool UpdateDShowEncoder(void *data, obs_data_t *settings)
 {
 	DShowEncoder *encoder = reinterpret_cast<DShowEncoder *>(data);
 
-	if (!obs_encoder_active(encoder->context))
+	if (!obs_encoder_active(encoder->context)) {
 		return encoder->Update(settings);
+	}
 
 	return true;
 }
@@ -192,14 +194,16 @@ inline void DShowEncoder::ParseFirstPacket(const uint8_t *data, size_t size)
 		while (nal_start < end && !*(nal_start++))
 			;
 
-		if (nal_start == end)
+		if (nal_start == end) {
 			break;
+		}
 
 		type = nal_start[0] & 0x1F;
 
 		nal_end = obs_avc_find_startcode(nal_start, end);
-		if (!nal_end)
+		if (!nal_end) {
 			nal_end = end;
+		}
 
 		if (type == OBS_NAL_SPS || type == OBS_NAL_PPS) {
 			da_push_back_array(header, nal_codestart, nal_end - nal_codestart);
@@ -233,8 +237,9 @@ inline bool DShowEncoder::Encode(struct encoder_frame *frame, struct encoder_pac
 
 	bool success =
 		encoder.Encode(frame_data, frame_sizes, actualPTS, actualPTS + frameInterval, dshowPacket, new_packet);
-	if (!success)
+	if (!success) {
 		return false;
+	}
 
 	if (new_packet && !!dshowPacket.data && !!dshowPacket.size) {
 		packet->data = dshowPacket.data;
@@ -283,8 +288,9 @@ static void GetDShowVideoInfo(void *data, struct video_scale_info *info)
 	DShowEncoder *encoder = reinterpret_cast<DShowEncoder *>(data);
 	encoder->format = VIDEO_FORMAT_I420;
 
-	if (info->format == VIDEO_FORMAT_I420 && ValidResolution(info->width, info->height))
+	if (info->format == VIDEO_FORMAT_I420 && ValidResolution(info->width, info->height)) {
 		return;
+	}
 
 	info->format = VIDEO_FORMAT_I420;
 	info->width = info->width;

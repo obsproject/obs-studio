@@ -141,7 +141,7 @@ public func gs_indexbuffer_get_num_indices(indexBuffer: UnsafeRawPointer) -> UIn
 /// - Parameter indexBuffer: Opaque pointer to ``MetalIndexBuffer`` instance shared with `libobs`
 /// - Returns: Index buffer type as identified by the `gs_index_type` enum
 ///
-/// > Warning: As the `gs_index_type` enumeration does not provide an "invalid" value (and thus `0` becomes a valied
+/// > Warning: As the `gs_index_type` enumeration does not provide an "invalid" value (and thus `0` becomes a valid
 /// value), this function has no way to communicate an incompatible index buffer type that might be introduced at a
 /// later point.
 @_cdecl("gs_indexbuffer_get_type")

@@ -74,8 +74,7 @@ if(PC_PipeWire_VERSION VERSION_GREATER 0)
   set(PipeWire_VERSION ${PC_PipeWire_VERSION})
 elseif(EXISTS "${PipeWire_INCLUDE_DIR}/pipewire/version.h")
   file(
-    STRINGS
-    "${PipeWire_INCLUDE_DIR}/pipewire/version.h"
+    STRINGS "${PipeWire_INCLUDE_DIR}/pipewire/version.h"
     _version_string
     REGEX "^.*PW_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$"
   )

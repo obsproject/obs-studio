@@ -1,3 +1,26 @@
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * Yami contains many core definitions for the appearance of widgets
+ * throughout the app.
+ *
+ * If you are developing a custom theme it is HIGHLY RECOMMENDED that you
+ * use Yami as a Base and apply your changes in a Variant Theme (.ovt).
+ * Creating your own Base Theme means you are opting out of the default
+ * appearance for all widgets and will be responsible for keeping your base
+ * theme up to date with every new release!
+ *
+ * Do NOT copy Yami into a new base theme only to make minor changes or
+ * adjustments. Your theme will likely break with every OBS Studio update.
+ *
+ * You can learn more about OBS Studio's theme system on our GitHub wiki:
+ * https://github.com/obsproject/obs-studio/wiki/OBS-Studio-Theme-System
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
+
 @OBSThemeMeta {
     name: 'Yami';
     id: 'com.obsproject.Yami';
@@ -12,42 +35,49 @@
     --blue3: #284CB8;
     --blue4: #213E97;
     --blue5: #1A3278;
+    --blue6: #162A64;
 
     --red1: #E85E75;
     --red2: #E33B57;
     --red3: #C01C37;
     --red4: #A1172E;
     --red5: #7D1224;
+    --red6: #590D1A;
 
     --pink1: #E5619A;
     --pink2: #E03E84;
     --pink3: #C11F65;
     --pink4: #9E1A53;
     --pink5: #7B1441;
+    --pink6: #580E2E;
 
     --teal1: #3DBEF5;
     --teal2: #16B1F3;
     --teal3: #0981B4;
     --teal4: #086F9B;
     --teal5: #065374;
+    --teal6: #04374E;
 
     --purple1: #997FDC;
     --purple2: #805FD3;
     --purple3: #5B34BF;
     --purple4: #4D2CA0;
     --purple5: #3D2380;
+    --purple6: #2E1A60;
 
     --green1: #59D966;
     --green2: #37D247;
     --green3: #25A231;
     --green4: #1E8528;
     --green5: #17641E;
+    --green6: #0F4313;
 
     --yellow1: #EABC48;
     --yellow2: #E5AF24;
     --yellow3: #B88A16;
     --yellow4: #926E11;
     --yellow5: #6E520D;
+    --yellow6: #493709;
 
     --grey1: #5B6273;
     --grey2: #4E5566;
@@ -59,16 +89,16 @@
     --grey8: #13141A;
 
     --white1: #FFFFFF;
-    --white2: #EBEBEB;
-    --white3: #D6D6D6;
-    --white4: #C2C2C2;
-    --white5: #ADADAD;
+    --white2: #E1E1E1;
+    --white3: #D2D2D2;
+    --white4: #B4B4B4;
+    --white5: #969696;
 
     --black1: #0A0A0A;
     --black2: #1F1F1F;
-    --black3: #333333;
-    --black4: #474747;
-    --black5: #5C5C5C;
+    --black3: #414141;
+    --black4: #646464;
+    --black5: #828282;
 
     /* Base Theme Colors */
     --bg_window: var(--grey7);
@@ -81,12 +111,9 @@
     --primary_dark: var(--blue4);
     --primary_darker: var(--blue5);
 
-    --warning: var(--yellow3);
-    --danger: var(--red3);
-
     --text: var(--white1);
-    --text_light: rgb(214, 214, 214);
-    --text_muted: rgb(153, 153, 153);
+    --text_light: var(--white1);
+    --text_muted: var(--white5);
 
     --text_disabled: var(--text_muted);
     --text_inactive: rgb(255, 254, 255);
@@ -101,7 +128,7 @@
     --highlight_color: var(--primary_lighter);
 
     /* TODO: Better Accessibility focus state */
-    /* TODO: Move Accessibilty Colors to Theme config system */
+    /* TODO: Move Accessibility Colors to Theme config system */
     --border_highlight: "transparent";
 
     /* OS Fixes */
@@ -109,7 +136,7 @@
 
     --font_base: calc(1pt * var(--font_base_value));
     --font_small: max(7pt, calc(0.8pt * var(--font_base_value)));
-    --font_xsmall: max(6.25pt, calc(0.85pt * var(--font_base_value)));
+    --font_xsmall: max(6.75pt, calc(0.65pt * var(--font_base_value)));
     --font_large: calc(1.1pt * var(--font_base_value));
     --font_xlarge: calc(1.5pt * var(--font_base_value));
 
@@ -135,6 +162,7 @@
 
     --padding_base_border: calc(var(--padding_base) + 1px);
 
+    --spinbox_min_width: calc(var(--input_height) * 2.5);
     --spinbox_button_height: calc(var(--input_height_half) - 1px);
 
     --volume_slider: calc(calc(4px + var(--font_base_value)) / 4);
@@ -166,6 +194,7 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+    --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
@@ -201,27 +230,23 @@
     --tab_border_focus: var(--primary_lighter);
     --tab_border_selected: var(--primary);
 
-    --tab_padding_base: calc(5px + var(--padding_base));
-    --tab_padding_large: calc(9px + var(--padding_base));
+    --tab_padding_base: var(--padding_large);
+    --tab_padding_large: calc(0px + var(--padding_wide));
 
     --preview_scale_width: calc(calc(var(--input_text_padding) * 3.5) * calc(var(--font_base_value) / 10));
 
     --separator_hover: var(--white1);
 
     --action_row_base: calc(var(--input_height_base) * 0.75);
-    --action_row_height: calc(var(--action_row_base) + calc(var(--action_row_padding) * 2));
-    --action_row_border: 3px;
     --action_row_input_width: calc(var(--action_row_base) * 4);
-    --action_row_collapse: calc(var(--action_row_base) + var(--padding_large));
-    --action_row_collapse_radius: calc(var(--action_row_collapse) / 2);
-    --action_row_padding: calc(var(--padding_large) * 1.5);
+    --action_row_padding: calc(var(--padding_large) * 1.2);
     --action_row_padding_x: calc(var(--action_row_padding) * 2);
     --action_row_padding_nested: calc(var(--action_row_padding_x) * 1.5);
 
     --toggle_border: 1;
     --toggle_margin: 3;
-    --toggle_width: calc(var(--action_row_base) * 1.8);
-    --toggle_height: calc(var(--action_row_base) * 0.9);
+    --toggle_width: calc(var(--action_row_base) * 1.6);
+    --toggle_height: calc(var(--action_row_base) * 0.8);
     --toggle_handle: calc(calc(calc(var(--toggle_height) * 0.9) - calc(var(--toggle_border) * 2)) - var(--toggle_margin));
     --toggle_radius: calc(var(--toggle_height) / 2);
 
@@ -275,9 +300,41 @@
     background-color: var(--bg_base);
 }
 
+.bg-primary {
+    background-color: var(--primary);
+}
+
+.bg-secondary {
+    background-color: var(--teal3);
+}
+
+.bg-info {
+    background-color: var(--grey8);
+}
+
+.bg-warning {
+    background-color: var(--yellow6);
+}
+
+.bg-danger {
+    background-color: var(--red6);
+}
+
+.bg-success {
+    background-color: var(--green6);
+}
+
 .text-title {
     font-size: var(--font_large);
     font-weight: bold;
+}
+
+.text-small {
+    font-size: var(--font_small);
+}
+
+.text-tiny {
+    font-size: var(--font_xsmall);
 }
 
 .text-heading {
@@ -289,6 +346,14 @@
     font-size: var(--font_large);
 }
 
+.text-bold {
+    font-weight: bold;
+}
+
+.text-italic {
+    font-style: italic;
+}
+
 .text-bright {
     color: var(--primary_light);
 }
@@ -298,15 +363,35 @@
 }
 
 .text-warning {
-    color: var(--warning);
+    color: var(--yellow3);
 }
 
 .text-danger {
-    color: var(--danger);
+    color: var(--red3);
 }
 
 .text-success {
     color: var(--green3);
+}
+
+.bg-secondary.text-secondary {
+    color: var(--teal1);
+}
+
+.bg-info.text-info {
+    color: var(--text_light);
+}
+
+.bg-warning.text-warning {
+    color: var(--yellow1);
+}
+
+.bg-danger.text-danger {
+    color: var(--red1);
+}
+
+.bg-success.text-success {
+    color: var(--green1);
 }
 
 .frame-notice {
@@ -335,6 +420,12 @@
     margin: var(--spacing_base) 0;
 }
 
+.subtitle {
+    font-size: var(--font_small);
+    font-weight: bold;
+    color: var(--text_muted);
+}
+
 .button-primary {
     background-color: var(--primary_dark);
     border-color: var(--primary);
@@ -349,6 +440,15 @@
 
 .button-primary:hover {
     border-color: var(--primary_light);
+}
+
+.toolbar-button {
+    background: transparent;
+    font-weight: bold;
+    padding: 0 var(--padding_xlarge);
+    margin: var(--spacing_small) var(--spacing_small) 0px;
+    border: var(--highlight_width) solid transparent;
+    border-radius: var(--border_radius);
 }
 
 .margin {
@@ -445,6 +545,18 @@
 
 .icon-close {
     qproperty-icon: url(theme:Dark/close.svg);
+}
+
+.icon-pin {
+    qproperty-icon: url(theme:Dark/pin.svg);
+}
+
+.icon-layout-vertical {
+    qproperty-icon: url(theme:Dark/layout-vertical.svg);
+}
+
+.icon-layout-horizontal {
+    qproperty-icon: url(theme:Dark/layout-horizontal.svg);
 }
 
 /* Media icons */
@@ -611,7 +723,16 @@ QMenuBar::item:selected {
     background: var(--primary);
 }
 
+/* Toolbars */
+
+QToolBar::separator {
+    background: var(--border_color);
+    width: 1px;
+    margin: 0px var(--spacing_base) 0px;
+}
+
 /* Item Lists */
+
 QListWidget {
     border-radius: var(--border_radius);
 }
@@ -627,23 +748,25 @@ QMenu {
     outline: none;
 }
 
-QMenu {
-    border: 1px solid var(--border_color);
-}
-
 QListWidget::item,
 SourceTreeItem {
     padding: var(--padding_large) var(--padding_large);
 }
 
-QMenu::item {
+QMenu::item,
+QMenu > QWidget {
     padding: var(--padding_large) var(--padding_menu);
     padding-right: 20px;
 }
 
+QMenu > QWidget {
+    outline: none;
+}
+
+QMenu::item,
+QMenu > QWidget,
 QListView::item,
-QListWidget::item,
-QMenu::item {
+QListWidget::item {
     border-radius: var(--border_radius);
     color: var(--text);
     border: 1px solid transparent;
@@ -652,6 +775,12 @@ QMenu::item {
 SourceTreeItem {
     border-radius: var(--border_radius);
     color: var(--text);
+}
+
+QMenu,
+QMenu > QMenu {
+    border: 1px solid var(--border_color);
+    padding: var(--spacing_base);
 }
 
 /* Temporary fix for plugins affected by fix in #11555 */
@@ -672,6 +801,7 @@ SourceTree .indicator-expand {
 }
 
 QMenu::item:selected,
+QMenu > QWidget:selected,
 QListView::item:selected,
 QListWidget::item:selected {
     background-color: var(--primary);
@@ -740,6 +870,10 @@ OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_base);
 }
 
+OBSPropertiesView IconLabel {
+    margin-left: var(--spacing_large);
+}
+
 /* Dock Widget */
 OBSDock > QWidget {
     background: var(--bg_base);
@@ -752,14 +886,10 @@ OBSDock > QWidget {
 OBSDock QToolBar {
     padding: 1px;
     margin: 0px;
+    height: 32px;
+    max-height: 32px;
     border-top: 1px solid var(--border_color);
     spacing: 0;
-}
-
-OBSDock QToolBar::separator {
-    background: transparent;
-    width: var(--spacing_large);
-    border: none;
 }
 
 OBSDock QToolBar QToolButton {
@@ -789,8 +919,9 @@ OBSDock QLabel {
 }
 
 QDockWidget {
-    font-size: var(--font_base);
+    font-size: var(--font_small);
     font-weight: bold;
+    color: var(--text_light);
 
     titlebar-close-icon: url(theme:Dark/close.svg);
     titlebar-normal-icon: url(theme:Dark/popout.svg);
@@ -798,8 +929,9 @@ QDockWidget {
 
 QDockWidget::title {
     text-align: left;
-    background-color: var(--button_bg);
-    padding: var(--padding_large);
+    background-color: var(--grey5);
+    border: 1px solid var(--grey4);
+    padding: var(--padding_base) var(--padding_large);
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
@@ -1023,15 +1155,21 @@ QTabWidget::pane {
 
 QTabBar {
     outline: none;
+    font-size: var(--font_small);
+}
+
+QTabBar::top {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+QTabBar::bottom {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 QTabWidget::tab-bar {
     alignment: left;
-}
-
-QTabBar QToolButton {
-    background: var(--button_bg);
-    border: none;
 }
 
 QTabBar::tab:top {
@@ -1046,13 +1184,12 @@ QTabBar::tab:bottom {
 
 QTabBar::tab {
     background: var(--tab_bg);
-    color: var(--text);
-    border: none;
+    color: var(--text_muted);
+    border: 1px solid var(--tab_bg);
     padding: var(--tab_padding_base) var(--tab_padding_large);
     min-width: 50px;
     margin: 1px 0px;
     margin-right: 2px;
-    border: 1px solid var(--tab_border);
 }
 
 QTabBar::tab:pressed {
@@ -1070,22 +1207,21 @@ QTabBar::tab:focus {
 }
 
 QTabBar::tab:selected {
-    background: var(--tab_bg_down);
+    background: var(--primary);
     color: var(--text);
+    border: 1px solid var(--primary_light);
 }
 
 QTabBar::tab:top {
-    border-bottom: 0px solid transparent;
     margin-bottom: 0px;
 }
 
 QTabBar::tab:bottom {
-    border-top: 0px solid transparent;
     margin-top: 0px;
 }
 
 QTabBar QToolButton {
-    background: var(--button_bg);
+    background: var(--tab_bg);
     min-width: 16px;
     padding: 0px;
 }
@@ -1215,8 +1351,12 @@ QDoubleSpinBox {
     border: var(--input_border_width) solid var(--input_bg);
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
+    padding-right: var(--padding_base);
+
     height: var(--input_height);
+    min-width: var(--spinbox_width);
     max-height: var(--input_height);
+    min-width: var(--spinbox_min_width);
 }
 
 QSpinBox:hover,
@@ -1400,10 +1540,11 @@ QPushButton:disabled {
 }
 
 QPushButton::menu-indicator {
-    image: url(theme:Dark/down.svg);
+    image: url(theme:Dark/collapse.svg);
     subcontrol-position: right;
-    subcontrol-origin: padding;
-    width: 25px;
+    subcontrol-origin: content;
+    margin-left: var(--spacing_large);
+    right: -2px;
 }
 
 QToolButton {
@@ -1428,11 +1569,22 @@ QToolButton:last-child,
 QToolButton:hover,
 QToolButton:focus,
 .btn-tool:hover,
-.btn-tool:focus,
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:focus {
+.btn-tool:focus {
     border-color: var(--button_border);
     background-color: var(--button_bg_hover);
+}
+
+QToolButton:checked,
+.btn-tool:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+QToolButton:checked:hover,
+QToolButton:checked:focus,
+.btn-tool:checked:hover,
+.btn-tool:checked:focus {
+    border-color: var(--primary_lighter);
 }
 
 QToolButton:pressed,
@@ -1526,114 +1678,134 @@ QSlider::handle:disabled {
     background-color: var(--white5);
 }
 
-/* Volume Control */
-
-#stackedMixerArea QPushButton {
-    width: var(--icon_base);
-    height: var(--icon_base);
-    background-color: var(--button_bg);
-    padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px;
-    border: var(--highlight_width) solid var(--button_border);
-    border-radius: var(--border_radius);
-    icon-size: var(--icon_base);
-}
-
-/* This is an incredibly cursed but necessary fix */
-#stackedMixerArea QPushButton:!hover {
-    background-color: var(--button_bg);
-}
-
-#stackedMixerArea QPushButton:hover {
-    background-color: var(--button_bg_hover);
-    border-color: var(--button_border_hover);
-}
-
-#stackedMixerArea QPushButton:pressed {
-    background-color: var(--button_bg_down);
-}
-
 #stackedMixerArea {
     border: none;
     padding: 0px;
 }
 
-VolControl {
+.mixer-category {
+    color: var(--text_muted);
+    margin: 0;
+    padding: 0;
+    text-align: center;
+}
+
+/* Volume Control Buttons */
+
+.btn-mute,
+.btn-monitor {
+    width: var(--icon_small);
+    height: var(--icon_small);
+    background-color: transparent;
+    padding: var(--padding_base_border) var(--padding_base_border);
+    margin: 0px var(--spacing_small);
+    border: var(--highlight_width) solid transparent;
+    border-radius: var(--border_radius);
+    icon-size: var(--icon_small);
+}
+
+.btn-mute:checked,
+.btn-monitor:checked {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+.btn-mute:hover,
+.btn-monitor:hover {
+    background-color: var(--button_bg_hover);
+    border-color: transparent;
+}
+
+.btn-mute:pressed,
+.btn-monitor:pressed {
+    background-color: var(--button_bg_down);
+}
+
+/* Mute Button */
+
+.btn-mute {
+    color: var(--text);
+    qproperty-icon: url(theme:Dark/settings/audio.svg);
+}
+
+.btn-mute.checked {
+    color: var(--red3);
+    background: transparent;
+    qproperty-icon: url(theme:Dark/mute.svg);
+}
+
+.btn-mute.checked.hover {
+    color: var(--red2);
+    background: var(--grey8);
+    border-color: var(--red1);
+}
+
+.btn-mute.checked:focus {
+    border-color: var(--red1);
+}
+
+.btn-mute.mute-warning {
+    color: var(--yellow1);
+    background: var(--yellow6);
+    qproperty-icon: url(theme:Dark/unassigned.svg);
+}
+
+.btn-mute.mute-warning.hover,
+.btn-mute.mute-warning:focus {
+    border-color: var(--yellow1);
+}
+
+/* Monitor Button */
+
+.btn-monitor {
+    background: transparent;
+    qproperty-icon: url(theme:Dark/headphones-off.svg);
+}
+
+.btn-monitor:focus {
+    border-color: var(--red1);
+}
+
+.btn-monitor.checked {
+    background: var(--green4);
+    color: var(--text_light);
+    qproperty-icon: url(theme:Dark/headphones.svg);
+}
+
+.btn-monitor.checked:focus,
+.btn-monitor:checked:focus {
+    color: var(--text_light);
+    border-color: var(--green1);
+}
+
+.btn-monitor.checked:hover {
+    background: var(--green3);
+    border-color: var(--green1);
+    color: var(--text_light);
+}
+
+/* Toggle hidden button */
+
+.toggle-hidden:checked {
+    background: var(--purple5);
+    border-color: var(--purple3);
+}
+
+.toggle-hidden:disabled {
+    background: transparent;
+    border-color: transparent;
+}
+
+VolumeControl,
+VolumeMeter {
     background: var(--bg_base);
 }
 
-VolControl QLabel {
-    font-size: var(--font_small);
-    margin: var(--spacing_small) 0px;
-}
-
-VolControl #volLabel {
-    padding: var(--padding_base) 0px var(--padding_base);
-    text-align: center;
-    font-size: var(--font_base);
-    color: var(--text_muted);
-}
-
-/* Horizontal Mixer */
-#hMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--padding_base);
-    border-bottom: 1px solid var(--border_color);
-}
-
-#hMixerScrollArea VolControl QSlider {
-    margin: 0px 0px var(--padding_base);
-}
-
-#hMixerScrollArea VolControl QSlider::groove:horizontal {
-    background: var(--bg_window);
-    height: var(--volume_slider);
-}
-
-/* Vertical Mixer */
-#vMixerScrollArea VolControl {
-    padding: var(--padding_container) 0px var(--padding_container);
-    border-right: 1px solid var(--border_color);
-}
-
-#vMixerScrollArea VolControl QSlider {
-    width: var(--volume_slider_box);
-    margin: 0px var(--padding_xlarge);
-}
-
-#vMixerScrollArea VolControl #volLabel {
-    padding: var(--padding_base) 0px var(--padding_base);
-    min-width: var(--volume_slider_label);
-    margin-left: var(--padding_xlarge);
-    text-align: center;
-}
-
-#vMixerScrollArea VolControl QSlider::groove:vertical {
-    background: var(--bg_window);
-    width: var(--volume_slider);
-}
-
-#vMixerScrollArea VolControl #volMeterFrame {
-    padding: var(--padding_large) var(--padding_xlarge) var(--padding_large) 0px;
-}
-
-#vMixerScrollArea VolControl QLabel {
-    padding: 0px var(--padding_large);
-}
-
-#vMixerScrollArea VolControl QPushButton {
-    margin-left: var(--spacing_base);
-    margin-right: var(--padding_xlarge);
-}
-
-#vMixerScrollArea VolControl .indicator-mute {
-    margin-left: var(--padding_xlarge);
-}
-
 VolumeMeter {
-    background: transparent;
-}
-
-VolumeMeter {
+    color: var(--grey3);
+    font-size: 6pt;
+    font-weight: bold;
+    
     qproperty-backgroundNominalColor: var(--green5);
     qproperty-backgroundWarningColor: var(--yellow5);
     qproperty-backgroundErrorColor: var(--red5);
@@ -1641,8 +1813,170 @@ VolumeMeter {
     qproperty-foregroundWarningColor: var(--yellow2);
     qproperty-foregroundErrorColor: var(--red2);
     qproperty-magnitudeColor: rgb(0, 0, 0);
-    qproperty-majorTickColor: var(--white1);
+    qproperty-majorTickColor: var(--white5);
     qproperty-minorTickColor: var(--grey1);
+
+    qproperty-backgroundNominalColorDisabled: var(--black4);
+    qproperty-backgroundWarningColorDisabled: var(--black5);
+    qproperty-backgroundErrorColorDisabled: var(--black3);
+    qproperty-foregroundNominalColorDisabled: var(--white3);
+    qproperty-foregroundWarningColorDisabled: var(--white3);
+    qproperty-foregroundErrorColorDisabled: var(--white4);
+}
+
+VolumeName {
+    background: transparent;
+    padding: var(--padding_base) 0;
+    border: 1px solid transparent;
+}
+
+VolumeName QLabel {
+    font-size: var(--font_small);
+}
+
+VolumeName:focus {
+    border: 1px solid var(--button_border_hover);
+}
+
+VolumeName:hover {
+    background: var(--button_bg_hover);
+    border: 1px solid var(--button_border_hover);
+}
+
+VolumeControl #volLabel {
+    min-width: 48px;
+    padding: var(--padding_base) 0px var(--padding_base);
+    text-align: center;
+    font-size: var(--font_small);
+    color: var(--text_muted);
+}
+
+/* Horizontal Mixer */
+#hVolumeWidgets VolumeControl {
+    padding: 0px 0px;
+    border-bottom: 1px solid var(--border_color);
+    margin-bottom: 0px;
+}
+
+#hVolumeWidgets .mixer-category {
+    margin: var(--spacing_base);
+    padding: 0px var(--padding_xlarge);
+    border-radius: var(--border_radius);
+}
+
+#hVolumeWidgets VolumeName {
+    padding-right: var(--padding_large);
+}
+
+#hVolumeWidgets VolumeName QLabel {
+    margin: 0 var(--padding_large);
+}
+
+#hVolumeWidgets #volLabel {
+    margin: 0 var(--spacing_base);
+    border-radius: var(--border_radius);
+}
+
+#hVolumeWidgets #volMeterFrame {
+    margin-bottom: var(--padding_large);
+}
+
+#hVolumeWidgets VolumeControl QSlider {
+    margin: var(--padding_large) 0px var(--padding_large);
+}
+
+#hVolumeWidgets VolumeControl QSlider::groove:horizontal {
+    background: var(--bg_window);
+    height: var(--volume_slider);
+}
+
+#hVolumeWidgets VolumeControl QPushButton {
+    margin-left: var(--padding_large);
+}
+
+#hVolumeWidgets VolumeControl #volMeterFrame {
+    padding: 0 var(--padding_xlarge);
+}
+
+/* Vertical Mixer */
+#vVolumeWidgets VolumeControl {
+    padding: 0px 0px var(--padding_container);
+    border-right: 1px solid var(--border_color);
+}
+
+#vVolumeWidgets .mixer-category {
+    border-bottom: 1px solid var(--border_color);
+}
+
+#vMixerScrollArea VolumeControl QSlider {
+    width: var(--volume_slider_box);
+    margin: 0px var(--padding_xlarge);
+}
+
+#vVolumeWidgets VolumeControl #volLabel {
+    padding: var(--padding_base) 0px var(--padding_base);
+    min-width: var(--volume_slider_label);
+    margin-left: var(--padding_xlarge);
+    text-align: center;
+}
+
+#vVolumeWidgets VolumeControl QSlider::groove:vertical {
+    background: var(--bg_window);
+    width: var(--volume_slider);
+}
+
+#vVolumeWidgets VolumeControl #volMeterFrame {
+    padding: var(--padding_large) var(--padding_xlarge) var(--padding_large) 0px;
+}
+
+#vVolumeWidgets VolumeControl QLabel {
+    padding: 0px var(--padding_large);
+}
+
+VolumeControl.volume-inactive,
+VolumeControl.volume-inactive VolumeMeter {
+    background: var(--grey7);
+}
+
+VolumeControl.volume-hidden .mixer-name,
+VolumeControl.volume-inactive .mixer-name {
+    color: var(--text_muted);
+}
+
+VolumeControl .mixer-category {
+    font-weight: bold;
+    background: var(--blue6);
+    color: var(--blue1);
+}
+
+VolumeControl.volume-pinned .mixer-category {
+    background: var(--blue5);
+    color: var(--text_light);
+}
+
+VolumeControl.volume-hidden .mixer-category {
+    background: var(--purple6);
+    color: var(--purple1);
+}
+
+VolumeControl.volume-unassigned .mixer-category {
+    background: var(--yellow6);
+    color: var(--yellow1);
+}
+
+VolumeControl.volume-inactive .mixer-category {
+    background: var(--grey8);
+    color: var(--text_muted);
+}
+
+VolumeControl.volume-preview .mixer-category {
+    background: var(--green6);
+    color: var(--green1);
+}
+
+#stackedMixerArea VolumeControl.volume-hidden QSlider::groove,
+#stackedMixerArea VolumeControl.volume-inactive QSlider::groove {
+    background: var(--grey8);
 }
 
 /* Status Bar */
@@ -1754,7 +2088,6 @@ QTableView::indicator:unchecked {
 QCheckBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked:hover,
 QTableView::indicator:unchecked:hover {
-    border: none;
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
@@ -1826,75 +2159,6 @@ QTableView::indicator:unchecked:disabled {
 .indicator-visibility::indicator:unchecked,
 .indicator-visibility::indicator:unchecked:hover {
     image: url(:res/images/invisible.svg);
-}
-
-/* Mute CheckBox */
-
-.indicator-mute {
-    outline: none;
-}
-
-.indicator-mute::indicator,
-.indicator-mute::indicator:unchecked {
-    width: var(--icon_base);
-    height: var(--icon_base);
-    background-color: var(--button_bg);
-    padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px;
-    border: var(--highlight_width) solid var(--button_border);
-    border-radius: var(--border_radius);
-    icon-size: var(--icon_base);
-}
-
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:unchecked:hover {
-    background-color: var(--button_bg_hover);
-    padding: var(--padding_base_border) var(--padding_base_border);
-    margin: 0px;
-    border: var(--highlight_width) solid var(--button_border_hover);
-    icon-size: var(--icon_base);
-}
-
-.indicator-mute::indicator:pressed,
-.indicator-mute::indicator:pressed:hover {
-    background-color: var(--button_bg_down);
-    border-color: var(--button_border);
-}
-
-.indicator-mute::indicator:checked {
-    image: url(theme:Dark/mute.svg);
-}
-
-.indicator-mute::indicator:indeterminate {
-    image: url(theme:Dark/unassigned.svg);
-}
-
-.indicator-mute::indicator:unchecked {
-    image: url(theme:Dark/settings/audio.svg);
-}
-
-.indicator-mute::indicator:unchecked:hover {
-    image: url(theme:Dark/settings/audio.svg);
-}
-
-.indicator-mute::indicator:unchecked:focus {
-    image: url(theme:Dark/settings/audio.svg);
-}
-
-.indicator-mute::indicator:checked:hover {
-    image: url(theme:Dark/mute.svg);
-}
-
-.indicator-mute::indicator:checked:focus {
-    image: url(theme:Dark/mute.svg);
-}
-
-.indicator-mute::indicator:checked:disabled {
-    image: url(theme:Dark/mute.svg);
-}
-
-.indicator-mute::indicator:unchecked:disabled {
-    image: url(theme:Dark/settings/audio.svg);
 }
 
 #hotkeyFilterReset {
@@ -2242,26 +2506,86 @@ OBSBasicAdvAudio #scrollAreaWidgetContents {
     border: 1px solid var(--input_border_hover);
 }
 
+/* Add Source Dialog */
+.btn-create-new {
+    background: transparent;
+    padding: var(--padding_wide) var(--padding_large);
+    border-radius: var(--border_radius);
+    border: 2px dashed var(--grey3);
+    outline: none;
+    qproperty-icon: url(theme:Dark/plus.svg);
+    margin-bottom: var(--spacing_large);
+}
+
+SourceSelectButton {
+    background: var(--grey5);
+    padding: var(--padding_base) var(--padding_large);
+    margin: var(--spacing_base);
+    border-radius: var(--border_radius);
+    border: 1px solid var(--grey3);
+    outline: none;
+}
+
+SourceSelectButton QLabel {
+    padding: var(--padding_large) 0;
+    text-align: center;
+}
+
+SourceSelectButton #thumbnail {
+    background: var(--grey6);
+    border-radius: var(--border_radius);
+    padding: 0;
+    margin-top: var(--spacing_base);
+}
+
+SourceSelectButton:hover {
+    background-color: var(--button_bg_hover);
+}
+
+SourceSelectButton:checked {
+    background-color: var(--primary);
+    border-color: var(--primary_light);
+}
+
+SourceSelectButton:focus,
+SourceSelectButton:checked:focus {
+    border-color: var(--white3);
+}
+
+SourceSelectButton:pressed,
+SourceSelectButton:pressed:hover {
+    background-color: var(--button_bg_down);
+    border-color: var(--button_border);
+}
+
+InfoChip {
+    font-size: var(--font_small);
+    font-weight: bold;
+    padding: 0 var(--padding_large);
+    border-radius: var(--border_radius);
+}
+
 /* Idian Widgets */
-idian--Group {
+idian--ListHeader {
     border-radius: var(--border_radius);
     font-weight: bold;
     margin: 0 0 var(--spacing_base);
+    padding: 0 var(--padding_base);
     min-width: 300px;
-    max-width: 600px;
 }
 
-idian--Group .header .title {
+idian--RowList .title {
     font-weight: bold;
-    padding: var(--padding_large) 0;
+    padding: 0;
 }
 
-idian--Group .header .description {
+idian--RowList .description {
+    font-size: var(--font_small);
     color: var(--text_muted);
-    padding: var(--spacing_small) 0;
+    padding: 0;
 }
 
-idian--PropertiesList {
+idian--RowList {
     border-width: 0;
     padding: 0;
     margin: var(--spacing_base) 0;
@@ -2269,13 +2593,14 @@ idian--PropertiesList {
 
 idian--Row {
     background: var(--grey5);
-    margin: 0;
     padding: var(--action_row_padding) var(--action_row_padding_x);
+    border-radius: var(--border_radius);
+    border: var(--input_border_width) solid var(--border_color);
 }
 
 idian--Row.keyFocus {
     background: var(--grey4);
-    border: var(--highlight_width) solid var(--grey4);
+    border: var(--highlight_width) solid var(--highlight_color);
 }
 
 idian--Row.cursor-pointer.hover {
@@ -2283,19 +2608,18 @@ idian--Row.cursor-pointer.hover {
     border: var(--highlight_width) solid var(--grey1);
 }
 
-idian--Row.first {
+idian--RowList idian--Row {
+    border-radius: 0;
+}
+
+idian--RowList idian--Row.first {
     border-top-left-radius: var(--border_radius);
     border-top-right-radius: var(--border_radius);
 }
 
-idian--Row.last {
+idian--RowList idian--Row.last {
     border-bottom-left-radius: var(--border_radius);
     border-bottom-right-radius: var(--border_radius);
-}
-
-idian--Row > QLabel.description {
-    font-size: var(--font_small);
-    color: var(--text_muted);
 }
 
 idian--ToggleSwitch {
@@ -2315,11 +2639,11 @@ idian--ToggleSwitch {
     border: var(--highlight_width) solid transparent;
 }
 
-idian--ToggleSwitch:hover {
+idian--ToggleSwitch.hover {
     border-color: var(--grey4);
 }
 
-idian--ToggleSwitch:checked:hover {
+idian--ToggleSwitch.checked.hover {
     border-color: var(--white1);
 }
 
@@ -2327,13 +2651,13 @@ idian--ToggleSwitch.keyFocus {
     border-color: var(--highlight_color);
 }
 
-idian--Row idian--ToggleSwitch:hover,
+idian--Row idian--ToggleSwitch.hover,
 idian--Row.hover > idian--ToggleSwitch.row-buddy {
     border-color: var(--grey1);
 }
 
-idian--Row idian--ToggleSwitch:checked:hover,
-idian--Row.hover idian--ToggleSwitch.row-buddy:checked {
+idian--Row idian--ToggleSwitch.hover.checked,
+idian--Row.hover > idian--ToggleSwitch.checked.row-buddy {
     border-color: var(--white1);
 }
 
@@ -2352,7 +2676,7 @@ idian--Row QComboBox:focus {
     border-color: transparent;
 }
 
-idian--Row QComboBox:hover {
+idian--Row QComboBox.hover {
     border-color: var(--grey1);
 }
 
@@ -2377,7 +2701,7 @@ idian--Row QComboBox QAbstractItemView::item {
     padding: var(--padding_base) var(--padding_large);
 }
 
-idian--Row QComboBox QAbstractItemView::item:hover,
+idian--Row QComboBox QAbstractItemView.hover::item,
 idian--Row QComboBox QAbstractItemView::item:selected {
     background-color: var(--list_item_bg_selected);
     padding: var(--padding_base) var(--padding_large);
@@ -2390,7 +2714,7 @@ idian--Row QDoubleSpinBox {
     padding: var(--padding_base) var(--action_row_padding_x);
 }
 
-idian--PropertiesListSpacer {
+idian--RowListSpacer {
     max-height: var(--spacing_small);
     min-height: var(--spacing_small);
     background-color: var(--bg_window);
@@ -2400,116 +2724,164 @@ idian--Row idian--CheckBox {
     outline: none;
 }
 
-idian--Row idian--CheckBox::indicator,
-idian--Row idian--CheckBox::indicator:unchecked:hover {
+idian--CheckBox::indicator {
     border: var(--highlight_width) solid transparent;
     border-radius: var(--border_radius);
 }
 
-idian--Row.hover > idian--CheckBox.row-buddy::indicator,
-idian--Row > idian--CheckBox::indicator:unchecked:hover,
-idian--Row > idian--CheckBox::indicator:hover {
-    border-color: var(--grey1);
-}
-
-idian--Row.hover > idian--CheckBox.row-buddy::indicator:unchecked,
-idian--CheckBox.keyFocus::indicator:unchecked {
+idian--CheckBox.keyFocus::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy::indicator {
     image: url(theme:Yami/checkbox_unchecked_focus.svg);
 }
 
-idian--Row idian--CheckBox.keyFocus::indicator,
-idian--Row.hover > idian--CheckBox::indicator {
+idian--CheckBox.keyFocus.checked::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy.checked::indicator {
     image: url(theme:Yami/checkbox_checked_focus.svg);
 }
 
-idian--Row idian--CheckBox.keyFocus::indicator,
-idian--Row idian--CheckBox.keyFocus::indicator:unchecked,
-idian--Row idian--CheckBox.keyFocus::indicator:hover,
-idian--Row idian--CheckBox.keyFocus::indicator:unchecked:hover {
+idian--CheckBox.hover::indicator,
+idian--CheckBox.checked.hover::indicator,
+idian--Row.hover > idian--CheckBox.row-buddy::indicator
+idian--Row.hover > idian--CheckBox.row-buddy.checked::indicator {
+    border-color: var(--grey1);
+}
+
+idian--CheckBox.keyFocus::indicator,
+idian--CheckBox.keyFocus.checked::indicator {
     border-color: var(--highlight_color);
 }
 
-idian--CollapsibleRow {
+idian--CollapsibleGroup {
     margin: 0;
     padding: 0;
     border: none;
 }
 
-idian--CollapsibleRow.keyFocus {
+idian--CollapsibleGroup.expanded > idian--Row {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+idian--CollapsibleGroup idian--Row.keyFocus {
     border: var(--highlight_width) solid var(--highlight_color);
 }
 
-idian--CollapsibleRow idian--PropertiesList {
+idian--CollapsibleGroup idian--RowList {
     border-radius: 0;
     border-left: 1px solid var(--grey5);
     border-right: 1px solid var(--grey5);
     border-bottom: 1px solid var(--grey5);
+    border-bottom: 1px solid var(--grey5);
     margin: var(--spacing_small) 0px 0px;
 }
 
-idian--CollapsibleRow idian--PropertiesList idian--Row {
+idian--CollapsibleGroup idian--RowList idian--Row {
     background-color: var(--grey6);
     padding-left: var(--action_row_padding_nested);
 }
 
-idian--CollapsibleRow idian--Row.first,
-idian--CollapsibleRow idian--Row.last {
+idian--CollapsibleGroup idian--RowList idian--Row.first {
     border-radius: 0;
 }
 
-idian--CollapsibleRow idian--PropertiesList idian--ToggleSwitch {
+idian--CollapsibleGroup idian--RowList idian--Row.last {
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--RowList idian--CollapsibleGroup idian--Row.last {
+    border-radius: 0;
+}
+
+idian--RowList idian--CollapsibleGroup.last idian--Row.last {
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+idian--CollapsibleGroup idian--RowList idian--ToggleSwitch {
     qproperty-background: var(--grey7);
     qproperty-background_hover: var(--grey6);
 }
 
-idian--ExpandButton {
+idian--InlineButton,
+idian--Row idian--InlineButton {
     background: transparent;
-    min-width: var(--action_row_collapse);
-    max-width: var(--action_row_collapse);
-    min-height: var(--action_row_collapse);
-    max-height: var(--action_row_collapse);
-    border: none;
+    min-width: var(--input_height);
+    min-height: var(--input_height);
+    border-radius: var(--border_radius);
+    padding: var(--padding_base);
+    margin: 0 var(--spacing_base);
+    
+    border: var(--highlight_width) solid transparent;
 }
 
-idian--ExpandButton::indicator {
-    background: var(--grey5);
-    border-radius: var(--action_row_collapse_radius);
-    padding: var(--padding_large);
-    image: url(theme:Dark/down.svg);
-    border: var(--highlight_width) solid var(--grey5);
+idian--InlineButton:hover {
+    background-color: var(--button_bg_hover);
+    border-color: var(--input_border_hover);
 }
 
-idian--ExpandButton::indicator:checked {
-    image: url(theme:Dark/up.svg);
+idian--InlineButton:hover,
+idian--Row.hover idian--InlineButton.row-buddy {
+    border-color: var(--input_border_hover);
 }
 
-idian--ExpandButton.keyFocus,
-idian--ExpandButton.keyFocus::indicator {
+idian--InlineButton:pressed {
+    background-color: var(--button_bg_down);
+}
+
+idian--InlineButton:focus,
+idian--InlineButton.keyFocus,
+idian--Row.keyFocus idian--InlineButton,
+idian--Row.keyFocus idian--InlineButton.checked {
     border-color: var(--highlight_color);
 }
 
-idian--RowFrame .btn-frame {
+idian--ExpandButton {
+    qproperty-icon: url(theme:Dark/down.svg);
+}
+
+idian--ExpandButton.checked {
+    qproperty-icon: url(theme:Dark/up.svg);
+    background: transparent;
+    border-color: transparent;
+}
+
+AlignmentSelector {
+    border: 1px solid var(--input_border);
+    margin: 0px;
+    border-radius: 2px;
+}
+
+AlignmentSelector:focus,
+AlignmentSelector:hover {
+    border: 1px solid var(--white3);
+}
+
+AlignmentSelector:checked:hover {
+    border: 1px solid var(--primary_lighter);
+}
+
+AlignmentSelector::indicator {
+    margin: 0px;
+    background: transparent;    
+}
+
+AlignmentSelector::indicator:checked {
+    background: var(--primary);
+}
+
+AlignmentSelector::indicator:checked:focus {
+    background: var(--primary_light);
+}
+
+AlignmentSelector:disabled {
+    border: 1px solid var(--grey3);
+}
+
+AlignmentSelector::indicator:disabled {
     background: var(--grey5);
-    padding: var(--action_row_padding) var(--action_row_padding_x);
 }
 
-idian--RowFrame.hover .btn-frame {
-    background: var(--grey4);
-}
-
-idian--RowFrame.hover idian--Row,
-idian--RowFrame.hover idian--Row.hover {
-    background: var(--grey4);
-    border: 2px solid var(--grey1);
-    border-right: none;
-}
-
-idian--RowFrame.hover .row-buddy {
-    background: var(--grey4);
-    border: 2px solid var(--grey1);
-    border-left: none;
-}
-
-idian--RowFrame.hover idian--ExpandButton::indicator {
-    border-color: var(--grey1);
+AlignmentSelector::indicator:checked:disabled {
+    background: var(--grey3);
 }

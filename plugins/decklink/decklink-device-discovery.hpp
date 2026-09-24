@@ -43,8 +43,9 @@ public:
 		info.param = param;
 
 		for (DeviceChangeInfo &curCB : callbacks) {
-			if (curCB.callback == callback && curCB.param == param)
+			if (curCB.callback == callback && curCB.param == param) {
 				return;
+			}
 		}
 
 		callbacks.push_back(info);

@@ -19,8 +19,9 @@ void UrlPushButton::mousePressEvent(QMouseEvent *event)
 {
 	Q_UNUSED(event)
 	QUrl openUrl = m_targetUrl;
-	if (openUrl.isEmpty())
+	if (openUrl.isEmpty()) {
 		return;
+	}
 
 	QDesktopServices::openUrl(openUrl);
 }

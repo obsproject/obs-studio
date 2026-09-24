@@ -332,7 +332,7 @@ Libobs Objects
    enumeration.
 
    Use :c:func:`obs_canvas_get_ref()` or
-   :c:func:`obs_canvas_get_weak_encoder()` if you want to retain a
+   :c:func:`obs_canvas_get_weak_canvas()` if you want to retain a
    reference after obs_enum_canvases finishes.
 
 ---------------------

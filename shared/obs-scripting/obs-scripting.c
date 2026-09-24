@@ -24,6 +24,18 @@
 #include "obs-scripting-internal.h"
 #include "obs-scripting-callback.h"
 
+static obs_module_t *obs_module_pointer;
+
+void obs_scripting_set_module(obs_module_t *module)
+{
+	obs_module_pointer = module;
+}
+
+obs_module_t *obs_current_module(void)
+{
+	return obs_module_pointer;
+}
+
 #if defined(LUAJIT_FOUND)
 extern obs_script_t *obs_lua_script_create(const char *path, obs_data_t *settings);
 extern bool obs_lua_script_load(obs_script_t *s);

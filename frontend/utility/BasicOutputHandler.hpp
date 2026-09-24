@@ -1,10 +1,12 @@
 #pragma once
 
 #include <utility/MultitrackVideoOutput.hpp>
+#include <utility/WHIPSimulcastEncoders.hpp>
 
 #include <obs.hpp>
 #include <util/dstr.hpp>
 
+#include <functional>
 #include <future>
 
 #define RTMP_PROTOCOL "rtmp"
@@ -41,6 +43,8 @@ struct BasicOutputHandler {
 	video_t *virtualCamVideo = nullptr;
 	obs_scene_t *vCamSourceScene = nullptr;
 	obs_sceneitem_t *vCamSourceSceneItem = nullptr;
+
+	std::unique_ptr<WHIPSimulcastEncoders> whipSimulcastEncoders;
 
 	std::string outputType;
 	std::string lastError;
@@ -136,8 +140,9 @@ inline bool ServiceSupportsVodTrack(const char *service)
 	static const char *vodTrackServices[] = {"Twitch"};
 
 	for (const char *vodTrackService : vodTrackServices) {
-		if (astrcmpi(vodTrackService, service) == 0)
+		if (astrcmpi(vodTrackService, service) == 0) {
 			return true;
+		}
 	}
 
 	return false;

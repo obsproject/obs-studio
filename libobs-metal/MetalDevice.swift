@@ -149,40 +149,43 @@ class MetalDevice {
     func blitSwapChains() {
         guard swapChains.count > 0 else { return }
 
-        guard let commandBuffer = commandQueue.makeCommandBuffer(),
-            let encoder = commandBuffer.makeBlitCommandEncoder()
-        else {
-            return
-        }
-
         self.swapChainQueue.sync {
             swapChains = swapChains.filter { $0.discard == false }
         }
 
-        for swapChain in swapChains {
-            guard let renderTarget = swapChain.renderTarget, let drawable = swapChain.layer.nextDrawable() else {
-                continue
-            }
-
-            guard renderTarget.texture.width == drawable.texture.width,
-                renderTarget.texture.height == drawable.texture.height,
-                renderTarget.texture.pixelFormat == drawable.texture.pixelFormat
+        autoreleasepool {
+            guard let commandBuffer = commandQueue.makeCommandBuffer(),
+                let encoder = commandBuffer.makeBlitCommandEncoder()
             else {
-                continue
+                return
             }
 
-            autoreleasepool {
+            var drawablesToPresent: [CAMetalDrawable] = []
+            for swapChain in swapChains {
+                guard let renderTarget = swapChain.renderTarget, let drawable = swapChain.layer.nextDrawable() else {
+                    continue
+                }
+
+                guard renderTarget.texture.width == drawable.texture.width,
+                    renderTarget.texture.height == drawable.texture.height,
+                    renderTarget.texture.pixelFormat == drawable.texture.pixelFormat
+                else {
+                    continue
+                }
+
                 encoder.waitForFence(swapChain.fence)
                 encoder.copy(from: renderTarget.texture, to: drawable.texture)
-
-                commandBuffer.addScheduledHandler { _ in
-                    drawable.present()
-                }
+                drawablesToPresent.append(drawable)
             }
-        }
 
-        encoder.endEncoding()
-        commandBuffer.commit()
+            encoder.endEncoding()
+
+            for drawable in drawablesToPresent {
+                commandBuffer.present(drawable)
+            }
+
+            commandBuffer.commit()
+        }
     }
 
     /// Simulates an explicit "clear" command commonly used in OpenGL or Direct3D11 implementations.
@@ -549,7 +552,7 @@ class MetalDevice {
     ///
     /// This is necessary as the final output of projectors needs to be blitted into the drawables provided by the
     /// `CAMetalLayer` of each ``OBSSwapChain`` at the screen refresh interval, but projectors are usually rendered
-    /// using tens of seperate little draw calls.
+    /// using tens of separate little draw calls.
     ///
     /// Thus a virtual "display render stage" state is maintained by the Metal renderer, which is started when a
     /// ``OBSSwapChain`` instance is loaded by `libobs`  and ended when `device_end_scene` is called.
@@ -628,7 +631,7 @@ class MetalDevice {
     /// will fail.
     ///
     /// If the source texture has pending writes (e.g., it was used as the render target for a clear or draw command),
-    /// then the current command buffer will be comitted to ensure that the blit command encoded by this function
+    /// then the current command buffer will be committed to ensure that the blit command encoded by this function
     /// happens after the pending commands.
     ///
     /// > Important: This function differs from ``copyTexture`` insofar as it will wait for the completion of all
@@ -661,7 +664,7 @@ class MetalDevice {
     /// textures pixel data.
     ///
     /// If the source texture has pending writes (e.g., it was used as the render target for a clear or draw command),
-    /// then the current command buffer will be comitted to ensure that the blit command encoded by this function
+    /// then the current command buffer will be committed to ensure that the blit command encoded by this function
     /// happens after the pending commands.
     ///
     /// > Important: This function will wait for the completion of all commands in the command queue to ensure that the
@@ -739,7 +742,7 @@ class MetalDevice {
     /// otherwise the copy operation will fail.
     ///
     /// If the source texture has pending writes (e.g., it was used as the render target for a clear or draw command),
-    /// then the current command buffer will be comitted to ensure that the blit command encoded by this function
+    /// then the current command buffer will be committed to ensure that the blit command encoded by this function
     /// happens after the pending commands.
     ///
     func copyTextureRegion(

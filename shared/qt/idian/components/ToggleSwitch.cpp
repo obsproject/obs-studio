@@ -35,9 +35,10 @@ QColor blendColors(const QColor &color1, const QColor &color2, float ratio)
 ToggleSwitch::ToggleSwitch(QWidget *parent)
 	: QAbstractButton(parent),
 	  animHandle(new QPropertyAnimation(this, "xpos", this)),
-	  animBgColor(new QPropertyAnimation(this, "blend", this)),
-	  Utils(this)
+	  animBgColor(new QPropertyAnimation(this, "blend", this))
 {
+	Utils::applyStateStylingEventFilter(this);
+
 	offPos = rect().width() / 2 - 18;
 	onPos = rect().width() / 2 + 18;
 	xPos = offPos;
@@ -47,6 +48,8 @@ ToggleSwitch::ToggleSwitch(QWidget *parent)
 	setAccessibleName("ToggleSwitch");
 
 	installEventFilter(this);
+
+	setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 
 	connect(this, &ToggleSwitch::clicked, this, &ToggleSwitch::onClicked);
 
@@ -68,8 +71,9 @@ void ToggleSwitch::animateHandlePosition()
 
 	int endPos = onPos;
 
-	if ((!isDelayed() && !isChecked()) || (isDelayed() && !pendingStatus))
+	if ((!isDelayed() && !isChecked()) || (isDelayed() && !pendingStatus)) {
 		endPos = offPos;
+	}
 
 	animHandle->setEndValue(endPos);
 
@@ -89,8 +93,9 @@ void ToggleSwitch::updateBackgroundColor()
 
 	QColor bg = blendColors(offColor, onColor, blend);
 
-	if (!isEnabled())
+	if (!isEnabled()) {
 		bg = backgroundInactive;
+	}
 
 	setStyleSheet("background: " + bg.name());
 }
@@ -98,7 +103,7 @@ void ToggleSwitch::updateBackgroundColor()
 void ToggleSwitch::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::EnabledChange) {
-		Utils::toggleClass("disabled", !isEnabled());
+		Utils::toggleClass(this, "disabled", !isEnabled());
 		updateBackgroundColor();
 	}
 }
@@ -144,25 +149,29 @@ void ToggleSwitch::showEvent(QShowEvent *e)
 
 void ToggleSwitch::click()
 {
-	if (!isDelayed())
+	if (!isDelayed()) {
 		QAbstractButton::click();
+	}
 
-	if (isChecked() == pendingStatus)
+	if (isChecked() == pendingStatus) {
 		setPending(!isChecked());
+	}
 }
 
 void ToggleSwitch::onClicked(bool checked)
 {
-	if (delayed)
+	if (delayed) {
 		return;
+	}
 
 	setPending(checked);
 }
 
 void ToggleSwitch::setStatus(bool status)
 {
-	if (status == isChecked() && status == pendingStatus)
+	if (status == isChecked() && status == pendingStatus) {
 		return;
+	}
 
 	pendingStatus = status;
 	setChecked(status);
@@ -185,8 +194,9 @@ void ToggleSwitch::setPending(bool pending)
 	pendingStatus = pending;
 	animateHandlePosition();
 
-	if (!isDelayed())
+	if (!isDelayed()) {
 		return;
+	}
 
 	if (pending) {
 		emit pendingChecked();

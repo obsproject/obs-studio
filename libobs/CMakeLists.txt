@@ -7,6 +7,8 @@ if(OS_WINDOWS AND NOT OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   return()
 endif()
 
+include(cmake/obs-core-modules.cmake)
+
 find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
@@ -37,6 +39,10 @@ target_sources(
     obs-avc.h
     obs-canvas.c
     obs-config.h
+    $<$<PLATFORM_ID:Darwin>:obs-core-modules-loader-mac.m>
+    $<$<PLATFORM_ID:Windows>:obs-core-modules-loader-win.c>
+    $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-core-modules-loader-nix.c>
+    obs-core-modules-loader.h
     obs-data.c
     obs-data.h
     obs-defs.h
@@ -190,8 +196,10 @@ target_sources(
     graphics/image-file.c
     graphics/image-file.h
     graphics/input.h
-    graphics/libnsgif/libnsgif.c
-    graphics/libnsgif/libnsgif.h
+    graphics/libnsgif/gif.c
+    graphics/libnsgif/lzw.c
+    graphics/libnsgif/lzw.h
+    graphics/libnsgif/nsgif.h
     graphics/math-defs.h
     graphics/math-extra.c
     graphics/math-extra.h
@@ -240,6 +248,7 @@ target_link_libraries(
   libobs
   PRIVATE
     OBS::caption
+    OBS::libobs-core-modules
     OBS::libobs-version
     FFmpeg::avcodec
     FFmpeg::avformat
@@ -282,7 +291,7 @@ set(
   graphics/graphics.h
   graphics/image-file.h
   graphics/input.h
-  graphics/libnsgif/libnsgif.h
+  graphics/libnsgif/nsgif.h
   graphics/math-defs.h
   graphics/math-extra.h
   graphics/matrix3.h
@@ -356,8 +365,7 @@ set(
 
 if(OS_WINDOWS)
   list(
-    APPEND
-    public_headers
+    APPEND public_headers
     util/threading-windows.h
     util/windows/ComPtr.hpp
     util/windows/CoTaskMemPtr.hpp

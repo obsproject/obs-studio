@@ -25,8 +25,9 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 	obs_data_array_t *savedProjectors = obs_data_array_create();
 
 	auto saveProjector = [savedProjectors](OBSProjector *projector) {
-		if (!projector)
+		if (!projector) {
 			return;
+		}
 
 		OBSDataAutoRelease data = obs_data_create();
 		ProjectorType type = projector->GetProjectorType();
@@ -47,16 +48,18 @@ obs_data_array_t *OBSBasic::SaveProjectors()
 		obs_data_set_int(data, "type", static_cast<int>(type));
 		obs_data_set_string(data, "geometry", projector->saveGeometry().toBase64().constData());
 
-		if (projector->IsAlwaysOnTopOverridden())
+		if (projector->IsAlwaysOnTopOverridden()) {
 			obs_data_set_bool(data, "alwaysOnTop", projector->IsAlwaysOnTop());
+		}
 
 		obs_data_set_bool(data, "alwaysOnTopOverridden", projector->IsAlwaysOnTopOverridden());
 
 		obs_data_array_push_back(savedProjectors, data);
 	};
 
-	for (size_t i = 0; i < projectors.size(); i++)
+	for (size_t i = 0; i < projectors.size(); i++) {
 		saveProjector(static_cast<OBSProjector *>(projectors[i]));
+	}
 
 	return savedProjectors;
 }
@@ -91,8 +94,9 @@ void OBSBasic::updateMultiviewProjectorMenu()
 void OBSBasic::ClearProjectors()
 {
 	for (size_t i = 0; i < projectors.size(); i++) {
-		if (projectors[i])
+		if (projectors[i]) {
 			delete projectors[i];
+		}
 	}
 
 	projectors.clear();
@@ -105,24 +109,28 @@ QList<QString> OBSBasic::GetProjectorMenuMonitorsFormatted()
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
 		QRect screenGeometry = screen->geometry();
-		qreal ratio = screen->devicePixelRatio();
+		qreal screenPixelRatio = screen->devicePixelRatio();
 		QString name = "";
 #if defined(__APPLE__) || defined(_WIN32)
 		name = screen->name();
 #else
 		name = screen->model().simplified();
 
-		if (name.length() > 1 && name.endsWith("-"))
+		if (name.length() > 1 && name.endsWith("-")) {
 			name.chop(1);
+		}
 #endif
 		name = name.simplified();
 
 		if (name.length() == 0) {
 			name = QString("%1 %2").arg(QTStr("Display")).arg(QString::number(i + 1));
 		}
+
+		int screenPixelWidth = std::round((screenGeometry.width() * screenPixelRatio) * 0.5f) * 2;
+		int screenPixelHeight = std::round((screenGeometry.height() * screenPixelRatio) * 0.5f) * 2;
+
 		QString str = QString("%1: %2x%3 @ %4,%5")
-				      .arg(name, QString::number(screenGeometry.width() * ratio),
-					   QString::number(screenGeometry.height() * ratio),
+				      .arg(name, QString::number(screenPixelWidth), QString::number(screenPixelHeight),
 					   QString::number(screenGeometry.x()), QString::number(screenGeometry.y()));
 		projectorsFormatted.push_back(str);
 	}
@@ -143,16 +151,18 @@ void OBSBasic::DeleteProjector(OBSProjector *projector)
 OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor, ProjectorType type)
 {
 	/* seriously?  10 monitors? */
-	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
+	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1) {
 		return nullptr;
+	}
 
 	bool closeProjectors = config_get_bool(App()->GetUserConfig(), "BasicWindow", "CloseExistingProjectors");
 
 	if (closeProjectors && monitor > -1) {
 		for (size_t i = projectors.size(); i > 0; i--) {
 			size_t idx = i - 1;
-			if (projectors[idx]->GetMonitor() == monitor)
+			if (projectors[idx]->GetMonitor() == monitor) {
 				DeleteProjector(projectors[idx]);
+			}
 		}
 	}
 
@@ -173,8 +183,9 @@ void OBSBasic::OpenSourceProjector()
 {
 	int monitor = sender()->property("monitor").toInt();
 	OBSSceneItem item = GetCurrentSceneItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	OpenProjector(obs_sceneitem_get_source(item), monitor, ProjectorType::Source);
 }
@@ -189,8 +200,9 @@ void OBSBasic::OpenSceneProjector()
 {
 	int monitor = sender()->property("monitor").toInt();
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
 	OpenProjector(obs_scene_get_source(scene), monitor, ProjectorType::Scene);
 }
@@ -203,8 +215,9 @@ void OBSBasic::OpenPreviewWindow()
 void OBSBasic::OpenSourceWindow()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
@@ -214,8 +227,9 @@ void OBSBasic::OpenSourceWindow()
 void OBSBasic::OpenSceneWindow()
 {
 	OBSScene scene = GetCurrentScene();
-	if (!scene)
+	if (!scene) {
 		return;
+	}
 
 	OBSSource source = obs_scene_get_source(scene);
 
@@ -230,8 +244,9 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 		case ProjectorType::Source:
 		case ProjectorType::Scene: {
 			OBSSourceAutoRelease source = obs_get_source_by_name(info->name.c_str());
-			if (!source)
+			if (!source) {
 				return;
+			}
 
 			projector = OpenProjector(source, info->monitor, info->type);
 			break;
@@ -252,8 +267,9 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 					QStyle::alignedRect(Qt::LeftToRight, Qt::AlignCenter, size(), rect));
 			}
 
-			if (info->alwaysOnTopOverridden)
+			if (info->alwaysOnTopOverridden) {
 				projector->SetIsAlwaysOnTop(info->alwaysOnTop, true);
+			}
 		}
 	}
 }

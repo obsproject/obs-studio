@@ -23,8 +23,9 @@ constexpr std::string_view OBSServiceFileName = "service.json";
 
 void OBSBasic::SaveService()
 {
-	if (!service)
+	if (!service) {
 		return;
+	}
 
 	const OBSProfile &currentProfile = GetCurrentProfile();
 
@@ -71,20 +72,23 @@ bool OBSBasic::LoadService()
 	service = obs_service_create(type, "default_service", settings, hotkey_data);
 	obs_service_release(service);
 
-	if (!service)
+	if (!service) {
 		return false;
+	}
 
 	/* Enforce Opus on WHIP if needed */
 	if (strcmp(obs_service_get_protocol(service), "WHIP") == 0) {
 		const char *option = config_get_string(activeConfiguration, "SimpleOutput", "StreamAudioEncoder");
-		if (strcmp(option, "opus") != 0)
+		if (strcmp(option, "opus") != 0) {
 			config_set_string(activeConfiguration, "SimpleOutput", "StreamAudioEncoder", "opus");
+		}
 
 		option = config_get_string(activeConfiguration, "AdvOut", "AudioEncoder");
 
 		const char *encoder_codec = obs_get_encoder_codec(option);
-		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0)
+		if (!encoder_codec || strcmp(encoder_codec, "opus") != 0) {
 			config_set_string(activeConfiguration, "AdvOut", "AudioEncoder", "ffmpeg_opus");
+		}
 	}
 
 	return true;
@@ -94,12 +98,14 @@ bool OBSBasic::InitService()
 {
 	ProfileScope("OBSBasic::InitService");
 
-	if (LoadService())
+	if (LoadService()) {
 		return true;
+	}
 
 	service = obs_service_create("rtmp_common", "default_service", nullptr, nullptr);
-	if (!service)
+	if (!service) {
 		return false;
+	}
 	obs_service_release(service);
 
 	return true;

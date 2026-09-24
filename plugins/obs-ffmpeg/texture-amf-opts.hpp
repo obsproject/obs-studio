@@ -1,15 +1,20 @@
 static bool str_to_bool(const char *str)
 {
-	if (!str)
+	if (!str) {
 		return false;
-	if (*str == '1')
+	}
+	if (*str == '1') {
 		return true;
-	if (*str == '0')
+	}
+	if (*str == '0') {
 		return false;
-	if (astrcmpi(str, "true") == 0)
+	}
+	if (astrcmpi(str, "true") == 0) {
 		return true;
-	if (astrcmpi(str, "false") == 0)
+	}
+	if (astrcmpi(str, "false") == 0) {
 		return false;
+	}
 	return false;
 }
 
@@ -22,33 +27,36 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 	if (strcmp(opt->name, "g") == 0 || strcmp(opt->name, "keyint") == 0) {
 
 		int val = atoi(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(IDR_PERIOD, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(NUM_GOPS_PER_IDR, val);
-		else if (av1)
+		} else if (av1) {
 			set_av1_opt(GOP_SIZE, val);
+		}
 
 	} else if (strcmp(opt->name, "usage") == 0) {
 
 		if (strcmp(opt->value, "transcoding") == 0) {
 			set_enum_opt(USAGE, TRANSCODING);
 		} else if (strcmp(opt->value, "ultralowlatency") == 0) {
-			if (avc)
+			if (avc) {
 				set_avc_enum(USAGE, ULTRA_LOW_LATENCY);
-			else if (hevc)
+			} else if (hevc) {
 				set_hevc_enum(USAGE, ULTRA_LOW_LATENCY);
-			else
+			} else {
 				warn("Invalid value for %s: %s", opt->name, opt->value);
+			}
 		} else if (strcmp(opt->value, "lowlatency") == 0) {
 			set_enum_opt(USAGE, LOW_LATENCY);
 		} else if (strcmp(opt->value, "webcam") == 0) {
-			if (avc)
+			if (avc) {
 				set_avc_enum(USAGE, WEBCAM);
-			else if (hevc)
+			} else if (hevc) {
 				set_hevc_enum(USAGE, WEBCAM);
-			else
+			} else {
 				warn("Invalid value for %s: %s", opt->name, opt->value);
+			}
 		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 		}
@@ -76,16 +84,18 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 
 		std::string val = opt->value;
 		size_t pos = val.find('.');
-		if (pos != std::string::npos)
+		if (pos != std::string::npos) {
 			val.erase(pos, 1);
+		}
 
 		int level = std::stoi(val);
-		if (avc)
+		if (avc) {
 			set_avc_opt(PROFILE_LEVEL, level);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(PROFILE_LEVEL, level);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "quality") == 0) {
 
@@ -121,82 +131,90 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 	} else if (strcmp(opt->name, "filler_data") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(FILLER_DATA_ENABLE, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(FILLER_DATA_ENABLE, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "vbaq") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(ENABLE_VBAQ, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(ENABLE_VBAQ, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "qp_i") == 0) {
 
 		int val = atoi(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(QP_I, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(QP_I, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "qp_p") == 0) {
 
 		int val = atoi(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(QP_P, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(QP_P, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "me_half_pel") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(MOTION_HALF_PIXEL, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(MOTION_HALF_PIXEL, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "me_quarter_pel") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(MOTION_QUARTERPIXEL, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(MOTION_QUARTERPIXEL, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "aud") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(INSERT_AUD, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(INSERT_AUD, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (strcmp(opt->name, "max_au_size") == 0) {
 
 		int val = atoi(opt->value);
-		if (avc)
+		if (avc) {
 			set_avc_opt(MAX_AU_SIZE, val);
-		else if (hevc)
+		} else if (hevc) {
 			set_hevc_opt(MAX_AU_SIZE, val);
-		else
+		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
+		}
 
 	} else if (avc && strcmp(opt->name, "preanalysis") == 0) {
 

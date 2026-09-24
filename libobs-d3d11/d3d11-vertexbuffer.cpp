@@ -37,8 +37,9 @@ void gs_vertex_buffer::FlushBuffer(ID3D11Buffer *buffer, void *array, size_t ele
 	D3D11_MAPPED_SUBRESOURCE msr;
 	HRESULT hr;
 
-	if (FAILED(hr = device->context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr)))
+	if (FAILED(hr = device->context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr))) {
 		throw HRError("Failed to map buffer", hr);
+	}
 
 	memcpy(msr.pData, array, elementSize * vbd.data->num);
 	device->context->Unmap(buffer, 0);
@@ -49,12 +50,15 @@ UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader, ID3D11Buffer **b
 	UINT numBuffers = 0;
 	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3), "point");
 
-	if (shader->hasNormals)
+	if (shader->hasNormals) {
 		PushBuffer(&numBuffers, buffers, strides, normalBuffer, sizeof(vec3), "normal");
-	if (shader->hasColors)
+	}
+	if (shader->hasColors) {
 		PushBuffer(&numBuffers, buffers, strides, colorBuffer, sizeof(uint32_t), "color");
-	if (shader->hasTangents)
+	}
+	if (shader->hasTangents) {
 		PushBuffer(&numBuffers, buffers, strides, tangentBuffer, sizeof(vec3), "tangent");
+	}
 	if (shader->nTexUnits <= uvBuffers.size()) {
 		for (size_t i = 0; i < shader->nTexUnits; i++) {
 			buffers[numBuffers] = uvBuffers[i];
@@ -87,30 +91,36 @@ void gs_vertex_buffer::InitBuffer(const size_t elementSize, const size_t numVert
 	srd.pSysMem = array;
 
 	hr = device->device->CreateBuffer(&bd, &srd, buffer);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create buffer", hr);
+	}
 }
 
 void gs_vertex_buffer::BuildBuffers()
 {
 	InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->points, &vertexBuffer);
 
-	if (vbd.data->normals)
+	if (vbd.data->normals) {
 		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->normals, &normalBuffer);
+	}
 
-	if (vbd.data->tangents)
+	if (vbd.data->tangents) {
 		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->tangents, &tangentBuffer);
+	}
 
-	if (vbd.data->colors)
+	if (vbd.data->colors) {
 		InitBuffer(sizeof(uint32_t), vbd.data->num, vbd.data->colors, &colorBuffer);
+	}
 
 	for (size_t i = 0; i < vbd.data->num_tex; i++) {
 		struct gs_tvertarray *tverts = vbd.data->tvarray + i;
 
-		if (tverts->width != 2 && tverts->width != 4)
+		if (tverts->width != 2 && tverts->width != 4) {
 			throw "Invalid texture vertex size specified";
-		if (!tverts->array)
+		}
+		if (!tverts->array) {
 			throw "No texture vertices specified";
+		}
 
 		ComPtr<ID3D11Buffer> buffer;
 		InitBuffer(tverts->width * sizeof(float), vbd.data->num, tverts->array, &buffer);
@@ -126,10 +136,12 @@ gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 	  vbd(data),
 	  numVerts(data->num)
 {
-	if (!data->num)
+	if (!data->num) {
 		throw "Cannot initialize vertex buffer with 0 vertices";
-	if (!data->points)
+	}
+	if (!data->points) {
 		throw "No points specified for vertex buffer";
+	}
 
 	BuildBuffers();
 }

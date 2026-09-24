@@ -37,6 +37,7 @@
 #include <zstd.h>
 
 #include <array>
+#include <atomic>
 #include <string>
 #include <vector>
 
@@ -95,7 +96,8 @@ int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, size_t patch_siz
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
 extern size_t totalFileSize;
-extern size_t completedFileSize;
+extern std::atomic<int> lastPosition;
+extern std::atomic<size_t> completedFileSize;
 extern HANDLE cancelRequested;
 
 #pragma pack(push, r1, 1)

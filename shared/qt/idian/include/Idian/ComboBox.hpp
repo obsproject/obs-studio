@@ -24,7 +24,7 @@
 
 namespace idian {
 
-class ComboBox : public QComboBox, public Utils {
+class ComboBox : public QComboBox {
 	Q_OBJECT
 
 public:
@@ -41,18 +41,6 @@ protected:
 	void hidePopup() override;
 
 	void mousePressEvent(QMouseEvent *event) override;
-
-	void focusInEvent(QFocusEvent *e) override
-	{
-		Utils::showKeyFocused(e);
-		QComboBox::focusInEvent(e);
-	}
-
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		Utils::hideKeyFocused(e);
-		QComboBox::focusOutEvent(e);
-	}
 };
 
 } // namespace idian

@@ -67,8 +67,9 @@ struct FFmpegFormat {
 
 	bool operator==(const FFmpegFormat &format) const
 	{
-		if (!strequal(name, format.name))
+		if (!strequal(name, format.name)) {
 			return false;
+		}
 
 		return strequal(mime_type, format.mime_type);
 	}

@@ -539,12 +539,13 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 					     kVTCompressionPropertyKey_AllowFrameReordering,
 					     kVTCompressionPropertyKey_ProfileLevel};
 
-		SInt32 key_frame_interval = (SInt32)(enc->keyint * ((float)enc->fps_num / enc->fps_den));
-		float expected_framerate = (float)enc->fps_num / enc->fps_den;
+		int actual_frame_rate = enc->fps_num / enc->fps_den;
+		int key_frame_interval = enc->keyint * actual_frame_rate;
+
 		CFNumberRef MaxKeyFrameInterval =
-			CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &key_frame_interval);
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &key_frame_interval);
 		CFNumberRef ExpectedFrameRate =
-			CFNumberCreate(kCFAllocatorDefault, kCFNumberFloat32Type, &expected_framerate);
+			CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &actual_frame_rate);
 		CFTypeRef AllowFrameReordering = enc->bframes ? kCFBooleanTrue : kCFBooleanFalse;
 
 		video_t *video = obs_encoder_video(enc->encoder);
@@ -1375,10 +1376,10 @@ static void vt_defaults(obs_data_t *settings, void *data)
 			obs_data_set_default_string(settings, "rate_control", "CBR");
 		}
 	}
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_int(settings, "quality", 60);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
-	obs_data_set_default_int(settings, "max_bitrate", 2500);
+	obs_data_set_default_int(settings, "max_bitrate", 6000);
 	obs_data_set_default_double(settings, "max_bitrate_window", 1.5f);
 	obs_data_set_default_int(settings, "keyint_sec", 2);
 	obs_data_set_default_string(settings, "profile",
@@ -1446,7 +1447,7 @@ void obs_module_post_load(void)
 		.get_defaults2 = vt_defaults,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
-		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+		.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE,
 	};
 
 	da_init(vt_prores_hardware_encoder_list);

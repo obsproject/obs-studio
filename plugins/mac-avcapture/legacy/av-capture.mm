@@ -1257,9 +1257,14 @@ static NSArray *presets(void)
     return @[
         //AVCaptureSessionPresetiFrame1280x720,
         //AVCaptureSessionPresetiFrame960x540,
-        AVCaptureSessionPreset3840x2160, AVCaptureSessionPreset1920x1080, AVCaptureSessionPreset1280x720,
-        AVCaptureSessionPreset960x540, AVCaptureSessionPreset640x480, AVCaptureSessionPreset352x288,
-        AVCaptureSessionPreset320x240, AVCaptureSessionPresetHigh,
+        AVCaptureSessionPreset3840x2160,
+        AVCaptureSessionPreset1920x1080,
+        AVCaptureSessionPreset1280x720,
+        AVCaptureSessionPreset960x540,
+        AVCaptureSessionPreset640x480,
+        AVCaptureSessionPreset352x288,
+        AVCaptureSessionPreset320x240,
+        AVCaptureSessionPresetHigh,
         //AVCaptureSessionPresetMedium,
         //AVCaptureSessionPresetLow,
         //AVCaptureSessionPresetPhoto,
@@ -1548,6 +1553,16 @@ static media_frames_per_second convert(CMTime time_)
 
 using frame_rates_t = vector<pair<media_frames_per_second, media_frames_per_second>>;
 
+static bool operator==(const media_frames_per_second &a, const media_frames_per_second &b)
+{
+    return a.numerator == b.numerator && a.denominator == b.denominator;
+}
+
+static bool operator!=(const media_frames_per_second &a, const media_frames_per_second &b)
+{
+    return !(a == b);
+}
+
 static frame_rates_t enumerate_frame_rates(AVCaptureDevice *dev, const CMVideoDimensions *dims = nullptr)
 {
     frame_rates_t res;
@@ -1586,16 +1601,6 @@ static frame_rates_t enumerate_frame_rates(AVCaptureDevice *dev, const CMVideoDi
     }
 
     return res;
-}
-
-static bool operator==(const media_frames_per_second &a, const media_frames_per_second &b)
-{
-    return a.numerator == b.numerator && a.denominator == b.denominator;
-}
-
-static bool operator!=(const media_frames_per_second &a, const media_frames_per_second &b)
-{
-    return !(a == b);
 }
 
 static bool frame_rate_property_needs_update(obs_property_t *p, const frame_rates_t &frame_rates)

@@ -30,7 +30,7 @@ target_sources(
 
 target_compile_definitions(
   obs-scripting
-  PRIVATE SCRIPT_DIR="${OBS_SCRIPT_PLUGIN_PATH}" $<$<BOOL:${ENABLE_UI}>:ENABLE_UI>
+  PRIVATE SCRIPT_DIR="${OBS_SCRIPT_PLUGIN_PATH}" $<$<BOOL:${ENABLE_FRONTEND}>:ENABLE_FRONTEND>
 )
 
 target_include_directories(obs-scripting PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -40,7 +40,7 @@ target_link_libraries(
   PRIVATE
     OBS::libobs
     OBS::cstrcache
-    $<$<BOOL:${ENABLE_UI}>:OBS::frontend-api>
+    $<$<BOOL:${ENABLE_FRONTEND}>:OBS::frontend-api>
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
     $<$<PLATFORM_ID:Darwin>:objc>
 )

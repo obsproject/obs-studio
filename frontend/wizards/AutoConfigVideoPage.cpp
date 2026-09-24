@@ -45,8 +45,9 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent) : QWizardPage(parent),
 
 	// Auto config only supports testing down to 240p, don't allow current
 	// resolution if it's lower than that.
-	if (ovi.base_height >= 240)
+	if (ovi.base_height >= 240) {
 		ui->canvasRes->addItem(QTStr(RES_USE_CURRENT).arg(cxStr, cyStr), (int)encRes);
+	}
 
 	QList<QScreen *> screens = QGuiApplication::screens();
 	for (int i = 0; i < screens.size(); i++) {

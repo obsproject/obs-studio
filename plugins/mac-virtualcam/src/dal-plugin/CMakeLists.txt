@@ -53,6 +53,8 @@ set_target_properties_obs(
 
 set_property(TARGET obs-dal-plugin PROPERTY OSX_ARCHITECTURES x86_64 arm64)
 
+target_compile_options(obs-dal-plugin PRIVATE "-Wno-deprecated-declarations")
+
 string(TIMESTAMP CURRENT_YEAR "%Y")
 set_target_xcode_properties(
   obs-dal-plugin

@@ -173,6 +173,26 @@ enum obs_module_load_state {
 	OBS_MODULE_FAILED_TO_INITIALIZE,
 };
 
+enum obs_runtime_module_type {
+	OBS_MODULE_TYPE_UNDEFINED,
+	OBS_MODULE_TYPE_CORE,
+	OBS_MODULE_TYPE_PLUGIN,
+	OBS_MODULE_TYPE_LEGACY_PLUGIN,
+};
+
+#ifndef SWIG
+struct obs_runtime_module_path {
+	const char *binary;
+	const char *data;
+};
+
+struct obs_runtime_module_info {
+	struct obs_runtime_module_path path_info;
+	enum obs_runtime_module_type type;
+	const char *name;
+};
+#endif
+
 struct obs_transform_info {
 	struct vec2 pos;
 	float rot;
@@ -566,16 +586,8 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
  */
 EXPORT void obs_add_safe_module(const char *name);
 
-/**
- * Adds a module to the list of core modules (which cannot be disabled).
- * If the list is empty, all modules are allowed.
- *
- * @param  name  Specifies the module's name (filename sans extension).
- */
-EXPORT void obs_add_core_module(const char *name);
-
 /** Automatically loads all modules from module paths (convenience function) */
-EXPORT void obs_load_all_modules(void);
+OBS_DEPRECATED EXPORT void obs_load_all_modules(void);
 
 struct obs_module_failure_info {
 	char **failed_modules;
@@ -583,7 +595,7 @@ struct obs_module_failure_info {
 };
 
 EXPORT void obs_module_failure_info_free(struct obs_module_failure_info *mfi);
-EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
+OBS_DEPRECATED EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
 
 /** Notifies modules that all modules have been loaded.  This function should
  * be called after all modules have been loaded. */
@@ -603,12 +615,29 @@ struct obs_module_info2 {
 	const char *bin_path;
 	const char *data_path;
 	const char *name;
+	enum obs_runtime_module_type type;
 };
 
 typedef void (*obs_find_module_callback2_t)(void *param, const struct obs_module_info2 *info);
 
 /** Finds all modules within the search paths added by obs_add_module_path. */
 EXPORT void obs_find_modules2(obs_find_module_callback2_t callback, void *param);
+
+/** Loads all registered core modules. */
+EXPORT bool obs_load_core_modules(void);
+
+/** Loads plugins at a given path. omp defines if modern or legacy plugins at path. */
+EXPORT void obs_load_plugins(struct obs_runtime_module_info *info, struct obs_module_failure_info *error);
+
+/** Returns true if a module is a core module. */
+EXPORT bool obs_is_core_module(obs_module_t *module);
+
+EXPORT bool obs_is_legacy_module(obs_module_t *module);
+
+/** Finds and loads a particular core module.
+ *  Returns false if module cant be found. */
+bool find_core_module(struct obs_runtime_module_info *info, obs_find_module_callback2_t callback, void *data);
+
 #endif
 
 typedef void (*obs_enum_module_callback_t)(void *param, obs_module_t *module);
@@ -1074,11 +1103,13 @@ EXPORT bool obs_source_removed(const obs_source_t *source);
 
 /** The 'hidden' flag is not the same as a sceneitem's visibility. It is a
   * property the determines if it can be found through searches. **/
+/** TODO: Remove both functions and temp_removed in 34.0 (https://github.com/obsproject/obs-studio/issues/13768) */
+
 /** Simply sets a 'hidden' flag when the source is still alive but shouldn't be found */
-EXPORT void obs_source_set_hidden(obs_source_t *source, bool hidden);
+OBS_DEPRECATED EXPORT void obs_source_set_hidden(obs_source_t *source, bool hidden);
 
 /** Returns the current 'hidden' state on the source */
-EXPORT bool obs_source_is_hidden(obs_source_t *source);
+OBS_DEPRECATED EXPORT bool obs_source_is_hidden(obs_source_t *source);
 
 /** Returns capability flags of a source */
 EXPORT uint32_t obs_source_get_output_flags(const obs_source_t *source);
@@ -1323,6 +1354,13 @@ EXPORT void obs_source_add_audio_capture_callback(obs_source_t *source, obs_sour
 EXPORT void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_audio_capture_t callback,
 						     void *param);
 
+/**
+ * For an Audio Output Capture source (like 'wasapi_output_capture') used for 'Desktop Audio', this checks whether the
+ * device is also used for monitoring. A signal to obs core struct is then emitted to trigger deduplication  logic at
+ * the end of an audio tick.
+ */
+EXPORT void obs_source_audio_output_capture_device_changed(obs_source_t *source, const char *device_id);
+
 typedef void (*obs_source_caption_t)(void *param, obs_source_t *source, const struct obs_source_cea_708 *captions);
 
 EXPORT void obs_source_add_caption_callback(obs_source_t *source, obs_source_caption_t callback, void *param);
@@ -1356,8 +1394,11 @@ enum obs_monitoring_type {
 	OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT,
 };
 
-EXPORT void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type);
-EXPORT enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *source);
+EXPORT void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled);
+EXPORT bool obs_source_get_monitoring_enabled(const obs_source_t *source);
+
+OBS_DEPRECATED EXPORT void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type);
+OBS_DEPRECATED EXPORT enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *source);
 
 /** Gets private front-end settings data.  This data is saved/loaded
  * automatically.  Returns an incremented reference. */
@@ -1603,6 +1644,8 @@ EXPORT uint32_t obs_transition_get_alignment(const obs_source_t *transition);
 
 EXPORT void obs_transition_set_size(obs_source_t *transition, uint32_t cx, uint32_t cy);
 EXPORT void obs_transition_get_size(const obs_source_t *transition, uint32_t *cx, uint32_t *cy);
+
+EXPORT bool obs_transition_is_active(obs_source_t *transition);
 
 /* function used by transitions */
 
@@ -2342,6 +2385,9 @@ EXPORT size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder);
 /** For audio encoders, returns the mixer index */
 EXPORT size_t obs_encoder_get_mixer_index(const obs_encoder_t *encoder);
 
+/* For audio encoders, returns the number of samples to skip at the beginning of the stream */
+EXPORT uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder);
+
 /**
  * Sets the preferred video format for a video encoder.  If the encoder can use
  * the format specified, it will force a conversion to that format if the
@@ -2580,6 +2626,10 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst, const struct obs
 /* ------------------------------------------------------------------------- */
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
+
+/* Get dark and light versions of custom icons */
+EXPORT const char *obs_source_get_dark_icon(const char *id);
+EXPORT const char *obs_source_get_light_icon(const char *id);
 
 /* ------------------------------------------------------------------------- */
 /* Canvases */

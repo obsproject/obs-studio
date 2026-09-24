@@ -21,8 +21,6 @@
 
 class OBSBasic;
 
-using namespace std;
-
 template<typename T> struct OBSStudioCallback {
 	T callback;
 	void *private_data;
@@ -32,9 +30,9 @@ template<typename T> struct OBSStudioCallback {
 
 struct OBSStudioAPI : obs_frontend_callbacks {
 	OBSBasic *main;
-	vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
-	vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
-	vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
+	std::vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
+	std::vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
+	std::vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
 
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
@@ -225,6 +223,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags) override;
 
 	bool obs_frontend_remove_canvas(obs_canvas_t *canvas) override;
+
+	void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) override;
+
+	bool obs_frontend_can_paste_sceneitem(bool duplicate) override;
+
+	void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate) override;
 
 	void on_load(obs_data_t *settings) override;
 

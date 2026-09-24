@@ -16,13 +16,14 @@
 ******************************************************************************/
 
 #include <OBSApp.hpp>
+
+#include <components/VolumeAccessibleInterface.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
 #include <utility/BaseLexer.hpp>
 #include <utility/OBSTranslator.hpp>
 #include <utility/platform.hpp>
-#include <widgets/VolumeAccessibleInterface.hpp>
 
 #include <qt-wrappers.hpp>
 #include <util/platform.h>
@@ -114,8 +115,7 @@ static void LogString(fstream &logFile, const char *timeString, char *str, int l
 	logFile << msg << endl;
 	logfile_mutex.unlock();
 
-	QMetaObject::invokeMethod(App(), "addLogLine", Qt::QueuedConnection, Q_ARG(int, log_level),
-				  Q_ARG(QString, QString(msg.c_str())));
+	QMetaObject::invokeMethod(App(), &OBSApp::addLogLine, Qt::QueuedConnection, log_level, QString(msg.c_str()));
 }
 
 static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
@@ -126,8 +126,9 @@ static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
 
 	while (*nextLine) {
 		char *nextLine = strchr(str, '\n');
-		if (!nextLine)
+		if (!nextLine) {
 			break;
+		}
 
 		if (nextLine != str && nextLine[-1] == '\r') {
 			nextLine[-1] = 0;
@@ -149,8 +150,9 @@ static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
 static inline int sum_chars(const char *str)
 {
 	int val = 0;
-	for (; *str != 0; str++)
+	for (; *str != 0; str++) {
 		val += *str;
+	}
 
 	return val;
 }
@@ -227,13 +229,15 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #if !defined(_WIN32) && !defined(_DEBUG)
 		def_log_handler(log_level, msg, args2, nullptr);
 #endif
-		if (!too_many_repeated_entries(logFile, msg, str))
+		if (!too_many_repeated_entries(logFile, msg, str)) {
 			LogStringChunk(logFile, str, log_level);
+		}
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
-	if (log_level <= LOG_ERROR && IsDebuggerPresent())
+	if (log_level <= LOG_ERROR && IsDebuggerPresent()) {
 		__debugbreak();
+	}
 #endif
 
 #ifndef _WIN32
@@ -244,10 +248,12 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 static bool get_token(lexer *lex, string &str, base_token_type type)
 {
 	base_token token;
-	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
+	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE)) {
 		return false;
-	if (token.type != type)
+	}
+	if (token.type != type) {
 		return false;
+	}
 
 	str.assign(token.text.array, token.text.len);
 	return true;
@@ -256,10 +262,12 @@ static bool get_token(lexer *lex, string &str, base_token_type type)
 static bool expect_token(lexer *lex, const char *str, base_token_type type)
 {
 	base_token token;
-	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
+	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE)) {
 		return false;
-	if (token.type != type)
+	}
+	if (token.type != type) {
 		return false;
+	}
 
 	return strref_cmp(&token.text, str) == 0;
 }
@@ -273,64 +281,46 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 
 	if (has_prefix) {
 		string temp;
-		if (!get_token(lex, temp, BASETOKEN_ALPHA))
+		if (!get_token(lex, temp, BASETOKEN_ALPHA)) {
 			return 0;
+		}
 	}
 
-	if (!get_token(lex, year, BASETOKEN_DIGIT))
+	if (!get_token(lex, year, BASETOKEN_DIGIT)) {
 		return 0;
-	if (!expect_token(lex, "-", BASETOKEN_OTHER))
+	}
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) {
 		return 0;
-	if (!get_token(lex, month, BASETOKEN_DIGIT))
+	}
+	if (!get_token(lex, month, BASETOKEN_DIGIT)) {
 		return 0;
-	if (!expect_token(lex, "-", BASETOKEN_OTHER))
+	}
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) {
 		return 0;
-	if (!get_token(lex, day, BASETOKEN_DIGIT))
+	}
+	if (!get_token(lex, day, BASETOKEN_DIGIT)) {
 		return 0;
-	if (!get_token(lex, hour, BASETOKEN_DIGIT))
+	}
+	if (!get_token(lex, hour, BASETOKEN_DIGIT)) {
 		return 0;
-	if (!expect_token(lex, "-", BASETOKEN_OTHER))
+	}
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) {
 		return 0;
-	if (!get_token(lex, minute, BASETOKEN_DIGIT))
+	}
+	if (!get_token(lex, minute, BASETOKEN_DIGIT)) {
 		return 0;
-	if (!expect_token(lex, "-", BASETOKEN_OTHER))
+	}
+	if (!expect_token(lex, "-", BASETOKEN_OTHER)) {
 		return 0;
-	if (!get_token(lex, second, BASETOKEN_DIGIT))
+	}
+	if (!get_token(lex, second, BASETOKEN_DIGIT)) {
 		return 0;
+	}
 
 	stringstream timestring;
 	timestring << year << month << day << hour << minute << second;
 	return std::stoull(timestring.str());
 }
-
-/* If upgrading from an older (non-XDG) build of OBS, move config files to XDG directory. */
-/* TODO: Remove after version 32.0. */
-#if defined(__FreeBSD__)
-static void move_to_xdg(void)
-{
-	char old_path[512];
-	char new_path[512];
-	char *home = getenv("HOME");
-	if (!home)
-		return;
-
-	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
-		return;
-
-	/* make base xdg path if it doesn't already exist */
-	if (GetAppConfigPath(new_path, sizeof(new_path), "") <= 0)
-		return;
-	if (os_mkdirs(new_path) == MKDIR_ERROR)
-		return;
-
-	if (GetAppConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
-		return;
-
-	if (os_file_exists(old_path) && !os_file_exists(new_path)) {
-		rename(old_path, new_path);
-	}
-}
-#endif
 
 static void delete_oldest_file(bool has_prefix, const char *location)
 {
@@ -346,8 +336,9 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 		unsigned int count = 0;
 
 		while ((entry = os_readdir(dir)) != NULL) {
-			if (entry->directory || *entry->d_name == '.')
+			if (entry->directory || *entry->d_name == '.') {
 				continue;
+			}
 
 			uint64_t ts = convert_log_name(has_prefix, entry->d_name);
 
@@ -381,8 +372,9 @@ static void get_last_log(bool has_prefix, const char *subdir_to_use, std::string
 
 	if (dir) {
 		while ((entry = os_readdir(dir)) != NULL) {
-			if (entry->directory || *entry->d_name == '.')
+			if (entry->directory || *entry->d_name == '.') {
 				continue;
+			}
 
 			uint64_t ts = convert_log_name(has_prefix, entry->d_name);
 
@@ -447,12 +439,14 @@ ProfilerSnapshot GetSnapshot()
 
 static void SaveProfilerData(const ProfilerSnapshot &snap)
 {
-	if (currentLogFile.empty())
+	if (currentLogFile.empty()) {
 		return;
+	}
 
 	auto pos = currentLogFile.rfind('.');
-	if (pos == currentLogFile.npos)
+	if (pos == currentLogFile.npos) {
 		return;
+	}
 
 #define LITERAL_SIZE(x) x, (sizeof(x) - 1)
 	ostringstream dst;
@@ -462,8 +456,9 @@ static void SaveProfilerData(const ProfilerSnapshot &snap)
 #undef LITERAL_SIZE
 
 	BPtr<char> path = GetAppConfigPathPtr(dst.str().c_str());
-	if (!profiler_snapshot_dump_csv_gz(snap.get(), path))
+	if (!profiler_snapshot_dump_csv_gz(snap.get(), path)) {
 		blog(LOG_WARNING, "Could not save profiler data to '%s'", static_cast<const char *>(path));
+	}
 }
 
 static auto ProfilerFree = [](void *) {
@@ -481,8 +476,9 @@ static auto ProfilerFree = [](void *) {
 
 QAccessibleInterface *accessibleFactory(const QString &classname, QObject *object)
 {
-	if (classname == QLatin1String("VolumeSlider") && object && object->isWidgetType())
+	if (classname == QLatin1String("VolumeSlider") && object && object->isWidgetType()) {
 		return new VolumeAccessibleInterface(static_cast<QWidget *>(object));
+	}
 
 	return nullptr;
 }
@@ -519,12 +515,13 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-	/* NOTE: Users blindly set this, but this theme is incompatble with Qt6 and
+	/* NOTE: Users blindly set this, but this theme is incompatible with Qt6 and
 	 * crashes loading saved geometry. Just turn off this theme and let users complain OBS
 	 * looks ugly instead of crashing. */
 	const char *platform_theme = getenv("QT_QPA_PLATFORMTHEME");
-	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0)
+	if (platform_theme && strcmp(platform_theme, "qt5ct") == 0) {
 		unsetenv("QT_QPA_PLATFORMTHEME");
+	}
 #endif
 
 	/* NOTE: This disables an optimisation in Qt that attempts to determine if
@@ -575,8 +572,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			cancel_launch = mb.clickedButton() == cancelButton;
 		}
 
-		if (cancel_launch)
+		if (cancel_launch) {
 			return 0;
+		}
 
 		if (!created_log) {
 			create_log_file(logFile);
@@ -615,8 +613,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 #endif
 
-		if (!created_log)
+		if (!created_log) {
 			create_log_file(logFile);
+		}
 
 		program.checkForUncleanShutdown();
 
@@ -668,8 +667,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			mb.setDefaultButton(closeButton);
 
 			mb.exec();
-			if (mb.clickedButton() == closeButton)
+			if (mb.clickedButton() == closeButton) {
 				return 0;
+			}
 		}
 #endif
 
@@ -682,8 +682,9 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 			blog(LOG_INFO, "Command Line Arguments: %s", stor.str().c_str());
 		}
 
-		if (!program.OBSInit())
+		if (!program.OBSInit()) {
 			return 0;
+		}
 
 		prof.Stop();
 
@@ -825,11 +826,13 @@ static constexpr char vcRunInstallerUrl[] = "https://obsproject.com/visual-studi
 static bool vc_runtime_outdated()
 {
 	win_version_info ver;
-	if (!get_dll_ver(L"msvcp140.dll", &ver))
+	if (!get_dll_ver(L"msvcp140.dll", &ver)) {
 		return true;
+	}
 	/* Major is always 14 (hence 140.dll), so we only care about minor. */
-	if (ver.minor >= 40)
+	if (ver.minor >= 40) {
 		return false;
+	}
 
 	int choice = MessageBoxA(NULL, vcRunErrorMsg, vcRunErrorTitle, MB_OKCANCEL | MB_ICONERROR | MB_TASKMODAL);
 	if (choice == IDOK) {
@@ -838,6 +841,29 @@ static bool vc_runtime_outdated()
 	}
 
 	return true;
+}
+
+static void set_process_mitigation_policies()
+{
+	PROCESS_MITIGATION_DEP_POLICY dep = {0};
+	dep.DisableAtlThunkEmulation = 1;
+	dep.Enable = 1;
+	dep.Permanent = TRUE;
+	SetProcessMitigationPolicy(ProcessDEPPolicy, &dep, sizeof(dep));
+
+	PROCESS_MITIGATION_ASLR_POLICY aslr = {0};
+	aslr.EnableBottomUpRandomization = 1;
+	aslr.EnableHighEntropy = 1;
+	aslr.EnableForceRelocateImages = 1;
+	aslr.DisallowStrippedImages = 1;
+	SetProcessMitigationPolicy(ProcessASLRPolicy, &aslr, sizeof(aslr));
+
+#ifdef _DEBUG
+	PROCESS_MITIGATION_STRICT_HANDLE_CHECK_POLICY hcheck = {0};
+	hcheck.RaiseExceptionOnInvalidHandleReference = 1;
+	hcheck.HandleExceptionsPermanentlyEnabled = 1;
+	SetProcessMitigationPolicy(ProcessStrictHandleCheckPolicy, &hcheck, sizeof(hcheck));
+#endif
 }
 #endif
 
@@ -856,39 +882,65 @@ static bool vc_runtime_outdated()
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
-	signal(SIGPIPE, SIG_IGN);
+	using SignalHandlerCallback = decltype(OBSApp::sigIntSignalHandler);
 
-	struct sigaction sig_handler;
+	auto setupSignalHandler = [](SignalHandlerCallback &callback, int signal) {
+		struct sigaction signalHandler{};
+		signalHandler.sa_handler = callback;
+		sigemptyset(&signalHandler.sa_mask);
+		signalHandler.sa_flags = 0;
 
-	sig_handler.sa_handler = OBSApp::SigIntSignalHandler;
-	sigemptyset(&sig_handler.sa_mask);
-	sig_handler.sa_flags = 0;
+		sigaction(signal, &signalHandler, nullptr);
+	};
 
-	sigaction(SIGINT, &sig_handler, NULL);
+	setupSignalHandler(OBSApp::sigIntSignalHandler, SIGINT);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGTERM);
+	setupSignalHandler(OBSApp::sigTermSignalHandler, SIGHUP);
+	setupSignalHandler(OBSApp::sigAbrtSignalHandler, SIGABRT);
+	setupSignalHandler(OBSApp::sigQuitSignalHandler, SIGQUIT);
 
-	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
-	a closed pipe. */
-	sigset_t sigpipe_mask;
-	sigemptyset(&sigpipe_mask);
-	sigaddset(&sigpipe_mask, SIGPIPE);
-	sigset_t saved_mask;
-	if (pthread_sigmask(SIG_BLOCK, &sigpipe_mask, &saved_mask) == -1) {
-		perror("pthread_sigmask");
+	// Block SIGPIPE in all threads, this can happen if a thread calls write on a closed pipe.
+	// Supposedly this can happen when OBS tries to write to a closed RTMP socket.
+	sigset_t sigpipeMask{};
+	sigemptyset(&sigpipeMask);
+	sigaddset(&sigpipeMask, SIGPIPE);
+	sigset_t savedMask{};
+
+	// pthread_sigmask returns 0 on success
+	bool signalMaskChanged = pthread_sigmask(SIG_BLOCK, &sigpipeMask, &savedMask) == 0;
+
+	if (!signalMaskChanged) {
+		perror("Unexpected failure to add 'SIG_BLOCK' to 'SIGPIPE' signal mask.");
 		exit(1);
 	}
 #endif
 
 #ifdef _WIN32
 	// Abort as early as possible if MSVC runtime is outdated
-	if (vc_runtime_outdated())
+	if (vc_runtime_outdated()) {
 		return 1;
+	}
+
 	// Try to keep this as early as possible
 	install_dll_blocklist_hook();
 
+	set_process_mitigation_policies();
+
 	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
+
+	/* Shutdown priority value is a range from 0 - 4FF with higher values getting first priority.
+	 * 000 - 0FF and 400 - 4FF are reserved system ranges.
+	 * Processes start at shutdown level 0x280 by default.
+	 * We set the main OBS application to a higher priority to ensure it tries to close before
+	 * any subprocesses such as CEF.
+	 */
+	SetProcessShutdownParameters(0x300, SHUTDOWN_NORETRY);
 
 	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
 	if (hRtwq) {
@@ -899,10 +951,6 @@ int main(int argc, char *argv[])
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
-
-#if defined(__FreeBSD__)
-	move_to_xdg();
-#endif
 
 	obs_set_cmdline_args(argc, argv);
 
@@ -943,16 +991,19 @@ int main(int argc, char *argv[])
 			opt_start_virtualcam = true;
 
 		} else if (arg_is(argv[i], "--collection", nullptr)) {
-			if (++i < argc)
+			if (++i < argc) {
 				opt_starting_collection = argv[i];
+			}
 
 		} else if (arg_is(argv[i], "--profile", nullptr)) {
-			if (++i < argc)
+			if (++i < argc) {
 				opt_starting_profile = argv[i];
+			}
 
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
-			if (++i < argc)
+			if (++i < argc) {
 				opt_starting_scene = argv[i];
+			}
 
 		} else if (arg_is(argv[i], "--minimize-to-tray", nullptr)) {
 			opt_minimize_tray = true;

@@ -8,7 +8,7 @@
 #import "OBSAVCapture.h"
 #import "AVCaptureDeviceFormat+OBSListable.h"
 
-/// Tthe maximum number of frame rate ranges to show complete information for before providing a more generic description of the supported frame rates inside of a device format description.
+/// The maximum number of frame rate ranges to show complete information for before providing a more generic description of the supported frame rates inside of a device format description.
 static const UInt32 kMaxFrameRateRangesInDescription = 10;
 
 @implementation OBSAVCapture
@@ -417,6 +417,23 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
     OBSAVCaptureMediaFPS fps;
     if (!obs_data_get_frames_per_second(self.captureInfo->settings, "frame_rate", &fps, NULL)) {
         [self AVCaptureLog:LOG_DEBUG withFormat:@"No valid framerate found in settings"];
+
+        AVCaptureDeviceFormat *lastFormat = [self.deviceInput.device.formats lastObject];
+
+        fps = [OBSAVCapture fallbackFrameRateForFormat:lastFormat];
+
+        if (lastFormat.videoSupportedFrameRateRanges.count == 0) {
+            return NO;
+        }
+
+        obs_data_set_obj(self.captureInfo->settings, "frame_rate", NULL);
+
+        obs_data_item_t *frameRateSetting = obs_data_item_byname(self.captureInfo->settings, "frame_rate");
+
+        obs_data_item_set_frames_per_second(&frameRateSetting, fps, NULL);
+
+        obs_source_update(self.captureInfo->source, self.captureInfo->settings);
+
         return NO;
     }
 
@@ -1129,21 +1146,14 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
         return;
     }
 
-    if (![[device uniqueID] isEqualTo:self.deviceUUID]) {
-        obs_source_update_properties(self.captureInfo->source);
-        return;
-    }
-
-    if (self.deviceInput.device) {
-        [self AVCaptureLog:LOG_INFO withFormat:@"Received connect event with active device '%@' (UUID %@)",
-                                               self.deviceInput.device.localizedName, self.deviceInput.device.uniqueID];
-
-        obs_source_update_properties(self.captureInfo->source);
-        return;
-    }
+    obs_source_update_properties(self.captureInfo->source);
 
     [self AVCaptureLog:LOG_INFO
             withFormat:@"Received connect event for device '%@' (UUID %@)", device.localizedName, device.uniqueID];
+
+    if (![[device uniqueID] isEqualTo:self.deviceUUID]) {
+        return;
+    }
 
     NSError *error;
     NSString *presetName = [OBSAVCapture stringFromSettings:self.captureInfo->settings withSetting:@"preset"];
@@ -1314,7 +1324,7 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
                     if (frame->format != VIDEO_FORMAT_NONE && frame->format != videoFormat) {
                         [self AVCaptureLog:LOG_DEBUG
                                 withFormat:@"Switching fourcc: '%@' (0x%x) -> '%@' (0x%x)",
-                                           [OBSAVCapture stringFromFourCharCode:frame->format], frame -> format,
+                                           [OBSAVCapture stringFromFourCharCode:frame->format], frame->format,
                                            [OBSAVCapture stringFromFourCharCode:mediaSubType], mediaSubType];
                     }
 #endif

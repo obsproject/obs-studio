@@ -135,6 +135,8 @@ struct obs_module {
 	DARRAY(char *) outputs;
 	DARRAY(char *) encoders;
 	DARRAY(char *) services;
+
+	enum obs_runtime_module_type module_type;
 };
 
 struct obs_disabled_module {
@@ -156,6 +158,7 @@ extern void free_module(struct obs_module *mod);
 struct obs_module_path {
 	char *bin;
 	char *data;
+	enum obs_runtime_module_type type;
 };
 
 static inline void free_module_path(struct obs_module_path *omp)
@@ -460,9 +463,7 @@ struct obs_core_audio {
 	pthread_mutex_t task_mutex;
 	struct deque tasks;
 
-	volatile bool prevent_monitoring_duplication;
 	struct obs_source *monitoring_duplicating_source;
-	bool monitoring_duplication_prevented_on_prev_tick;
 };
 
 /* user sources, output channels, and displays */
@@ -539,6 +540,8 @@ struct obs_core_hotkeys {
 	char *push_to_talk;
 	char *sceneitem_show;
 	char *sceneitem_hide;
+	char *monitor_on;
+	char *monitor_off;
 };
 
 typedef DARRAY(struct obs_source_info) obs_source_info_array_t;
@@ -550,7 +553,6 @@ struct obs_core {
 	DARRAY(struct obs_module_path) module_paths;
 	DARRAY(char *) safe_modules;
 	DARRAY(char *) disabled_modules;
-	DARRAY(char *) core_modules;
 
 	obs_source_info_array_t source_types;
 	obs_source_info_array_t input_types;
@@ -578,6 +580,8 @@ struct obs_core {
 	os_task_queue_t *destruction_task_thread;
 
 	obs_task_handler_t ui_task_handler;
+
+	bool core_modules_loaded;
 };
 
 extern struct obs_core *obs;
@@ -742,6 +746,7 @@ extern obs_canvas_t *obs_create_main_canvas(void);
 extern void obs_canvas_destroy(obs_canvas_t *canvas);
 extern void obs_canvas_clear_mix(obs_canvas_t *canvas);
 extern void obs_free_canvas_mixes(void);
+extern bool obs_canvas_has_valid_video_info(obs_canvas_t *canvas);
 extern bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi);
 extern void obs_canvas_insert_source(obs_canvas_t *canvas, obs_source_t *source);
 extern void obs_canvas_remove_source(obs_source_t *source);
@@ -992,6 +997,8 @@ struct obs_source {
 	/* audio monitoring */
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
+	bool monitoring_enabled;
+	obs_hotkey_pair_id monitor_on_off_key;
 
 	/* media action queue */
 	DARRAY(struct media_action) media_actions;
@@ -1350,6 +1357,14 @@ struct obs_encoder_group {
 
 	uint32_t num_encoders_started;
 	uint64_t start_timestamp;
+
+	uint32_t frame_rate_divisors_lcm;
+
+	uint64_t reconfigure_request;
+	int64_t next_pts;
+	uint32_t encoders_updated_next_pts;
+	uint32_t encoders_reconfigured;
+	bool reconfigure_again;
 };
 
 struct obs_encoder {
@@ -1423,12 +1438,16 @@ struct obs_encoder {
 
 	/* track encoders that are part of a gop-aligned multi track group */
 	struct obs_encoder_group *encoder_group;
+	uint64_t last_reconfigure_request;
+	uint64_t last_handled_reconfigure_request;
 
 	pthread_mutex_t outputs_mutex;
 	DARRAY(obs_output_t *) outputs;
 
 	/* stores the video/audio media output pointer.  video_t *or audio_t **/
 	void *media;
+	/* Stores the original video if GPU scaling is enabled and `media` can be overwritten. */
+	video_t *original_video;
 
 	pthread_mutex_t callbacks_mutex;
 	DARRAY(struct encoder_callback) callbacks;

@@ -23,7 +23,6 @@ extern void unload_nvidia_vfx(void);
 bool obs_module_load(void)
 {
 #ifdef LIBNVAFX_ENABLED
-	/* load nvidia audio fx dll */
 	if (load_nvidia_afx())
 		obs_register_source(&nvidia_audiofx_filter);
 #endif

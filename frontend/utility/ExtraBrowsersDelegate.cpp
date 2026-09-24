@@ -30,8 +30,9 @@ void ExtraBrowsersDelegate::setEditorData(QWidget *editor, const QModelIndex &in
 bool ExtraBrowsersDelegate::eventFilter(QObject *object, QEvent *event)
 {
 	QLineEdit *edit = qobject_cast<QLineEdit *>(object);
-	if (!edit)
+	if (!edit) {
 		return false;
+	}
 
 	if (LineEditCanceled(event)) {
 		RevertText(edit);

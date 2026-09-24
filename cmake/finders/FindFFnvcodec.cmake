@@ -50,8 +50,7 @@ if(PC_FFnvcodec_VERSION VERSION_GREATER 0)
   set(FFnvcodec_VERSION ${PC_FFnvcodec_VERSION})
 elseif(EXISTS "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h")
   file(
-    STRINGS
-    "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h"
+    STRINGS "${FFnvcodec_INCLUDE_DIR}/ffnvcodec/nvEncodeAPI.h"
     _version_string
     REGEX "^.*NVENCAPI_(MAJOR|MINOR)_VERSION[ \t]+[0-9]+[ \t]*$"
   )

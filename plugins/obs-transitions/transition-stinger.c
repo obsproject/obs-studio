@@ -29,7 +29,7 @@ struct stinger_info {
 	float transition_b_mul;
 	bool transitioning;
 	bool transition_point_is_frame;
-	int monitoring_type;
+	bool monitoring;
 	enum fade_style fade_style;
 
 	bool track_matte_enabled;
@@ -136,8 +136,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 		obs_source_set_muted(s->matte_source, true);
 	}
 
-	s->monitoring_type = (int)obs_data_get_int(settings, "audio_monitoring");
-	obs_source_set_monitoring_type(s->media_source, s->monitoring_type);
+	s->monitoring = obs_data_get_bool(settings, "enable_monitoring");
+	obs_source_set_monitoring_enabled(s->media_source, s->monitoring);
 
 	s->fade_style = (enum fade_style)obs_data_get_int(settings, "audio_fade_style");
 
@@ -524,6 +524,7 @@ static bool stinger_audio_render(void *data, uint64_t *ts_out, struct obs_source
 static void stinger_transition_start(void *data)
 {
 	struct stinger_info *s = data;
+	enum obs_media_state state;
 
 	if (s->media_source) {
 		calldata_t cd = {0};
@@ -531,7 +532,8 @@ static void stinger_transition_start(void *data)
 		proc_handler_t *ph = obs_source_get_proc_handler(s->media_source);
 		proc_handler_t *matte_ph = s->matte_source ? obs_source_get_proc_handler(s->matte_source) : NULL;
 
-		if (s->transitioning) {
+		state = obs_source_media_get_state(s->media_source);
+		if (s->transitioning || state == OBS_MEDIA_STATE_PLAYING) {
 			proc_handler_call(ph, "restart", &cd);
 			if (matte_ph) {
 				proc_handler_call(matte_ph, "restart", &cd);
@@ -727,14 +729,7 @@ static obs_properties_t *stinger_properties(void *data)
 	dstr_free(&filter);
 
 	// audio output settings
-	obs_property_t *monitor_list = obs_properties_add_list(ppts, "audio_monitoring",
-							       obs_module_text("AudioMonitoring"), OBS_COMBO_TYPE_LIST,
-							       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.None"), OBS_MONITORING_TYPE_NONE);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.MonitorOnly"),
-				  OBS_MONITORING_TYPE_MONITOR_ONLY);
-	obs_property_list_add_int(monitor_list, obs_module_text("AudioMonitoring.Both"),
-				  OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
+	obs_properties_add_bool(ppts, "enable_monitoring", obs_module_text("AudioMonitoring"));
 
 	// audio fade settings
 	obs_property_t *audio_fade_style = obs_properties_add_list(

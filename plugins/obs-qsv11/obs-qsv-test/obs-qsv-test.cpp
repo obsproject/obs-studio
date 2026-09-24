@@ -64,8 +64,9 @@ static bool get_adapter_caps(IDXGIFactory *factory, mfxLoader loader, mfxSession
 
 	ComPtr<IDXGIAdapter> adapter;
 	hr = factory->EnumAdapters(adapter_idx, &adapter);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return false;
+	}
 
 	DXGI_ADAPTER_DESC desc;
 	adapter->GetDesc(&desc);
@@ -83,23 +84,27 @@ static bool get_adapter_caps(IDXGIFactory *factory, mfxLoader loader, mfxSession
 	mfxStatus sts = MFXEnumImplementations(loader, adapter_idx - idx_adjustment, MFX_IMPLCAPS_IMPLDESCSTRUCTURE,
 					       reinterpret_cast<mfxHDL *>(&idesc));
 
-	if (sts != MFX_ERR_NONE)
+	if (sts != MFX_ERR_NONE) {
 		return false;
+	}
 
 	caps.is_dgpu = false;
-	if (idesc->Dev.MediaAdapterType == MFX_MEDIA_DISCRETE)
+	if (idesc->Dev.MediaAdapterType == MFX_MEDIA_DISCRETE) {
 		caps.is_dgpu = true;
+	}
 
 	caps.supports_av1 = false;
 	caps.supports_hevc = false;
 	mfxEncoderDescription *enc = &idesc->Enc;
 	if (enc->NumCodecs != 0) {
 		for (int codec = 0; codec < enc->NumCodecs; codec++) {
-			if (enc->Codecs[codec].CodecID == MFX_CODEC_AV1)
+			if (enc->Codecs[codec].CodecID == MFX_CODEC_AV1) {
 				caps.supports_av1 = true;
+			}
 #if ENABLE_HEVC
-			if (enc->Codecs[codec].CodecID == MFX_CODEC_HEVC)
+			if (enc->Codecs[codec].CodecID == MFX_CODEC_HEVC) {
 				caps.supports_hevc = true;
+			}
 #endif
 		}
 	} else {
@@ -122,8 +127,9 @@ DWORD WINAPI TimeoutThread(LPVOID param)
 	HANDLE hMainThread = (HANDLE)param;
 
 	DWORD ret = WaitForSingleObject(hMainThread, CHECK_TIMEOUT_MS);
-	if (ret == WAIT_TIMEOUT)
+	if (ret == WAIT_TIMEOUT) {
 		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
+	}
 
 	CloseHandle(hMainThread);
 
@@ -154,16 +160,19 @@ try {
 	/* query qsv support                                         */
 
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw "CreateDXGIFactory1 failed";
+	}
 
 	mfxLoader loader = MFXLoad();
-	if (!loader)
+	if (!loader) {
 		throw "MFXLoad failed";
+	}
 
 	mfxConfig cfg = MFXCreateConfig(loader);
-	if (!cfg)
+	if (!cfg) {
 		throw "MFXCreateConfig failed";
+	}
 
 	mfxVariant impl;
 
@@ -179,8 +188,9 @@ try {
 	while (get_adapter_caps(factory, loader, m_session, idx++) == true)
 		;
 
-	if (m_session)
+	if (m_session) {
 		MFXClose(m_session);
+	}
 
 	MFXUnload(loader);
 

@@ -101,7 +101,9 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err, const ch
 
 bool load_nvenc_lib(void)
 {
-#ifdef _WIN32
+#if defined(_M_ARM64)
+	nvenc_lib = os_dlopen("nvEncodeAPI.dll");
+#elif defined(_WIN32)
 	nvenc_lib = os_dlopen("nvEncodeAPI64.dll");
 #else
 	nvenc_lib = os_dlopen("libnvidia-encode.so.1");

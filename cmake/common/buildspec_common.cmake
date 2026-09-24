@@ -46,11 +46,37 @@ function(_check_deps_version version)
   return(PROPAGATE found CMAKE_PREFIX_PATH)
 endfunction()
 
+function(_get_dependency_data variable_name)
+  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/CMakePresets.json" preset_data)
+
+  string(JSON configure_presets GET ${preset_data} "configurePresets")
+
+  string(JSON preset_count LENGTH "${configure_presets}")
+  math(EXPR preset_count "${preset_count}-1")
+
+  foreach(index RANGE 0 ${preset_count})
+    string(JSON preset_member_data GET "${configure_presets}" ${index})
+    string(JSON preset_name GET ${preset_member_data} "name")
+
+    if(preset_name STREQUAL dependencies)
+      string(JSON vendor_data GET ${preset_member_data} "vendor")
+      string(JSON vendor_data GET ${vendor_data} "obsproject.com/obs-studio")
+      string(JSON dependency_data GET ${vendor_data} "dependencies")
+      break()
+    else()
+      continue()
+    endif()
+  endforeach()
+
+  set(${variable_name} "${dependency_data}")
+
+  return(PROPAGATE ${variable_name})
+endfunction()
+
 # _check_dependencies: Fetch and extract pre-built OBS build dependencies
 function(_check_dependencies)
-  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/buildspec.json" buildspec)
-
-  string(JSON dependency_data GET ${buildspec} dependencies)
+  set(dependencies_list ${ARGV})
+  _get_dependency_data(dependency_data)
 
   foreach(dependency IN LISTS dependencies_list)
     if(dependency STREQUAL cef AND NOT ENABLE_BROWSER)
@@ -92,8 +118,7 @@ function(_check_dependencies)
 
     if(EXISTS "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256")
       file(
-        READ
-        "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256"
+        READ "${dependencies_dir}/.dependency_${dependency}_${arch}.sha256"
         OBS_DEPENDENCY_${dependency}_${arch}_HASH
       )
     endif()
@@ -128,15 +153,16 @@ function(_check_dependencies)
 
     if(NOT EXISTS "${dependencies_dir}/${file}")
       message(STATUS "Downloading ${url}")
-      file(DOWNLOAD "${url}" "${dependencies_dir}/${file}" STATUS download_status EXPECTED_HASH SHA256=${hash})
+      file(DOWNLOAD "${url}" "${dependencies_dir}/${file}.tmp" STATUS download_status EXPECTED_HASH SHA256=${hash})
 
       list(GET download_status 0 error_code)
       list(GET download_status 1 error_message)
-      if(error_code GREATER 0)
+      if(error_code)
+        file(REMOVE "${dependencies_dir}/${file}.tmp")
         message(STATUS "Downloading ${url} - Failure")
         message(FATAL_ERROR "Unable to download ${url}, failed with error: ${error_message}")
-        file(REMOVE "${dependencies_dir}/${file}")
       else()
+        file(RENAME "${dependencies_dir}/${file}.tmp" "${dependencies_dir}/${file}")
         message(STATUS "Downloading ${url} - done")
       endif()
     endif()

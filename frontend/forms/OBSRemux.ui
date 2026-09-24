@@ -32,7 +32,7 @@
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="standardButtons">
-        <set>QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Reset|QDialogButtonBox::RestoreDefaults</set>
+        <set>QDialogButtonBox::StandardButton::Close|QDialogButtonBox::StandardButton::Ok|QDialogButtonBox::StandardButton::Reset|QDialogButtonBox::StandardButton::RestoreDefaults</set>
        </property>
       </widget>
      </item>
@@ -41,7 +41,7 @@
    <item row="1" column="0">
     <widget class="QTableView" name="tableView">
      <property name="selectionMode">
-      <enum>QAbstractItemView::NoSelection</enum>
+      <enum>QAbstractItemView::SelectionMode::NoSelection</enum>
      </property>
      <attribute name="horizontalHeaderMinimumSectionSize">
       <number>23</number>

@@ -49,7 +49,7 @@ void EditorWidget::buildEffectContainer(AEffect *effect)
 	effect->dispatcher(effect, effEditGetRect, 0, 0, &vstRect, 0);
 	if (vstRect) {
 		// on Windows, the size reported by 'effect' is larger than
-		// its actuall size by a factor of the monitor's ui scale,
+		// its actual size by a factor of the monitor's ui scale,
 		// so the window size should be divided by the factor
 		qreal scale_factor = devicePixelRatioF();
 		int width = vstRect->right - vstRect->left;
@@ -77,7 +77,7 @@ void EditorWidget::handleResizeRequest(int, int)
 
 	if (rec) {
 		// on Windows, the size reported by 'effect' is larger than
-		// its actuall size by a factor of the monitor's ui scale,
+		// its actual size by a factor of the monitor's ui scale,
 		// so the window size should be divided by the factor
 		qreal scale_factor = devicePixelRatioF();
 		int width = rec->right - rec->left;

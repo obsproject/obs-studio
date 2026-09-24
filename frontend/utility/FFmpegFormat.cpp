@@ -22,8 +22,9 @@ using namespace std;
 
 static bool is_output_device(const AVClass *avclass)
 {
-	if (!avclass)
+	if (!avclass) {
 		return false;
+	}
 
 	switch (avclass->category) {
 	case AV_CLASS_CATEGORY_DEVICE_VIDEO_OUTPUT:
@@ -42,8 +43,9 @@ vector<FFmpegFormat> GetSupportedFormats()
 
 	void *i = 0;
 	while ((output_format = av_muxer_iterate(&i)) != nullptr) {
-		if (is_output_device(output_format->priv_class))
+		if (is_output_device(output_format->priv_class)) {
 			continue;
+		}
 
 		formats.emplace_back(output_format);
 	}
@@ -54,11 +56,13 @@ vector<FFmpegFormat> GetSupportedFormats()
 FFmpegCodec FFmpegFormat::GetDefaultEncoder(FFmpegCodecType codec_type) const
 {
 	const AVCodecID codec_id = codec_type == VIDEO ? video_codec : audio_codec;
-	if (codec_type == UNKNOWN || codec_id == AV_CODEC_ID_NONE)
+	if (codec_type == UNKNOWN || codec_id == AV_CODEC_ID_NONE) {
 		return {};
+	}
 
-	if (auto codec = avcodec_find_encoder(codec_id))
+	if (auto codec = avcodec_find_encoder(codec_id)) {
 		return {codec};
+	}
 
 	/* Fall back to using the format name as the encoder,
 	 * this works for some formats such as FLV. */

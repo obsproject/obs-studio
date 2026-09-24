@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 add_subdirectory(api)
 
-option(ENABLE_FRONTEND "Enable building with UI frontend (requires Qt6)" ON)
-
 if(NOT ENABLE_FRONTEND)
   target_disable_feature(obs "User Interface")
   return()
@@ -26,6 +24,10 @@ if(NOT TARGET OBS::bpm)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" bpm)
 endif()
 
+if(NOT TARGET OBS::qt-obs-spinbox)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/qt/obs-spinbox" obs-spinbox)
+endif()
+
 add_executable(obs-studio)
 add_executable(OBS::studio ALIAS obs-studio)
 
@@ -40,6 +42,7 @@ target_link_libraries(
     OBS::frontend-api
     OBS::json11
     OBS::bpm
+    OBS::qt-obs-spinbox
 )
 
 include(cmake/ui-components.cmake)
@@ -65,8 +68,6 @@ include(cmake/feature-restream.cmake)
 include(cmake/feature-youtube.cmake)
 include(cmake/feature-whatsnew.cmake)
 include(cmake/feature-idian-playground.cmake)
-
-add_subdirectory(plugins)
 
 configure_file(cmake/templates/ui-config.h.in ui-config.h)
 
@@ -97,10 +98,6 @@ foreach(graphics_library IN ITEMS opengl metal d3d11)
     target_compile_definitions(obs-studio PRIVATE DL_${graphics_library_U}="")
   endif()
 endforeach()
-
-get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-list(JOIN obs_module_list "|" SAFE_MODULES)
-target_compile_definitions(obs-studio PRIVATE "SAFE_MODULES=\"${SAFE_MODULES}\"")
 
 get_target_property(target_sources obs-studio SOURCES)
 set(target_cpp_sources ${target_sources})

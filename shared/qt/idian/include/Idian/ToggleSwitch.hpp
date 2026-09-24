@@ -31,7 +31,7 @@
 
 namespace idian {
 
-class ToggleSwitch : public QAbstractButton, public Utils {
+class ToggleSwitch : public QAbstractButton {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)
@@ -81,18 +81,6 @@ protected:
 	void leaveEvent(QEvent *) override;
 	void keyReleaseEvent(QKeyEvent *) override;
 	void mouseReleaseEvent(QMouseEvent *) override;
-
-	void focusInEvent(QFocusEvent *e) override
-	{
-		Utils::showKeyFocused(e);
-		QAbstractButton::focusInEvent(e);
-	}
-
-	void focusOutEvent(QFocusEvent *e) override
-	{
-		Utils::hideKeyFocused(e);
-		QAbstractButton::focusOutEvent(e);
-	}
 
 private slots:
 	void onClicked(bool checked);

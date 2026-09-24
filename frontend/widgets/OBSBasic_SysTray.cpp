@@ -29,28 +29,26 @@ void OBSBasic::SystemTrayInit()
 #else
 	QIcon trayIconFile = QIcon(":/res/images/obs.png");
 #endif
-	trayIcon.reset(new QSystemTrayIcon(QIcon::fromTheme("obs-tray", trayIconFile), this));
+	trayIcon = new QSystemTrayIcon(QIcon::fromTheme("obs-tray", trayIconFile), this);
 	trayIcon->setToolTip("OBS Studio");
 
-	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayIcon.data());
-	sysTrayStream =
-		new QAction(StreamingActive() ? QTStr("Basic.Main.StopStreaming") : QTStr("Basic.Main.StartStreaming"),
-			    trayIcon.data());
-	sysTrayRecord =
-		new QAction(RecordingActive() ? QTStr("Basic.Main.StopRecording") : QTStr("Basic.Main.StartRecording"),
-			    trayIcon.data());
+	trayMenu = new QMenu(this);
+
+	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayMenu);
+	sysTrayStream = new QAction(
+		StreamingActive() ? QTStr("Basic.Main.StopStreaming") : QTStr("Basic.Main.StartStreaming"), trayMenu);
+	sysTrayRecord = new QAction(
+		RecordingActive() ? QTStr("Basic.Main.StopRecording") : QTStr("Basic.Main.StartRecording"), trayMenu);
 	sysTrayReplayBuffer = new QAction(ReplayBufferActive() ? QTStr("Basic.Main.StopReplayBuffer")
 							       : QTStr("Basic.Main.StartReplayBuffer"),
-					  trayIcon.data());
+					  trayMenu);
 	sysTrayVirtualCam = new QAction(VirtualCamActive() ? QTStr("Basic.Main.StopVirtualCam")
 							   : QTStr("Basic.Main.StartVirtualCam"),
-					trayIcon.data());
-	exit = new QAction(QTStr("Exit"), trayIcon.data());
+					trayMenu);
+	exit = new QAction(QTStr("Exit"), trayMenu);
 
-	trayMenu = new QMenu;
-
-	previewProjector = new QMenu(QTStr("Projector.Open.Preview"));
-	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"));
+	previewProjector = new QMenu(QTStr("Projector.Open.Preview"), trayMenu);
+	studioProgramProjector = new QMenu(QTStr("Projector.Open.Program"), trayMenu);
 	OBSBasic::updateSysTrayProjectorMenu();
 
 	trayMenu->addAction(showHide);
@@ -67,13 +65,15 @@ void OBSBasic::SystemTrayInit()
 	trayIcon->setContextMenu(trayMenu);
 	trayIcon->show();
 
-	if (outputHandler && !outputHandler->replayBuffer)
+	if (outputHandler && !outputHandler->replayBuffer) {
 		sysTrayReplayBuffer->setEnabled(false);
+	}
 
 	sysTrayVirtualCam->setEnabled(vcamEnabled);
 
-	if (Active())
+	if (Active()) {
 		OnActivate(true);
+	}
 
 	connect(trayIcon.data(), &QSystemTrayIcon::activated, this, &OBSBasic::IconActivated);
 	connect(showHide, &QAction::triggered, this, &OBSBasic::ToggleShowHide);
@@ -108,16 +108,19 @@ void OBSBasic::SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n
 
 void OBSBasic::SystemTray(bool firstStarted)
 {
-	if (!QSystemTrayIcon::isSystemTrayAvailable())
+	if (!QSystemTrayIcon::isSystemTrayAvailable()) {
 		return;
-	if (!trayIcon && !firstStarted)
+	}
+	if (!trayIcon && !firstStarted) {
 		return;
+	}
 
 	bool sysTrayWhenStarted = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayEnabled");
 
-	if (firstStarted)
+	if (firstStarted) {
 		SystemTrayInit();
+	}
 
 	if (!sysTrayEnabled) {
 		trayIcon->hide();
@@ -132,10 +135,11 @@ void OBSBasic::SystemTray(bool firstStarted)
 		}
 	}
 
-	if (isVisible())
+	if (isVisible()) {
 		showHide->setText(QTStr("Basic.SystemTray.Hide"));
-	else
+	} else {
 		showHide->setText(QTStr("Basic.SystemTray.Show"));
+	}
 }
 
 bool OBSBasic::sysTrayMinimizeToTray()

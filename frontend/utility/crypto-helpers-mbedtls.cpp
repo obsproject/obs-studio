@@ -21,7 +21,7 @@ bool VerifySignature(const uint8_t *pubKey, const size_t pubKeyLen, const uint8_
 	if ((ret = mbedtls_md(mbedtls_md_info_from_type(MBEDTLS_MD_SHA512), buf, len, hash)) != 0) {
 		goto exit;
 	}
-	// Verify signautre
+	// Verify signature
 	if ((ret = mbedtls_pk_verify(&pk, MBEDTLS_MD_SHA512, hash, 64, sig, sigLen)) != 0) {
 		goto exit;
 	}

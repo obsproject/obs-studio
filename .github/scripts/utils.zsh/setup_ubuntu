@@ -23,9 +23,13 @@ local deps_label
 local deps_hash
 
 IFS=';' read -r deps_version deps_baseurl deps_label deps_hash deps_revision <<< \
-  "$(jq -r --arg target "${target}" \
-    '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]} | join(";")' \
-    ${buildspec_file})"
+  "$(jq -r --arg target "${target}" '
+    .configurePresets[]
+    | select(.name=="dependencies")
+    | .vendor["obsproject.com/obs-studio"].dependencies["cef"]
+    | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]}
+    | join(";")
+  ' ${project_root}/CMakePresets.json)"
 
 if (( ! deps_version )) {
   log_error 'No valid cef spec found in buildspec.json.'
