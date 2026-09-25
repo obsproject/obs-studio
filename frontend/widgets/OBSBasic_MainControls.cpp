@@ -50,9 +50,7 @@
 #include <nlohmann/json.hpp>
 #include <QDesktopServices>
 
-#ifdef _WIN32
 #include <sstream>
-#endif
 
 extern bool restart;
 extern bool restart_safe;
