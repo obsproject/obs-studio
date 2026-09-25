@@ -72,7 +72,7 @@ public:
 	void GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnVPSBuf, mfxU16 *pnSPSBuf,
 			  mfxU16 *pnPPSBuf);
 	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
-			 mfxBitstream **pBS);
+			 uint8_t *pDataV, uint32_t strideV, mfxBitstream **pBS);
 	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
@@ -90,6 +90,8 @@ protected:
 			   uint32_t strideUV);
 	mfxStatus LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
 			   uint32_t strideUV);
+	mfxStatus LoadVUYX(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataU, uint8_t *pDataV,
+			   uint32_t strideY, uint32_t strideU, uint32_t strideV);
 	mfxStatus Drain();
 	int GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize);
 

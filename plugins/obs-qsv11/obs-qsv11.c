@@ -1215,9 +1215,9 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encod
 	// if we actually do expect null frames to complete output.
 	if (frame)
 		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, frame->data[0], frame->data[1], frame->linesize[0],
-					 frame->linesize[1], &pBS);
+					 frame->linesize[1], frame->data[2], frame->linesize[2], &pBS);
 	else
-		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, NULL, NULL, 0, 0, &pBS);
+		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, NULL, NULL, 0, 0, NULL, 0, &pBS);
 
 	if (ret < 0) {
 		warn("encode failed");

@@ -234,6 +234,15 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
 	}
 	m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+	if (pParams->video_fmt_444) {
+		/* 8-bit 4:4:4 (HEVC SCC): oneVPL expects packed AYUV surfaces,
+		 * which FFmpeg feeds from AV_PIX_FMT_VUYX (byte order V,U,Y,X). */
+		m_mfxEncParams.mfx.FrameInfo.FourCC = MFX_FOURCC_AYUV;
+		m_mfxEncParams.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV444;
+		m_mfxEncParams.mfx.FrameInfo.BitDepthLuma = 8;
+		m_mfxEncParams.mfx.FrameInfo.BitDepthChroma = 8;
+		m_mfxEncParams.mfx.FrameInfo.Shift = 0;
+	}
 	m_mfxEncParams.mfx.FrameInfo.PicStruct = MFX_PICSTRUCT_PROGRESSIVE;
 	m_mfxEncParams.mfx.FrameInfo.CropX = 0;
 	m_mfxEncParams.mfx.FrameInfo.CropY = 0;
@@ -247,7 +256,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	PRAGMA_WARN_PUSH
 	PRAGMA_WARN_DEPRECATION
 	if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
-		if (platform.CodeName >= MFX_PLATFORM_DG2) {
+		/* HEVC SCC is only available on the VDENC (low-power) path */
+		if (platform.CodeName >= MFX_PLATFORM_DG2 || pParams->video_fmt_444) {
 			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
 		}
 	} else if (codec == QSV_CODEC_AV1) {
@@ -377,18 +387,25 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 #endif
 
 #if defined(_WIN32)
-	// TODO: Ask about this one on VAAPI too.
-	memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));
-	m_ExtVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
-	m_ExtVideoSignalInfo.Header.BufferSz = sizeof(m_ExtVideoSignalInfo);
-	m_ExtVideoSignalInfo.VideoFormat = pParams->VideoFormat;
-	m_ExtVideoSignalInfo.VideoFullRange = pParams->VideoFullRange;
-	m_ExtVideoSignalInfo.ColourDescriptionPresent = 1;
-	m_ExtVideoSignalInfo.ColourPrimaries = pParams->ColourPrimaries;
-	m_ExtVideoSignalInfo.TransferCharacteristics = pParams->TransferCharacteristics;
-	m_ExtVideoSignalInfo.MatrixCoefficients = pParams->MatrixCoefficients;
-	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVideoSignalInfo);
+	const bool attach_vsi = true;
+#else
+	/* On Linux keep the historical behaviour for existing encoders, but
+	 * attach colour metadata for the 4:4:4 SCC path (FFmpeg does the same
+	 * unconditionally and it is accepted by oneVPL/VAAPI). */
+	const bool attach_vsi = pParams->video_fmt_444;
 #endif
+	if (attach_vsi) {
+		memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));
+		m_ExtVideoSignalInfo.Header.BufferId = MFX_EXTBUFF_VIDEO_SIGNAL_INFO;
+		m_ExtVideoSignalInfo.Header.BufferSz = sizeof(m_ExtVideoSignalInfo);
+		m_ExtVideoSignalInfo.VideoFormat = pParams->VideoFormat;
+		m_ExtVideoSignalInfo.VideoFullRange = pParams->VideoFullRange;
+		m_ExtVideoSignalInfo.ColourDescriptionPresent = 1;
+		m_ExtVideoSignalInfo.ColourPrimaries = pParams->ColourPrimaries;
+		m_ExtVideoSignalInfo.TransferCharacteristics = pParams->TransferCharacteristics;
+		m_ExtVideoSignalInfo.MatrixCoefficients = pParams->MatrixCoefficients;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVideoSignalInfo);
+	}
 
 	// CLL and Chroma location in HEVC only supported by VPL
 	if (m_ver.Major >= 2) {
@@ -453,7 +470,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	memcpy(&validParams, &m_mfxEncParams, sizeof(validParams));
 	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &validParams);
 	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
-		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+		/* HEVC SCC only exists on the low-power path; never fall back to
+		 * the non-low-power encoder for it. */
+		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON && !pParams->video_fmt_444) {
 			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
 			m_co2.LookAheadDepth = 0;
 		}
@@ -514,7 +533,8 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	} else {
 		mfxU16 width = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Width);
 		mfxU16 height = (mfxU16)MSDK_ALIGN32(EncRequest.Info.Height);
-		mfxU8 bitsPerPixel = 12;
+		bool is_ayuv = EncRequest.Info.FourCC == MFX_FOURCC_AYUV;
+		mfxU8 bitsPerPixel = is_ayuv ? 32 : 12;
 		mfxU32 surfaceSize = width * height * bitsPerPixel / 8;
 		m_nSurfNum = EncRequest.NumFrameSuggested;
 
@@ -525,10 +545,21 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 			memcpy(&(m_pmfxSurfaces[i]->Info), &(m_mfxEncParams.mfx.FrameInfo), sizeof(mfxFrameInfo));
 
 			mfxU8 *pSurface = (mfxU8 *)new mfxU8[surfaceSize];
-			m_pmfxSurfaces[i]->Data.Y = pSurface;
-			m_pmfxSurfaces[i]->Data.U = pSurface + width * height;
-			m_pmfxSurfaces[i]->Data.V = pSurface + width * height + 1;
-			m_pmfxSurfaces[i]->Data.Pitch = width;
+			if (is_ayuv) {
+				/* Packed 4:4:4:4, byte order per pixel is V,U,Y,X
+				 * (matches FFmpeg AV_PIX_FMT_VUYX upload). Data.A only
+				 * needs to be a valid address, the value is unused. */
+				m_pmfxSurfaces[i]->Data.V = pSurface;
+				m_pmfxSurfaces[i]->Data.U = pSurface + 1;
+				m_pmfxSurfaces[i]->Data.Y = pSurface + 2;
+				m_pmfxSurfaces[i]->Data.A = pSurface + 3;
+				m_pmfxSurfaces[i]->Data.Pitch = width * 4;
+			} else {
+				m_pmfxSurfaces[i]->Data.Y = pSurface;
+				m_pmfxSurfaces[i]->Data.U = pSurface + width * height;
+				m_pmfxSurfaces[i]->Data.V = pSurface + width * height + 1;
+				m_pmfxSurfaces[i]->Data.Pitch = width;
+			}
 		}
 	}
 
@@ -665,6 +696,50 @@ mfxStatus QSV_Encoder_Internal::LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pD
 	return MFX_ERR_NONE;
 }
 
+mfxStatus QSV_Encoder_Internal::LoadVUYX(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataU, uint8_t *pDataV,
+					 uint32_t strideY, uint32_t strideU, uint32_t strideV)
+{
+	mfxU32 w, h, i, x, pitch;
+	mfxFrameInfo *pInfo = &pSurface->Info;
+	mfxFrameData *pData = &pSurface->Data;
+
+	if (!pDataY || !pDataU || !pDataV) {
+		warn("LoadVUYX: missing plane data (Y=%p U=%p V=%p), frame format mismatch?", (void *)pDataY,
+		     (void *)pDataU, (void *)pDataV);
+		return MFX_ERR_NULL_PTR;
+	}
+
+	if (pInfo->CropH > 0 && pInfo->CropW > 0) {
+		w = pInfo->CropW;
+		h = pInfo->CropH;
+	} else {
+		w = pInfo->Width;
+		h = pInfo->Height;
+	}
+
+	pitch = pData->Pitch;
+
+	/* Repack the three full-resolution I444 planes into packed AYUV
+	 * (byte order per pixel: V,U,Y,X). Data.V points at the base of the
+	 * packed buffer. */
+	for (i = 0; i < h; i++) {
+		const uint8_t *srcY = pDataY + i * strideY;
+		const uint8_t *srcU = pDataU + i * strideU;
+		const uint8_t *srcV = pDataV + i * strideV;
+		mfxU8 *dst = pData->V + (i + pInfo->CropY) * pitch + pInfo->CropX * 4;
+
+		for (x = 0; x < w; x++) {
+			dst[0] = srcV[x];
+			dst[1] = srcU[x];
+			dst[2] = srcY[x];
+			dst[3] = 255;
+			dst += 4;
+		}
+	}
+
+	return MFX_ERR_NONE;
+}
+
 mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY, uint8_t *pDataUV,
 					 uint32_t strideY, uint32_t strideUV)
 {
@@ -713,7 +788,7 @@ int QSV_Encoder_Internal::GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize)
 }
 
 mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
-				       uint32_t strideUV, mfxBitstream **pBS)
+				       uint32_t strideUV, uint8_t *pDataV, uint32_t strideV, mfxBitstream **pBS)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
@@ -770,8 +845,13 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
-	sts = (pSurface->Info.FourCC == MFX_FOURCC_P010) ? LoadP010(pSurface, pDataY, pDataUV, strideY, strideUV)
-							 : LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
+	if (pSurface->Info.FourCC == MFX_FOURCC_AYUV) {
+		sts = LoadVUYX(pSurface, pDataY, pDataUV, pDataV, strideY, strideUV, strideV);
+	} else if (pSurface->Info.FourCC == MFX_FOURCC_P010) {
+		sts = LoadP010(pSurface, pDataY, pDataUV, strideY, strideUV);
+	} else {
+		sts = LoadNV12(pSurface, pDataY, pDataUV, strideY, strideUV);
+	}
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	pSurface->Data.TimeStamp = ts;
@@ -898,7 +978,13 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	if (m_pmfxSurfaces) {
 		for (int i = 0; i < m_nSurfNum; i++) {
 			if (!m_bUseTexAlloc) {
-				delete[] m_pmfxSurfaces[i]->Data.Y;
+				/* For AYUV the base pointer of the allocation is
+				 * Data.V, not Data.Y. */
+				if (m_pmfxSurfaces[i]->Info.FourCC == MFX_FOURCC_AYUV) {
+					delete[] m_pmfxSurfaces[i]->Data.V;
+				} else {
+					delete[] m_pmfxSurfaces[i]->Data.Y;
+				}
 			}
 
 			delete m_pmfxSurfaces[i];

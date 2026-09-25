@@ -127,6 +127,7 @@ typedef struct {
 	mfxU16 MaxContentLightLevel;
 	mfxU16 MaxPicAverageLightLevel;
 	bool video_fmt_10bit;
+	bool video_fmt_444; /* 8-bit 4:4:4 input (HEVC SCC), repacked to VUYX/AYUV */
 	bool bRepeatHeaders;
 } qsv_param_t;
 
@@ -157,7 +158,8 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor);
 qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec, bool useTexAlloc);
 void qsv_encoder_add_roi(qsv_t *, const struct obs_encoder_roi *roi);
 void qsv_encoder_clear_roi(qsv_t *pContext);
-int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t, uint32_t, mfxBitstream **pBS);
+int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t, uint32_t, uint8_t *, uint32_t,
+		       mfxBitstream **pBS);
 int qsv_encoder_encode_tex(qsv_t *, uint64_t, void *, uint64_t, uint64_t *, mfxBitstream **pBS);
 int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS, uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();

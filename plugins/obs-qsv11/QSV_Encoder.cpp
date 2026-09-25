@@ -161,13 +161,13 @@ void qsv_encoder_clear_roi(qsv_t *pContext)
 }
 
 int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
-		       uint32_t strideUV, mfxBitstream **pBS)
+		       uint32_t strideUV, uint8_t *pDataV, uint32_t strideV, mfxBitstream **pBS)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (pDataY != NULL && pDataUV != NULL) {
-		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
+		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pDataV, strideV, pBS);
 	}
 
 	if (sts == MFX_ERR_NONE) {
