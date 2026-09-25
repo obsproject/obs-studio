@@ -898,7 +898,7 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	if (m_pmfxSurfaces) {
 		for (int i = 0; i < m_nSurfNum; i++) {
 			if (!m_bUseTexAlloc) {
-				delete m_pmfxSurfaces[i]->Data.Y;
+				delete[] m_pmfxSurfaces[i]->Data.Y;
 			}
 
 			delete m_pmfxSurfaces[i];
