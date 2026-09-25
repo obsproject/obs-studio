@@ -54,6 +54,8 @@ target_sources(
     obs-hotkey.c
     obs-hotkey.h
     obs-hotkeys.h
+    obs-hotkey-portal.c
+    obs-hotkey-portal.h
     obs-interaction.h
     obs-internal.h
     obs-missing-files.c
@@ -321,6 +323,7 @@ set(
   obs-encoder.h
   obs-hotkey.h
   obs-hotkeys.h
+  obs-hotkey-portal.h
   obs-interaction.h
   obs-missing-files.h
   obs-module.h
