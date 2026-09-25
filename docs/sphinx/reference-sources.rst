@@ -178,6 +178,10 @@ Source Definition Structure (obs_source_info)
 
    - **OBS_SOURCE_REQUIRES_CANVAS** - Source type requires a canvas.
 
+   - **OBS_SOURCE_FALLBACK** - Source is a fallback, meaning the
+     original source is invalid, and has been replaced by another one.
+     Used for invalid transitions
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
@@ -898,6 +902,27 @@ General Source Functions
    :c:func:`obs_save_sources()` should not exist in the back-end.
 
    :param   id:             The source type string identifier
+   :param   name:           The desired name of the source.  For private
+                            sources, this does not have to be unique,
+                            and can additionally be *NULL* if desired
+   :param   settings:       The settings for the source, or *NULL* if
+                            none
+   :return:                 A reference to the newly created source, or
+                            *NULL* if failed
+
+---------------------
+
+.. function:: obs_source_t *obs_source_create_private_with_fallback(const char *id, const char *fallback_id, const char *name, obs_data_t *settings)
+
+   Same as :c:func:`obs_source_create_private()` but with a fallback id to use if the requested id is missing or invalid.
+
+   Author's Note: The existence of this function is a result of design
+   flaw: the front-end should control saving/loading of sources, and
+   functions like :c:func:`obs_enum_sources()` and
+   :c:func:`obs_save_sources()` should not exist in the back-end.
+
+   :param   id:             The source type string identifier
+   :param   fallback_id:    The fallback source type string identifier
    :param   name:           The desired name of the source.  For private
                             sources, this does not have to be unique,
                             and can additionally be *NULL* if desired
