@@ -112,7 +112,7 @@ runs:
            "/f",    "repo/.github/actions/windows-signing/prod-gc.crt"
            "/csp",  "Google Cloud KMS Provider"
            "/kc",   "projects/ci-signing/locations/global/keyRings/production/cryptoKeys/game-capture-release-sign-hsm/cryptoKeyVersions/1"
-           "${{ github.workspace }}/build/data/obs-plugins/win-capture/*.dll"
+           "${{ github.workspace }}/build/core/win-capture/data/*.dll"
         )
         Invoke-External $SignToolExe @signArgs
 
