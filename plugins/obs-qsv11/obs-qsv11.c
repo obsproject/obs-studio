@@ -504,6 +504,9 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 
 		} else if (astrcmpi(profile, "main10") == 0) {
 			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_MAIN10;
+		} else if (astrcmpi(profile, "scc") == 0) {
+			obsqsv->params.nCodecProfile = MFX_PROFILE_HEVC_SCC;
+			obsqsv->params.video_fmt_444 = true;
 		}
 
 	} else if (obsqsv->codec == QSV_CODEC_AV1) {
@@ -969,6 +972,13 @@ static void obs_qsv_video_plus_hdr_info(void *data, struct video_scale_info *inf
 	enum video_format pref_format;
 
 	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
+
+	/* HEVC SCC 8-bit 4:4:4 path: always request I444 frames, do not downconvert */
+	if (obsqsv->codec == QSV_CODEC_HEVC && obsqsv->params.nCodecProfile == MFX_PROFILE_HEVC_SCC) {
+		info->format = VIDEO_FORMAT_I444;
+		cap_resolution(obsqsv, info);
+		return;
+	}
 
 	if (!valid_av1_format(pref_format)) {
 		pref_format = valid_av1_format(info->format) ? info->format : VIDEO_FORMAT_NV12;
