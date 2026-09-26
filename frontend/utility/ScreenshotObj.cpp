@@ -53,12 +53,16 @@ ScreenshotObj::ScreenshotObj(obs_source_t *source) : weakSource(OBSGetWeakRef(so
 
 ScreenshotObj::~ScreenshotObj()
 {
+	obs_remove_tick_callback(renderTick, this);
+
+	if (!obs_initialized()) {
+		return;
+	}
+
 	obs_enter_graphics();
 	gs_stagesurface_destroy(stagesurf);
 	gs_texrender_destroy(texrender);
 	obs_leave_graphics();
-
-	obs_remove_tick_callback(renderTick, this);
 }
 
 void ScreenshotObj::renderScreenshot()
