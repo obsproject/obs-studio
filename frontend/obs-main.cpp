@@ -162,9 +162,11 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg, 
 	static mutex log_mutex;
 	static const char *last_msg_ptr = nullptr;
 	static int last_char_sum = 0;
+	static size_t last_len = 0;
 	static int rep_count = 0;
 
 	int new_sum = sum_chars(output_str);
+	size_t new_len = strlen(output_str);
 
 	lock_guard<mutex> guard(log_mutex);
 
@@ -177,6 +179,8 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg, 
 		if (diff < MAX_CHAR_VARIATION) {
 			return (rep_count++ >= MAX_REPEATED_LINES);
 		}
+	} else if (last_len == new_len && new_sum == last_char_sum) {
+		return (rep_count++ >= MAX_REPEATED_LINES);
 	}
 
 	if (rep_count > MAX_REPEATED_LINES) {
@@ -186,6 +190,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg, 
 
 	last_msg_ptr = msg;
 	last_char_sum = new_sum;
+	last_len = new_len;
 	rep_count = 0;
 
 	return false;
