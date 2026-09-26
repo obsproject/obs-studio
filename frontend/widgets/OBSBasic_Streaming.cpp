@@ -256,8 +256,10 @@ void OBSBasic::StreamingStart()
 		obs_service_t *service_obj = GetService();
 		OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 		std::string key = obs_data_get_string(settings, "stream_id");
-		if (!key.empty() && !youtubeStreamCheckThread) {
-			youtubeStreamCheckThread = CreateQThread([this, key] { YoutubeStreamCheck(key); });
+		YoutubeApiWrappers *apiYouTube = dynamic_cast<YoutubeApiWrappers *>(GetAuth());
+		if (apiYouTube && !key.empty() && !youtubeStreamCheckThread) {
+			youtubeStreamCheckThread =
+				CreateQThread([this, apiYouTube, key] { YoutubeStreamCheck(apiYouTube, key); });
 			youtubeStreamCheckThread->setObjectName("YouTubeStreamCheckThread");
 			youtubeStreamCheckThread->start();
 		}
