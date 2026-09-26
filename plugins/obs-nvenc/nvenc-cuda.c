@@ -99,7 +99,6 @@ void cuda_ctx_free(struct nvenc_data *enc)
 
 static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nvsurf)
 {
-	const bool p010 = obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010);
 	CUDA_ARRAY3D_DESCRIPTOR desc;
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
@@ -107,28 +106,26 @@ static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nv
 	desc.Flags = CUDA_ARRAY3D_SURFACE_LDST;
 	desc.NumChannels = 1;
 
-	if (!enc->non_texture) {
-		desc.Format = p010 ? CU_AD_FORMAT_UNSIGNED_INT16 : CU_AD_FORMAT_UNSIGNED_INT8;
-		desc.Height = enc->cy + enc->cy / 2;
-	} else {
-		switch (enc->surface_format) {
-		case NV_ENC_BUFFER_FORMAT_NV12:
-			desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
-			// Additional half-height plane for UV data
-			desc.Height += enc->cy / 2;
-			break;
-		case NV_ENC_BUFFER_FORMAT_YUV420_10BIT:
-			desc.Format = CU_AD_FORMAT_UNSIGNED_INT16; // 2 bytes per element
-			desc.Height += enc->cy / 2;
-			break;
-		case NV_ENC_BUFFER_FORMAT_YUV444:
-			desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
-			desc.Height *= 3; // 3 full-size planes
-			break;
-		default:
-			error("Unknown input format: %d", enc->surface_format);
-			return false;
-		}
+	switch (enc->surface_format) {
+	case NV_ENC_BUFFER_FORMAT_NV12:
+		desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
+		// Additional half-height plane for UV data
+		desc.Height += enc->cy / 2;
+		break;
+	case NV_ENC_BUFFER_FORMAT_YUV420_10BIT:
+		desc.Format = CU_AD_FORMAT_UNSIGNED_INT16; // 2 bytes per element
+		desc.Height += enc->cy / 2;
+		break;
+	case NV_ENC_BUFFER_FORMAT_YUV444:
+		desc.Format = CU_AD_FORMAT_UNSIGNED_INT8;
+		desc.Height *= 3; // 3 full-size planes
+		break;
+	case NV_ENC_BUFFER_FORMAT_AYUV:
+		desc.Format = CU_AD_FORMAT_UNSIGNED_INT32;
+		break;
+	default:
+		error("Unknown input format: %d", enc->surface_format);
+		return false;
 	}
 
 	CU_FAILED(cu->cuArray3DCreate(&nvsurf->tex, &desc))
@@ -140,11 +137,7 @@ static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nv
 	res.width = enc->cx;
 	res.height = enc->cy;
 	res.pitch = (uint32_t)(desc.Width * desc.NumChannels);
-	if (!enc->non_texture) {
-		res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT : NV_ENC_BUFFER_FORMAT_NV12;
-	} else {
-		res.bufferFormat = enc->surface_format;
-	}
+	res.bufferFormat = enc->surface_format;
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		return false;
@@ -157,15 +150,26 @@ static bool cuda_surface_init(struct nvenc_data *enc, struct nv_cuda_surface *nv
 
 bool cuda_init_surfaces(struct nvenc_data *enc)
 {
-	switch (enc->in_format) {
-	case VIDEO_FORMAT_P010:
-		enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
-		break;
-	case VIDEO_FORMAT_I444:
-		enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV444;
-		break;
-	default:
-		enc->surface_format = NV_ENC_BUFFER_FORMAT_NV12;
+	if (enc->non_texture) {
+		switch (enc->in_format) {
+		case VIDEO_FORMAT_P010:
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+			break;
+		case VIDEO_FORMAT_I444:
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV444;
+			break;
+		default:
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_NV12;
+		}
+	} else {
+		if (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_P010)) {
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+		} else if (obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_GBRA) ||
+			   obs_encoder_video_tex_active(enc->encoder, VIDEO_FORMAT_AYUV)) {
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_AYUV;
+		} else {
+			enc->surface_format = NV_ENC_BUFFER_FORMAT_NV12;
+		}
 	}
 
 	da_reserve(enc->surfaces, enc->buf_count);
