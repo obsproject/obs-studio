@@ -68,15 +68,14 @@ elseif(EXISTS "${PulseAudio_INCLUDE_DIR}/version.h")
     REGEX "^.*pa_get_headers_version\\(\\)[\t ]+\\(\".*\"\\)[ \t]*$"
   )
   string(
-    REGEX REPLACE
-    ".*pa_get_headers_version\\(\\)[\t ]+\\(\"([^\"]*)\"\\).*"
+    REGEX REPLACE ".*pa_get_headers_version\\(\\)[\t ]+\\(\"([^\"]*)\"\\).*"
     "\\1"
     PulseAudio_VERSION
     "${_VERSION_STRING}"
   )
 else()
   if(NOT PulseAudio_FIND_QUIETLY)
-    message(AUTHOR_WARNING "Failed to find PulseAudio version.")
+    message(WARNING "Failed to find PulseAudio version.")
   endif()
   set(PulseAudio_VERSION 0.0.0)
 endif()

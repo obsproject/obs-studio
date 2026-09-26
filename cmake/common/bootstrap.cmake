@@ -56,7 +56,6 @@ set(_obs_beta 0)
 # Add common module directories to default search path
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/common" "${CMAKE_CURRENT_SOURCE_DIR}/cmake/finders")
 
-include(policies NO_POLICY_SCOPE)
 include(versionconfig)
 include(buildnumber)
 include(osconfig)
