@@ -42,6 +42,7 @@ constexpr const wchar_t *kCDNUpdateBaseUrl = L"https://cdn-fastly.obsproject.com
 constexpr const wchar_t *kPatchManifestURL = L"https://obsproject.com/update_studio/getpatchmanifest";
 constexpr const wchar_t *kVSRedistURL = L"https://aka.ms/vs/17/release/vc_redist.x64.exe";
 constexpr const wchar_t *kMSHostname = L"aka.ms";
+constexpr const uint8_t kNewCorePluginsLocationVersionMajor = 33;
 
 /* ----------------------------------------------------------------------- */
 
@@ -740,8 +741,11 @@ static inline bool FileExists(const wchar_t *path)
 
 static bool NonCorePackageInstalled(const char *name)
 {
+	// While this function is still called, the check for obs-browser is not hit as it has been part of core for a while.
+	// Keeping it around and updated for now in case either of these things change in the future.
 	if (strcmp(name, "obs-browser") == 0) {
-		return FileExists(L"core\\obs-browser\\obs-browser.dll");
+		return FileExists(L"obs-plugins\\64bit\\obs-browser.dll") ||
+		       FileExists(L"core\\obs-browser\\obs-browser.dll");
 	}
 
 	return false;
@@ -1356,6 +1360,7 @@ static void ClearShaderCache()
 	}
 }
 
+extern "C" void UpdateHookFilesLegacy(void);
 extern "C" void UpdateHookFiles(void);
 
 static bool Update(wchar_t *cmdLine)
@@ -1744,7 +1749,12 @@ static bool Update(wchar_t *cmdLine)
 		StringCbCat(regsvr, sizeof(regsvr), L"\\regsvr32.exe");
 
 		StringCbCopy(src, sizeof(src), obs_base_directory);
-		StringCbCat(src, sizeof(src), L"\\core\\win-dshow\\data\\");
+
+		if (manifest.version_major >= kNewCorePluginsLocationVersionMajor) {
+			StringCbCat(src, sizeof(src), L"\\core\\win-dshow\\data\\");
+		} else {
+			StringCbCat(src, sizeof(src), L"\\data\\obs-plugins\\win-dshow\\");
+		}
 
 		StringCbCopy(tmp, sizeof(tmp), L"\"");
 		StringCbCat(tmp, sizeof(tmp), regsvr);
@@ -1765,7 +1775,11 @@ static bool Update(wchar_t *cmdLine)
 	 * Update hook files and vulkan registry */
 
 	Status(L"Updating Game Capture hooks...");
-	UpdateHookFiles();
+	if (manifest.version_major >= kNewCorePluginsLocationVersionMajor) {
+		UpdateHookFiles();
+	} else {
+		UpdateHookFilesLegacy();
+	}
 
 	/* ------------------------------------- *
 	 * Clear shader cache                    */
