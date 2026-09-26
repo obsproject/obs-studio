@@ -1028,6 +1028,11 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 
 	audioConfig.mode = (AudioMode)obs_data_get_int(settings, AUDIO_OUTPUT_MODE);
 
+	uint32_t sampleRate = audio_output_get_sample_rate(obs_get_audio());
+
+	// Try to set the desired sample rate.
+	audioConfig.sampleRate = sampleRate;
+
 	bool success = device.SetAudioConfig(&audioConfig);
 	if (!success) {
 		obs_source_set_audio_active(source, false);
@@ -1064,10 +1069,11 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 	}
 
 	blog(LOG_INFO,
+	     "\tOBS sample rate: %u\n"
 	     "\tsample rate: %d\n"
 	     "\tchannels: %d\n"
 	     "\taudio type: %s",
-	     audioConfig.sampleRate, audioConfig.channels, mode);
+	     sampleRate, audioConfig.sampleRate, audioConfig.channels, mode);
 	return true;
 }
 
