@@ -31,9 +31,9 @@ runs:
     - name: Setup bouf
       shell: pwsh
       env:
-        BOUF_TAG: 'v0.6.5'
-        BOUF_HASH: '2e16d5116415579b5dd8cd68b3fe6edaa7513938427567121942f592292605d5'
-        BOUF_NSIS_HASH: 'e323043627cfeebd237d306afc001c8c36a3c37f6ecef2b349a19a3209ae3450'
+        BOUF_TAG: 'v0.6.6'
+        BOUF_HASH: 'a4ad7c06fe00c4fdd2c22cab26b72d75b14655f9c756245f4be5dd2dadb7d5c8'
+        BOUF_NSIS_HASH: '02b533c3f9388391ec5a5079fac41486886fde67a26e5ed0e2652fa4e895deb4'
         GH_TOKEN: ${{ github.token }}
       run: |
         # Download bouf release
@@ -43,14 +43,14 @@ runs:
         $windows_zip = "bouf-windows-${env:BOUF_TAG}.zip"
         $nsis_zip = "bouf-nsis-${env:BOUF_TAG}.zip"
         Invoke-External gh release download "${env:BOUF_TAG}" -R "obsproject/bouf" -p $windows_zip -p $nsis_zip
-        
+
         if ((Get-FileHash $windows_zip -Algorithm SHA256).Hash -ne "${env:BOUF_HASH}") {
           throw "bouf hash does not match."
         }
         if ((Get-FileHash $nsis_zip -Algorithm SHA256).Hash -ne "${env:BOUF_NSIS_HASH}") {
           throw "NSIS package hash does not match."
         }
-        
+
         Expand-Archive -Path $windows_zip -DestinationPath bin
         Expand-Archive -Path $nsis_zip -DestinationPath nsis
 
@@ -70,7 +70,7 @@ runs:
         . ${env:GITHUB_ACTION_PATH}\Ensure-Location.ps1
         . ${env:GITHUB_ACTION_PATH}\Invoke-External.ps1
         Ensure-Location gcng
-        
+
         Invoke-External gh release download "${env:CNG_TAG}" -R "GoogleCloudPlatform/kms-integrations" -p "*amd64.zip"
         Expand-Archive -Path *.zip
         $sigPath = Get-ChildItem *.sig -Recurse
@@ -84,7 +84,7 @@ runs:
       shell: pwsh
       run: |
         choco install rclone --version=1.69.3 -y --no-progress
-    
+
     - name: 'Authenticate to Google Cloud'
       uses: 'google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093' # v3.0.0
       with:
@@ -112,7 +112,7 @@ runs:
            "/f",    "repo/.github/actions/windows-signing/prod-gc.crt"
            "/csp",  "Google Cloud KMS Provider"
            "/kc",   "projects/ci-signing/locations/global/keyRings/production/cryptoKeys/game-capture-release-sign-hsm/cryptoKeyVersions/1"
-           "${{ github.workspace }}/build/data/obs-plugins/win-capture/*.dll"
+           "${{ github.workspace }}/build/core/win-capture/data/*.dll"
         )
         Invoke-External $SignToolExe @signArgs
 

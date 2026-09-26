@@ -2199,13 +2199,20 @@
             "stream_key_link": "https://whowatch.tv/publish",
             "servers": [
                 {
-                    "name": "default",
-                    "url": "rtmp://live.whowatch.tv/live/"
+                    "name": "Global - グローバル (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global - グローバル (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
                 }
             ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "recommended": {
+                "profile": "baseline",
                 "keyint": 2,
-                "max video bitrate": 1800,
+                "bframes": 0,
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
             },
             "supported video codecs": [
@@ -2229,8 +2236,12 @@
                     "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
-                    "name": "New York, US",
-                    "url": "rtmps://stream.ewr.irl.run/ingest"
+                    "name": "Chicago, US",
+                    "url": "rtmps://stream.ord.irl.run/ingest"
+                },
+                {
+                    "name": "Ashburn, US",
+                    "url": "rtmps://stream.iad.irl.run/ingest"
                 },
                 {
                     "name": "Miami, US",
@@ -2247,6 +2258,10 @@
                 {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Seoul, SK",
+                    "url": "rtmps://stream.icn.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
@@ -2422,6 +2437,8 @@
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
+            "multitrack_video_name": "시차없는 LIVE+ [화질 최적화]",
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "servers": [
                 {
                     "name": "Default",
@@ -2506,7 +2523,7 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://injest.streamway.in/LiveApp"
+                    "url": "rtmps://injest.streamway.in:443/live"
                 },
                 {
                     "name": "Backup",
@@ -3416,6 +3433,33 @@
             "recommended": {
                 "keyint": 1,
                 "max video bitrate": 6000
+            }
+        },
+        {
+            "name": "Spoon",
+            "servers": [
+                {
+                    "name": "Korea (RTMPS)",
+                    "url": "rtmps://kr-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Korea (RTMP)",
+                    "url": "rtmp://kr-rtmp.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMPS)",
+                    "url": "rtmps://jp-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMP)",
+                    "url": "rtmp://jp-rtmp.spooncast.net/live"
+                }
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "max audio bitrate": 96
             }
         }
     ]

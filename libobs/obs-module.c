@@ -15,12 +15,13 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "util/platform.h"
-#include "util/dstr.h"
-
+#include "obs-core-modules-loader.h"
+#include "obs-core-modules.h"
 #include "obs-defs.h"
 #include "obs-internal.h"
 #include "obs-module.h"
+#include "util/dstr.h"
+#include "util/platform.h"
 
 extern const char *get_module_extension(void);
 
@@ -425,15 +426,6 @@ void obs_add_safe_module(const char *name)
 	da_push_back(obs->safe_modules, &item);
 }
 
-void obs_add_core_module(const char *name)
-{
-	if (!obs || !name)
-		return;
-
-	char *item = bstrdup(name);
-	da_push_back(obs->core_modules, &item);
-}
-
 void obs_add_disabled_module(const char *name)
 {
 	if (!obs || !name)
@@ -465,12 +457,7 @@ static bool is_safe_module(const char *name)
 
 static bool is_core_module(const char *name)
 {
-	for (size_t i = 0; i < obs->core_modules.num; i++) {
-		if (strcmp(name, obs->core_modules.array[i]) == 0)
-			return true;
-	}
-
-	return false;
+	return obs_in_core_module_list(name);
 }
 
 static bool is_disabled_module(const char *name)
@@ -512,9 +499,29 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		return;
 	}
 
-	if (is_disabled_module(info->name)) {
+	if (info->type != OBS_MODULE_TYPE_CORE && is_disabled_module(info->name)) {
 		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path, OBS_MODULE_DISABLED);
 		blog(LOG_WARNING, "Skipping module '%s', is disabled", info->name);
+		return;
+	}
+
+	/* This is a necessary check until legacy plugin loading is removed in a future update.
+	 * It covers portable installs where the old core modules still live in `obs-plugins`.
+	 */
+	if (info->type == OBS_MODULE_TYPE_LEGACY_PLUGIN && is_core_module(info->name)) {
+		blog(LOG_WARNING, "Skipping module '%s', is a legacy core module", info->name);
+		return;
+	}
+
+	obs_module_t *existing_module = obs_get_module(info->name);
+	if (info->type != OBS_MODULE_TYPE_CORE && existing_module != NULL) {
+		if (info->type == OBS_MODULE_TYPE_LEGACY_PLUGIN) {
+			blog(LOG_WARNING, "Skipping legacy plugin '%s' at '%s', already loaded from '%s'", info->name,
+			     info->bin_path, existing_module->bin_path);
+		} else {
+			blog(LOG_WARNING, "Skipping plugin '%s' at '%s', already loaded from '%s'", info->name,
+			     info->bin_path, existing_module->bin_path);
+		}
 		return;
 	}
 
@@ -544,6 +551,9 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 		free_module(module);
 		obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
 					   OBS_MODULE_FAILED_TO_INITIALIZE);
+		disabled_module->module_type = info->type;
+	} else {
+		module->module_type = info->type;
 	}
 
 	UNUSED_PARAMETER(param);
@@ -557,42 +567,45 @@ load_failure:
 	}
 }
 
-static const char *obs_load_all_modules_name = "obs_load_all_modules";
-#ifdef _WIN32
-static const char *reset_win32_symbol_paths_name = "reset_win32_symbol_paths";
-#endif
-
-void obs_load_all_modules(void)
-{
-	profile_start(obs_load_all_modules_name);
-	obs_find_modules2(load_all_callback, NULL);
-#ifdef _WIN32
-	profile_start(reset_win32_symbol_paths_name);
-	reset_win32_symbol_paths();
-	profile_end(reset_win32_symbol_paths_name);
-#endif
-	profile_end(obs_load_all_modules_name);
-}
-
-static const char *obs_load_all_modules2_name = "obs_load_all_modules2";
+void obs_load_all_modules(void) {}
 
 void obs_load_all_modules2(struct obs_module_failure_info *mfi)
 {
-	struct fail_info fail_info = {0};
-	memset(mfi, 0, sizeof(*mfi));
+	UNUSED_PARAMETER(mfi);
+}
 
-	profile_start(obs_load_all_modules2_name);
-	obs_find_modules2(load_all_callback, &fail_info);
-#ifdef _WIN32
-	profile_start(reset_win32_symbol_paths_name);
-	reset_win32_symbol_paths();
-	profile_end(reset_win32_symbol_paths_name);
-#endif
-	profile_end(obs_load_all_modules2_name);
+bool obs_load_core_modules(void)
+{
+	if (obs->core_modules_loaded) {
+		return true;
+	}
 
-	mfi->count = fail_info.fail_count;
-	mfi->failed_modules = strlist_split(fail_info.fail_modules.array, ';', false);
-	dstr_free(&fail_info.fail_modules);
+	struct fail_info error = {0};
+
+	load_core_modules(load_all_callback, &error);
+
+	obs->core_modules_loaded = error.fail_count == 0;
+
+	dstr_free(&error.fail_modules);
+
+	return obs->core_modules_loaded;
+}
+
+static void find_modules_in_path(struct obs_module_path *omp, obs_find_module_callback2_t callback, void *param);
+
+void obs_load_plugins(struct obs_runtime_module_info *info, struct obs_module_failure_info *error)
+{
+	struct obs_module_path omp = {.bin = (char *)info->path_info.binary,
+				      .data = (char *)info->path_info.data,
+				      .type = info->type};
+
+	struct fail_info failure = {0};
+
+	find_modules_in_path(&omp, load_all_callback, &failure);
+
+	error->count = failure.fail_count;
+	error->failed_modules = strlist_split(failure.fail_modules.array, ';', false);
+	dstr_free(&failure.fail_modules);
 }
 
 void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
@@ -603,8 +616,17 @@ void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
 	}
 }
 
+#ifdef _WIN32
+static const char *reset_win32_symbol_paths_name = "reset_win32_symbol_paths";
+#endif
+
 void obs_post_load_modules(void)
 {
+#ifdef _WIN32
+	profile_start(reset_win32_symbol_paths_name);
+	reset_win32_symbol_paths();
+	profile_end(reset_win32_symbol_paths_name);
+#endif
 	for (obs_module_t *mod = obs->first_module; !!mod; mod = mod->next)
 		if (mod->post_load)
 			mod->post_load();
@@ -631,6 +653,62 @@ static char *make_data_directory(const char *module_name, const char *data_dir)
 		make_data_dir(&parsed_data_dir, data_dir, module_name + 3);
 
 	return parsed_data_dir.array;
+}
+
+/* Function to find a specifically defined module. Used for loading core modules by name.
+ * info->path_info.binary should be path to the module binary, without its file extension.
+ * info->path_info.data should be path to the module data directory including the module name.
+ */
+bool find_core_module(struct obs_runtime_module_info *info, obs_find_module_callback2_t callback, void *data)
+{
+	const char *file_name = strrchr(info->path_info.binary, '/');
+	const char *name = file_name ? (file_name + 1) : info->path_info.binary;
+	info->name = name;
+
+	if (info->type != OBS_MODULE_TYPE_CORE) {
+		blog(LOG_WARNING, "Module %s is not a core module, and must be loaded with the plugin loader.", name);
+		return false;
+	}
+
+	bool found = false;
+
+	struct dstr module_path;
+	dstr_init_copy(&module_path, info->path_info.binary);
+	dstr_cat(&module_path, get_module_extension());
+
+	char *parsed_data_directory;
+	parsed_data_directory = make_data_directory(name, info->path_info.data);
+
+	if (os_file_exists(module_path.array)) {
+		struct obs_module_info2 callback_info = {.bin_path = module_path.array,
+							 .data_path = parsed_data_directory,
+							 .name = name,
+							 .type = info->type};
+
+		callback(data, &callback_info);
+		found = true;
+	}
+
+	bfree(parsed_data_directory);
+	dstr_free(&module_path);
+
+	return found;
+}
+
+bool obs_is_core_module(obs_module_t *module)
+{
+	if (!module)
+		return false;
+	return module->module_type == OBS_MODULE_TYPE_CORE;
+}
+
+bool obs_is_legacy_module(obs_module_t *module)
+{
+	if (!module) {
+		return false;
+	}
+
+	return module->module_type == OBS_MODULE_TYPE_LEGACY_PLUGIN;
 }
 
 static bool parse_binary_from_directory(struct dstr *parsed_bin_path, const char *bin_path, const char *file)
@@ -706,6 +784,7 @@ static void process_found_module(struct obs_module_path *omp, const char *path, 
 		info.bin_path = parsed_bin_path.array;
 		info.data_path = parsed_data_dir;
 		info.name = name.array;
+		info.type = omp->type;
 		callback(param, &info);
 	}
 
@@ -722,7 +801,6 @@ static void find_modules_in_path(struct obs_module_path *omp, obs_find_module_ca
 	os_glob_t *gi;
 
 	dstr_copy(&search_path, omp->bin);
-
 	module_start = strstr(search_path.array, "%module%");
 	if (module_start) {
 		dstr_resize(&search_path, module_start - search_path.array);

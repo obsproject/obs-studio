@@ -39,7 +39,7 @@ RowList::RowList(QWidget *parent) : QFrame(parent)
 
 void idian::RowList::addHeader(QWidget *widget)
 {
-	layout->insertWidget(layout->indexOf(rowLayout) - 1, widget);
+	layout->insertWidget(layout->indexOf(rowLayout), widget);
 }
 
 // Note: This function takes ownership of the added widget
@@ -48,7 +48,7 @@ void idian::RowList::addHeader(QWidget *widget)
 void RowList::addRow(QWidget *widget)
 {
 	// Add custom spacer when more than one row exists
-	if (rowLayout->count() > 0) {
+	if (count() > 0) {
 		rowLayout->addWidget(new RowListSpacer(this));
 	}
 
@@ -87,4 +87,9 @@ void RowList::clear()
 	}
 
 	adjustSize();
+}
+
+int idian::RowList::count() const
+{
+	return rowLayout->count();
 }

@@ -989,3 +989,11 @@ Functions
    :param duplicate: *true* for paste duplicate, *false* for paste reference
 
    .. versionadded:: 32.2
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_safe_mode_enabled(void)
+
+   :return: *true* if OBS was launched in Safe Mode, *false* otherwise
+
+   .. versionadded:: 33.0

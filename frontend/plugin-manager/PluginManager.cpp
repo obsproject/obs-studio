@@ -39,7 +39,7 @@ void addModuleToPluginManagerImpl(void *param, obs_module_t *newModule)
 	std::string moduleName = obs_get_module_file_name(newModule);
 	moduleName = moduleName.substr(0, moduleName.rfind("."));
 
-	if (!obs_get_module_allow_disable(moduleName.c_str())) {
+	if (obs_is_core_module(newModule)) {
 		return;
 	}
 
@@ -67,7 +67,7 @@ constexpr std::string_view OBSPluginManagerModulesFile = "modules.json";
 
 void PluginManager::preLoad()
 {
-	loadModules_();
+	loadModuleConfiguration_();
 	disableModules_();
 }
 
@@ -82,6 +82,32 @@ void PluginManager::postLoad()
 	linkUnloadedModules_();
 }
 
+void PluginManager::loadAllPlugins(bool usePortableMode)
+{
+	preLoad();
+	bool coreModuleLoadSuccess = obs_load_core_modules();
+
+	if (!coreModuleLoadSuccess) {
+		loadState_ = State::Failure;
+		//TODO: Replace with structured exception type - https://github.com/obsproject/obs-studio/issues/13394
+		throw "Failed to load core OBS modules. OBS cannot run without these modules. Please try reinstalling OBS.";
+	}
+
+	if (loadMode_ == Mode::Full) {
+		blog(LOG_INFO, "---------------------------------");
+		State pluginState = loadPlugins(usePortableMode);
+		State legacyPluginState = loadLegacyPlugins(usePortableMode);
+
+		loadState_ = (pluginState && legacyPluginState) ? State::Success : State::PartialFailure;
+	}
+
+	blog(LOG_INFO, "---------------------------------");
+	obs_log_loaded_modules();
+	blog(LOG_INFO, "---------------------------------");
+	obs_post_load_modules();
+	postLoad();
+}
+
 std::filesystem::path PluginManager::getConfigFilePath_()
 {
 	std::filesystem::path path = App()->userPluginManagerSettingsLocation /
@@ -90,7 +116,7 @@ std::filesystem::path PluginManager::getConfigFilePath_()
 	return path;
 }
 
-void PluginManager::loadModules_()
+void PluginManager::loadModuleConfiguration_()
 {
 	auto modulesFile = getConfigFilePath_();
 	if (std::filesystem::exists(modulesFile)) {
@@ -282,31 +308,73 @@ void PluginManager::disableModules_()
 void PluginManager::open()
 {
 	auto main = OBSBasic::Get();
-	PluginManagerWindow pluginManagerWindow(modules_, main);
-	auto result = pluginManagerWindow.exec();
-	if (result == QDialog::Accepted) {
-		modules_ = pluginManagerWindow.result();
-		saveModules_();
+	auto *pluginManagerWindow = new PluginManagerWindow(modules_, failedModules_, main);
 
-		bool changed = false;
+	QObject::connect(pluginManagerWindow, &QDialog::finished, pluginManagerWindow,
+			 [this, pluginManagerWindow, main](int result) {
+				 if (result == QDialog::Accepted) {
+					 modules_ = pluginManagerWindow->getModules();
+					 saveModules_();
 
-		for (auto const &moduleInfo : modules_) {
-			if (moduleInfo.enabled != moduleInfo.enabledAtLaunch) {
-				changed = true;
-				break;
-			}
-		}
+					 bool changed = pluginManagerWindow->isEnabledPluginsChanged();
+					 if (changed) {
+						 QMessageBox::StandardButton button = OBSMessageBox::question(
+							 main, QTStr("Restart"), QTStr("NeedsRestart"));
 
-		if (changed) {
-			QMessageBox::StandardButton button =
-				OBSMessageBox::question(main, QTStr("Restart"), QTStr("NeedsRestart"));
+						 if (button == QMessageBox::Yes) {
+							 restart = true;
+							 main->close();
+						 }
+					 }
+				 }
 
-			if (button == QMessageBox::Yes) {
-				restart = true;
-				main->close();
-			}
-		}
-	}
+				 pluginManagerWindow->deleteLater();
+			 });
+
+	pluginManagerWindow->setModal(true);
+	pluginManagerWindow->show();
 }
 
 }; // namespace OBS
+
+bool operator&&(const OBS::PluginManager::State &lhs, const OBS::PluginManager::State &rhs)
+{
+	using State = OBS::PluginManager::State;
+
+	if (lhs == State::Success && rhs == State::Success) {
+		return true;
+	}
+
+	return false;
+}
+
+bool operator&&(const OBS::PluginManager::State &lhs, bool rhs)
+{
+	return (lhs == OBS::PluginManager::State::Success && rhs);
+}
+
+bool operator&&(bool lhs, const OBS::PluginManager::State &rhs)
+{
+	return (lhs && rhs == OBS::PluginManager::State::Success);
+}
+
+bool operator||(const OBS::PluginManager::State &lhs, const OBS::PluginManager::State &rhs)
+{
+	using State = OBS::PluginManager::State;
+
+	if (lhs == State::Success || rhs == State::Success) {
+		return true;
+	}
+
+	return false;
+}
+
+bool operator||(const OBS::PluginManager::State &lhs, bool rhs)
+{
+	return (lhs == OBS::PluginManager::State::Success || rhs);
+}
+
+bool operator||(bool lhs, const OBS::PluginManager::State &rhs)
+{
+	return (lhs || rhs == OBS::PluginManager::State::Success);
+}

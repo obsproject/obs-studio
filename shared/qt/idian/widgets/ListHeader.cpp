@@ -35,10 +35,13 @@ ListHeader::ListHeader(QWidget *parent) : QFrame(parent)
 	auto *textLayout = new QVBoxLayout();
 	nameLabel = new QLabel();
 	nameLabel->setVisible(false);
+	nameLabel->setIndent(0);
 	Utils::addClass(nameLabel, "title");
 
 	descriptionLabel = new QLabel();
 	descriptionLabel->setVisible(false);
+	descriptionLabel->setIndent(0);
+	descriptionLabel->setWordWrap(true);
 	Utils::addClass(descriptionLabel, "description");
 
 	textLayout->addWidget(nameLabel);
