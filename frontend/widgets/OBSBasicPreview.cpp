@@ -32,6 +32,10 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQT
 
 OBSBasicPreview::~OBSBasicPreview()
 {
+	if (!obs_initialized()) {
+		return;
+	}
+
 	obs_enter_graphics();
 
 	if (overflow) {
