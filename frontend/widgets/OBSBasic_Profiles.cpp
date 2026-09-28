@@ -1065,12 +1065,21 @@ void OBSBasic::CheckForMissingEncoders()
 	const QString encoderListItem = QTStr("EncoderMissing.ItemText");
 	const QString unknownErrorText = QTStr("EncoderMissing.Unknown");
 
-	std::unordered_set<std::string_view> missing_encoders = {
-		config_get_string(activeConfiguration, "AdvOut", "Encoder"),
-		config_get_string(activeConfiguration, "AdvOut", "RecEncoder"),
-		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder")),
-		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder")),
-	};
+	const char *outputMode = config_get_string(activeConfiguration, "Output", "Mode");
+
+	std::unordered_set<std::string_view> missing_encoders;
+	if (strcmp(outputMode, "Advanced") != 0) {
+		missing_encoders = {
+			get_simple_output_encoder(
+				config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder")),
+			get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder")),
+		};
+	} else {
+		missing_encoders = {
+			config_get_string(activeConfiguration, "AdvOut", "Encoder"),
+			config_get_string(activeConfiguration, "AdvOut", "RecEncoder"),
+		};
+	}
 
 	size_t idx = 0;
 	const char *id;
