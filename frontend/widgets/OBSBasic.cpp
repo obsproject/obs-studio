@@ -867,17 +867,26 @@ bool OBSBasic::InitBasicConfigDefaults()
 
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceId", "default");
 #ifdef _WIN32
-	const char *monitoringId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceId");
-	const char *stableId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceStableId");
-	char *resolvedId = nullptr;
-	char *resolvedStableId = nullptr;
-	if (get_audio_device_ids(monitoringId, stableId, &resolvedId, &resolvedStableId)) {
-		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceId", resolvedId);
-		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceStableId",
-				  resolvedStableId ? resolvedStableId : "");
+	const char *deviceId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceId");
+	const char *stableDeviceId = config_get_string(activeConfiguration, "Audio", "MonitoringDeviceStableId");
+
+	char *currentDeviceId = nullptr;
+	char *currentStableDeviceId = nullptr;
+	bool isDeviceAvailable =
+		get_audio_device_ids(deviceId, stableDeviceId, &currentDeviceId, &currentStableDeviceId);
+
+	if (isDeviceAvailable) {
+		config_set_string(activeConfiguration, "Audio", "MonitoringDeviceId", currentDeviceId);
+
+		if (currentStableDeviceId) {
+			config_set_string(activeConfiguration, "Audio", "MonitoringDeviceStableId",
+					  currentStableDeviceId);
+		} else {
+			config_set_string(activeConfiguration, "Audio", "MonitoringDeviceStableId", "");
+		}
 	}
-	bfree(resolvedStableId);
-	bfree(resolvedId);
+	bfree(currentStableDeviceId);
+	bfree(currentDeviceId);
 #endif
 	config_set_default_string(activeConfiguration, "Audio", "MonitoringDeviceName",
 				  Str("Basic.Settings.Advanced.Audio.MonitoringDevice"

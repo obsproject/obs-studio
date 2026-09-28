@@ -3354,13 +3354,18 @@ void OBSBasicSettings::SaveAdvancedSettings()
 
 		if (lastMonitoringDevice != newDevice) {
 #ifdef _WIN32
-			char *id = nullptr;
-			char *stableId = nullptr;
-			get_audio_device_ids(QT_TO_UTF8(newDevice), nullptr, &id, &stableId);
-			config_set_string(main->Config(), "Audio", "MonitoringDeviceStableId",
-					  stableId ? stableId : "");
-			bfree(stableId);
-			bfree(id);
+			char *currentDeviceId = nullptr;
+			char *currentStableDeviceId = nullptr;
+			get_audio_device_ids(QT_TO_UTF8(newDevice), nullptr, &currentDeviceId, &currentStableDeviceId);
+
+			if (currentStableDeviceId) {
+				config_set_string(main->Config(), "Audio", "MonitoringDeviceStableId",
+						  currentStableDeviceId);
+			} else {
+				config_set_string(main->Config(), "Audio", "MonitoringDeviceStableId", "");
+			}
+			bfree(currentStableDeviceId);
+			bfree(currentDeviceId);
 #endif
 			obs_set_audio_monitoring_device(QT_TO_UTF8(ui->monitoringDevice->currentText()),
 							QT_TO_UTF8(newDevice));

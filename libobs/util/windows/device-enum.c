@@ -1,6 +1,6 @@
 #include "device-enum.h"
 #include "../dstr.h"
-#include "../platform.h"
+#include <util/platform.h>
 
 #include <dxgi.h>
 #include <mmdeviceapi.h>
@@ -33,17 +33,6 @@ void enum_graphics_device_luids(device_luid_cb device_luid, void *param)
 
 bool get_audio_device_ids(const char *id, const char *fallback_id, char **device_id, char **stable_id)
 {
-	static const PROPERTYKEY stable_id_key = {
-		{0x1da5d803, 0xd492, 0x4edd, {0x8c, 0x23, 0xe0, 0xc0, 0xff, 0xee, 0x7f, 0x0e}},
-		12};
-	IMMDeviceEnumerator *enumerator = NULL;
-	IMMDevice *device = NULL;
-	IPropertyStore *store = NULL;
-	PROPVARIANT value;
-	WCHAR *wide_id = NULL;
-	WCHAR *endpoint_id = NULL;
-	HRESULT hr;
-
 	*device_id = NULL;
 	*stable_id = NULL;
 	if (!id || !*id)
@@ -54,11 +43,14 @@ bool get_audio_device_ids(const char *id, const char *fallback_id, char **device
 		return true;
 	}
 
-	hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator,
-			      (void **)&enumerator);
+	IMMDeviceEnumerator *enumerator = NULL;
+	HRESULT hr = CoCreateInstance(&CLSID_MMDeviceEnumerator, NULL, CLSCTX_ALL, &IID_IMMDeviceEnumerator,
+				      (void **)&enumerator);
 	if (FAILED(hr))
 		return false;
 
+	WCHAR *wide_id = NULL;
+	IMMDevice *device = NULL;
 	os_utf8_to_wcs_ptr(id, 0, &wide_id);
 	hr = enumerator->lpVtbl->GetDevice(enumerator, wide_id, &device);
 	bfree(wide_id);
@@ -71,11 +63,17 @@ bool get_audio_device_ids(const char *id, const char *fallback_id, char **device
 	if (FAILED(hr))
 		return false;
 
+	WCHAR *endpoint_id = NULL;
 	if (SUCCEEDED(device->lpVtbl->GetId(device, &endpoint_id))) {
 		os_wcs_to_utf8_ptr(endpoint_id, 0, device_id);
 		CoTaskMemFree(endpoint_id);
 	}
+	IPropertyStore *store = NULL;
 	if (SUCCEEDED(device->lpVtbl->OpenPropertyStore(device, STGM_READ, &store))) {
+		static const PROPERTYKEY stable_id_key = {
+			{0x1da5d803, 0xd492, 0x4edd, {0x8c, 0x23, 0xe0, 0xc0, 0xff, 0xee, 0x7f, 0x0e}},
+			12};
+		PROPVARIANT value;
 		PropVariantInit(&value);
 		hr = store->lpVtbl->GetValue(store, &stable_id_key, &value);
 		if (SUCCEEDED(hr) && value.vt == VT_LPWSTR && value.pwszVal && *value.pwszVal)

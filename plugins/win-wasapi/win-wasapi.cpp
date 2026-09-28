@@ -488,15 +488,25 @@ WASAPISource::~WASAPISource()
 
 WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 {
-	char *id = nullptr;
-	char *stable_id = nullptr;
-	if (get_audio_device_ids(obs_data_get_string(settings, OPT_DEVICE_ID),
-				 obs_data_get_string(settings, "device_stable_id"), &id, &stable_id)) {
-		obs_data_set_string(settings, OPT_DEVICE_ID, id);
-		obs_data_set_string(settings, "device_stable_id", stable_id ? stable_id : "");
+	const char *deviceId = obs_data_get_string(settings, OPT_DEVICE_ID);
+	const char *stableDeviceId = obs_data_get_string(settings, "device_stable_id");
+
+	char *currentDeviceId = nullptr;
+	char *currentStableDeviceId = nullptr;
+	bool isDeviceAvailable =
+		get_audio_device_ids(deviceId, stableDeviceId, &currentDeviceId, &currentStableDeviceId);
+
+	if (isDeviceAvailable) {
+		obs_data_set_string(settings, OPT_DEVICE_ID, currentDeviceId);
+
+		if (currentStableDeviceId) {
+			obs_data_set_string(settings, "device_stable_id", currentStableDeviceId);
+		} else {
+			obs_data_set_string(settings, "device_stable_id", "");
+		}
 	}
-	bfree(stable_id);
-	bfree(id);
+	bfree(currentStableDeviceId);
+	bfree(currentDeviceId);
 
 	WASAPISource::UpdateParams params;
 	params.device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
