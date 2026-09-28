@@ -322,6 +322,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(splitFileHotkey);
 	obs_hotkey_unregister(addChapterHotkey);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
+	obs_hotkey_unregister(saveReplayBufferHotkey);
 	obs_hotkey_pair_unregister(vcamHotkeys);
 	obs_hotkey_pair_unregister(togglePreviewHotkeys);
 	obs_hotkey_pair_unregister(contextBarHotkeys);
