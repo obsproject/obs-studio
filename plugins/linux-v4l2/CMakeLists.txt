@@ -8,7 +8,7 @@ if(NOT ENABLE_V4L2)
 endif()
 
 find_package(Libv4l2 REQUIRED)
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
+find_package(FFmpeg 8.0 REQUIRED COMPONENTS avcodec avutil avformat)
 
 if(OS_FREEBSD OR OS_OPENBSD)
   set(CMAKE_REQUIRED_INCLUDES "/usr/local/include")
