@@ -239,15 +239,10 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder, const char
 	const enum AVSampleFormat *sample_fmts = NULL;
 	const int *supported_samplerates = NULL;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
-	sample_fmts = enc->codec->sample_fmts;
-	supported_samplerates = enc->codec->supported_samplerates;
-#else
 	avcodec_get_supported_config(enc->context, enc->codec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
 				     (const void **)&sample_fmts, NULL);
 	avcodec_get_supported_config(enc->context, enc->codec, AV_CODEC_CONFIG_SAMPLE_RATE, 0,
 				     (const void **)&supported_samplerates, NULL);
-#endif
 
 	if (sample_fmts) {
 		/* Check if the requested format is actually available for the specified
