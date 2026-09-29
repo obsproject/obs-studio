@@ -72,6 +72,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		iconLabel->setStyleSheet("background: none");
 		idian::Utils::addClass(iconLabel, "source-icon");
 		idian::Utils::toggleClass(iconLabel, "text-muted", !sourceVisible);
+		style()->polish(iconLabel);
 		idian::Utils::applyColorToIcon(iconLabel);
 	}
 
@@ -483,6 +484,7 @@ void SourceTreeItem::VisibilityChanged(bool visible)
 {
 	if (iconLabel) {
 		idian::Utils::toggleClass(iconLabel, "text-muted", !visible);
+		style()->polish(iconLabel);
 		idian::Utils::applyColorToIcon(iconLabel);
 	}
 	idian::Utils::toggleClass(label, "text-muted", !visible);
