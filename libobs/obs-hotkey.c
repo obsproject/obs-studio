@@ -482,6 +482,11 @@ static inline void load_binding(obs_hotkey_t *hotkey, obs_data_t *data)
 	if (!modifiers && (combo.key == OBS_KEY_NONE || combo.key >= OBS_KEY_LAST_VALUE))
 		return;
 
+	/* Mouse1/Mouse2 are reserved for regular clicking and must not be
+	 * loaded as hotkeys, matching the frontend's restriction. */
+	if (combo.key == OBS_KEY_MOUSE1 || combo.key == OBS_KEY_MOUSE2)
+		return;
+
 	create_binding(hotkey, combo);
 }
 
