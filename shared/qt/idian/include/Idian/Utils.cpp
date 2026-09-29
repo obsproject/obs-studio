@@ -43,13 +43,26 @@ void Utils::addToPolishQueue(QWidget *widget)
 	QMetaObject::invokeMethod(this, &Utils::processPolishQueue, Qt::QueuedConnection);
 }
 
+void Utils::removeFromPolishQueue(QWidget *widget)
+{
+	auto it = std::remove(widgetPolishQueue.begin(), widgetPolishQueue.end(), widget);
+	widgetPolishQueue.erase(it, widgetPolishQueue.end());
+}
+
+bool Utils::isQueuedForPolish(QWidget *widget) const
+{
+	return std::find(widgetPolishQueue.begin(), widgetPolishQueue.end(), widget) != widgetPolishQueue.end();
+}
+
 void Utils::processPolishQueue()
 {
-	widgetPolishQueue.sort();
-	widgetPolishQueue.unique();
-
+	std::vector<QWidget *> polishedWidgets;
 	for (QPointer<QWidget> widget : widgetPolishQueue) {
-		if (widget) {
+		bool wasAlreadyPolished = std::find(polishedWidgets.begin(), polishedWidgets.end(), widget) !=
+					  polishedWidgets.end();
+
+		if (widget && !wasAlreadyPolished) {
+			polishedWidgets.push_back(widget);
 			widget->style()->polish(widget);
 		}
 	}
@@ -61,13 +74,14 @@ void Utils::processPolishQueue()
 void Utils::polishChildren(QWidget *widget)
 {
 	for (QWidget *child : widget->findChildren<QWidget *>()) {
-		repolish(child);
+		utils->addToPolishQueue(child);
 	}
 }
 
-void Utils::repolish(QWidget *widget)
+void Utils::polishNow(QWidget *widget)
 {
-	utils->addToPolishQueue(widget);
+	widget->style()->polish(widget);
+	utils->removeFromPolishQueue(widget);
 }
 
 void Utils::addClass(QWidget *widget, const QString &classname)
@@ -90,7 +104,7 @@ void Utils::addClass(QWidget *widget, const QString &classname)
 	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
 	widget->setProperty("class", newClasses);
 
-	repolish(widget);
+	utils->addToPolishQueue(widget);
 }
 
 void Utils::removeClass(QWidget *widget, const QString &classname)
@@ -116,7 +130,7 @@ void Utils::removeClass(QWidget *widget, const QString &classname)
 	QString newClasses = classList.isEmpty() ? "" : classList.join(" ");
 	widget->setProperty("class", newClasses);
 
-	repolish(widget);
+	utils->addToPolishQueue(widget);
 }
 
 void Utils::toggleClass(QWidget *widget, const QString &classname, bool toggle)
@@ -130,6 +144,10 @@ void Utils::toggleClass(QWidget *widget, const QString &classname, bool toggle)
 
 void Utils::applyColorToIcon(QAbstractButton *button)
 {
+	if (utils->isQueuedForPolish(button)) {
+		utils->polishNow(button);
+	}
+
 	if (button && !button->icon().isNull()) {
 		// Filter is on a widget with an icon set, update its colors
 		QStyleOptionButton opt;
@@ -147,6 +165,10 @@ void Utils::applyColorToIcon(QAbstractButton *button)
 
 void Utils::applyColorToIcon(QLabel *label)
 {
+	if (utils->isQueuedForPolish(label)) {
+		utils->polishNow(label);
+	}
+
 	if (label && !label->pixmap().isNull()) {
 		QStyleOptionFrame opt;
 		opt.initFrom(label);
