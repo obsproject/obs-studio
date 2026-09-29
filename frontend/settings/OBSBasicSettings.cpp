@@ -776,11 +776,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this, &OBSBasicSettings::SimpleReplayBufferChanged);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	connect(ui->advOutSplitFile, &QCheckBox::checkStateChanged, this, &OBSBasicSettings::AdvOutSplitFileChanged);
-#else
-	connect(ui->advOutSplitFile, &QCheckBox::stateChanged, this, &OBSBasicSettings::AdvOutSplitFileChanged);
-#endif
 	connect(ui->advOutSplitFileType, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::AdvOutSplitFileChanged);
 	connect(ui->advReplayBuf, &QCheckBox::toggled, this, &OBSBasicSettings::AdvReplayBufferChanged);
@@ -1298,13 +1294,8 @@ void OBSBasicSettings::LoadGeneralSettings()
 			config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 		connect(ui->hideOBSFromCapture, &QCheckBox::checkStateChanged, this,
 			&OBSBasicSettings::HideOBSWindowWarning);
-#else
-		connect(ui->hideOBSFromCapture, &QCheckBox::stateChanged, this,
-			&OBSBasicSettings::HideOBSWindowWarning);
-#endif
 	}
 #endif
 
@@ -4396,11 +4387,7 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 	UpdateAudioWarnings();
 }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 void OBSBasicSettings::HideOBSWindowWarning(Qt::CheckState state)
-#else
-void OBSBasicSettings::HideOBSWindowWarning(int state)
-#endif
 {
 	if (loading || state == Qt::Unchecked) {
 		return;
@@ -4768,29 +4755,6 @@ void OBSBasicSettings::AdvOutRecCheckCodecs()
 	}
 }
 
-#if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
-// Workaround for QTBUG-56064 on macOS
-static void ResetInvalidSelection(QComboBox *cbox)
-{
-	int idx = cbox->currentIndex();
-	if (idx < 0) {
-		return;
-	}
-
-	QStandardItemModel *model = dynamic_cast<QStandardItemModel *>(cbox->model());
-	QStandardItem *item = model->item(idx);
-
-	if (item->isEnabled()) {
-		return;
-	}
-
-	// Reset to "invalid" state if item was disabled
-	cbox->blockSignals(true);
-	cbox->setCurrentIndex(-1);
-	cbox->blockSignals(false);
-}
-#endif
-
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
 	auto Checked = [](QCheckBox *box) {
@@ -4833,12 +4797,6 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 	} else {
 		ui->autoRemux->setText(QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
-
-#if defined(__APPLE__) && QT_VERSION < QT_VERSION_CHECK(6, 5, 1)
-	// Workaround for QTBUG-56064 on macOS
-	ResetInvalidSelection(ui->advOutRecEncoder);
-	ResetInvalidSelection(ui->advOutRecAEncoder);
-#endif
 
 	// Show warning if codec selection was reset to an invalid state
 	if (ui->advOutRecEncoder->currentIndex() == -1 || ui->advOutRecAEncoder->currentIndex() == -1) {

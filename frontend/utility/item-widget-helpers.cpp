@@ -40,11 +40,6 @@ void DeleteListItem(QListWidget *widget, QListWidgetItem *item)
 
 void ClearListItems(QListWidget *widget)
 {
-#if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
-	// Workaround for the SceneTree workaround for QTBUG-105870
-	widget->setProperty("clearing", true);
-#endif
-
 	widget->setCurrentItem(nullptr, QItemSelectionModel::Clear);
 
 	for (int i = 0; i < widget->count(); i++) {
@@ -52,8 +47,4 @@ void ClearListItems(QListWidget *widget)
 	}
 
 	widget->clear();
-#if QT_VERSION < QT_VERSION_CHECK(6, 4, 3)
-	// Workaround for the SceneTree workaround for QTBUG-105870
-	widget->setProperty("clearing", false);
-#endif
 }

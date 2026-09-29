@@ -92,11 +92,7 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	hookWidget(ui->cropRight, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
 	hookWidget(ui->cropTop, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
 	hookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	hookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged, &OBSBasicTransform::onControlChanged);
-#else
-	hookWidget(ui->cropToBounds, &QCheckBox::stateChanged, &OBSBasicTransform::onControlChanged);
-#endif
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset), &QPushButton::clicked, main,
