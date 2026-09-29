@@ -53,33 +53,26 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 		[](const QString &link) { QDesktopServices::openUrl(QUrl(link)); });
 
 	ui->scheduledTime->setVisible(false);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-	connect(ui->checkScheduledLater, &QCheckBox::checkStateChanged, this,
-		[&](Qt::CheckState state)
-#else
-	connect(ui->checkScheduledLater, &QCheckBox::stateChanged, this,
-		[&](int state)
-#endif
-		{
-			const bool checked = (state == Qt::Checked);
-			ui->scheduledTime->setVisible(checked);
-			if (checked) {
-				ui->checkAutoStart->setVisible(true);
-				ui->checkAutoStop->setVisible(true);
-				ui->helpAutoStartStop->setVisible(true);
+	connect(ui->checkScheduledLater, &QCheckBox::checkStateChanged, this, [&](Qt::CheckState state) {
+		const bool checked = (state == Qt::Checked);
+		ui->scheduledTime->setVisible(checked);
+		if (checked) {
+			ui->checkAutoStart->setVisible(true);
+			ui->checkAutoStop->setVisible(true);
+			ui->helpAutoStartStop->setVisible(true);
 
-				ui->checkAutoStart->setChecked(false);
-				ui->checkAutoStop->setChecked(false);
-			} else {
-				ui->checkAutoStart->setVisible(false);
-				ui->checkAutoStop->setVisible(false);
-				ui->helpAutoStartStop->setVisible(false);
+			ui->checkAutoStart->setChecked(false);
+			ui->checkAutoStop->setChecked(false);
+		} else {
+			ui->checkAutoStart->setVisible(false);
+			ui->checkAutoStop->setVisible(false);
+			ui->helpAutoStartStop->setVisible(false);
 
-				ui->checkAutoStart->setChecked(true);
-				ui->checkAutoStop->setChecked(true);
-			}
-			UpdateOkButtonStatus();
-		});
+			ui->checkAutoStart->setChecked(true);
+			ui->checkAutoStop->setChecked(true);
+		}
+		UpdateOkButtonStatus();
+	});
 
 	ui->checkAutoStart->setVisible(false);
 	ui->checkAutoStop->setVisible(false);
