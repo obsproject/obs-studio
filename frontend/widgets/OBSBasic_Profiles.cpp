@@ -559,9 +559,27 @@ void OBSBasic::on_actionImportProfile_triggered()
 
 	if (!sourceDirectory.isEmpty() && !sourceDirectory.isNull()) {
 		const std::filesystem::path sourcePath = std::filesystem::u8path(sourceDirectory.toStdString());
-		const std::string directoryName = sourcePath.filename().u8string();
 
-		if (auto profile = GetProfileByDirectoryName(directoryName)) {
+		std::string profileName = sourcePath.filename().u8string();
+
+		const std::filesystem::path sourceSettingsFile =
+			sourcePath / std::filesystem::u8path(OBSProfileSettingsFile);
+		ConfigFile config;
+		if (config.Open(sourceSettingsFile.u8string().c_str(), CONFIG_OPEN_EXISTING) == CONFIG_SUCCESS) {
+			const char *configName = config_get_string(config, "General", "Name");
+			if (configName && *configName) {
+				profileName = configName;
+			}
+		}
+
+		std::string directoryName;
+		if (!GetFileSafeName(profileName.c_str(), directoryName)) {
+			blog(LOG_WARNING, "Failed to create safe directory name for imported profile '%s'",
+			     profileName.c_str());
+			return;
+		}
+
+		if (auto profile = GetProfileByName(profileName)) {
 			OBSMessageBox::warning(this, QTStr("Basic.MainMenu.Profile.Import"),
 					       QTStr("Basic.MainMenu.Profile.Exists"));
 			return;
