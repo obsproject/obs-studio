@@ -88,7 +88,7 @@ The baseline rules for the common languages used by the project are:
 
 To help with the formatting of code, the project contains configuration files for code-formatters of several languages:
 
-* `clang-format` can be used to correctly format C, C++, Objective-C, and Objective-C++ soure code
+* `clang-format` can be used to correctly format C, C++, Objective-C, and Objective-C++ source code
 * `swift-format` can be used to correctly format Swift source code
 * `gersemi` can be used to correctly format CMake source code
 
