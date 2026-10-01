@@ -199,7 +199,7 @@ void OBSBasic::RefreshSources(OBSScene scene)
 
 void OBSBasic::SourceCreated(void *data, calldata_t *params)
 {
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+	OBSSource source = (obs_source_t *)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL) {
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::AddScene, WaitConnection(), source);
@@ -208,7 +208,7 @@ void OBSBasic::SourceCreated(void *data, calldata_t *params)
 
 void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 {
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+	OBSSource source = (obs_source_t *)calldata_ptr(params, "source");
 
 	if (obs_scene_from_source(source) != NULL) {
 		QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::RemoveScene, source);
@@ -217,7 +217,7 @@ void OBSBasic::SourceRemoved(void *data, calldata_t *params)
 
 void OBSBasic::SourceRenamed(void *data, calldata_t *params)
 {
-	obs_source_t *source = (obs_source_t *)calldata_ptr(params, "source");
+	OBSSource source = (obs_source_t *)calldata_ptr(params, "source");
 	const char *newName = calldata_string(params, "new_name");
 	const char *prevName = calldata_string(params, "prev_name");
 
