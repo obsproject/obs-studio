@@ -7,13 +7,13 @@ source_def.output_flags = bit.bor(obs.OBS_SOURCE_VIDEO, obs.OBS_SOURCE_CUSTOM_DR
 
 function image_source_load(image, file)
 	obs.obs_enter_graphics();
-	obs.gs_image_file_free(image);
+	obs.gs_image_file_ex_free(image);
 	obs.obs_leave_graphics();
 
-	obs.gs_image_file_init(image, file);
+	obs.gs_image_file_ex_init(image, file, obs.GS_IMAGE_ALPHA_STRAIGHT);
 
 	obs.obs_enter_graphics();
-	obs.gs_image_file_init_texture(image);
+	obs.gs_image_file_ex_init_texture(image);
 	obs.obs_leave_graphics();
 
 	if not image.loaded then
@@ -27,10 +27,10 @@ end
 
 source_def.create = function(source, settings)
 	local data = {}
-	data.image = obs.gs_image_file()
-	data.hour_image = obs.gs_image_file()
-	data.minute_image = obs.gs_image_file()
-	data.second_image = obs.gs_image_file()
+	data.image = obs.gs_image_file_ex()
+	data.hour_image = obs.gs_image_file_ex()
+	data.minute_image = obs.gs_image_file_ex()
+	data.second_image = obs.gs_image_file_ex()
 
 	image_source_load(data.image, script_path() .. "clock-source/dial.png")
 	image_source_load(data.hour_image, script_path() .. "clock-source/hour.png")
@@ -42,10 +42,10 @@ end
 
 source_def.destroy = function(data)
 	obs.obs_enter_graphics();
-	obs.gs_image_file_free(data.image);
-	obs.gs_image_file_free(data.hour_image);
-	obs.gs_image_file_free(data.minute_image);
-	obs.gs_image_file_free(data.second_image);
+	obs.gs_image_file_ex_free(data.image);
+	obs.gs_image_file_ex_free(data.hour_image);
+	obs.gs_image_file_ex_free(data.minute_image);
+	obs.gs_image_file_ex_free(data.second_image);
 	obs.obs_leave_graphics();
 end
 
