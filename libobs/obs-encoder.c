@@ -1376,6 +1376,12 @@ void full_stop(struct obs_encoder *encoder)
 		pthread_mutex_lock(&encoder->outputs_mutex);
 		for (size_t i = 0; i < encoder->outputs.num; i++) {
 			struct obs_output *output = encoder->outputs.array[i];
+
+			/* force stopping an output that isn't running leaves its
+			 * stopping event unsignalled, which blocks its next start */
+			if (!obs_output_active(output))
+				continue;
+
 			obs_output_force_stop(output);
 
 			pthread_mutex_lock(&output->interleaved_mutex);
