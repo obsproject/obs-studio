@@ -62,8 +62,8 @@ struct vk_queue_data {
 	uint32_t fam_idx;
 	bool supports_transfer;
 	struct vk_frame_data *frames;
-	uint32_t frame_index;
 	uint32_t frame_count;
+	SRWLOCK frame_mutex;
 };
 
 struct vk_swap_view_data {
@@ -82,7 +82,9 @@ struct vk_frame_data {
 	VkCommandPool cmd_pool;
 	VkCommandBuffer cmd_buffer;
 	VkFence fence;
+	VkSemaphore present_wait_semaphore;
 	bool cmd_buffer_busy;
+	bool present_wait_semaphore_in_use;
 };
 
 struct vk_surf_data {
@@ -127,6 +129,10 @@ struct vk_data {
 
 	ID3D11Device *d3d11_device;
 	ID3D11DeviceContext *d3d11_context;
+
+	SRWLOCK capture_mutex;
+	bool capture_failed;
+	bool capture_stopped;
 };
 
 __declspec(thread) int vk_presenting = 0;
@@ -282,8 +288,8 @@ static struct vk_queue_data *add_queue_data(struct vk_data *data, VkQueue queue,
 	queue_data->fam_idx = fam_idx;
 	queue_data->supports_transfer = supports_transfer;
 	queue_data->frames = NULL;
-	queue_data->frame_index = 0;
 	queue_data->frame_count = 0;
+	InitializeSRWLock(&queue_data->frame_mutex);
 	return queue_data;
 }
 
@@ -447,11 +453,64 @@ static void vk_shtex_wait_until_idle(struct vk_data *data)
 	queue_walk_end(data);
 }
 
+static void vk_shtex_stop_capture(struct vk_data *data)
+{
+	if (data->capture_stopped)
+		return;
+
+	capture_free();
+	data->capture_stopped = true;
+}
+
+static void vk_shtex_mark_capture_failed(struct vk_data *data)
+{
+	if (data->capture_failed)
+		return;
+
+	vk_shtex_stop_capture(data);
+	data->capture_failed = true;
+}
+
+static void vk_shtex_retire_semaphores(struct vk_data *data)
+{
+	struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+	while (queue_data) {
+		AcquireSRWLockExclusive(&queue_data->frame_mutex);
+
+		bool present_semaphore_in_use = false;
+		for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count; frame_idx++) {
+			if (queue_data->frames[frame_idx].present_wait_semaphore_in_use) {
+				present_semaphore_in_use = true;
+				break;
+			}
+		}
+
+		if (present_semaphore_in_use) {
+			VkQueue queue = (VkQueue)(uintptr_t)queue_data->node.obj;
+			VkResult res = data->funcs.QueueWaitIdle(queue);
+			debug_res("QueueWaitIdle", res);
+
+			if (res != VK_SUCCESS)
+				vk_shtex_mark_capture_failed(data);
+
+			for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count; frame_idx++) {
+				queue_data->frames[frame_idx].present_wait_semaphore_in_use = false;
+			}
+		}
+
+		ReleaseSRWLockExclusive(&queue_data->frame_mutex);
+		queue_data = queue_walk_next(queue_data);
+	}
+
+	queue_walk_end(data);
+}
+
 static void vk_shtex_free(struct vk_data *data)
 {
-	capture_free();
-
 	vk_shtex_wait_until_idle(data);
+	vk_shtex_retire_semaphores(data);
+	vk_shtex_stop_capture(data);
 
 	struct vk_swap_data *swap = swap_walk_begin(data);
 
@@ -866,6 +925,7 @@ static bool vk_shtex_init(struct vk_data *data, HWND window, struct vk_swap_data
 	}
 
 	data->cur_swap = swap;
+	data->capture_stopped = false;
 
 	swap->captured = capture_init_shtex(&swap->shtex_info, window, swap->image_extent.width,
 					    swap->image_extent.height, (uint32_t)swap->format, false,
@@ -888,7 +948,6 @@ static void vk_shtex_create_frame_objects(struct vk_data *data, struct vk_queue_
 	queue_data->frames = vk_alloc(data->ac, image_count * sizeof(struct vk_frame_data),
 				      _Alignof(struct vk_frame_data), VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 	memset(queue_data->frames, 0, image_count * sizeof(struct vk_frame_data));
-	queue_data->frame_index = 0;
 	queue_data->frame_count = image_count;
 
 	VkDevice device = data->device;
@@ -921,6 +980,11 @@ static void vk_shtex_create_frame_objects(struct vk_data *data, struct vk_queue_
 		fci.flags = 0;
 		res = data->funcs.CreateFence(device, &fci, data->ac, &frame_data->fence);
 		debug_res("CreateFence", res);
+
+		VkSemaphoreCreateInfo sci = {0};
+		sci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+		res = data->funcs.CreateSemaphore(device, &sci, data->ac, &frame_data->present_wait_semaphore);
+		debug_res("CreateSemaphore", res);
 	}
 }
 
@@ -940,12 +1004,33 @@ static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy, 
 static void vk_shtex_destroy_frame_objects(struct vk_data *data, struct vk_queue_data *queue_data)
 {
 	VkDevice device = data->device;
+	bool present_semaphore_in_use = false;
+
+	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count; frame_idx++) {
+		if (queue_data->frames[frame_idx].present_wait_semaphore_in_use) {
+			present_semaphore_in_use = true;
+			break;
+		}
+	}
+
+	if (present_semaphore_in_use) {
+		VkQueue queue = (VkQueue)(uintptr_t)queue_data->node.obj;
+		VkResult res = data->funcs.QueueWaitIdle(queue);
+		debug_res("QueueWaitIdle", res);
+
+		if (res != VK_SUCCESS)
+			vk_shtex_mark_capture_failed(data);
+	}
 
 	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count; frame_idx++) {
 		struct vk_frame_data *frame_data = &queue_data->frames[frame_idx];
 		bool *cmd_buffer_busy = &frame_data->cmd_buffer_busy;
 		VkFence *fence = &frame_data->fence;
 		vk_shtex_destroy_fence(data, cmd_buffer_busy, fence);
+
+		if (frame_data->present_wait_semaphore)
+			data->funcs.DestroySemaphore(device, frame_data->present_wait_semaphore, data->ac);
+		frame_data->present_wait_semaphore = VK_NULL_HANDLE;
 
 		data->funcs.DestroyCommandPool(device, frame_data->cmd_pool, data->ac);
 		frame_data->cmd_pool = VK_NULL_HANDLE;
@@ -956,8 +1041,8 @@ static void vk_shtex_destroy_frame_objects(struct vk_data *data, struct vk_queue
 	queue_data->frame_count = 0;
 }
 
-static void vk_shtex_capture(struct vk_data *data, struct vk_device_funcs *funcs, struct vk_swap_data *swap,
-			     uint32_t idx, VkQueue queue, const VkPresentInfoKHR *info)
+static VkSemaphore vk_shtex_capture(struct vk_data *data, struct vk_device_funcs *funcs, struct vk_swap_data *swap,
+				    uint32_t idx, VkQueue queue, const VkPresentInfoKHR *info)
 {
 	VkResult res = VK_SUCCESS;
 
@@ -978,18 +1063,26 @@ static void vk_shtex_capture(struct vk_data *data, struct vk_device_funcs *funcs
 	VkImage cur_backbuffer = swap->swap_images[image_index];
 
 	struct vk_queue_data *queue_data = get_queue_data(data, queue);
+
+	AcquireSRWLockExclusive(&queue_data->frame_mutex);
+	VkSemaphore wait_semaphore = VK_NULL_HANDLE;
+
 	uint32_t fam_idx = queue_data->fam_idx;
 
 	const uint32_t image_count = swap->image_count;
-	if (queue_data->frame_count < image_count) {
-		if (queue_data->frame_count > 0)
+	if (queue_data->frame_count != image_count) {
+		if (queue_data->frame_count > 0) {
 			vk_shtex_destroy_frame_objects(data, queue_data);
+			if (data->capture_failed)
+				goto release;
+		}
 		vk_shtex_create_frame_objects(data, queue_data, image_count);
 	}
 
-	const uint32_t frame_index = queue_data->frame_index;
-	struct vk_frame_data *frame_data = &queue_data->frames[frame_index];
-	queue_data->frame_index = (frame_index + 1) % queue_data->frame_count;
+	struct vk_frame_data *frame_data = &queue_data->frames[image_index];
+	if (frame_data->present_wait_semaphore_in_use || frame_data->present_wait_semaphore == VK_NULL_HANDLE)
+		goto release;
+
 	vk_shtex_clear_fence(data, frame_data);
 
 	VkDevice device = data->device;
@@ -1122,26 +1215,48 @@ static void vk_shtex_capture(struct vk_data *data, struct vk_device_funcs *funcs
 
 	/* ------------------------------------------------------ */
 
+	VkPipelineStageFlags *wait_stage_flags = NULL;
+	if (info->waitSemaphoreCount > 0) {
+		wait_stage_flags = vk_alloc(data->ac, info->waitSemaphoreCount * sizeof(VkPipelineStageFlags),
+					    _Alignof(VkPipelineStageFlags), VK_SYSTEM_ALLOCATION_SCOPE_COMMAND);
+		if (!wait_stage_flags)
+			goto release;
+
+		for (uint32_t wait_index = 0; wait_index < info->waitSemaphoreCount; wait_index++)
+			wait_stage_flags[wait_index] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+	}
+
 	VkSubmitInfo submit_info;
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info.pNext = NULL;
-	submit_info.waitSemaphoreCount = 0;
-	submit_info.pWaitSemaphores = NULL;
-	submit_info.pWaitDstStageMask = NULL;
+	submit_info.waitSemaphoreCount = info->waitSemaphoreCount;
+	submit_info.pWaitSemaphores = info->pWaitSemaphores;
+	submit_info.pWaitDstStageMask = wait_stage_flags;
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &cmd_buffer;
-	submit_info.signalSemaphoreCount = 0;
-	submit_info.pSignalSemaphores = NULL;
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &frame_data->present_wait_semaphore;
 
 	const VkFence fence = frame_data->fence;
 	res = funcs->QueueSubmit(queue, 1, &submit_info, fence);
+	if (wait_stage_flags)
+		vk_free(data->ac, wait_stage_flags);
 
 #ifdef MORE_DEBUGGING
 	debug_res("QueueSubmit", res);
 #endif
 
-	if (res == VK_SUCCESS)
-		frame_data->cmd_buffer_busy = true;
+	if (res != VK_SUCCESS)
+		goto release;
+
+	frame_data->cmd_buffer_busy = true;
+	frame_data->present_wait_semaphore_in_use = true;
+
+	wait_semaphore = frame_data->present_wait_semaphore;
+
+release:
+	ReleaseSRWLockExclusive(&queue_data->frame_mutex);
+	return wait_semaphore;
 }
 
 static inline bool valid_rect(struct vk_swap_data *swap)
@@ -1149,8 +1264,11 @@ static inline bool valid_rect(struct vk_swap_data *swap)
 	return !!swap->image_extent.width && !!swap->image_extent.height;
 }
 
-static void vk_capture(struct vk_data *data, VkQueue queue, const VkPresentInfoKHR *info)
+static VkSemaphore vk_capture_locked(struct vk_data *data, VkQueue queue, const VkPresentInfoKHR *info)
 {
+	if (!data->valid || data->capture_failed)
+		return VK_NULL_HANDLE;
+
 	struct vk_swap_data *swap = NULL;
 	HWND window = NULL;
 	uint32_t idx = 0;
@@ -1173,12 +1291,13 @@ static void vk_capture(struct vk_data *data, VkQueue queue, const VkPresentInfoK
 		}
 	}
 
-	if (!window) {
-		return;
-	}
+	if (!window)
+		return VK_NULL_HANDLE;
 
 	if (capture_should_stop()) {
 		vk_shtex_free(data);
+		if (data->capture_failed)
+			return VK_NULL_HANDLE;
 	}
 	if (capture_should_init()) {
 		if (valid_rect(swap) && !vk_shtex_init(data, window, swap)) {
@@ -1190,21 +1309,81 @@ static void vk_capture(struct vk_data *data, VkQueue queue, const VkPresentInfoK
 	if (capture_ready()) {
 		if (swap != data->cur_swap) {
 			vk_shtex_free(data);
-			return;
+			return VK_NULL_HANDLE;
 		}
 
-		vk_shtex_capture(data, &data->funcs, swap, idx, queue, info);
+		return vk_shtex_capture(data, &data->funcs, swap, idx, queue, info);
 	}
+
+	return VK_NULL_HANDLE;
+}
+
+static void vk_shtex_release_present_semaphore(struct vk_data *data, VkSwapchainKHR swapchain, uint32_t image_index)
+{
+	AcquireSRWLockShared(&data->capture_mutex);
+
+	struct vk_swap_data *cur_swap = data->cur_swap;
+	if (!data->valid || data->capture_failed || !cur_swap ||
+	    (VkSwapchainKHR)(uintptr_t)cur_swap->node.obj != swapchain) {
+		ReleaseSRWLockShared(&data->capture_mutex);
+		return;
+	}
+
+	struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+	while (queue_data) {
+		AcquireSRWLockExclusive(&queue_data->frame_mutex);
+
+		if (image_index < queue_data->frame_count)
+			queue_data->frames[image_index].present_wait_semaphore_in_use = false;
+
+		ReleaseSRWLockExclusive(&queue_data->frame_mutex);
+
+		queue_data = queue_walk_next(queue_data);
+	}
+
+	queue_walk_end(data);
+
+	ReleaseSRWLockShared(&data->capture_mutex);
+}
+
+static VkResult VKAPI_CALL OBS_AcquireNextImageKHR(VkDevice device, VkSwapchainKHR swapchain, uint64_t timeout,
+						   VkSemaphore semaphore, VkFence fence, uint32_t *pImageIndex)
+{
+	struct vk_data *const data = get_device_data(device);
+	VkResult res = data->funcs.AcquireNextImageKHR(device, swapchain, timeout, semaphore, fence, pImageIndex);
+	if (res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR)
+		vk_shtex_release_present_semaphore(data, swapchain, *pImageIndex);
+	return res;
+}
+
+static VkResult VKAPI_CALL OBS_AcquireNextImage2KHR(VkDevice device, const VkAcquireNextImageInfoKHR *info,
+						    uint32_t *pImageIndex)
+{
+	struct vk_data *const data = get_device_data(device);
+	VkResult res = data->funcs.AcquireNextImage2KHR(device, info, pImageIndex);
+	if (res == VK_SUCCESS || res == VK_SUBOPTIMAL_KHR)
+		vk_shtex_release_present_semaphore(data, info->swapchain, *pImageIndex);
+	return res;
 }
 
 static VkResult VKAPI_CALL OBS_QueuePresentKHR(VkQueue queue, const VkPresentInfoKHR *info)
 {
 	struct vk_data *const data = get_device_data_by_queue(queue);
+
 	struct vk_queue_data *const queue_data = get_queue_data(data, queue);
 	struct vk_device_funcs *const funcs = &data->funcs;
+	VkSemaphore wait_semaphore = VK_NULL_HANDLE;
 
-	if (data->valid && queue_data->supports_transfer) {
-		vk_capture(data, queue, info);
+	AcquireSRWLockExclusive(&data->capture_mutex);
+
+	if (queue_data->supports_transfer)
+		wait_semaphore = vk_capture_locked(data, queue, info);
+
+	VkPresentInfoKHR present_info = *info;
+	if (wait_semaphore != VK_NULL_HANDLE) {
+		present_info.waitSemaphoreCount = 1;
+		present_info.pWaitSemaphores = &wait_semaphore;
 	}
 
 	if (vk_presenting != 0) {
@@ -1212,8 +1391,15 @@ static VkResult VKAPI_CALL OBS_QueuePresentKHR(VkQueue queue, const VkPresentInf
 	}
 
 	vk_presenting++;
-	VkResult res = funcs->QueuePresentKHR(queue, info);
+	VkResult res = funcs->QueuePresentKHR(queue, &present_info);
 	vk_presenting--;
+
+	if (wait_semaphore != VK_NULL_HANDLE && (res == VK_ERROR_OUT_OF_HOST_MEMORY ||
+						 res == VK_ERROR_OUT_OF_DEVICE_MEMORY || res == VK_ERROR_DEVICE_LOST)) {
+		vk_shtex_mark_capture_failed(data);
+	}
+
+	ReleaseSRWLockExclusive(&data->capture_mutex);
 	return res;
 }
 
@@ -1424,6 +1610,9 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device, const V
 	init_obj_list(&data->queues);
 	init_obj_list(&data->swap_views);
 	init_obj_list(&data->framebuffers);
+	InitializeSRWLock(&data->capture_mutex);
+	data->capture_failed = false;
+	data->capture_stopped = false;
 
 	/* -------------------------------------------------------- */
 	/* create device and initialize hook data                   */
@@ -1467,6 +1656,8 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device, const V
 	GETADDR(CreateSwapchainKHR);
 	GETADDR(DestroySwapchainKHR);
 	GETADDR(QueuePresentKHR);
+	GETADDR(AcquireNextImageKHR);
+	GETADDR_OPTIONAL(AcquireNextImage2KHR);
 	GETADDR(AllocateMemory);
 	GETADDR(FreeMemory);
 	GETADDR(BindImageMemory);
@@ -1483,11 +1674,14 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device, const V
 	GETADDR(CmdPipelineBarrier);
 	GETADDR(GetDeviceQueue);
 	GETADDR(QueueSubmit);
+	GETADDR(QueueWaitIdle);
 	GETADDR(CreateCommandPool);
 	GETADDR(DestroyCommandPool);
 	GETADDR(AllocateCommandBuffers);
 	GETADDR(CreateFence);
 	GETADDR(DestroyFence);
+	GETADDR(CreateSemaphore);
+	GETADDR(DestroySemaphore);
 	GETADDR(WaitForFences);
 	GETADDR(ResetFences);
 	GETADDR(CreateImageView);
@@ -1935,15 +2129,17 @@ static void VKAPI_CALL OBS_CmdBeginRenderPass2(VkCommandBuffer commandBuffer,
 static void VKAPI_CALL OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc, const VkAllocationCallbacks *ac)
 {
 	struct vk_data *data = get_device_data(device);
+
+	AcquireSRWLockExclusive(&data->capture_mutex);
+
 	struct vk_device_funcs *funcs = &data->funcs;
 	PFN_vkDestroySwapchainKHR destroy_swapchain = funcs->DestroySwapchainKHR;
 
 	if ((sc != VK_NULL_HANDLE) && data->valid) {
 		struct vk_swap_data *swap = get_swap_data(data, sc);
 		if (swap) {
-			if (data->cur_swap == swap) {
+			if (data->cur_swap == swap)
 				vk_shtex_free(data);
-			}
 
 			vk_free(ac, swap->swap_images);
 
@@ -1952,6 +2148,8 @@ static void VKAPI_CALL OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR s
 	}
 
 	destroy_swapchain(device, sc, ac);
+
+	ReleaseSRWLockExclusive(&data->capture_mutex);
 }
 
 static VkResult VKAPI_CALL OBS_CreateWin32SurfaceKHR(VkInstance inst, const VkWin32SurfaceCreateInfoKHR *info,
@@ -2000,6 +2198,8 @@ static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice device, cons
 	GETPROCADDR_IF_SUPPORTED(CreateSwapchainKHR);
 	GETPROCADDR_IF_SUPPORTED(DestroySwapchainKHR);
 	GETPROCADDR_IF_SUPPORTED(QueuePresentKHR);
+	GETPROCADDR_IF_SUPPORTED(AcquireNextImageKHR);
+	GETPROCADDR_IF_SUPPORTED(AcquireNextImage2KHR);
 	GETPROCADDR(CreateImageView);
 	GETPROCADDR(DestroyImageView);
 	GETPROCADDR(CreateFramebuffer);
