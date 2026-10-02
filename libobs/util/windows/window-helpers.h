@@ -42,6 +42,9 @@ EXPORT HWND ms_find_window(enum window_search_mode mode, enum window_priority pr
 EXPORT HWND ms_find_window_top_level(enum window_search_mode mode, enum window_priority priority,
 				     const char *window_class, const char *title, const char *exe);
 
+EXPORT void ms_fill_pid_window_list(obs_property_t *p, const char *placeholder);
+EXPORT HWND ms_find_window_by_pid(DWORD pid, enum window_search_mode mode);
+
 #ifdef __cplusplus
 }
 #endif
