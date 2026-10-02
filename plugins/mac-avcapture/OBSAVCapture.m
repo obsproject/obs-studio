@@ -6,6 +6,7 @@
 //
 
 #import "OBSAVCapture.h"
+#import <util/platform.h>
 #import "AVCaptureDeviceFormat+OBSListable.h"
 
 /// The maximum number of frame rate ranges to show complete information for before providing a more generic description of the supported frame rates inside of a device format description.
@@ -1225,13 +1226,26 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
     didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
          fromConnection:(AVCaptureConnection *)connection
 {
-    return;
+    if (_captureInfo && _isFastPath && output == self.videoOutput) {
+        CFTypeRef reason = CMGetAttachment(sampleBuffer, kCMSampleBufferAttachmentKey_DroppedFrameReason, NULL);
+        pthread_mutex_lock(&_captureInfo->mutex);
+        _captureInfo->diagnosticDrops++;
+        if (reason && CFEqual(reason, kCMSampleBufferDroppedFrameReason_FrameWasLate)) {
+            _captureInfo->diagnosticLateDrops++;
+        } else if (reason && CFEqual(reason, kCMSampleBufferDroppedFrameReason_OutOfBuffers)) {
+            _captureInfo->diagnosticBufferDrops++;
+        } else if (reason && CFEqual(reason, kCMSampleBufferDroppedFrameReason_Discontinuity)) {
+            _captureInfo->diagnosticDiscontinuities++;
+        }
+        pthread_mutex_unlock(&_captureInfo->mutex);
+    }
 }
 
 - (void)captureOutput:(AVCaptureOutput *)output
     didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer
            fromConnection:(AVCaptureConnection *)connection
 {
+    const uint64_t arrivalNS = os_gettime_ns();
     CMItemCount sampleCount = CMSampleBufferGetNumSamples(sampleBuffer);
 
     if (!_captureInfo || sampleCount < 1) {
@@ -1284,6 +1298,22 @@ static const UInt32 kMaxFrameRateRangesInDescription = 10;
                     }
 
                     previousSurface = _captureInfo->currentSurface;
+                    if (_captureInfo->diagnosticSamples && _captureInfo->diagnosticsEnabled) {
+                        uint64_t arrivalGap = arrivalNS - _captureInfo->diagnosticLastArrivalNS;
+                        int64_t ptsGap = presentationNanoTimeStamp.value - _captureInfo->diagnosticLatestPTS;
+                        if (arrivalGap > _captureInfo->diagnosticMaxArrivalGapNS) {
+                            _captureInfo->diagnosticMaxArrivalGapNS = arrivalGap;
+                        }
+                        if (ptsGap > _captureInfo->diagnosticMaxPTSGapNS) {
+                            _captureInfo->diagnosticMaxPTSGapNS = ptsGap;
+                        }
+                    }
+                    _captureInfo->diagnosticSamples++;
+                    _captureInfo->diagnosticLastArrivalNS = arrivalNS;
+                    _captureInfo->diagnosticLatestPTS = presentationNanoTimeStamp.value;
+                    if (previousSurface) {
+                        _captureInfo->diagnosticOverwrites++;
+                    }
                     _captureInfo->currentSurface = frameSurface;
 
                     CFRetain(_captureInfo->currentSurface);

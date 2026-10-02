@@ -6,6 +6,8 @@
 //
 
 #import "plugin-main.h"
+#import <inttypes.h>
+#import <stdlib.h>
 
 #pragma mark av-capture API
 
@@ -32,6 +34,8 @@ static void *av_fast_capture_create(obs_data_t *settings, obs_source_t *source)
 {
     OBSAVCaptureInfo *capture_info = bzalloc(sizeof(OBSAVCaptureInfo));
     capture_info->isFastPath = true;
+    const char *diagnostics = getenv("OBS_AVCAPTURE_DIAGNOSTICS");
+    capture_info->diagnosticsEnabled = diagnostics && strcmp(diagnostics, "1") == 0;
     capture_info->settings = settings;
     capture_info->source = source;
 
@@ -147,23 +151,60 @@ static void av_fast_capture_tick(void *av_capture, float seconds __unused)
     OBSAVCapture *capture = (__bridge OBSAVCapture *) (av_capture);
     OBSAVCaptureInfo *capture_info = capture.captureInfo;
 
-    if (!capture_info->currentSurface) {
-        return;
-    }
-
     if (!obs_source_showing(capture_info->source)) {
         return;
     }
-
-    IOSurfaceRef previousSurface = capture_info->previousSurface;
 
     if (pthread_mutex_lock(&capture_info->mutex)) {
         return;
     }
 
-    capture_info->previousSurface = capture_info->currentSurface;
-    capture_info->currentSurface = NULL;
+    // Test readiness under the same lock used by the capture callback.
+    capture_info->diagnosticTicks++;
+    IOSurfaceRef incomingSurface = capture_info->currentSurface;
+    IOSurfaceRef previousSurface = capture_info->previousSurface;
+    if (incomingSurface) {
+        capture_info->previousSurface = incomingSurface;
+        capture_info->currentSurface = NULL;
+        capture_info->diagnosticConsumed++;
+        capture_info->diagnosticConsumedPTS = capture_info->diagnosticLatestPTS;
+    } else {
+        capture_info->diagnosticRepeats++;
+    }
+
+    const bool report = capture_info->diagnosticsEnabled && capture_info->diagnosticTicks % 300 == 0;
+    const uint64_t samples = capture_info->diagnosticSamples;
+    const uint64_t drops = capture_info->diagnosticDrops;
+    const uint64_t overwritten = capture_info->diagnosticOverwrites;
+    const uint64_t ticks = capture_info->diagnosticTicks;
+    const uint64_t repeats = capture_info->diagnosticRepeats;
+    const uint64_t consumed = capture_info->diagnosticConsumed;
+    const int64_t pts = capture_info->diagnosticConsumedPTS;
+    const uint64_t late = capture_info->diagnosticLateDrops;
+    const uint64_t buffers = capture_info->diagnosticBufferDrops;
+    const uint64_t discontinuities = capture_info->diagnosticDiscontinuities;
+    const uint64_t arrivalGap = capture_info->diagnosticMaxArrivalGapNS;
+    const int64_t ptsGap = capture_info->diagnosticMaxPTSGapNS;
+    if (report) {
+        capture_info->diagnosticMaxArrivalGapNS = 0;
+        capture_info->diagnosticMaxPTSGapNS = 0;
+    }
     pthread_mutex_unlock(&capture_info->mutex);
+
+    // Aggregate logging only, outside the handoff lock. Counters are cumulative.
+    if (report) {
+        blog(LOG_INFO,
+             "[capture-diag] source=%s samples=%" PRIu64 " drops=%" PRIu64 " overwritten=%" PRIu64 " ticks=%" PRIu64
+             " no_new_surface=%" PRIu64 " consumed=%" PRIu64 " consumed_pts_ns=%" PRId64,
+             obs_source_get_name(capture_info->source), samples, drops, overwritten, ticks, repeats, consumed, pts);
+        blog(LOG_INFO,
+             "[capture-diag] source=%s late=%" PRIu64 " out_of_buffers=%" PRIu64 " discontinuities=%" PRIu64
+             " max_arrival_gap_ns=%" PRIu64 " max_pts_gap_ns=%" PRId64,
+             obs_source_get_name(capture_info->source), late, buffers, discontinuities, arrivalGap, ptsGap);
+    }
+    if (!incomingSurface) {
+        return;
+    }
 
     if (previousSurface == capture_info->previousSurface) {
         return;

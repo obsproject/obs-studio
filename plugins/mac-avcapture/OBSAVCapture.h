@@ -47,6 +47,23 @@ typedef struct av_capture {
 
     pthread_mutex_t mutex;
 
+    // Experimental diagnostics; all counters and timestamps are protected by mutex.
+    bool diagnosticsEnabled;
+    uint64_t diagnosticSamples;
+    uint64_t diagnosticDrops;
+    uint64_t diagnosticLateDrops;
+    uint64_t diagnosticBufferDrops;
+    uint64_t diagnosticDiscontinuities;
+    uint64_t diagnosticLastArrivalNS;
+    uint64_t diagnosticMaxArrivalGapNS;
+    int64_t diagnosticMaxPTSGapNS;
+    uint64_t diagnosticOverwrites;
+    uint64_t diagnosticTicks;
+    uint64_t diagnosticRepeats;
+    uint64_t diagnosticConsumed;
+    int64_t diagnosticLatestPTS;
+    int64_t diagnosticConsumedPTS;
+
     OBSAVCaptureColorSpace configuredColorSpace;
     OBSAVCaptureVideoRange configuredFourCC;
 
