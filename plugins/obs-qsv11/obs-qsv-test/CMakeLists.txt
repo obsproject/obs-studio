@@ -17,6 +17,6 @@ target_link_libraries(
   OBS::COMutils
 )
 
-target_link_options(obs-qsv-test PRIVATE /IGNORE:4099)
+target_link_options(obs-qsv-test PRIVATE /IGNORE:4099 $<$<PLATFORM_ID:Windows>:/DEPENDENTLOADFLAG:0x800>)
 
 set_target_properties_obs(obs-qsv-test PROPERTIES FOLDER plugins/obs-qsv11 PREFIX "")
