@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-find_package(FFmpeg REQUIRED avcodec avutil)
+find_package(FFmpeg 8.0 REQUIRED avcodec avutil)
 
 add_library(win-dshow MODULE)
 add_library(OBS::dshow ALIAS win-dshow)
