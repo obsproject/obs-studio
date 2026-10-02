@@ -5,7 +5,8 @@
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
 #include "decklink-device.hpp"
-#include "OBSVideoFrame.h"
+#include "HDRVideoFrame.hpp"
+#include "DeckLinkVideoBufferAccess.hpp"
 #include <atomic>
 #include <vector>
 
@@ -156,7 +157,8 @@ protected:
 	bool swap;
 	bool allow10Bit;
 
-	OBSVideoFrame *convertFrame = nullptr;
+	BMDPixelFormat convertFormat = bmdFormat8BitYUV;
+	ComPtr<IDeckLinkVideoConversion> frameConverter;
 	std::vector<uint8_t> frameBlobs[FrameQueueFrameCount];
 	FrameQueue frameQueueObsToDecklink;
 	FrameQueue frameQueueDecklinkToObs;
@@ -174,7 +176,7 @@ protected:
 
 public:
 	DeckLinkDeviceInstance(DecklinkBase *decklink, DeckLinkDevice *device);
-	virtual ~DeckLinkDeviceInstance();
+	~DeckLinkDeviceInstance() = default;
 
 	inline DeckLinkDevice *GetDevice() const { return device; }
 	inline long long GetActiveModeId() const { return mode ? mode->GetId() : 0; }
