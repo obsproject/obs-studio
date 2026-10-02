@@ -5,4 +5,4 @@ target_sources(libobs-core-modules PRIVATE obs-core-modules.c PUBLIC obs-core-mo
 
 target_include_directories(libobs-core-modules PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 
-set_property(TARGET libobs-core-modules PROPERTY FOLDER core)
+set_target_properties(libobs-core-modules PROPERTIES FOLDER core POSITION_INDEPENDENT_CODE TRUE)
