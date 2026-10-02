@@ -17,6 +17,7 @@
 
 #include "OBSBasicProperties.hpp"
 
+#include <utility/AppTooltip.hpp>
 #include <utility/display-helpers.hpp>
 #include <widgets/OBSBasic.hpp>
 
@@ -83,6 +84,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	} else {
 		ui->transitionButton->setVisible(false);
 	}
+	connect(view, &OBSPropertiesView::PropertiesRefreshed, this,
+		[this]() { AppTooltip::applyAppTooltipToChildren(view); });
 
 	view->show();
 	installEventFilter(CreateShortcutFilter());
