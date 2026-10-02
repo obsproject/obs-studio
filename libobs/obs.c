@@ -1807,13 +1807,13 @@ bool obs_enum_service_types(size_t idx, const char **id)
 
 void obs_enter_graphics(void)
 {
-	if (obs->video.graphics)
+	if (obs && obs->video.graphics)
 		gs_enter_context(obs->video.graphics);
 }
 
 void obs_leave_graphics(void)
 {
-	if (obs->video.graphics)
+	if (obs && obs->video.graphics)
 		gs_leave_context();
 }
 

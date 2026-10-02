@@ -19,6 +19,10 @@ Multiview::~Multiview()
 		}
 	}
 
+	if (!obs_initialized()) {
+		return;
+	}
+
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(actionSafeMargin);
 	gs_vertexbuffer_destroy(graphicsSafeMargin);
