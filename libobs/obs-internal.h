@@ -1397,6 +1397,9 @@ struct obs_encoder {
 	volatile bool paused;
 	bool initialized;
 
+	/* skipped by the gpu encode thread after a texture encode fails */
+	volatile bool gpu_encode_failed;
+
 	/* indicates ownership of the info.id buffer */
 	bool owns_info_id;
 

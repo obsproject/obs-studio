@@ -773,6 +773,7 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 		encoder->offset_usec = 0;
 		encoder->start_ts = 0;
 		encoder->frame_rate_divisor_counter = 0;
+		os_atomic_set_bool(&encoder->gpu_encode_failed, false);
 		maybe_clear_encoder_core_video_mix(encoder);
 
 		for (size_t i = 0; i < encoder->paired_encoders.num; i++) {
@@ -1382,6 +1383,13 @@ void full_stop(struct obs_encoder *encoder)
 			pthread_mutex_unlock(&output->interleaved_mutex);
 		}
 		pthread_mutex_unlock(&encoder->outputs_mutex);
+
+		/* stopping a texture encoder waits for the gpu encode thread, which
+		 * is this thread, so let the outputs stop it when they end capture */
+		if (gpu_encode_available(encoder)) {
+			os_atomic_set_bool(&encoder->gpu_encode_failed, true);
+			return;
+		}
 
 		pthread_mutex_lock(&encoder->callbacks_mutex);
 		da_free(encoder->callbacks);
