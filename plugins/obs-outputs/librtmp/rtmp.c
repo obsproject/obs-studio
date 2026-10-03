@@ -487,6 +487,12 @@ RTMP_EnableWrite(RTMP *r)
     r->Link.protocol |= RTMP_FEATURE_WRITE;
 }
 
+void
+RTMP_EnableReconnect(RTMP *r)
+{
+    r->Link.protocol |= RTMP_FEATURE_RECONNECT;
+}
+
 double
 RTMP_GetDuration(RTMP *r)
 {
@@ -1647,6 +1653,7 @@ SAVC(secureToken);
 SAVC(secureTokenResponse);
 SAVC(type);
 SAVC(nonprivate);
+SAVC(capsEx);
 
 static int
 SendConnectPacket(RTMP *r, RTMPPacket *cp)
@@ -1752,6 +1759,14 @@ SendConnectPacket(RTMP *r, RTMPPacket *cp)
         if (!enc)
             return FALSE;
     }
+    
+    if (r->Link.protocol & RTMP_FEATURE_RECONNECT)
+    {
+        enc = AMF_EncodeNamedNumber(enc, pend, &av_capsEx, RTMP_CAPS_RECONNECT);
+        if (!enc)
+            return FALSE;
+    }
+
     if (enc + 3 >= pend)
         return FALSE;
     *enc++ = 0;
