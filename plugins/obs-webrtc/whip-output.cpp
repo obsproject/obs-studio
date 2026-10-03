@@ -587,8 +587,8 @@ bool WHIPOutput::Connect()
 
 	auto offer_sdp = std::string(peer_connection->localDescription().value());
 
-#ifdef _WIN32
-	// The Windows Mbed TLS dependency rejects current Chrome's DTLS ClientHello.
+#if defined(_WIN32) || defined(__APPLE__)
+	// The Windows/macOS Mbed TLS dependency rejects current Chrome's DTLS ClientHello.
 	// VDO.Ninja supports the passive role, so offer active for this endpoint only.
 	// Keep normal actpass negotiation for other WHIP services (RFC 9725, 4.4.4).
 	CURLU *endpoint = curl_url();
