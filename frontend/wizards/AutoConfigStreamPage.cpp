@@ -122,10 +122,11 @@ bool AutoConfigStreamPage::validatePage()
 		if (IsYouTubeService(wiz->serviceName)) {
 			/* Adjust upper bound to YouTube limits
 			 * for resolutions above 1080p */
-			if (wiz->baseResolutionCY > 1440)
+			if (wiz->baseResolutionCY > 1440) {
 				bitrate = 51000;
-			else if (wiz->baseResolutionCY > 1080)
+			} else if (wiz->baseResolutionCY > 1080) {
 				bitrate = 18000;
+			}
 		}
 #endif
 	}
@@ -136,10 +137,12 @@ bool AutoConfigStreamPage::validatePage()
 
 	if (wiz->customServer) {
 		QString server = ui->customServer->text().trimmed();
-		wiz->server = wiz->serverName = QT_TO_UTF8(server);
+		const std::string name = server.toStdString();
+		wiz->server = name;
+		wiz->serverName = name;
 	} else {
-		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
-		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
+		wiz->serverName = ui->server->currentText().toStdString();
+		wiz->server = ui->server->currentData().toString().toStdString();
 	}
 
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
@@ -149,22 +152,26 @@ bool AutoConfigStreamPage::validatePage()
 	wiz->regionEU = ui->regionEU->isChecked();
 	wiz->regionAsia = ui->regionAsia->isChecked();
 	wiz->regionOther = ui->regionOther->isChecked();
-	wiz->serviceName = QT_TO_UTF8(ui->service->currentText());
-	if (ui->preferHardware)
+	wiz->serviceName = ui->service->currentText().toStdString();
+	if (ui->preferHardware) {
 		wiz->preferHardware = ui->preferHardware->isChecked();
-	wiz->key = QT_TO_UTF8(ui->key->text());
+	}
+	wiz->key = ui->key->text().toStdString();
 
 	if (!wiz->customServer) {
-		if (wiz->serviceName == "Twitch")
+		if (wiz->serviceName == "Twitch") {
 			wiz->service = AutoConfig::Service::Twitch;
+		}
 #ifdef YOUTUBE_ENABLED
-		else if (IsYouTubeService(wiz->serviceName))
+		else if (IsYouTubeService(wiz->serviceName)) {
 			wiz->service = AutoConfig::Service::YouTube;
+		}
 #endif
-		else if (wiz->serviceName == "Amazon IVS")
+		else if (wiz->serviceName == "Amazon IVS") {
 			wiz->service = AutoConfig::Service::AmazonIVS;
-		else
+		} else {
 			wiz->service = AutoConfig::Service::Other;
+		}
 	} else {
 		wiz->service = AutoConfig::Service::Other;
 	}
@@ -189,13 +196,15 @@ bool AutoConfigStreamPage::validatePage()
 								   postData, multitrack_video_name);
 
 				for (const auto &endpoint : config.ingest_endpoints) {
-					if (qstrnicmp("RTMP", endpoint.protocol.c_str(), 4) != 0)
+					if (qstrnicmp("RTMP", endpoint.protocol.c_str(), 4) != 0) {
 						continue;
+					}
 
 					std::string address = endpoint.url_template;
 					auto pos = address.find("/{stream_key}");
-					if (pos != address.npos)
+					if (pos != address.npos) {
 						address.erase(pos);
+					}
 
 					wiz->serviceConfigServers.push_back({address, address});
 				}
@@ -203,11 +212,13 @@ bool AutoConfigStreamPage::validatePage()
 				int multitrackVideoBitrate = 0;
 				for (auto &encoder_config : config.encoder_configurations) {
 					auto it = encoder_config.settings.find("bitrate");
-					if (it == encoder_config.settings.end())
+					if (it == encoder_config.settings.end()) {
 						continue;
+					}
 
-					if (!it->is_number_integer())
+					if (!it->is_number_integer()) {
 						continue;
+					}
 
 					int bitrate = 0;
 					it->get_to(bitrate);
@@ -233,8 +244,9 @@ bool AutoConfigStreamPage::validatePage()
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"), WARNING_TEXT("Text"));
 #undef WARNING_TEXT
 
-		if (button == QMessageBox::No)
+		if (button == QMessageBox::No) {
 			return false;
+		}
 	}
 
 	return true;
@@ -258,8 +270,9 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 	if (a) {
 		bool validKey = !a->key().empty();
 
-		if (validKey)
+		if (validKey) {
 			ui->key->setText(QT_UTF8(a->key().c_str()));
+		}
 
 		ui->streamKeyWidget->setVisible(false);
 		ui->streamKeyLabel->setVisible(false);
@@ -302,7 +315,7 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 
 void AutoConfigStreamPage::OnAuthConnected()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey || type == Auth::Type::OAuth_LinkedAccount) {
@@ -312,7 +325,7 @@ void AutoConfigStreamPage::OnAuthConnected()
 
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 	OAuth::DeleteCookies(service);
 
@@ -342,7 +355,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 
 #ifdef BROWSER_AVAILABLE
 	OAuth::DeleteCookies(service);
@@ -435,10 +448,11 @@ void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 void AutoConfigStreamPage::ServiceChanged()
 {
 	bool showMore = ui->service->currentData().toInt() == (int)ListOpt::ShowAll;
-	if (showMore)
+	if (showMore) {
 		return;
+	}
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
+	std::string service = ui->service->currentText().toStdString();
 	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
@@ -479,8 +493,9 @@ void AutoConfigStreamPage::ServiceChanged()
 	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
-	if ((service == "Twitch" && wiz->twitchAuto) || (service == "Amazon IVS" && wiz->amazonIVSAuto))
+	if ((service == "Twitch" && wiz->twitchAuto) || (service == "Amazon IVS" && wiz->amazonIVSAuto)) {
 		regionBased = false;
+	}
 
 	ui->streamkeyPageLayout->removeWidget(ui->serverLabel);
 	ui->streamkeyPageLayout->removeWidget(ui->serverStackedWidget);
@@ -493,8 +508,9 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
 	} else {
-		if (!testBandwidth)
+		if (!testBandwidth) {
 			ui->streamkeyPageLayout->insertRow(2, ui->serverLabel, ui->serverStackedWidget);
+		}
 
 		ui->region->setVisible(regionBased && testBandwidth);
 		ui->serverStackedWidget->setCurrentIndex(0);
@@ -534,7 +550,7 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -550,7 +566,6 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
 		ui->moreInfoButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateKeyLink()
@@ -559,7 +574,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -596,12 +611,11 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->streamKeyButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 
 	OBSDataAutoRelease settings = obs_data_create();
 
@@ -622,11 +636,13 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 		names.push_back(name);
 	}
 
-	if (showAll)
+	if (showAll) {
 		names.sort(Qt::CaseInsensitive);
+	}
 
-	for (QString &name : names)
+	for (QString &name : names) {
 		ui->service->addItem(name);
+	}
 
 	if (!showAll) {
 		ui->service->addItem(QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
@@ -637,11 +653,10 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 
 	if (!lastService.isEmpty()) {
 		int idx = ui->service->findText(lastService);
-		if (idx != -1)
+		if (idx != -1) {
 			ui->service->setCurrentIndex(idx);
+		}
 	}
-
-	obs_properties_destroy(props);
 
 	ui->service->blockSignals(false);
 }
@@ -659,7 +674,7 @@ void AutoConfigStreamPage::UpdateServerList()
 		lastService = serviceName;
 	}
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	OBSProperties props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -677,8 +692,6 @@ void AutoConfigStreamPage::UpdateServerList()
 		const char *server = obs_property_list_item_string(servers, i);
 		ui->server->addItem(name, server);
 	}
-
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateCompleted()

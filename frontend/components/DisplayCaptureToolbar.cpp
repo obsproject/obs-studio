@@ -21,8 +21,9 @@ void DisplayCaptureToolbar::Init()
 	ui->activateButton = nullptr;
 
 	obs_module_t *mod = get_os_module("win-capture", "mac-capture", "linux-capture");
-	if (!mod)
+	if (!mod) {
 		return;
+	}
 
 	const char *device_str = get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
 	ui->deviceLabel->setText(device_str);

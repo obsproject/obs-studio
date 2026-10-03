@@ -35,15 +35,6 @@ const char *get_module_extension(void)
     return "";
 }
 
-void add_default_module_paths(void)
-{
-    NSURL *pluginURL = [[NSBundle mainBundle] builtInPlugInsURL];
-    NSString *pluginModulePath = [[pluginURL path] stringByAppendingString:@"/%module%.plugin/Contents/MacOS/"];
-    NSString *pluginDataPath = [[pluginURL path] stringByAppendingString:@"/%module%.plugin/Contents/Resources/"];
-
-    obs_add_module_path(pluginModulePath.UTF8String, pluginDataPath.UTF8String);
-}
-
 char *find_libobs_data_file(const char *file)
 {
     NSBundle *frameworkBundle = [NSBundle bundleWithIdentifier:@"com.obsproject.libobs"];

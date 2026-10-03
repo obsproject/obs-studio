@@ -127,8 +127,9 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec, bool useTexA
 #undef WARN_ERR_IMPL
 
 		delete pEncoder;
-		if (pEncoder)
+		if (pEncoder) {
 			is_active.store(false);
+		}
 		return NULL;
 	}
 
@@ -165,15 +166,17 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY, uint8_t *p
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	if (pDataY != NULL && pDataUV != NULL)
+	if (pDataY != NULL && pDataUV != NULL) {
 		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
+	}
 
-	if (sts == MFX_ERR_NONE)
+	if (sts == MFX_ERR_NONE) {
 		return 0;
-	else if (sts == MFX_ERR_MORE_DATA)
+	} else if (sts == MFX_ERR_MORE_DATA) {
 		return 1;
-	else
+	} else {
 		return -1;
+	}
 }
 
 int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key,
@@ -184,12 +187,13 @@ int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex, uint64_t loc
 
 	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
 
-	if (sts == MFX_ERR_NONE)
+	if (sts == MFX_ERR_NONE) {
 		return 0;
-	else if (sts == MFX_ERR_MORE_DATA)
+	} else if (sts == MFX_ERR_MORE_DATA) {
 		return 1;
-	else
+	} else {
 		return -1;
+	}
 }
 
 int qsv_encoder_close(qsv_t *pContext)
@@ -197,8 +201,9 @@ int qsv_encoder_close(qsv_t *pContext)
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	delete pEncoder;
 
-	if (pEncoder)
+	if (pEncoder) {
 		is_active.store(false);
+	}
 
 	return 0;
 }
@@ -227,8 +232,9 @@ int qsv_encoder_reconfig(qsv_t *pContext, qsv_param_t *pParams)
 	pEncoder->UpdateParams(pParams);
 	mfxStatus sts = pEncoder->ReconfigureEncoder();
 
-	if (sts != MFX_ERR_NONE)
+	if (sts != MFX_ERR_NONE) {
 		return false;
+	}
 	return true;
 }
 
@@ -244,8 +250,9 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	vendor += string((char *)&cpuInfo[3], 4);
 	vendor += string((char *)&cpuInfo[2], 4);
 
-	if (vendor != "GenuineIntel")
+	if (vendor != "GenuineIntel") {
 		return QSV_CPU_PLATFORM_UNKNOWN;
+	}
 
 	util_cpuid(cpuInfo, 1);
 	uint8_t model = ((cpuInfo[0] >> 4) & 0xF) + ((cpuInfo[0] >> 12) & 0xF0);
@@ -253,8 +260,9 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 
 	// See Intel 64 and IA-32 Architectures Software Developer's Manual,
 	// Vol 3C Table 35-1
-	if (family != 6)
+	if (family != 6) {
 		return QSV_CPU_PLATFORM_UNKNOWN;
+	}
 
 	switch (model) {
 	case 0x1C:

@@ -31,8 +31,9 @@ int FillPropertyCombo(QComboBox *c, obs_property_t *p, const std::string &cur_id
 			id = val ? val : "";
 		}
 
-		if (cur_id == id)
+		if (cur_id == id) {
 			cur_idx = (int)i;
+		}
 
 		c->addItem(name, id.c_str());
 	}
@@ -77,7 +78,7 @@ void ComboSelectToolbar::Init()
 		return;
 	}
 
-	UpdateSourceComboToolbarProperties(ui->device, source, props.get(), prop_name, is_int);
+	UpdateSourceComboToolbarProperties(ui->device, source, props, prop_name, is_int);
 }
 
 void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx, const char *prop_name, bool is_int)

@@ -41,8 +41,9 @@ YouTubeAppDock::YouTubeAppDock(const QString &title) : BrowserDock(title), dockB
 
 bool YouTubeAppDock::IsYTServiceSelected()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return false;
+	}
 
 	obs_service_t *service_obj = OBSBasic::Get()->GetService();
 	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
@@ -74,8 +75,9 @@ void YouTubeAppDock::SettingsUpdated(bool cleanup)
 		}
 	}
 
-	if (ytservice)
+	if (ytservice) {
 		Update();
+	}
 }
 
 std::string YouTubeAppDock::InitYTUserUrl()
@@ -124,14 +126,17 @@ void YouTubeAppDock::AddYouTubeAppDock()
 
 void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 {
-	if (dockBrowser)
+	if (dockBrowser) {
 		delete dockBrowser;
+	}
 	dockBrowser = cef->create_widget(this, url, panel_cookies);
-	if (!dockBrowser)
+	if (!dockBrowser) {
 		return;
+	}
 
-	if (obs_browser_qcef_version() >= 1)
+	if (obs_browser_qcef_version() >= 1) {
 		dockBrowser->allowAllPopups(true);
+	}
 
 	this->SetWidget(dockBrowser);
 
@@ -142,8 +147,9 @@ void YouTubeAppDock::CreateBrowserWidget(const std::string &url)
 
 void YouTubeAppDock::SetVisibleYTAppDockInMenu(bool visible)
 {
-	if (visible && toggleViewAction()->isVisible())
+	if (visible && toggleViewAction()->isVisible()) {
 		return;
+	}
 
 	toggleViewAction()->setVisible(visible);
 	this->setVisible(visible);
@@ -208,8 +214,9 @@ void YouTubeAppDock::IngestionStopped(const char *stream_id, streaming_mode_t mo
 
 void YouTubeAppDock::showEvent(QShowEvent *)
 {
-	if (!dockBrowser)
+	if (!dockBrowser) {
 		Update();
+	}
 }
 
 void YouTubeAppDock::closeEvent(QCloseEvent *event)
@@ -220,8 +227,9 @@ void YouTubeAppDock::closeEvent(QCloseEvent *event)
 
 void YouTubeAppDock::DispatchYTEvent(const char *event, const char *video_id, streaming_mode_t mode)
 {
-	if (!dockBrowser)
+	if (!dockBrowser) {
 		return;
+	}
 
 	// update channelId if empty:
 	UpdateChannelId();
@@ -395,26 +403,30 @@ YoutubeApiWrappers *YouTubeAppDock::GetYTApi()
 
 void YouTubeAppDock::CleanupYouTubeUrls()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return;
+	}
 
 	static constexpr const char *YOUTUBE_VIDEO_URL = "://studio.youtube.com/video/";
 	// remove legacy YouTube Browser Docks (once)
 
 	bool youtube_cleanup_done = config_get_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone");
 
-	if (youtube_cleanup_done)
+	if (youtube_cleanup_done) {
 		return;
+	}
 
 	config_set_bool(App()->GetUserConfig(), "General", "YtDockCleanupDone", true);
 
 	const char *jsonStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "ExtraBrowserDocks");
-	if (!jsonStr)
+	if (!jsonStr) {
 		return;
+	}
 
 	json array = json::parse(jsonStr);
-	if (!array.is_array())
+	if (!array.is_array()) {
 		return;
+	}
 
 	json save_array;
 	std::string removedYTUrl;

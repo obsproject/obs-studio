@@ -21,10 +21,11 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 	QString bitness;
 
-	if (sizeof(void *) == 4)
+	if (sizeof(void *) == 4) {
 		bitness = " (32 bit)";
-	else if (sizeof(void *) == 8)
+	} else if (sizeof(void *) == 8) {
 		bitness = " (64 bit)";
+	}
 
 	QString ver = obs_get_version_string();
 
@@ -41,9 +42,8 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 		ui->donate->setOpenExternalLinks(true);
 	}
 
-	ui->getInvolved->setText(
-		"&nbsp;&nbsp;<a href='https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst'>" +
-		QTStr("About.GetInvolved") + "</a>");
+	ui->getInvolved->setText("&nbsp;&nbsp;<a href='https://obsproject.com/developer-contributing'>" +
+				 QTStr("About.GetInvolved") + "</a>");
 	ui->getInvolved->setTextInteractionFlags(Qt::TextBrowserInteraction);
 	ui->getInvolved->setOpenExternalLinks(true);
 
@@ -81,8 +81,9 @@ void OBSAbout::ShowAbout()
 {
 	OBSBasic *main = OBSBasic::Get();
 
-	if (main->patronJson.empty())
+	if (main->patronJson.empty()) {
 		return;
+	}
 
 	std::string error;
 	Json json = Json::parse(main->patronJson, error);
@@ -112,11 +113,13 @@ void OBSAbout::ShowAbout()
 			text += "\">";
 		}
 		text += QT_UTF8(name.c_str()).toHtmlEscaped();
-		if (!link.empty())
+		if (!link.empty()) {
 			text += "</a>";
+		}
 
-		if (first)
+		if (first) {
 			first = false;
+		}
 	}
 
 	ui->textBrowser->setHtml(text);

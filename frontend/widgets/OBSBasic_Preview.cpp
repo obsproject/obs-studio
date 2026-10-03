@@ -97,8 +97,9 @@ void OBSBasic::UpdatePreviewScalingMenu()
 
 void OBSBasic::DrawBackdrop(float cx, float cy)
 {
-	if (!box)
+	if (!box) {
 		return;
+	}
 
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DEFAULT, "DrawBackdrop");
 
@@ -163,8 +164,9 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 
 		OBSScene scene = window->GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
-		if (source)
+		if (source) {
 			obs_source_video_render(source);
+		}
 	} else {
 		obs_render_main_texture_src_color_only();
 	}
@@ -189,8 +191,11 @@ void OBSBasic::RenderMain(void *data, uint32_t, uint32_t)
 
 	window->ui->preview->DrawSceneEditing();
 
-	if (window->drawSpacingHelpers)
+	if (window->drawSpacingHelpers) {
 		window->ui->preview->DrawSpacingHelpers();
+	}
+
+	window->ui->preview->DrawSnapGuides();
 
 	/* --------------------------------------- */
 
@@ -270,10 +275,16 @@ void OBSBasic::TogglePreview()
 	EnablePreviewDisplay(previewEnabled);
 }
 
+void OBSBasic::addSnapGuide(SnapGuide guide)
+{
+	ui->preview->addSnapGuide(guide);
+}
+
 void OBSBasic::EnablePreview()
 {
-	if (previewProgramMode)
+	if (previewProgramMode) {
 		return;
+	}
 
 	previewEnabled = true;
 	EnablePreviewDisplay(true);
@@ -281,8 +292,9 @@ void OBSBasic::EnablePreview()
 
 void OBSBasic::DisablePreview()
 {
-	if (previewProgramMode)
+	if (previewProgramMode) {
 		return;
+	}
 
 	previewEnabled = false;
 	EnablePreviewDisplay(false);
@@ -290,8 +302,9 @@ void OBSBasic::DisablePreview()
 
 static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
 {
-	if (obs_sceneitem_locked(item))
+	if (obs_sceneitem_locked(item)) {
 		return true;
+	}
 
 	struct vec2 &offset = *static_cast<struct vec2 *>(param);
 	struct vec2 pos;
@@ -323,8 +336,9 @@ static bool nudge_callback(obs_scene_t *, obs_sceneitem_t *item, void *param)
 
 void OBSBasic::Nudge(int dist, MoveDir dir)
 {
-	if (ui->preview->Locked())
+	if (ui->preview->Locked()) {
 		return;
+	}
 
 	struct vec2 offset;
 	vec2_set(&offset, 0.0f, 0.0f);
@@ -448,8 +462,9 @@ void OBSBasic::ColorChange()
 	QAction *action = qobject_cast<QAction *>(sender());
 	QPushButton *colorButton = qobject_cast<QPushButton *>(sender());
 
-	if (selectedItems.count() == 0)
+	if (selectedItems.count() == 0) {
 		return;
+	}
 
 	if (colorButton) {
 		int preset = colorButton->property("bgColor").value<int>();
@@ -550,14 +565,16 @@ void OBSBasic::ColorChange()
 
 void OBSBasic::UpdateProjectorHideCursor()
 {
-	for (size_t i = 0; i < projectors.size(); i++)
+	for (size_t i = 0; i < projectors.size(); i++) {
 		projectors[i]->SetHideCursor();
+	}
 }
 
 void OBSBasic::UpdateProjectorAlwaysOnTop(bool top)
 {
-	for (size_t i = 0; i < projectors.size(); i++)
+	for (size_t i = 0; i < projectors.size(); i++) {
 		SetAlwaysOnTop(projectors[i], top);
+	}
 }
 
 void OBSBasic::ResetProjectors()

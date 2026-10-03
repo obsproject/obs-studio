@@ -17,8 +17,9 @@ public:
 	STDMETHODIMP_(ULONG) STDMETHODCALLTYPE Release()
 	{
 		long val = os_atomic_dec_long(&refs);
-		if (val == 0)
+		if (val == 0) {
 			delete this;
+		}
 		return (ULONG)val;
 	}
 
@@ -47,8 +48,9 @@ public:
 
 	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR id)
 	{
-		if (cb && id)
+		if (cb && id) {
 			cb(flow, role, id);
+		}
 
 		return S_OK;
 	}
@@ -80,8 +82,9 @@ WASAPINotify::~WASAPINotify()
 
 void WASAPINotify::AddDefaultDeviceChangedCallback(void *handle, WASAPINotifyDefaultDeviceChangedCallback cb)
 {
-	if (!handle)
+	if (!handle) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> l(mutex);
 	defaultDeviceChangedCallbacks[handle] = cb;
@@ -89,8 +92,9 @@ void WASAPINotify::AddDefaultDeviceChangedCallback(void *handle, WASAPINotifyDef
 
 void WASAPINotify::RemoveDefaultDeviceChangedCallback(void *handle)
 {
-	if (!handle)
+	if (!handle) {
 		return;
+	}
 
 	std::lock_guard<std::mutex> l(mutex);
 	defaultDeviceChangedCallbacks.erase(handle);
@@ -99,6 +103,7 @@ void WASAPINotify::RemoveDefaultDeviceChangedCallback(void *handle)
 void WASAPINotify::OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR id)
 {
 	std::lock_guard<std::mutex> l(mutex);
-	for (const auto &cb : defaultDeviceChangedCallbacks)
+	for (const auto &cb : defaultDeviceChangedCallbacks) {
 		cb.second(flow, role, id);
+	}
 }

@@ -10,25 +10,33 @@ target_sources(
   PRIVATE
     components/CheckBox.cpp
     components/ComboBox.cpp
-    components/DoubleSpinBox.cpp
-    components/SpinBox.cpp
+    components/ExpandButton.cpp
+    components/InlineButton.cpp
+    components/RowDoubleSpinBox.cpp
+    components/RowInfo.cpp
+    components/RowSpinBox.cpp
     components/ToggleSwitch.cpp
     include/Idian/CheckBox.hpp
+    include/Idian/CollapsibleGroup.hpp
     include/Idian/ComboBox.hpp
-    include/Idian/DoubleSpinBox.hpp
-    include/Idian/Group.hpp
+    include/Idian/ExpandButton.hpp
     include/Idian/Idian.hpp
-    include/Idian/PropertiesList.hpp
+    include/Idian/InlineButton.hpp
+    include/Idian/ListHeader.hpp
     include/Idian/Row.hpp
-    include/Idian/SpinBox.hpp
+    include/Idian/RowDoubleSpinBox.hpp
+    include/Idian/RowInfo.hpp
+    include/Idian/RowList.hpp
+    include/Idian/RowSpinBox.hpp
     include/Idian/StateEventFilter.cpp
     include/Idian/StateEventFilter.hpp
     include/Idian/ToggleSwitch.hpp
     include/Idian/Utils.cpp
     include/Idian/Utils.hpp
-    widgets/Group.cpp
-    widgets/PropertiesList.cpp
+    widgets/CollapsibleGroup.cpp
+    widgets/ListHeader.cpp
     widgets/Row.cpp
+    widgets/RowList.cpp
 )
 target_sources(idian PUBLIC include/Idian/Idian.hpp)
 

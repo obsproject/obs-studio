@@ -24,7 +24,7 @@
 
 namespace idian {
 
-class ComboBox : public QComboBox, public Utils {
+class ComboBox : public QComboBox {
 	Q_OBJECT
 
 public:

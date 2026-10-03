@@ -173,8 +173,8 @@ Property Object Functions
 
    Adds a 'path' property.  Can be a directory or a file.
 
-   If target is a file path, the filters should be this format, separated by
-   double semicolons, and extensions separated by space::
+   If target is a file path or file save, the filters should be this format,
+   separated by double semicolons, and extensions separated by space::
 
      "Example types 1 and 2 (*.ex1 *.ex2);;Example type 3 (*.ex3)"
 
@@ -187,9 +187,10 @@ Property Object Functions
                            - **OBS_PATH_DIRECTORY** - Directory
 
    :param    filter:       If type is a file path, then describes the file filter
-                           that the user can browse.  Items are separated via
-                           double semicolons.  If multiple file types in a
-                           filter, separate with space.
+                           that the user can browse. If type is a save path,
+                           then describes the file types the file can be
+                           saved as. Items are separated via double semicolons.
+                           If multiple file types in a filter, separate with space.
    :param    default_path: The default path to start in, or *NULL*
    :return:                The property
 
@@ -259,7 +260,14 @@ Property Object Functions
 ---------------------
 
 .. function:: obs_property_t *obs_properties_add_button(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback)
-              obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
+
+   Like :c:func:`obs_properties_add_button2`, except the value of the ``data`` argument in the callback is
+   determined by the caller of :c:func:`obs_property_button_clicked`, and as such unspecified by libobs.
+
+   .. deprecated:: 32.1
+   Use :c:func:`obs_properties_add_button2` instead.
+
+.. function:: obs_property_t *obs_properties_add_button2(obs_properties_t *props, const char *name, const char *text, obs_property_clicked_t callback, void *priv)
 
    Adds a button property.  This property does not actually store any
    settings; it's used to implement a button in user interface if the
@@ -270,11 +278,7 @@ Property Object Functions
 
    :param    name:        Setting identifier string
    :param    text:        Localized name shown to user
-   :param    callback:    Callback to be executed when the button is pressed. Note that if the property
-                          is created with :c:func:`obs_properties_add_button` instead of
-                          :c:func:`obs_properties_add_button2`, the value of ``data`` is determined by
-                          the caller of :c:func:`obs_property_button_clicked`, and as such unspecified
-                          by libobs.
+   :param    callback:    Callback to be executed when the button is pressed
    :param    priv:        Pointer passed back as the `data` argument of the callback
    :return:               The property
 
@@ -737,6 +741,9 @@ Property Modification Functions
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
    :returns: The index of the list item.
 
+   Note: If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of
+   ``val``.
+
 ---------------------
 
 .. function:: size_t obs_property_list_add_int(obs_property_t *p, const char *name, long long val)
@@ -766,6 +773,9 @@ Property Modification Functions
    :param    idx:  The index of the list item
    :param    name: Localized name shown to user
    :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
+
+   Note: If ``p`` is of type OBS_COMBO_TYPE_EDITABLE, :c:func:`obs_data_get_string` will return ``name`` instead of
+   ``val``.
 
 ---------------------
 

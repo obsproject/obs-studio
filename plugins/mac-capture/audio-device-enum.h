@@ -19,8 +19,9 @@ struct device_list {
 
 static inline void device_list_free(struct device_list *list)
 {
-	for (size_t i = 0; i < list->items.num; i++)
+	for (size_t i = 0; i < list->items.num; i++) {
 		device_item_free(list->items.array + i);
+	}
 
 	da_free(list->items);
 }

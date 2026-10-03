@@ -26,7 +26,7 @@
 #include <util/platform.h>
 #include <util/config-file.h>
 
-#if defined(ENABLE_UI)
+#if defined(ENABLE_FRONTEND)
 #include "obs-frontend-api.h"
 #endif
 
@@ -106,6 +106,6 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "util/platform.h"
 %include "util/config-file.h"
 
-#if defined(ENABLE_UI)
+#if defined(ENABLE_FRONTEND)
 %include "obs-frontend-api.h"
 #endif

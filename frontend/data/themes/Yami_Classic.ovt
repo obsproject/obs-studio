@@ -1,3 +1,21 @@
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * This is a Variant Theme (Style) for Yami named Classic. Variant themes
+ * override variable values and append additional style rules to the end of
+ * the final composed stylesheet.
+ *
+ * If you are developing a custom theme it is HIGHLY RECOMMENDED that you
+ * use Yami as a Base and apply your changes in a Variant Theme (.ovt).
+ *
+ * You can learn more about OBS Studio's theme system on our GitHub wiki:
+ * https://github.com/obsproject/obs-studio/wiki/OBS-Studio-Theme-System
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
+
 @OBSThemeMeta {
     name: 'Classic';
     id: 'com.obsproject.Yami.Classic';
@@ -22,6 +40,7 @@
 
     --primary: rgb(25,52,76);
     --primary_light: rgb(33,71,109);
+    --primary_dark: rgb(19, 40, 58);
 
     /* Layout */
     --padding_large: min(max(0px, calc(1px * var(--padding_base_value))), 5px);
@@ -81,6 +100,13 @@
     --dock_title_padding: calc(2px + var(--padding_base));
     --icon_base_mixer: calc(2px + var(--icon_base));
     --padding_menu_y: calc(3px + calc(1 * var(--padding_base_value)));
+}
+
+/* --------------------- */
+/* General Styling Hints */
+
+.dialog-frame {
+    background: var(--bg_window);
 }
 
 QStatusBar {
@@ -214,50 +240,24 @@ QPushButton[toolButton="true"] {
   background: var(--bg_base);
 }
 
-#hMixerScrollArea VolControl {
-    padding: 0px var(--padding_container);
+#hVolumeWidgets VolumeControl {
     margin-bottom: 1px;
 }
 
-#hMixerScrollArea #volMeterFrame {
+#hVolumeWidgets VolumeControl #volMeterFrame {
     margin-top: var(--spacing_large);
 }
 
-#vMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--spacing_large);
+#vVolumeWidgets VolumeControl {
     border-right: 1px solid var(--bg_window);
 }
 
-#vMixerScrollArea QLabel {
+#vVolumeWidgets VolumeControl QLabel {
     font-size: var(--font_small);
 }
 
-#vMixerScrollArea #volLabel {
+#vVolumeWidgets VolumeControl #volLabel {
     font-size: var(--font_base);
-}
-
-.indicator-mute::indicator,
-.indicator-mute::indicator:unchecked {
-    background-color: var(--bg_base);
-    border: none;
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    icon-size: var(--icon_base_mixer);
-}
-
-.indicator-mute::indicator:checked {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:checked:hover,
-.indicator-mute::indicator:unchecked:hover {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:unchecked:hover {
-    icon-size: var(--icon_base_mixer);
-    border: none;
 }
 
 #contextContainer {
@@ -274,9 +274,13 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--text);
     qproperty-minorTickColor: rgb(122,121,122); /* light */
-    qproperty-meterThickness: 3;
 }
 
 OBSBasicStats {
     background: var(--bg_window);
+}
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton {
+    background-color: var(--grey7);
 }

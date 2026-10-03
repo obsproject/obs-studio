@@ -50,7 +50,10 @@ Contributing
 
 - If you wish to contribute code to the project, please make sure to
   read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
+  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
+  
+- Code for the project follows the code style guidelines, located
+  here: https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
 
 - Developer/API documentation can be found here:
   https://obsproject.com/docs

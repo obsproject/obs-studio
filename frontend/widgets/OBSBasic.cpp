@@ -41,6 +41,7 @@
 #include <settings/OBSBasicSettings.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
+#include <utility/ScreenshotObj.hpp>
 #if defined(_WIN32) || defined(WHATSNEW_ENABLED)
 #include <utility/WhatsNewInfoThread.hpp>
 #endif
@@ -60,11 +61,9 @@
 #include <QThread>
 #include <QWidgetAction>
 
-#ifdef _WIN32
+#include <mutex>
 #include <sstream>
-#endif
 #include <string>
-#include <unordered_set>
 
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -107,114 +106,8 @@ extern bool cef_js_avail;
 extern void DestroyPanelCookieManager();
 extern void CheckExistingCookieId();
 
-static void AddExtraModulePaths()
-{
-	string plugins_path, plugins_data_path;
-	char *s;
-
-	s = getenv("OBS_PLUGINS_PATH");
-	if (s)
-		plugins_path = s;
-
-	s = getenv("OBS_PLUGINS_DATA_PATH");
-	if (s)
-		plugins_data_path = s;
-
-	if (!plugins_path.empty() && !plugins_data_path.empty()) {
-#if defined(__APPLE__)
-		plugins_path += "/%module%.plugin/Contents/MacOS";
-		plugins_data_path += "/%module%.plugin/Contents/Resources";
-		obs_add_module_path(plugins_path.c_str(), plugins_data_path.c_str());
-#else
-		string data_path_with_module_suffix;
-		data_path_with_module_suffix += plugins_data_path;
-		data_path_with_module_suffix += "/%module%";
-		obs_add_module_path(plugins_path.c_str(), data_path_with_module_suffix.c_str());
-#endif
-	}
-
-	if (portable_mode)
-		return;
-
-	char base_module_dir[512];
-#if defined(_WIN32)
-	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%");
-#elif defined(__APPLE__)
-	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%.plugin");
-#else
-	int ret = GetAppConfigPath(base_module_dir, sizeof(base_module_dir), "obs-studio/plugins/%module%");
-#endif
-
-	if (ret <= 0)
-		return;
-
-	string path = base_module_dir;
-#if defined(__APPLE__)
-	/* User Application Support Search Path */
-	obs_add_module_path((path + "/Contents/MacOS").c_str(), (path + "/Contents/Resources").c_str());
-
-#ifndef __aarch64__
-	/* Legacy System Library Search Path */
-	char system_legacy_module_dir[PATH_MAX];
-	GetProgramDataPath(system_legacy_module_dir, sizeof(system_legacy_module_dir), "obs-studio/plugins/%module%");
-	std::string path_system_legacy = system_legacy_module_dir;
-	obs_add_module_path((path_system_legacy + "/bin").c_str(), (path_system_legacy + "/data").c_str());
-
-	/* Legacy User Application Support Search Path */
-	char user_legacy_module_dir[PATH_MAX];
-	GetAppConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir), "obs-studio/plugins/%module%");
-	std::string path_user_legacy = user_legacy_module_dir;
-	obs_add_module_path((path_user_legacy + "/bin").c_str(), (path_user_legacy + "/data").c_str());
-#endif
-#else
-#if ARCH_BITS == 64
-	obs_add_module_path((path + "/bin/64bit").c_str(), (path + "/data").c_str());
-#else
-	obs_add_module_path((path + "/bin/32bit").c_str(), (path + "/data").c_str());
-#endif
-#endif
-}
-
-/* First-party modules considered to be potentially unsafe to load in Safe Mode
- * due to them allowing external code (e.g. scripts) to modify OBS's state. */
-static const unordered_set<string> unsafe_modules = {
-	"frontend-tools", // Scripting
-	"obs-websocket",  // Allows outside modifications
-};
-
-static void SetSafeModuleNames()
-{
-#ifndef SAFE_MODULES
-	return;
-#else
-	string module;
-	stringstream modules_(SAFE_MODULES);
-
-	while (getline(modules_, module, '|')) {
-		/* When only disallowing third-party plugins, still add
-		 * "unsafe" bundled modules to the safe list. */
-		if (disable_3p_plugins || !unsafe_modules.count(module))
-			obs_add_safe_module(module.c_str());
-	}
-#endif
-}
-
-static void SetCoreModuleNames()
-{
-#ifndef SAFE_MODULES
-	throw "SAFE_MODULES not defined";
-#else
-	std::string safeModules = SAFE_MODULES;
-	if (safeModules.empty()) {
-		throw "SAFE_MODULES is empty";
-	}
-	string module;
-	stringstream modules_(SAFE_MODULES);
-
-	while (getline(modules_, module, '|')) {
-		obs_add_core_module(module.c_str());
-	}
-#endif
+namespace {
+std::once_flag saveOnceFlag;
 }
 
 extern void setupDockAction(QDockWidget *dock);
@@ -381,18 +274,20 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	bool sceneGrid = config_get_bool(App()->GetUserConfig(), "BasicWindow", "gridMode");
 	ui->scenes->SetGridMode(sceneGrid);
 
-	if (sceneGrid)
+	if (sceneGrid) {
 		ui->actionSceneGridMode->setChecked(true);
-	else
+	} else {
 		ui->actionSceneListMode->setChecked(true);
+	}
 
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
-		if (obs_get_video_info(&ovi))
+		if (obs_get_video_info(&ovi)) {
 			ResizePreview(ovi.base_width, ovi.base_height);
+		}
 
 		UpdateContextBarVisibility();
 		UpdatePreviewControls();
@@ -472,8 +367,8 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	renameScene->setShortcut({Qt::Key_Return});
 	renameSource->setShortcut({Qt::Key_Return});
 
-	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
-	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
+	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
+	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace, Qt::Key_Delete});
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
@@ -681,20 +576,22 @@ bool OBSBasic::InitBasicConfigDefaults()
 	auto MigrateFormat = [&](const char *section) {
 		bool has_old_key = config_has_user_value(activeConfiguration, section, "RecFormat");
 		bool has_new_key = config_has_user_value(activeConfiguration, section, "RecFormat2");
-		if (!has_new_key && !has_old_key)
+		if (!has_new_key && !has_old_key) {
 			return;
+		}
 
 		string old_format =
 			config_get_string(activeConfiguration, section, has_new_key ? "RecFormat2" : "RecFormat");
 		string new_format = old_format;
-		if (old_format == "ts")
+		if (old_format == "ts") {
 			new_format = "mpegts";
-		else if (old_format == "m3u8")
+		} else if (old_format == "m3u8") {
 			new_format = "hls";
-		else if (old_format == "fmp4")
+		} else if (old_format == "fmp4") {
 			new_format = "fragmented_mp4";
-		else if (old_format == "fmov")
+		} else if (old_format == "fmov") {
 			new_format = "fragmented_mov";
+		}
 
 		if (new_format != old_format || !has_new_key) {
 			config_set_string(activeConfiguration, section, "RecFormat2", new_format.c_str());
@@ -875,10 +772,11 @@ void OBSBasic::InitBasicConfigDefaults2()
 				  useNV ? SIMPLE_ENCODER_NVENC : SIMPLE_ENCODER_X264);
 
 	const char *aac_default = "ffmpeg_aac";
-	if (EncoderAvailable("CoreAudio_AAC"))
+	if (EncoderAvailable("CoreAudio_AAC")) {
 		aac_default = "CoreAudio_AAC";
-	else if (EncoderAvailable("libfdk_aac"))
+	} else if (EncoderAvailable("libfdk_aac")) {
 		aac_default = "libfdk_aac";
+	}
 
 	config_set_default_string(activeConfiguration, "AdvOut", "AudioEncoder", aac_default);
 	config_set_default_string(activeConfiguration, "AdvOut", "RecAudioEncoder", aac_default);
@@ -922,14 +820,14 @@ void OBSBasic::InitOBSCallbacks()
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_add",
 		[](void *data, calldata_t *) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "UpdateEditMenu",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::UpdateEditMenu,
 						  Qt::QueuedConnection);
 		},
 		this);
 	signalHandlers.emplace_back(
 		obs_get_signal_handler(), "source_filter_remove",
 		[](void *data, calldata_t *) {
-			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "UpdateEditMenu",
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::UpdateEditMenu,
 						  Qt::QueuedConnection);
 		},
 		this);
@@ -977,10 +875,12 @@ void OBSBasic::OBSInit()
 {
 	ProfileScope("OBSBasic::OBSInit");
 
-	if (!InitBasicConfig())
+	if (!InitBasicConfig()) {
 		throw "Failed to load basic.ini";
-	if (!ResetAudio())
+	}
+	if (!ResetAudio()) {
 		throw "Failed to initialize audio";
+	}
 
 	int ret = 0;
 
@@ -994,8 +894,9 @@ void OBSBasic::OBSInit()
 	case OBS_VIDEO_INVALID_PARAM:
 		throw "Failed to initialize video:  Invalid parameters";
 	default:
-		if (ret != OBS_VIDEO_SUCCESS)
+		if (ret != OBS_VIDEO_SUCCESS) {
 			throw UNKNOWN_ERROR;
+		}
 	}
 
 	/* load audio monitoring */
@@ -1017,27 +918,15 @@ void OBSBasic::OBSInit()
 #if defined(_WIN32) && !defined(_DEBUG)
 	LoadLibraryW(L"Qt6Network");
 #endif
-	struct obs_module_failure_info mfi;
-
-	// Safe Mode disables third-party plugins so we don't need to add each path outside the OBS bundle/installation.
-	if (safe_mode || disable_3p_plugins) {
-		SetSafeModuleNames();
-	} else {
-		AddExtraModulePaths();
-	}
-
-	// Core modules are not allowed to be disabled by the user via plugin manager.
-	SetCoreModuleNames();
-
-	/* Modules can access frontend information (i.e. profile and scene collection data) during their initialization, and some modules (e.g. obs-websockets) are known to use the filesystem location of the current profile in their own code.
-
-     Thus the profile and scene collection discovery needs to happen before any access to that information (but after initializing global settings) to ensure legacy code gets valid path information.
-     */
+	// Modules can access frontend information (i.e., profile and scene collection data) during their initialization,
+	// and some modules (e.g., obs-websockets) are known to use the filesystem location of the current profile in their
+	// own code.
+	//
+	// Thus, the profile and scene collection discovery needs to happen before any access to that information happens,
+	// but after initializing global settings, to ensure legacy code gets valid path information.
 	RefreshSceneCollections(true);
 
-	App()->loadAppModules(mfi);
-
-	BPtr<char *> failed_modules = mfi.failed_modules;
+	App()->loadAppModules();
 
 #ifdef BROWSER_AVAILABLE
 	cef = obs_browser_init_panel();
@@ -1055,8 +944,9 @@ void OBSBasic::OBSInit()
 
 	blog(LOG_INFO, STARTUP_SEPARATOR);
 
-	if (!InitService())
+	if (!InitService()) {
 		throw "Failed to initialize service";
+	}
 
 	ResetOutputs();
 	CreateHotkeys();
@@ -1092,8 +982,9 @@ void OBSBasic::OBSInit()
 	bool contextVisible = config_get_bool(App()->GetUserConfig(), "BasicWindow", "ShowContextToolbars");
 	ui->toggleContextBar->setChecked(contextVisible);
 	ui->contextContainer->setVisible(contextVisible);
-	if (contextVisible)
+	if (contextVisible) {
 		UpdateContextBar(true);
+	}
 	UpdateEditMenu();
 
 	{
@@ -1128,11 +1019,11 @@ void OBSBasic::OBSInit()
 
 	previewEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewEnabled");
 
-	if (!previewEnabled && !IsPreviewProgramMode())
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay", Qt::QueuedConnection,
-					  Q_ARG(bool, previewEnabled));
-	else if (!previewEnabled && IsPreviewProgramMode())
-		QMetaObject::invokeMethod(this, "EnablePreviewDisplay", Qt::QueuedConnection, Q_ARG(bool, true));
+	if (!previewEnabled && !IsPreviewProgramMode()) {
+		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, previewEnabled);
+	} else if (!previewEnabled && IsPreviewProgramMode()) {
+		QMetaObject::invokeMethod(this, &OBSBasic::EnablePreviewDisplay, Qt::QueuedConnection, true);
+	}
 
 	disableSaving--;
 
@@ -1140,8 +1031,9 @@ void OBSBasic::OBSInit()
 		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderMain, this);
 
 		struct obs_video_info ovi;
-		if (obs_get_video_info(&ovi))
+		if (obs_get_video_info(&ovi)) {
 			ResizePreview(ovi.base_width, ovi.base_height);
+		}
 	};
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, this, addDisplay);
@@ -1156,8 +1048,9 @@ void OBSBasic::OBSInit()
 #ifdef _WIN32
 	SetWin32DropStyle(this);
 
-	if (!hideWindowOnStart)
+	if (!hideWindowOnStart) {
 		show();
+	}
 #endif
 
 	bool alwaysOnTop = config_get_bool(App()->GetUserConfig(), "BasicWindow", "AlwaysOnTop");
@@ -1172,15 +1065,17 @@ void OBSBasic::OBSInit()
 		SetAlwaysOnTop(this, true);
 		ui->actionAlwaysOnTop->setChecked(true);
 	} else if (isWayland) {
-		if (opt_always_on_top)
+		if (opt_always_on_top) {
 			blog(LOG_INFO, "Always On Top not available on Wayland, ignoring.");
+		}
 		ui->actionAlwaysOnTop->setEnabled(false);
 		ui->actionAlwaysOnTop->setVisible(false);
 	}
 
 #ifndef _WIN32
-	if (!hideWindowOnStart)
+	if (!hideWindowOnStart) {
 		show();
+	}
 #endif
 
 	// Set up Audio Mixer dock
@@ -1215,8 +1110,9 @@ void OBSBasic::OBSInit()
 
 #ifdef YOUTUBE_ENABLED
 	/* setup YouTube app dock */
-	if (YouTubeAppDock::IsYTServiceSelected())
+	if (YouTubeAppDock::IsYTServiceSelected()) {
 		NewYouTubeAppDock();
+	}
 #endif
 
 	const char *dockStateStr = config_get_string(App()->GetUserConfig(), "BasicWindow", "DockState");
@@ -1225,8 +1121,9 @@ void OBSBasic::OBSInit()
 		on_resetDocks_triggered(true);
 	} else {
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
+		if (!restoreState(dockState)) {
 			on_resetDocks_triggered(true);
+		}
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GetUserConfig(), "General", "Pre23Defaults");
@@ -1265,8 +1162,9 @@ void OBSBasic::OBSInit()
 		config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
 	}
 
-	if (!first_run && !has_last_version && !Active())
-		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered", Qt::QueuedConnection);
+	if (!first_run && !has_last_version && !Active()) {
+		QMetaObject::invokeMethod(this, &OBSBasic::on_autoConfigure_triggered, Qt::QueuedConnection);
+	}
 
 #if (defined(_WIN32) || defined(__APPLE__)) && (OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
 	/* Automatically set branch to "beta" the first time a pre-release build is run. */
@@ -1280,8 +1178,9 @@ void OBSBasic::OBSInit()
 
 	emit userSettingChanged("BasicWindow", "VerticalVolumeControl");
 
-	if (config_get_bool(activeConfiguration, "General", "OpenStatsOnStartup"))
+	if (config_get_bool(activeConfiguration, "General", "OpenStatsOnStartup")) {
 		on_stats_triggered();
+	}
 
 	OBSBasicStats::InitializeValues();
 
@@ -1341,25 +1240,11 @@ void OBSBasic::OBSInit()
 	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
 
-	if (!hideWindowOnStart)
+	if (!hideWindowOnStart) {
 		activateWindow();
-
-	/* ------------------------------------------- */
-	/* display warning message for failed modules  */
-
-	if (mfi.count) {
-		QString failed_plugins;
-
-		char **plugin = mfi.failed_modules;
-		while (*plugin) {
-			failed_plugins += *plugin;
-			failed_plugins += "\n";
-			plugin++;
-		}
-
-		QString failed_msg = QTStr("PluginsFailedToLoad.Text").arg(failed_plugins);
-		OBSMessageBox::warning(this, QTStr("PluginsFailedToLoad.Title"), failed_msg);
 	}
+
+	App()->handlePluginLoadState();
 }
 
 void OBSBasic::OnFirstLoad()
@@ -1381,30 +1266,28 @@ void OBSBasic::OnFirstLoad()
 
 	bool showLogViewerOnStartup = config_get_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup");
 
-	if (showLogViewerOnStartup)
+	if (showLogViewerOnStartup) {
 		on_actionViewCurrentLog_triggered();
-}
-
-OBSBasic::~OBSBasic()
-{
-	if (!isClosing()) {
-		closeWindow();
 	}
 }
+
+OBSBasic::~OBSBasic() {}
 
 void OBSBasic::applicationShutdown() noexcept
 {
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
-#ifndef __APPLE_
+#ifndef __APPLE__
 	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 #endif
 
-	if (updateCheckThread && updateCheckThread->isRunning())
+	if (updateCheckThread && updateCheckThread->isRunning()) {
 		updateCheckThread->wait();
+	}
 
-	if (patronJsonThread && patronJsonThread->isRunning())
+	if (patronJsonThread && patronJsonThread->isRunning()) {
 		patronJsonThread->wait();
+	}
 
 	delete screenshotData;
 	delete previewProjectorSource;
@@ -1497,32 +1380,34 @@ static inline enum obs_scale_type GetScaleType(ConfigFile &activeConfiguration)
 {
 	const char *scaleTypeStr = config_get_string(activeConfiguration, "Video", "ScaleType");
 
-	if (astrcmpi(scaleTypeStr, "bilinear") == 0)
+	if (astrcmpi(scaleTypeStr, "bilinear") == 0) {
 		return OBS_SCALE_BILINEAR;
-	else if (astrcmpi(scaleTypeStr, "lanczos") == 0)
+	} else if (astrcmpi(scaleTypeStr, "lanczos") == 0) {
 		return OBS_SCALE_LANCZOS;
-	else if (astrcmpi(scaleTypeStr, "area") == 0)
+	} else if (astrcmpi(scaleTypeStr, "area") == 0) {
 		return OBS_SCALE_AREA;
-	else
+	} else {
 		return OBS_SCALE_BICUBIC;
+	}
 }
 
 static inline enum video_format GetVideoFormatFromName(const char *name)
 {
-	if (astrcmpi(name, "I420") == 0)
+	if (astrcmpi(name, "I420") == 0) {
 		return VIDEO_FORMAT_I420;
-	else if (astrcmpi(name, "NV12") == 0)
+	} else if (astrcmpi(name, "NV12") == 0) {
 		return VIDEO_FORMAT_NV12;
-	else if (astrcmpi(name, "I444") == 0)
+	} else if (astrcmpi(name, "I444") == 0) {
 		return VIDEO_FORMAT_I444;
-	else if (astrcmpi(name, "I010") == 0)
+	} else if (astrcmpi(name, "I010") == 0) {
 		return VIDEO_FORMAT_I010;
-	else if (astrcmpi(name, "P010") == 0)
+	} else if (astrcmpi(name, "P010") == 0) {
 		return VIDEO_FORMAT_P010;
-	else if (astrcmpi(name, "P216") == 0)
+	} else if (astrcmpi(name, "P216") == 0) {
 		return VIDEO_FORMAT_P216;
-	else if (astrcmpi(name, "P416") == 0)
+	} else if (astrcmpi(name, "P416") == 0) {
 		return VIDEO_FORMAT_P416;
+	}
 #if 0 //currently unsupported
 	else if (astrcmpi(name, "YVYU") == 0)
 		return VIDEO_FORMAT_YVYU;
@@ -1531,29 +1416,32 @@ static inline enum video_format GetVideoFormatFromName(const char *name)
 	else if (astrcmpi(name, "UYVY") == 0)
 		return VIDEO_FORMAT_UYVY;
 #endif
-	else
+	else {
 		return VIDEO_FORMAT_BGRA;
+	}
 }
 
 static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 {
 	enum video_colorspace colorspace = VIDEO_CS_SRGB;
-	if (strcmp(name, "601") == 0)
+	if (strcmp(name, "601") == 0) {
 		colorspace = VIDEO_CS_601;
-	else if (strcmp(name, "709") == 0)
+	} else if (strcmp(name, "709") == 0) {
 		colorspace = VIDEO_CS_709;
-	else if (strcmp(name, "2100PQ") == 0)
+	} else if (strcmp(name, "2100PQ") == 0) {
 		colorspace = VIDEO_CS_2100_PQ;
-	else if (strcmp(name, "2100HLG") == 0)
+	} else if (strcmp(name, "2100HLG") == 0) {
 		colorspace = VIDEO_CS_2100_HLG;
+	}
 
 	return colorspace;
 }
 
 int OBSBasic::ResetVideo()
 {
-	if (outputHandler && outputHandler->Active())
+	if (outputHandler && outputHandler->Active()) {
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
+	}
 
 	ProfileScope("OBSBasic::ResetVideo");
 
@@ -1600,8 +1488,9 @@ int OBSBasic::ResetVideo()
 
 	if (ret == OBS_VIDEO_SUCCESS) {
 		ResizePreview(ovi.base_width, ovi.base_height);
-		if (program)
+		if (program) {
 			ResizeProgram(ovi.base_width, ovi.base_height);
+		}
 
 		const float sdr_white_level = (float)config_get_uint(activeConfiguration, "Video", "SdrWhiteLevel");
 		const float hdr_nominal_peak_level =
@@ -1643,20 +1532,21 @@ bool OBSBasic::ResetAudio()
 
 	const char *channelSetupStr = config_get_string(activeConfiguration, "Audio", "ChannelSetup");
 
-	if (strcmp(channelSetupStr, "Mono") == 0)
+	if (strcmp(channelSetupStr, "Mono") == 0) {
 		ai.speakers = SPEAKERS_MONO;
-	else if (strcmp(channelSetupStr, "2.1") == 0)
+	} else if (strcmp(channelSetupStr, "2.1") == 0) {
 		ai.speakers = SPEAKERS_2POINT1;
-	else if (strcmp(channelSetupStr, "4.0") == 0)
+	} else if (strcmp(channelSetupStr, "4.0") == 0) {
 		ai.speakers = SPEAKERS_4POINT0;
-	else if (strcmp(channelSetupStr, "4.1") == 0)
+	} else if (strcmp(channelSetupStr, "4.1") == 0) {
 		ai.speakers = SPEAKERS_4POINT1;
-	else if (strcmp(channelSetupStr, "5.1") == 0)
+	} else if (strcmp(channelSetupStr, "5.1") == 0) {
 		ai.speakers = SPEAKERS_5POINT1;
-	else if (strcmp(channelSetupStr, "7.1") == 0)
+	} else if (strcmp(channelSetupStr, "7.1") == 0) {
 		ai.speakers = SPEAKERS_7POINT1;
-	else
+	} else {
 		ai.speakers = SPEAKERS_STEREO;
+	}
 
 	bool lowLatencyAudioBuffering = config_get_bool(App()->GetUserConfig(), "Audio", "LowLatencyAudioBuffering");
 	if (lowLatencyAudioBuffering) {
@@ -1757,11 +1647,13 @@ void OBSBasic::changeEvent(QEvent *event)
 				return;
 			}
 
-			if (previewEnabled)
+			if (previewEnabled) {
 				EnablePreviewDisplay(false);
+			}
 		} else if (stateEvent->oldState() & Qt::WindowMinimized && isVisible()) {
-			if (previewEnabled)
+			if (previewEnabled) {
 				EnablePreviewDisplay(true);
+			}
 		}
 	}
 }
@@ -1825,16 +1717,18 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 {
 	uint32_t type = config_get_uint(activeConfiguration, "Video", "FPSType");
 
-	if (type == 1) //"Integer"
+	if (type == 1) { //"Integer"
 		GetFPSInteger(num, den);
-	else if (type == 2) //"Fraction"
+	} else if (type == 2) { //"Fraction"
 		GetFPSFraction(num, den);
+	}
 	/*
 	 * 	else if (false) //"Nanoseconds", currently not implemented
 	 *		GetFPSNanoseconds(num, den);
 	 */
-	else
+	else {
 		GetFPSCommon(num, den);
+	}
 }
 
 config_t *OBSBasic::Config() const
@@ -1849,16 +1743,19 @@ void OBSBasic::saveAll()
 				  saveGeometry().toBase64().constData());
 	}
 
-	Auth::Save();
-	SaveProjectNow();
+	std::call_once(saveOnceFlag, [this]() {
+		Auth::Save();
+		SaveProjectNow();
 
-	config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState", saveState().toBase64().constData());
+		config_set_string(App()->GetUserConfig(), "BasicWindow", "DockState",
+				  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
-	if (cef) {
-		SaveExtraBrowserDocks();
-	}
+		if (cef) {
+			SaveExtraBrowserDocks();
+		}
 #endif
+	});
 
 	config_set_int(App()->GetAppConfig(), "General", "LastVersion", LIBOBS_API_VER);
 	config_save_safe(App()->GetAppConfig(), "tmp", nullptr);
@@ -1944,20 +1841,26 @@ void OBSBasic::closeWindow()
 	 * To avoid such a case, destroy displays earlier than others such as
 	 * deleting browser docks. */
 	ui->preview->DestroyDisplay();
-	if (program)
+	if (program) {
 		program->DestroyDisplay();
+	}
 
-	if (outputHandler->VirtualCamActive())
+	if (outputHandler->VirtualCamActive()) {
 		outputHandler->StopVirtualCam();
+	}
 
-	if (introCheckThread)
+	if (introCheckThread) {
 		introCheckThread->wait();
-	if (whatsNewInitThread)
+	}
+	if (whatsNewInitThread) {
 		whatsNewInitThread->wait();
-	if (updateCheckThread)
+	}
+	if (updateCheckThread) {
 		updateCheckThread->wait();
-	if (logUploadThread)
+	}
+	if (logUploadThread) {
 		logUploadThread->wait();
+	}
 	if (devicePropertiesThread && devicePropertiesThread->isRunning()) {
 		devicePropertiesThread->wait();
 		devicePropertiesThread.reset();
@@ -2004,9 +1907,9 @@ void OBSBasic::closeWindow()
 
 	emit mainWindowClosed();
 
-	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(App(), &OBSApp::quit, Qt::QueuedConnection);
 #else
-	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(App(), &OBSApp::quit, Qt::QueuedConnection);
 #endif
 }
 
@@ -2022,19 +1925,6 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
-	bool allowPastingDuplicate = !!clipboard.size();
-	for (size_t i = clipboard.size(); i > 0; i--) {
-		const size_t idx = i - 1;
-		OBSWeakSource &weak = clipboard[idx].weak_source;
-		if (obs_weak_source_expired(weak)) {
-			clipboard.erase(clipboard.begin() + idx);
-			continue;
-		}
-		OBSSourceAutoRelease strong = obs_weak_source_get_source(weak.Get());
-		if (allowPastingDuplicate && obs_source_get_output_flags(strong) & OBS_SOURCE_DO_NOT_DUPLICATE)
-			allowPastingDuplicate = false;
-	}
-
 	int videoCount = 0;
 	bool canTransformMultiple = false;
 	for (int i = 0; i < totalCount; i++) {
@@ -2042,11 +1932,13 @@ void OBSBasic::UpdateEditMenu()
 		OBSSource source = obs_sceneitem_get_source(item);
 		const uint32_t flags = obs_source_get_output_flags(source);
 		const bool hasVideo = (flags & OBS_SOURCE_VIDEO) != 0;
-		if (hasVideo && !obs_sceneitem_locked(item))
+		if (hasVideo && !obs_sceneitem_locked(item)) {
 			canTransformMultiple = true;
+		}
 
-		if (hasVideo)
+		if (hasVideo) {
 			videoCount++;
+		}
 	}
 	const bool canTransformSingle = videoCount == 1 && totalCount == 1;
 
@@ -2059,8 +1951,11 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionPasteTransform->setEnabled(canTransformMultiple && hasCopiedTransform && videoCount > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(!obs_weak_source_expired(copyFiltersSource()) && totalCount > 0);
-	ui->actionPasteRef->setEnabled(!!clipboard.size());
-	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
+	auto pasteType = getItemPasteType();
+	ui->actionPasteRef->setEnabled(pasteType == OBS::ItemPasteType::Reference ||
+				       pasteType == OBS::ItemPasteType::Both);
+	ui->actionPasteDup->setEnabled(pasteType == OBS::ItemPasteType::Duplicate ||
+				       pasteType == OBS::ItemPasteType::Both);
 
 	ui->actionMoveUp->setEnabled(totalCount > 0);
 	ui->actionMoveDown->setEnabled(totalCount > 0);
@@ -2088,14 +1983,17 @@ void OBSBasic::UpdateTitleBar()
 	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
 
 	name << "OBS ";
-	if (previewProgramMode)
+	if (previewProgramMode) {
 		name << "Studio ";
+	}
 
 	name << App()->GetVersionString(false);
-	if (safe_mode)
+	if (safe_mode) {
 		name << " (" << Str("TitleBar.SafeMode") << ")";
-	if (App()->IsPortableMode())
+	}
+	if (App()->IsPortableMode()) {
 		name << " - " << Str("TitleBar.PortableMode");
+	}
 
 	name << " - " << Str("TitleBar.Profile") << ": " << profile;
 	name << " - " << Str("TitleBar.Scenes") << ": " << sceneCollection;
@@ -2108,34 +2006,38 @@ OBSBasic *OBSBasic::Get()
 	return reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 }
 
-void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
+void OBSBasic::UpdatePatronJson(const std::string &text, const std::string &error)
 {
-	if (!error.isEmpty())
+	if (!error.empty()) {
 		return;
+	}
 
-	patronJson = QT_TO_UTF8(text);
+	patronJson = text;
 }
 
 void OBSBasic::SetDisplayAffinity(QWindow *window)
 {
-	if (!SetDisplayAffinitySupported())
+	if (!SetDisplayAffinitySupported()) {
 		return;
+	}
 
 	bool hideFromCapture = config_get_bool(App()->GetUserConfig(), "BasicWindow", "HideOBSWindowsFromCapture");
 
 	// Don't hide projectors, those are designed to be visible / captured
-	if (window->property("isOBSProjectorWindow") == true)
+	if (window->property("isOBSProjectorWindow") == true) {
 		return;
+	}
 
 #ifdef _WIN32
 	HWND hwnd = (HWND)window->winId();
 
 	DWORD curAffinity;
 	if (GetWindowDisplayAffinity(hwnd, &curAffinity)) {
-		if (hideFromCapture && curAffinity != WDA_EXCLUDEFROMCAPTURE)
+		if (hideFromCapture && curAffinity != WDA_EXCLUDEFROMCAPTURE) {
 			SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
-		else if (!hideFromCapture && curAffinity != WDA_NONE)
+		} else if (!hideFromCapture && curAffinity != WDA_NONE) {
 			SetWindowDisplayAffinity(hwnd, WDA_NONE);
+		}
 	}
 
 #else
@@ -2147,8 +2049,9 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 
 void OBSBasic::OnEvent(enum obs_frontend_event event)
 {
-	if (api)
+	if (api) {
 		api->on_event(event);
+	}
 }
 
 OBSPromptResult OBSBasic::PromptForName(const OBSPromptRequest &request, const OBSPromptCallback &callback)

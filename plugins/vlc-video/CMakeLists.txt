@@ -23,7 +23,6 @@ endmacro()
 
 option(ENABLE_VLC "Build OBS with VLC plugin support" ON)
 if(NOT ENABLE_VLC)
-  target_disable(vlc-video)
   return()
 endif()
 

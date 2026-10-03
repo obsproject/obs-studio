@@ -1,5 +1,6 @@
 #include "OBSBasicTransform.hpp"
 
+#include <DoubleSpinBox.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include "moc_OBSBasicTransform.cpp"
@@ -91,11 +92,7 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 	hookWidget(ui->cropRight, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
 	hookWidget(ui->cropTop, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
 	hookWidget(ui->cropBottom, ISCROLL_CHANGED, &OBSBasicTransform::onCropChanged);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	hookWidget(ui->cropToBounds, &QCheckBox::checkStateChanged, &OBSBasicTransform::onControlChanged);
-#else
-	hookWidget(ui->cropToBounds, &QCheckBox::stateChanged, &OBSBasicTransform::onControlChanged);
-#endif
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Reset), &QPushButton::clicked, main,
@@ -130,10 +127,11 @@ OBSBasicTransform::~OBSBasicTransform()
 	};
 
 	std::string redo_data(obs_data_get_json(wrapper));
-	if (undo_data.compare(redo_data) != 0)
+	if (undo_data.compare(redo_data) != 0) {
 		main->undo_s.add_action(
 			QTStr("Undo.Transform").arg(obs_source_get_name(obs_scene_get_source(main->GetCurrentScene()))),
 			undo_redo, undo_redo, undo_data, redo_data);
+	}
 }
 
 void OBSBasicTransform::setScene(OBSScene scene)
@@ -154,7 +152,7 @@ void OBSBasicTransform::setScene(OBSScene scene)
 
 void OBSBasicTransform::setItem(OBSSceneItem newItem)
 {
-	QMetaObject::invokeMethod(this, "setItemQt", Q_ARG(OBSSceneItem, OBSSceneItem(newItem)));
+	QMetaObject::invokeMethod(this, &OBSBasicTransform::setItemQt, OBSSceneItem(newItem));
 }
 
 void OBSBasicTransform::setEnabled(bool enable)
@@ -168,8 +166,9 @@ void OBSBasicTransform::setEnabled(bool enable)
 void OBSBasicTransform::setItemQt(OBSSceneItem newItem)
 {
 	item = newItem;
-	if (item)
+	if (item) {
 		refreshControls();
+	}
 
 	bool enable = !!item && !obs_sceneitem_locked(item);
 	setEnabled(enable);
@@ -180,8 +179,9 @@ void OBSBasicTransform::OBSSceneItemTransform(void *param, calldata_t *data)
 	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
-	if (item == window->item && !window->ignoreTransformSignal)
-		QMetaObject::invokeMethod(window, "refreshControls");
+	if (item == window->item && !window->ignoreTransformSignal) {
+		QMetaObject::invokeMethod(window, &OBSBasicTransform::refreshControls);
+	}
 }
 
 void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
@@ -190,8 +190,9 @@ void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(data, "scene");
 	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
-	if (item == window->item)
+	if (item == window->item) {
 		window->setItem(FindASelectedItem(scene));
+	}
 }
 
 void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
@@ -199,8 +200,9 @@ void OBSBasicTransform::OBSSceneItemSelect(void *param, calldata_t *data)
 	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
-	if (item != window->item)
+	if (item != window->item) {
 		window->setItem(item);
+	}
 }
 
 void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
@@ -220,7 +222,7 @@ void OBSBasicTransform::OBSSceneItemLocked(void *param, calldata_t *data)
 	OBSBasicTransform *window = static_cast<OBSBasicTransform *>(param);
 	bool locked = calldata_bool(data, "locked");
 
-	QMetaObject::invokeMethod(window, "setEnabled", Q_ARG(bool, !locked));
+	QMetaObject::invokeMethod(window, &OBSBasicTransform::setEnabled, !locked);
 }
 
 static const uint32_t indexToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
@@ -237,8 +239,9 @@ static int alignToIndex(uint32_t align)
 {
 	int index = 0;
 	for (uint32_t curAlign : indexToAlign) {
-		if (curAlign == align)
+		if (curAlign == align) {
 			return index;
+		}
 
 		index++;
 	}
@@ -248,8 +251,9 @@ static int alignToIndex(uint32_t align)
 
 void OBSBasicTransform::refreshControls()
 {
-	if (!item)
+	if (!item) {
 		return;
+	}
 
 	obs_transform_info oti;
 	obs_sceneitem_crop crop;
@@ -333,8 +337,9 @@ void OBSBasicTransform::onAlignChanged(int index)
 
 void OBSBasicTransform::onBoundsType(int index)
 {
-	if (index == -1)
+	if (index == -1) {
 		return;
+	}
 
 	obs_bounds_type type = (obs_bounds_type)index;
 	bool enable = (type != OBS_BOUNDS_NONE);
@@ -405,8 +410,9 @@ void OBSBasicTransform::onBoundsType(int index)
 
 void OBSBasicTransform::onControlChanged()
 {
-	if (ignoreItemChange)
+	if (ignoreItemChange) {
 		return;
+	}
 
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	uint32_t source_cx = obs_source_get_width(source);
@@ -441,8 +447,9 @@ void OBSBasicTransform::onControlChanged()
 
 void OBSBasicTransform::onCropChanged()
 {
-	if (ignoreItemChange)
+	if (ignoreItemChange) {
 		return;
+	}
 
 	obs_sceneitem_crop crop;
 	crop.left = uint32_t(ui->cropLeft->value());
@@ -457,8 +464,9 @@ void OBSBasicTransform::onCropChanged()
 
 void OBSBasicTransform::onSceneChanged(QListWidgetItem *current, QListWidgetItem *)
 {
-	if (!current)
+	if (!current) {
 		return;
+	}
 
 	OBSScene scene = GetOBSRef<OBSScene>(current);
 	this->setScene(scene);

@@ -17,8 +17,9 @@ void OBSBasicSettings::InitAppearancePage()
 	}
 
 	int idx = ui->theme->findData(currentBaseTheme);
-	if (idx != -1)
+	if (idx != -1) {
 		ui->theme->setCurrentIndex(idx);
+	}
 
 	ui->themeVariant->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
 
@@ -41,8 +42,9 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 	/* Nothing to do if current and last base theme were the same */
 	const QString baseThemeId = ui->theme->currentData().toString();
-	if (reload && baseThemeId == currentBaseTheme)
+	if (reload && baseThemeId == currentBaseTheme) {
 		return;
+	}
 
 	ui->themeVariant->blockSignals(true);
 	ui->themeVariant->clear();
@@ -57,20 +59,24 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 	for (const OBSTheme &theme : themes) {
 		/* Skip non-visible themes */
-		if (!theme.isVisible || theme.isHighContrast)
+		if (!theme.isVisible || theme.isHighContrast) {
 			continue;
+		}
 		/* Skip non-child themes */
-		if (theme.isBaseTheme || theme.parent != baseThemeId)
+		if (theme.isBaseTheme || theme.parent != baseThemeId) {
 			continue;
+		}
 
 		ui->themeVariant->addItem(theme.name, theme.id);
-		if (baseTheme && theme.filename == baseTheme->filename)
+		if (baseTheme && theme.filename == baseTheme->filename) {
 			defaultVariant = theme.id;
+		}
 	}
 
 	int idx = ui->themeVariant->findData(currentTheme->id);
-	if (idx != -1)
+	if (idx != -1) {
 		ui->themeVariant->setCurrentIndex(idx);
+	}
 
 	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
 	ui->themeVariant->blockSignals(false);
@@ -89,8 +95,9 @@ void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 
 	if (reload) {
 		QString themeId = ui->theme->currentData().toString();
-		if (ui->themeVariant->currentIndex() != -1)
+		if (ui->themeVariant->currentIndex() != -1) {
 			themeId = ui->themeVariant->currentData().toString();
+		}
 
 		App()->SetTheme(themeId);
 	}

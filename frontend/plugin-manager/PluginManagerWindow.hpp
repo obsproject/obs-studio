@@ -17,11 +17,12 @@
 
 #pragma once
 
-#include "ui_PluginManagerWindow.h"
 #include "PluginManager.hpp"
 
 #include <QDialog>
 #include <QWidget>
+
+#include "ui_PluginManagerWindow.h"
 
 namespace OBS {
 
@@ -30,17 +31,34 @@ class PluginManagerWindow : public QDialog {
 	std::unique_ptr<Ui::PluginManagerWindow> ui;
 
 public:
-	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules, QWidget *parent = nullptr);
-	inline std::vector<ModuleInfo> const result() { return modules_; }
+	enum class Status { Invalid = 0, Loadable, Error, Missing };
+
+	struct Entry {
+		OBS::ModuleInfo *module{nullptr};
+		QString name{};
+		Status status{Status::Invalid};
+		bool isLegacy{false};
+	};
+
+	enum class Page { Installed };
+
+	explicit PluginManagerWindow(std::vector<ModuleInfo> const &modules,
+				     std::vector<std::string> const &failedModules, QWidget *parent = nullptr);
+
+	std::vector<ModuleInfo> const getModules() { return modules_; }
+	bool isEnabledPluginsChanged();
+
+	void setPage(Page page);
 
 private:
 	std::vector<ModuleInfo> modules_;
+	std::vector<Entry> installedPluginEntries;
+
+	void setupInstalledPage(std::vector<std::string> failedModules);
 
 	void sectionSelectionChanged();
 	QPersistentModelIndex activeSectionIndex;
-	void setSection(QPersistentModelIndex index);
-
-	bool isEnabledPluginsChanged();
+	void setSection(int sidebarRow);
 };
 
 }; // namespace OBS

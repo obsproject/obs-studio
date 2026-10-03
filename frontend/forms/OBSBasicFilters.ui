@@ -20,7 +20,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
      <property name="sizeConstraint">
-      <enum>QLayout::SetMinimumSize</enum>
+      <enum>QLayout::SizeConstraint::SetMinimumSize</enum>
      </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -67,16 +67,16 @@
              </sizepolicy>
             </property>
             <property name="contextMenuPolicy">
-             <enum>Qt::CustomContextMenu</enum>
+             <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
             </property>
             <property name="dragEnabled">
              <bool>true</bool>
             </property>
             <property name="dragDropMode">
-             <enum>QAbstractItemView::InternalMove</enum>
+             <enum>QAbstractItemView::DragDropMode::InternalMove</enum>
             </property>
             <property name="defaultDropAction">
-             <enum>Qt::TargetMoveAction</enum>
+             <enum>Qt::DropAction::TargetMoveAction</enum>
             </property>
             <property name="spacing">
              <number>1</number>
@@ -220,10 +220,10 @@
              <item>
               <spacer name="asyncToolbarSpacer">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Expanding</enum>
+                <enum>QSizePolicy::Policy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -242,7 +242,7 @@
        <item>
         <widget class="Line" name="separatorLine">
          <property name="orientation">
-          <enum>Qt::Horizontal</enum>
+          <enum>Qt::Orientation::Horizontal</enum>
          </property>
         </widget>
        </item>
@@ -289,16 +289,16 @@
              </sizepolicy>
             </property>
             <property name="contextMenuPolicy">
-             <enum>Qt::CustomContextMenu</enum>
+             <enum>Qt::ContextMenuPolicy::CustomContextMenu</enum>
             </property>
             <property name="dragEnabled">
              <bool>true</bool>
             </property>
             <property name="dragDropMode">
-             <enum>QAbstractItemView::InternalMove</enum>
+             <enum>QAbstractItemView::DragDropMode::InternalMove</enum>
             </property>
             <property name="defaultDropAction">
-             <enum>Qt::TargetMoveAction</enum>
+             <enum>Qt::DropAction::TargetMoveAction</enum>
             </property>
             <property name="spacing">
              <number>1</number>
@@ -442,10 +442,10 @@
              <item>
               <spacer name="effectToolbarSpacer">
                <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+                <enum>Qt::Orientation::Horizontal</enum>
                </property>
                <property name="sizeType">
-                <enum>QSizePolicy::Expanding</enum>
+                <enum>QSizePolicy::Policy::Expanding</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -472,10 +472,10 @@
         </size>
        </property>
        <property name="frameShape">
-        <enum>QFrame::NoFrame</enum>
+        <enum>QFrame::Shape::NoFrame</enum>
        </property>
        <property name="frameShadow">
-        <enum>QFrame::Plain</enum>
+        <enum>QFrame::Shadow::Plain</enum>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_6">
         <property name="leftMargin">
@@ -499,7 +499,7 @@
            </size>
           </property>
           <property name="orientation">
-           <enum>Qt::Vertical</enum>
+           <enum>Qt::Orientation::Vertical</enum>
           </property>
           <property name="childrenCollapsible">
            <bool>false</bool>
@@ -512,10 +512,10 @@
             </sizepolicy>
            </property>
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Shape::NoFrame</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_7">
             <property name="spacing">
@@ -559,10 +559,10 @@
             </sizepolicy>
            </property>
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Shape::NoFrame</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <layout class="QVBoxLayout" name="propertiesLayout">
             <property name="leftMargin">
@@ -587,12 +587,12 @@
            <number>4</number>
           </property>
           <property name="sizeConstraint">
-           <enum>QLayout::SetMaximumSize</enum>
+           <enum>QLayout::SizeConstraint::SetMaximumSize</enum>
           </property>
           <item>
            <widget class="QDialogButtonBox" name="buttonBox">
             <property name="standardButtons">
-             <set>QDialogButtonBox::Close|QDialogButtonBox::RestoreDefaults</set>
+             <set>QDialogButtonBox::StandardButton::Close|QDialogButtonBox::StandardButton::RestoreDefaults</set>
             </property>
            </widget>
           </item>

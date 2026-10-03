@@ -92,19 +92,22 @@ void OAuthLogin::urlChanged(const QString &url)
 {
 	std::string uri = get_token ? "access_token=" : "code=";
 	int code_idx = url.indexOf(uri.c_str());
-	if (code_idx == -1)
+	if (code_idx == -1) {
 		return;
+	}
 
-	if (!url.startsWith(OAUTH_BASE_URL))
+	if (!url.startsWith(OAUTH_BASE_URL)) {
 		return;
+	}
 
 	code_idx += (int)uri.size();
 
 	int next_idx = url.indexOf("&", code_idx);
-	if (next_idx != -1)
+	if (next_idx != -1) {
 		code = url.mid(code_idx, next_idx - code_idx);
-	else
+	} else {
 		code = url.right(url.size() - code_idx);
+	}
 
 	accept();
 }

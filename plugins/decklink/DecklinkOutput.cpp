@@ -31,23 +31,28 @@ bool DeckLinkOutput::Activate(DeckLinkDevice *device, long long modeId)
 	const bool isActive = instance != nullptr;
 
 	if (same) {
-		if (!isActive)
+		if (!isActive) {
 			return false;
+		}
 
 		if (instance->GetActiveModeId() == modeId && instance->GetActivePixelFormat() == pixelFormat &&
 		    instance->GetActiveColorSpace() == colorSpace && instance->GetActiveColorRange() == colorRange &&
-		    instance->GetActiveChannelFormat() == channelFormat)
+		    instance->GetActiveChannelFormat() == channelFormat) {
 			return false;
+		}
 	}
 
-	if (isActive)
+	if (isActive) {
 		instance->StopOutput();
+	}
 
-	if (!same)
+	if (!same) {
 		instance.Set(new DeckLinkDeviceInstance(this, device));
+	}
 
-	if (instance == nullptr)
+	if (instance == nullptr) {
 		return false;
+	}
 
 	DeckLinkDeviceMode *mode = GetDevice()->FindOutputMode(modeId);
 	if (mode == nullptr) {
@@ -67,8 +72,9 @@ bool DeckLinkOutput::Activate(DeckLinkDevice *device, long long modeId)
 void DeckLinkOutput::Deactivate(void)
 {
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
-	if (instance)
+	if (instance) {
 		instance->StopOutput();
+	}
 
 	instance = nullptr;
 

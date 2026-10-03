@@ -28,8 +28,9 @@ QString OBSTranslator::translate(const char *, const char *sourceText, const cha
 	const char *out = nullptr;
 	QString str(sourceText);
 	str.replace(" ", "");
-	if (!App()->TranslateString(QT_TO_UTF8(str), &out))
+	if (!App()->TranslateString(QT_TO_UTF8(str), &out)) {
 		return QString(sourceText);
+	}
 
 	return QT_UTF8(out);
 }

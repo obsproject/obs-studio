@@ -108,14 +108,16 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 
 	/* --------------------------------------------- */
 	QPushButton *closeButton = nullptr;
-	if (closable)
+	if (closable) {
 		closeButton = new QPushButton(QTStr("Close"));
+	}
 	QPushButton *resetButton = new QPushButton(QTStr("Reset"));
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addStretch();
 	buttonLayout->addWidget(resetButton);
-	if (closable)
+	if (closable) {
 		buttonLayout->addWidget(closeButton);
+	}
 
 	/* --------------------------------------------- */
 
@@ -158,8 +160,9 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	setLayout(mainLayout);
 
 	/* --------------------------------------------- */
-	if (closable)
+	if (closable) {
 		connect(closeButton, &QPushButton::clicked, this, [this]() { close(); });
+	}
 	connect(resetButton, &QPushButton::clicked, this, [this]() { Reset(); });
 
 	delete shortcutFilter;
@@ -179,8 +182,9 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	QObject::connect(&timer, &QTimer::timeout, this, &OBSBasicStats::Update);
 	timer.setInterval(TIMER_INTERVAL);
 
-	if (isVisible())
+	if (isVisible()) {
 		timer.start();
+	}
 
 	Update();
 
@@ -203,8 +207,9 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 
 	obs_frontend_add_event_callback(OBSFrontendEvent, this);
 
-	if (obs_frontend_recording_active())
+	if (obs_frontend_recording_active()) {
 		StartRecTimeLeft();
+	}
 }
 
 void OBSBasicStats::closeEvent(QCloseEvent *event)
@@ -273,8 +278,9 @@ void OBSBasicStats::Update()
 	OBSOutputAutoRelease strOutput = obs_frontend_get_streaming_output();
 	OBSOutputAutoRelease recOutput = obs_frontend_get_recording_output();
 
-	if (!strOutput && !recOutput)
+	if (!strOutput && !recOutput) {
 		return;
+	}
 
 	/* ------------------------------------------- */
 	/* general usage                               */
@@ -285,12 +291,13 @@ void OBSBasicStats::Update()
 	QString str = QString::number(curFPS, 'f', 2);
 	fps->setText(str);
 
-	if (curFPS < (obsFPS * 0.8))
+	if (curFPS < (obsFPS * 0.8)) {
 		setClasses(fps, "text-danger");
-	else if (curFPS < (obsFPS * 0.95))
+	} else if (curFPS < (obsFPS * 0.95)) {
 		setClasses(fps, "text-warning");
-	else
+	} else {
 		setClasses(fps, "");
+	}
 
 	/* ------------------ */
 
@@ -321,12 +328,13 @@ void OBSBasicStats::Update()
 	str = QString::number(num, 'f', 1) + abrv;
 	hddSpace->setText(str);
 
-	if (num_bytes < GBYTE)
+	if (num_bytes < GBYTE) {
 		setClasses(hddSpace, "text-danger");
-	else if (num_bytes < (5 * GBYTE))
+	} else if (num_bytes < (5 * GBYTE)) {
 		setClasses(hddSpace, "text-warning");
-	else
+	} else {
 		setClasses(hddSpace, "");
+	}
 
 	/* ------------------ */
 
@@ -344,12 +352,13 @@ void OBSBasicStats::Update()
 
 	long double fpsFrameTime = (long double)ovi.fps_den * 1000.0l / (long double)ovi.fps_num;
 
-	if (num > fpsFrameTime)
+	if (num > fpsFrameTime) {
 		setClasses(renderTime, "text-danger");
-	else if (num > fpsFrameTime * 0.75l)
+	} else if (num > fpsFrameTime * 0.75l) {
 		setClasses(renderTime, "text-warning");
-	else
+	} else {
 		setClasses(renderTime, "");
+	}
 
 	/* ------------------ */
 
@@ -372,12 +381,13 @@ void OBSBasicStats::Update()
 			   QString::number(num, 'f', 1));
 	skippedFrames->setText(str);
 
-	if (num > 5.0l)
+	if (num > 5.0l) {
 		setClasses(skippedFrames, "text-danger");
-	else if (num > 1.0l)
+	} else if (num > 1.0l) {
 		setClasses(skippedFrames, "text-warning");
-	else
+	} else {
 		setClasses(skippedFrames, "");
+	}
 
 	/* ------------------ */
 
@@ -397,12 +407,13 @@ void OBSBasicStats::Update()
 	str = MakeMissedFramesText(total_lagged, total_rendered, num);
 	missedFrames->setText(str);
 
-	if (num > 5.0l)
+	if (num > 5.0l) {
 		setClasses(missedFrames, "text-danger");
-	else if (num > 1.0l)
+	} else if (num > 1.0l) {
 		setClasses(missedFrames, "text-warning");
-	else
+	} else {
 		setClasses(missedFrames, "");
+	}
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
@@ -418,8 +429,9 @@ void OBSBasicStats::Update()
 
 void OBSBasicStats::StartRecTimeLeft()
 {
-	if (recTimeLeft.isActive())
+	if (recTimeLeft.isActive()) {
 		ResetRecTimeLeft();
+	}
 
 	recordTimeLeft->setText(QTStr("Calculating"));
 	recTimeLeft.start();
@@ -436,12 +448,14 @@ void OBSBasicStats::ResetRecTimeLeft()
 
 void OBSBasicStats::RecordingTimeLeft()
 {
-	if (bitrates.empty())
+	if (bitrates.empty()) {
 		return;
+	}
 
 	long double averageBitrate = accumulate(bitrates.begin(), bitrates.end(), 0.0) / (long double)bitrates.size();
-	if (averageBitrate == 0)
+	if (averageBitrate == 0) {
 		return;
+	}
 
 	long double bytesPerSec = (averageBitrate / 8.0l) * 1000.0l;
 	long double secondsUntilFull = (long double)num_bytes / bytesPerSec;
@@ -480,24 +494,28 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 	uint64_t curTime = os_gettime_ns();
 	uint64_t bytesSent = totalBytes;
 
-	if (bytesSent < lastBytesSent)
+	if (bytesSent < lastBytesSent) {
 		bytesSent = 0;
-	if (bytesSent == 0)
+	}
+	if (bytesSent == 0) {
 		lastBytesSent = 0;
+	}
 
 	uint64_t bitsBetween = (bytesSent - lastBytesSent) * 8;
 	long double timePassed = (long double)(curTime - lastBytesSentTime) / 1000000000.0l;
 	kbps = (long double)bitsBetween / timePassed / 1000.0l;
 
-	if (timePassed < 0.01l)
+	if (timePassed < 0.01l) {
 		kbps = 0.0l;
+	}
 
 	QString str = QTStr("Basic.Stats.Status.Inactive");
 	QString styling;
 	bool active = output ? obs_output_active(output) : false;
 	if (rec) {
-		if (active)
+		if (active) {
 			str = QTStr("Basic.Stats.Status.Recording");
+		}
 	} else {
 		if (active) {
 			bool reconnecting = output ? obs_output_reconnecting(output) : false;
@@ -549,12 +567,13 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 			      .arg(QString::number(dropped), QString::number(total), QString::number(num, 'f', 1));
 		droppedFrames->setText(str);
 
-		if (num > 5.0l)
+		if (num > 5.0l) {
 			setClasses(droppedFrames, "text-danger");
-		else if (num > 1.0l)
+		} else if (num > 1.0l) {
 			setClasses(droppedFrames, "text-warning");
-		else
+		} else {
 			setClasses(droppedFrames, "");
+		}
 	}
 
 	lastBytesSent = bytesSent;
@@ -563,8 +582,9 @@ void OBSBasicStats::OutputLabels::Update(obs_output_t *output, bool rec)
 
 void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
 {
-	if (!output)
+	if (!output) {
 		return;
+	}
 
 	first_total = obs_output_get_total_frames(output);
 	first_dropped = obs_output_get_frames_dropped(output);

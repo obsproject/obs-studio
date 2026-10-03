@@ -66,11 +66,11 @@ public:
 	};
 
 private:
-	std::unique_ptr<idian::Utils> utils;
-
 	OBSWeakSource weakSource_;
 	const char *uuid;
 	std::vector<OBSSignal> obsSignals;
+	bool obsMonitoring;
+	bool obsMuted;
 
 	QBoxLayout *mainLayout;
 	QLabel *categoryLabel;
@@ -90,27 +90,32 @@ private:
 
 	QMenu *contextMenu;
 
+	static const QIcon &getWarningIcon();
+	static const QIcon &getMutedIcon();
+	static const QIcon &getUnmutedIcon();
+	static const QIcon &getMonitorOnIcon();
+	static const QIcon &getMonitorOffIcon();
+
 	static void obsVolumeChanged(void *param, float db);
 	static void obsVolumeMuted(void *data, calldata_t *calldata);
-	static void obsMixersOrMonitoringChanged(void *data, calldata_t *);
+	static void obsMixersChanged(void *data, calldata_t *);
+	static void obsMonitoringChanged(void *data, calldata_t *);
 	static void obsSourceActivated(void *data, calldata_t *params);
 	static void obsSourceDeactivated(void *data, calldata_t *params);
 	static void obsSourceDestroy(void *data, calldata_t *params);
 
 	void setLayoutVertical(bool vertical);
 	void showVolumeControlMenu(QPoint pos = QPoint(0, 0));
-	void updateCategoryLabel();
 	void updateDecayRate();
 	void updatePeakMeterType();
 
 	void setMuted(bool mute);
-	void setMonitoring(obs_monitoring_type type);
+	void setMonitoring(bool enabled);
 
 public slots:
-	void sourceActiveChanged(bool active);
 	void setUseDisabledColors(bool greyscale);
 	void setLocked(bool locked);
-	void updateMixerState();
+	void processMixerState();
 
 private slots:
 	void renameSource();
@@ -122,7 +127,10 @@ private slots:
 	void updateText();
 	void setName(QString name);
 
-	void handleSourceDestroyed() { deleteLater(); }
+	void onSourceActiveChanged(bool active);
+	void onMuteChanged(bool muted);
+	void onMonitoringChanged(bool enabled);
+	void onSourceDestroyed() { deleteLater(); }
 
 signals:
 	void unhideAll();
@@ -156,6 +164,7 @@ public:
 	}
 
 	void updateName();
+	void updateCategoryLabel();
 	void refreshColors();
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS], const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);

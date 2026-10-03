@@ -73,10 +73,12 @@ bool OAuth::LoadInternal()
 
 bool OAuth::TokenExpired()
 {
-	if (token.empty())
+	if (token.empty()) {
 		return true;
-	if ((uint64_t)time(nullptr) > expire_time - 5)
+	}
+	if ((uint64_t)time(nullptr) > expire_time - 5) {
 		return true;
+	}
 	return false;
 }
 
@@ -142,12 +144,14 @@ try {
 	};
 
 	ExecThreadedWithoutBlocking(func, QTStr("Auth.Authing.Title"), QTStr("Auth.Authing.Text").arg(service()));
-	if (!success || output.empty())
+	if (!success || output.empty()) {
 		throw ErrorInfo("Failed to get token from remote", error);
+	}
 
 	Json json = Json::parse(output, error);
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo("Failed to parse json", error);
+	}
 
 	/* -------------------------- */
 	/* error handling             */
@@ -158,23 +162,26 @@ try {
 			return true;
 		}
 	}
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	/* -------------------------- */
 	/* success!                   */
 
 	expire_time = (uint64_t)time(nullptr) + json["expires_in"].int_value();
 	token = json["access_token"].string_value();
-	if (token.empty())
+	if (token.empty()) {
 		throw ErrorInfo("Failed to get token from remote", error);
+	}
 
 	if (!auth_code.empty()) {
 		refresh_token = json["refresh_token"].string_value();
-		if (refresh_token.empty())
+		if (refresh_token.empty()) {
 			throw ErrorInfo("Failed to get refresh token from "
 					"remote",
 					error);
+		}
 
 		currentScopeVer = scope_ver;
 	}
@@ -195,8 +202,9 @@ try {
 
 void OAuthStreamKey::OnStreamConfig()
 {
-	if (key_.empty())
+	if (key_.empty()) {
 		return;
+	}
 
 	OBSBasic *main = OBSBasic::Get();
 	obs_service_t *service = main->GetService();
@@ -205,10 +213,11 @@ void OAuthStreamKey::OnStreamConfig()
 
 	bool bwtest = obs_data_get_bool(settings, "bwtest");
 
-	if (bwtest && strcmp(this->service(), "Twitch") == 0)
+	if (bwtest && strcmp(this->service(), "Twitch") == 0) {
 		obs_data_set_string(settings, "key", (key_ + "?bandwidthtest=true").c_str());
-	else
+	} else {
 		obs_data_set_string(settings, "key", key_.c_str());
+	}
 
 	obs_service_update(service, settings);
 }

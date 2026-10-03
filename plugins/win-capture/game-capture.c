@@ -886,8 +886,14 @@ static inline bool create_inject_process(struct game_capture *gc, const char *in
 	STARTUPINFO si = {0};
 	bool success = false;
 
-	os_utf8_to_wcs_ptr(inject_path, 0, &inject_path_w);
-	os_utf8_to_wcs_ptr(hook_dll, 0, &hook_dll_w);
+	char *abs_inject_path = os_get_abs_path_ptr(inject_path);
+	char *abs_hook_dll = os_get_abs_path_ptr(hook_dll);
+
+	os_utf8_to_wcs_ptr(abs_inject_path, 0, &inject_path_w);
+	os_utf8_to_wcs_ptr(abs_hook_dll, 0, &hook_dll_w);
+
+	bfree(abs_inject_path);
+	bfree(abs_hook_dll);
 
 	si.cb = sizeof(si);
 
@@ -1098,6 +1104,12 @@ static void setup_window(struct game_capture *gc, HWND window)
 	}
 }
 
+static int rects_nearly_equal(RECT first, RECT second, long delta)
+{
+	return abs(first.left - second.left) <= delta && abs(first.right - second.right) <= delta &&
+	       abs(first.top - second.top) <= delta && abs(first.bottom - second.bottom) <= delta;
+}
+
 static void get_fullscreen_window(struct game_capture *gc)
 {
 	HWND window = GetForegroundWindow();
@@ -1131,8 +1143,11 @@ static void get_fullscreen_window(struct game_capture *gc)
 		return;
 	}
 
-	if (rect.left == mi.rcMonitor.left && rect.right == mi.rcMonitor.right && rect.bottom == mi.rcMonitor.bottom &&
-	    rect.top == mi.rcMonitor.top) {
+	/* Some apps extend their windows 1-2 pixels beyond the monitor's supported resolution to circumvent certain
+	 * exclusive fullscreen-related issues caused either by their graphics library, Windows itself, or both. Thus,
+	 * we compare the window's corner coordinates with those of the monitor using an acceptable relative margin of
+	 * 2, allowing it to extend slightly past the edge of the monitor. */
+	if (rects_nearly_equal(rect, mi.rcMonitor, 2)) {
 		setup_window(gc, window);
 	} else {
 		gc->wait_for_target_startup = true;

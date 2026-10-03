@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_JACK "Build OBS with JACK support" OFF)
 if(NOT ENABLE_JACK)
-  target_disable(linux-jack)
   return()
 endif()
 

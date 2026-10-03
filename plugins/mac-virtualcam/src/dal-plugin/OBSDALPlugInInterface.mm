@@ -349,8 +349,8 @@ static CMIOHardwarePlugInInterface sInterface = {
     NULL,
 
     // IUnknown Routines
-    (HRESULT (*)(void *, CFUUIDBytes, void **)) HardwarePlugIn_QueryInterface, (ULONG(*)(void *)) HardwarePlugIn_AddRef,
-    (ULONG(*)(void *)) HardwarePlugIn_Release,
+    (HRESULT (*)(void *, CFUUIDBytes, void **)) HardwarePlugIn_QueryInterface,
+    (ULONG (*)(void *)) HardwarePlugIn_AddRef, (ULONG (*)(void *)) HardwarePlugIn_Release,
 
     // DAL Plug-In Routines
     HardwarePlugIn_Initialize, HardwarePlugIn_InitializeWithObjectID, HardwarePlugIn_Teardown,

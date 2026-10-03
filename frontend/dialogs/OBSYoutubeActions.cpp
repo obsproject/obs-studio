@@ -53,33 +53,26 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 		[](const QString &link) { QDesktopServices::openUrl(QUrl(link)); });
 
 	ui->scheduledTime->setVisible(false);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
-	connect(ui->checkScheduledLater, &QCheckBox::checkStateChanged, this,
-		[&](Qt::CheckState state)
-#else
-	connect(ui->checkScheduledLater, &QCheckBox::stateChanged, this,
-		[&](int state)
-#endif
-		{
-			const bool checked = (state == Qt::Checked);
-			ui->scheduledTime->setVisible(checked);
-			if (checked) {
-				ui->checkAutoStart->setVisible(true);
-				ui->checkAutoStop->setVisible(true);
-				ui->helpAutoStartStop->setVisible(true);
+	connect(ui->checkScheduledLater, &QCheckBox::checkStateChanged, this, [&](Qt::CheckState state) {
+		const bool checked = (state == Qt::Checked);
+		ui->scheduledTime->setVisible(checked);
+		if (checked) {
+			ui->checkAutoStart->setVisible(true);
+			ui->checkAutoStop->setVisible(true);
+			ui->helpAutoStartStop->setVisible(true);
 
-				ui->checkAutoStart->setChecked(false);
-				ui->checkAutoStop->setChecked(false);
-			} else {
-				ui->checkAutoStart->setVisible(false);
-				ui->checkAutoStop->setVisible(false);
-				ui->helpAutoStartStop->setVisible(false);
+			ui->checkAutoStart->setChecked(false);
+			ui->checkAutoStop->setChecked(false);
+		} else {
+			ui->checkAutoStart->setVisible(false);
+			ui->checkAutoStop->setVisible(false);
+			ui->helpAutoStartStop->setVisible(false);
 
-				ui->checkAutoStart->setChecked(true);
-				ui->checkAutoStop->setChecked(true);
-			}
-			UpdateOkButtonStatus();
-		});
+			ui->checkAutoStart->setChecked(true);
+			ui->checkAutoStop->setChecked(true);
+		}
+		UpdateOkButtonStatus();
+	});
 
 	ui->checkAutoStart->setVisible(false);
 	ui->checkAutoStop->setVisible(false);
@@ -171,11 +164,13 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 
 	connect(workerThread, &WorkerThread::failed, this, [&]() {
 		auto last_error = apiYouTube->GetLastError();
-		if (last_error.isEmpty())
+		if (last_error.isEmpty()) {
 			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
+		}
 
-		if (!apiYouTube->GetTranslatedError(last_error))
+		if (!apiYouTube->GetTranslatedError(last_error)) {
 			last_error = QTStr("YouTube.Actions.Error.Text").arg(last_error);
+		}
 
 		ShowErrorDialog(this, last_error);
 		QDialog::reject();
@@ -227,15 +222,17 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 			});
 			ui->scrollAreaWidgetContents->layout()->addWidget(label);
 
-			if (selectedBroadcast == broadcast)
+			if (selectedBroadcast == broadcast) {
 				label->clicked();
+			}
 		});
 	workerThread->start();
 
 	OBSBasic *main = OBSBasic::Get();
 	bool rememberSettings = config_get_bool(main->activeConfiguration, "YouTube", "RememberSettings");
-	if (rememberSettings)
+	if (rememberSettings) {
 		LoadSettings();
+	}
 
 	// Switch to events page and select readied broadcast once loaded
 	if (broadcastReady) {
@@ -253,8 +250,9 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth, bool broadcast
 void OBSYoutubeActions::showEvent(QShowEvent *event)
 {
 	QDialog::showEvent(event);
-	if (thumbnailFile.isEmpty())
+	if (thumbnailFile.isEmpty()) {
 		ui->thumbnailPreview->setPixmap(GetPlaceholder().pixmap(QSize(16, 16)));
+	}
 }
 
 OBSYoutubeActions::~OBSYoutubeActions()
@@ -267,8 +265,9 @@ OBSYoutubeActions::~OBSYoutubeActions()
 
 void WorkerThread::run()
 {
-	if (!pending)
+	if (!pending) {
 		return;
+	}
 	json11::Json broadcasts;
 
 	for (QString broadcastStatus : {"active", "upcoming"}) {
@@ -288,10 +287,12 @@ void WorkerThread::run()
 					QString stream_id = QString::fromStdString(
 						item["contentDetails"]["boundStreamId"].string_value());
 					json11::Json stream;
-					if (!apiYouTube->FindStream(stream_id, stream))
+					if (!apiYouTube->FindStream(stream_id, stream)) {
 						continue;
-					if (stream["status"]["streamStatus"] == "active")
+					}
+					if (stream["status"]["streamStatus"] == "active") {
 						continue;
+					}
 				}
 
 				QString title = QString::fromStdString(item["snippet"]["title"].string_value());
@@ -317,11 +318,12 @@ void WorkerThread::run()
 			}
 
 			auto nextPageToken = broadcasts["nextPageToken"].string_value();
-			if (nextPageToken.empty() || items.empty())
+			if (nextPageToken.empty() || items.empty()) {
 				break;
-			else {
-				if (!pending)
+			} else {
+				if (!pending) {
 					return;
+				}
 				if (!apiYouTube->GetBroadcastsList(broadcasts, QString::fromStdString(nextPageToken),
 								   broadcastStatus)) {
 					emit failed();
@@ -420,8 +422,9 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api, BroadcastDesc
 	}
 
 #ifdef YOUTUBE_ENABLED
-	if (OBSBasic::Get()->GetYouTubeAppDock())
+	if (OBSBasic::Get()->GetYouTubeAppDock()) {
 		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastCreated(broadcast.id.toStdString().c_str());
+	}
 #endif
 
 	return true;
@@ -461,14 +464,16 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api, StreamDescr
 		}
 	}
 
-	if (broadcastPrivacy != "private")
+	if (broadcastPrivacy != "private") {
 		apiYouTube->SetChatId(selectedBroadcast);
-	else
+	} else {
 		apiYouTube->ResetChat();
+	}
 
 #ifdef YOUTUBE_ENABLED
-	if (OBSBasic::Get()->GetYouTubeAppDock())
+	if (OBSBasic::Get()->GetYouTubeAppDock()) {
 		OBSBasic::Get()->GetYouTubeAppDock()->BroadcastSelected(selectedBroadcast.toStdString().c_str());
+	}
 #endif
 
 	return true;
@@ -503,10 +508,11 @@ void OBSYoutubeActions::InitBroadcast()
 							  ui->checkScheduledLater->isChecked());
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
-			if (success)
+			if (success) {
 				broadcast.id = this->selectedBroadcast;
+			}
 		};
-		QMetaObject::invokeMethod(&msgBox, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&msgBox, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 	QScopedPointer<QThread> thread(CreateQThread(action));
 	thread->start();
@@ -527,23 +533,25 @@ void OBSYoutubeActions::InitBroadcast()
 			} else {
 				// Stream now usecase.
 				blog(LOG_DEBUG, "New valid stream: %s", QT_TO_UTF8(stream.name));
-				emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), true,
-					true, true);
+				emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(),
+					true, true, true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
-			emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), autostart,
-				autostop, true);
+			emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(),
+				autostart, autostop, true);
 			Accept();
 		}
 	} else {
 		// Fail.
 		auto last_error = apiYouTube->GetLastError();
-		if (last_error.isEmpty())
+		if (last_error.isEmpty()) {
 			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-		if (!apiYouTube->GetTranslatedError(last_error))
+		}
+		if (!apiYouTube->GetTranslatedError(last_error)) {
 			last_error = QTStr("YouTube.Actions.Error.NoBroadcastCreated").arg(last_error);
+		}
 
 		ShowErrorDialog(this, last_error);
 	}
@@ -566,10 +574,11 @@ void OBSYoutubeActions::ReadyBroadcast()
 							  ui->checkScheduledLater->isChecked(), true);
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
-			if (success)
+			if (success) {
 				broadcast.id = this->selectedBroadcast;
+			}
 		};
-		QMetaObject::invokeMethod(&msgBox, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&msgBox, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 	QScopedPointer<QThread> thread(CreateQThread(action));
 	thread->start();
@@ -577,16 +586,18 @@ void OBSYoutubeActions::ReadyBroadcast()
 	thread->wait();
 
 	if (success) {
-		emit ok(QT_TO_UTF8(broadcast.id), QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name), autostart, autostop,
-			false);
+		emit ok(broadcast.id.toStdString(), stream.id.toStdString(), stream.name.toStdString(), autostart,
+			autostop, false);
 		Accept();
 	} else {
 		// Fail.
 		auto last_error = apiYouTube->GetLastError();
-		if (last_error.isEmpty())
+		if (last_error.isEmpty()) {
 			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-		if (!apiYouTube->GetTranslatedError(last_error))
+		}
+		if (!apiYouTube->GetTranslatedError(last_error)) {
 			last_error = QTStr("YouTube.Actions.Error.NoBroadcastCreated").arg(last_error);
+		}
 
 		ShowErrorDialog(this, last_error);
 	}
@@ -608,8 +619,9 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.schedul_for_later = ui->checkScheduledLater->isChecked();
 	broadcast.projection = ui->check360Video->isChecked() ? "360" : "rectangular";
 
-	if (ui->checkRememberSettings->isChecked())
+	if (ui->checkRememberSettings->isChecked()) {
 		SaveSettings(broadcast);
+	}
 }
 
 void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
@@ -657,10 +669,11 @@ void OBSYoutubeActions::LoadSettings()
 	ui->checkDVR->setChecked(dvr);
 
 	bool forKids = config_get_bool(main->activeConfiguration, "YouTube", "MadeForKids");
-	if (forKids)
+	if (forKids) {
 		ui->yesMakeForKids->setChecked(true);
-	else
+	} else {
 		ui->notMakeForKids->setChecked(true);
+	}
 
 	bool schedLater = config_get_bool(main->activeConfiguration, "YouTube", "ScheduleForLater");
 	ui->checkScheduledLater->setChecked(schedLater);
@@ -673,10 +686,11 @@ void OBSYoutubeActions::LoadSettings()
 
 	const char *projection = config_get_string(main->activeConfiguration, "YouTube", "Projection");
 	if (projection && *projection) {
-		if (strcmp(projection, "360") == 0)
+		if (strcmp(projection, "360") == 0) {
 			ui->check360Video->setChecked(true);
-		else
+		} else {
 			ui->check360Video->setChecked(false);
+		}
 	}
 
 	const char *thumbFile = config_get_string(main->activeConfiguration, "YouTube", "ThumbnailFile");

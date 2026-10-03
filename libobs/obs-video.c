@@ -558,7 +558,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 			copy_surfaces = video->copy_surfaces_encode;
 			channel_count = 1;
 #endif
-			gs_flush();
 		}
 
 		if (video->gpu_conversion) {
@@ -566,7 +565,6 @@ static inline void render_video(struct obs_core_video_mix *video, bool raw_activ
 		}
 
 		if (gpu_active) {
-			gs_flush();
 			output_gpu_encoders(video, raw_active);
 		}
 
@@ -959,18 +957,15 @@ extern THREAD_LOCAL bool is_graphics_thread;
 static void execute_graphics_tasks(void)
 {
 	struct obs_core_video *video = &obs->video;
-	bool tasks_remaining = true;
-
-	while (tasks_remaining) {
-		pthread_mutex_lock(&video->task_mutex);
-		if (video->tasks.size) {
-			struct obs_task_info info;
-			deque_pop_front(&video->tasks, &info, sizeof(info));
-			info.task(info.param);
-		}
-		tasks_remaining = !!video->tasks.size;
+	pthread_mutex_lock(&video->task_mutex);
+	while (video->tasks.size) {
+		struct obs_task_info info;
+		deque_pop_front(&video->tasks, &info, sizeof(info));
 		pthread_mutex_unlock(&video->task_mutex);
+		info.task(info.param);
+		pthread_mutex_lock(&video->task_mutex);
 	}
+	pthread_mutex_unlock(&video->task_mutex);
 }
 
 #ifdef _WIN32

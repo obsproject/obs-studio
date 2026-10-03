@@ -4,13 +4,13 @@ on:
 jobs:
   windows:
     name: Windows 🪟 (PVS-Studio)
-    runs-on: windows-2022
+    runs-on: windows-2025-vs2026
     if: false && github.repository_owner == 'obsproject'
     defaults:
       run:
         shell: pwsh
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0
@@ -41,12 +41,12 @@ jobs:
 
   macos:
     name: macOS 🍏 (clang-analyze)
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         shell: zsh --no-rcs --errexit --pipefail {0}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           submodules: recursive
           fetch-depth: 0
@@ -57,8 +57,8 @@ jobs:
           : Set Up Environment 🔧
           if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
-          print '::group::Enable Xcode 16.4'
-          sudo xcode-select --switch /Applications/Xcode_16.4.app/Contents/Developer
+          print '::group::Enable Xcode 26.5'
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
           print '::endgroup::'
 
           print '::group::Clean Homebrew Environment'
@@ -70,6 +70,12 @@ jobs:
 
           if (( #remove_formulas )) brew uninstall --ignore-dependencies ${remove_formulas}
           print '::endgroup::'
+
+          local xcode_cas_path="${HOME}/Library/Developer/Xcode/DerivedData/CompilationCache.noindex"
+
+          if ! [[ -d ${xcode_cas_path} ]] mkdir -p ${xcode_cas_path}
+
+          print "xcodeCasPath=${xcode_cas_path}" >> $GITHUB_OUTPUT
 
       - name: Set Up Code Signing 🔑
         uses: ./.github/actions/setup-macos-codesigning
@@ -96,6 +102,7 @@ jobs:
           CODESIGN_IDENT: ${{ steps.codesign.outputs.codesignIdent }}
           CODESIGN_TEAM: ${{ steps.codesign.outputs.codesignTeam }}
           PROVISIONING_PROFILE: ${{ steps.codesign.outputs.provisioningProfileUUID }}
+          XCODE_CAS_PATH: ${{ steps.setup.outputs.xcodeCasPath }}
         run: |
           : Run macOS Build
 
@@ -124,12 +131,46 @@ jobs:
 
           pushd ${analytics_root}
 
-          npx @microsoft/sarif-multitool merge --merge-runs *.sarif
+          # The jq expression below merges the results of all separate compilation (and
+          # analysis) runs into a single result of all tools, thus meeting the
+          # requirements of the codeql-action's upload job.
+          # The merged sarif file contains a single "runs" array with a single
+          # corresponding "tool" object.
+          #
+          # Each sarif file will have its own "rules" array (depending on which rules the
+          # file violated), so all violated rules across all compilations need to be
+          # collected into this array.
+          #
+          # Next, all "artifacts" array elements and "rules" array elements from all
+          # sarif files have to be added to the same "global" corresponding arrays in the
+          # new single "runs" object.
+          #
+          # Finally, because LLVM produces codeflow regions with invalid "endLine" and
+          # "endColumn" entries (with value 0), those entries are removed from the
+          # regions in the results' codeFlows arrays.
 
+          jq -s '{
+            "$schema": first(.[]."$schema"),
+            "version": first(.[].version),
+            "runs": [{
+              "tool": {
+                "driver": (first(.[].runs[].tool.driver) | del(.rules)) + {
+                  "rules": reduce(.[].runs[].tool.driver.rules) as $obj ([]; . + $obj) | unique
+                }
+              },
+              "artifacts": reduce(.[].runs[].artifacts) as $obj ([]; . + $obj) | unique,
+              "results": (reduce(.[].runs[].results) as $obj ([]; . + $obj))
+              | del(
+                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endLine,
+                .[].codeFlows[].threadFlows[].locations[].location.physicalLocation.region.endColumn
+                | select(. == 0)
+              )
+            }]
+          }' *.sarif > merged.sarif
           popd
 
       - name: Upload SARIF report files 📦
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@9e0d7b8d25671d64c341c19c0152d693099fb5ba # v4.35.5
         with:
           sarif_file: "${{ github.workspace }}/analytics/merged.sarif"
           category: 'clang-analyze (macOS Apple Silicon)'

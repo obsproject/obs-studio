@@ -138,12 +138,12 @@ target_sources(obs-virtualcam-module PRIVATE cmake/windows/${_OUTPUT_NAME}.def)
 
 configure_file(virtualcam-install.bat.in virtualcam-install.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-install.bat"
-                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow"
+                    "${OBS_PLUGIN_DESTINATION}/win-dshow/data"
 )
 
 configure_file(virtualcam-uninstall.bat.in virtualcam-uninstall.bat)
 target_add_resource(obs-virtualcam-module "${CMAKE_CURRENT_BINARY_DIR}/virtualcam-uninstall.bat"
-                    "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow"
+                    "${OBS_PLUGIN_DESTINATION}/win-dshow/data"
 )
 
 set_target_properties_obs(

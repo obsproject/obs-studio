@@ -1,12 +1,13 @@
-/* Intentionally left blank */
-/* Themes are created using Qt CSS, you can visit */
-/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
-/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
-
-/* OBS will use the theme filename for the settings. */
-/* You can ship images using relative paths in qss. */
-/* Dark Theme is a good place to start if you need */
-/* a template. */
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * This is a special theme that is not normally selectable by the user. It
+ * exists only for certain accessibility scenarios but is otherwise unused.
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
 
 @OBSThemeMeta {
     name: 'System';
@@ -84,22 +85,6 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
-.indicator-mute {
-    outline: none;
-}
-
-.indicator-mute::indicator:checked {
-    image: url(:/res/images/mute.svg);
-}
-
-.indicator-mute::indicator:indeterminate {
-    image: url(:/res/images/unassigned.svg);
-}
-
-.indicator-mute::indicator:unchecked {
-    image: url(:/settings/images/settings/audio.svg);
-}
-
 .indicator-expand {
     background: transparent;
     outline: none;
@@ -130,13 +115,6 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: rgb(0, 0, 0);
     qproperty-minorTickColor: rgb(50, 50, 50);
-    qproperty-meterThickness: 3;
-
-    /* The meter scale numbers normally use your QWidget font, with size    */
-    /* multiplied by meterFontScaling to get a proportionally smaller font. */
-    /* To use a unique font for the numbers, specify font-family and/or     */
-    /* font-size here, and set meterFontScaling to 1.0.                     */
-    qproperty-meterFontScaling: 0.7;
 }
 
 
@@ -483,4 +461,17 @@ IdianPlayground QVBoxLayout {
     padding-bottom: 8px;
     font-weight: bold;
     margin-bottom: 6px;
+}
+
+/* Primary Control Button Checked Coloring */
+#streamButton:!hover:!pressed.state-active,
+#recordButton:!hover:!pressed.state-active,
+#pauseRecordButton:!hover:!pressed.state-active,
+#replayBufferButton:!hover:!pressed.state-active,
+#virtualCamButton:!hover:!pressed.state-active,
+#modeSwitch:!hover:!pressed.state-active,
+#broadcastButton:!hover:!pressed.state-active {
+    background: rgb(203, 226, 248);
+    border: 1px solid palette(highlight);
+    margin: 1px;
 }

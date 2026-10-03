@@ -43,17 +43,17 @@ static const char *canvas_signals[] = {
 	NULL,
 };
 
-static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_source)
+static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_canvas)
 {
 	struct calldata data;
 	uint8_t stack[128];
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "canvas", canvas);
-	if (signal_obs)
+	if (signal_obs && !canvas->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
-	if (signal_source)
-		signal_handler_signal(canvas->context.signals, signal_source, &data);
+	if (signal_canvas)
+		signal_handler_signal(canvas->context.signals, signal_canvas, &data);
 }
 
 static inline void canvas_dosignal_source(const char *signal, obs_canvas_t *canvas, obs_source_t *source)
@@ -294,16 +294,18 @@ void obs_free_canvas_mixes(void)
 	pthread_mutex_unlock(&obs->data.canvases_mutex);
 }
 
+bool obs_canvas_has_valid_video_info(obs_canvas_t *canvas)
+{
+	struct obs_video_info *ovi = &canvas->ovi;
+	return ovi->base_width && ovi->base_height && ovi->output_width && ovi->output_height &&
+	       ovi->output_format != VIDEO_FORMAT_NONE;
+}
+
 bool obs_canvas_reset_video_internal(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (!ovi && !canvas->mix)
-		return true;
-
 	obs_canvas_clear_mix(canvas);
 
-	if (ovi)
-		canvas->ovi = *ovi;
-
+	canvas->ovi = *ovi;
 	canvas->mix = obs_create_video_mix(&canvas->ovi);
 	if (canvas->mix) {
 		canvas->mix->view = &canvas->view;
@@ -401,7 +403,7 @@ void obs_canvas_rename_source(obs_source_t *source, const char *name)
 
 bool obs_canvas_reset_video(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (canvas->flags & MAIN || obs_video_active())
+	if (!ovi || canvas->flags & MAIN || obs_video_active())
 		return false;
 
 	return obs_canvas_reset_video_internal(canvas, ovi);
@@ -417,7 +419,7 @@ bool obs_canvas_get_video_info(const obs_canvas_t *canvas, struct obs_video_info
 	if (!obs->video.graphics || !canvas->mix)
 		return false;
 
-	*ovi = canvas->ovi;
+	*ovi = canvas->mix->ovi;
 	return true;
 }
 

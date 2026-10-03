@@ -26,6 +26,20 @@
 
 #include "moc_VolumeName.cpp"
 
+namespace {
+QString getPlainText(const QString &text)
+{
+	if (Qt::mightBeRichText(text)) {
+		QTextDocument doc;
+		doc.setHtml(text);
+
+		return doc.toPlainText();
+	}
+
+	return text;
+}
+} // namespace
+
 VolumeName::VolumeName(obs_source_t *source, QWidget *parent)
 	: QAbstractButton(parent),
 	  indicatorWidth(style()->pixelMetric(QStyle::PM_MenuButtonIndicator, nullptr, this))
@@ -39,6 +53,8 @@ VolumeName::VolumeName(obs_source_t *source, QWidget *parent)
 	setLayout(layout);
 
 	label = new QLabel(this);
+	label->setIndent(0);
+	label->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Ignored);
 	layout->addWidget(label);
 
 	layout->setContentsMargins(0, 0, indicatorWidth, 0);
@@ -57,26 +73,49 @@ void VolumeName::setAlignment(Qt::Alignment alignment_)
 	}
 }
 
-QSize VolumeName::sizeHint() const
+QSize VolumeName::minimumSizeHint() const
 {
 	QStyleOptionButton opt;
 	opt.initFrom(this);
 
-	const QFontMetrics metrics(font());
-	QSize textSize = metrics.size(Qt::TextSingleLine, text());
+	QString plainText = getPlainText(fullText);
 
-	int width = textSize.width();
+	QFontMetrics metrics(label->font());
+	QSize textSize = metrics.size(Qt::TextSingleLine, plainText);
+
+	// A minimum sizeHint of 0 tells Qt it can try to reduce its size when an appropriate sizePolicy has been set.
+	// The text ellide behavior will ensure it fits within the actual bounds the widget is allocated.
+	int width = 0;
 	int height = textSize.height();
 
 	if (!opt.icon.isNull()) {
 		height = std::max(height, indicatorWidth);
 	}
 
-	const int spacing = style()->pixelMetric(QStyle::PM_ButtonMargin, &opt, this) / 2;
-	width += indicatorWidth + spacing;
-
 	QSize contentsSize = style()->sizeFromContents(QStyle::CT_PushButton, &opt, QSize(width, height), this);
+
+	contentsSize.rwidth() += indicatorWidth;
+
 	return contentsSize;
+}
+
+QSize VolumeName::sizeHint() const
+{
+	QString plainText = getPlainText(fullText);
+
+	QFontMetrics metrics(label->font());
+
+	int textWidth = metrics.horizontalAdvance(plainText);
+	int textHeight = metrics.height();
+
+	int width = textWidth + indicatorWidth;
+
+	// Account for label margins if needed
+	QMargins margins = label->contentsMargins();
+	width += margins.left() + margins.right();
+	int height = textHeight + margins.top() + margins.bottom();
+
+	return QSize(width, height);
 }
 
 void VolumeName::obsSourceRenamed(void *data, calldata_t *params)
@@ -84,21 +123,21 @@ void VolumeName::obsSourceRenamed(void *data, calldata_t *params)
 	VolumeName *widget = static_cast<VolumeName *>(data);
 	const char *name = calldata_string(params, "new_name");
 
-	QMetaObject::invokeMethod(widget, "onRenamed", Qt::QueuedConnection, Q_ARG(QString, name));
+	QMetaObject::invokeMethod(widget, &VolumeName::onRenamed, Qt::QueuedConnection, QString::fromUtf8(name));
 }
 
 void VolumeName::obsSourceRemoved(void *data, calldata_t *)
 {
 	VolumeName *widget = static_cast<VolumeName *>(data);
 
-	QMetaObject::invokeMethod(widget, "onRemoved", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(widget, &VolumeName::onRemoved, Qt::QueuedConnection);
 }
 
 void VolumeName::obsSourceDestroyed(void *data, calldata_t *)
 {
 	VolumeName *widget = static_cast<VolumeName *>(data);
 
-	QMetaObject::invokeMethod(widget, "onDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(widget, &VolumeName::onDestroyed, Qt::QueuedConnection);
 }
 
 void VolumeName::resizeEvent(QResizeEvent *event)
@@ -139,27 +178,32 @@ void VolumeName::onRenamed(QString name)
 void VolumeName::setText(const QString &text)
 {
 	QAbstractButton::setText(text);
+	updateGeometry();
 	updateLabelText(text);
 }
 
 void VolumeName::updateLabelText(const QString &name)
 {
-	QString plainText = name;
-	// Handle source names that use rich text.
-	if (name.contains("<") && name.contains(">")) {
-		QTextDocument doc;
-		doc.setHtml(name);
-
-		plainText = doc.toPlainText();
-	}
+	QString plainText = getPlainText(name);
+	fullText = name;
 
 	QFontMetrics metrics(label->font());
-	QString elidedText = metrics.elidedText(plainText, Qt::ElideMiddle, width() - indicatorWidth * 2);
 
-	bool useElidedText = metrics.boundingRect(plainText).width() > width() - indicatorWidth;
+	int availableWidth = label->contentsRect().width();
+	if (availableWidth <= 0) {
+		label->clear();
+		return;
+	}
 
-	bool isRichText = name != plainText;
-	label->setText(useElidedText && !isRichText ? elidedText : name);
+	int textWidth = metrics.horizontalAdvance(plainText);
+
+	if (availableWidth > textWidth) {
+		label->setText(name);
+		return;
+	}
+
+	QString elided = metrics.elidedText(plainText, Qt::ElideMiddle, availableWidth);
+	label->setText(elided);
 }
 
 void VolumeName::onRemoved()

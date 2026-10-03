@@ -194,12 +194,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->colorspace = data->config.colorspace;
 	context->thread_count = 0;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
-	pix_fmts = data->vcodec->pix_fmts;
-#else
 	avcodec_get_supported_config(context, data->vcodec, AV_CODEC_CONFIG_PIX_FORMAT, 0, (const void **)&pix_fmts,
 				     NULL);
-#endif
 
 	closest_format = data->config.format;
 	if (pix_fmts) {
@@ -333,12 +329,8 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(61, 13, 100)
-	sample_fmts = data->acodec->sample_fmts;
-#else
 	avcodec_get_supported_config(context, data->acodec, AV_CODEC_CONFIG_SAMPLE_FORMAT, 0,
 				     (const void **)&sample_fmts, NULL);
-#endif
 
 	context->sample_fmt = sample_fmts ? sample_fmts[0] : AV_SAMPLE_FMT_FLTP;
 

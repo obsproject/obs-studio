@@ -67,8 +67,9 @@ using json = nlohmann::json;
 
 void censorRecurse(json &data)
 {
-	if (!data.is_structured())
+	if (!data.is_structured()) {
 		return;
+	}
 
 	auto it = data.find("authentication");
 	if (it != data.end() && it->is_string()) {

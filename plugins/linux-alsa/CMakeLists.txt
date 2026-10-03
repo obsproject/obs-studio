@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 option(ENABLE_ALSA "Build OBS with ALSA support" ON)
 
 if(NOT ENABLE_ALSA)
-  target_disable(linux-alsa)
   return()
 endif()
 

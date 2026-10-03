@@ -84,10 +84,12 @@ static inline bool dxgi_init(dxgi_info &info)
 
 static inline void dxgi_free(dxgi_info &info)
 {
-	if (info.swap)
+	if (info.swap) {
 		info.swap->Release();
-	if (info.hwnd)
+	}
+	if (info.hwnd) {
 		DestroyWindow(info.hwnd);
+	}
 }
 
 void get_dxgi_offsets(struct dxgi_offsets *offsets, struct dxgi_offsets2 *offsets2)

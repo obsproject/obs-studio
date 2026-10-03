@@ -35,10 +35,10 @@
    <item>
     <widget class="QFrame" name="outerFrame">
      <property name="frameShape">
-      <enum>QFrame::NoFrame</enum>
+      <enum>QFrame::Shape::NoFrame</enum>
      </property>
      <property name="frameShadow">
-      <enum>QFrame::Plain</enum>
+      <enum>QFrame::Shadow::Plain</enum>
      </property>
      <property name="lineWidth">
       <number>0</number>
@@ -65,10 +65,10 @@
       <item>
        <widget class="QFrame" name="transformSettings">
         <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
+         <enum>QFrame::Shape::NoFrame</enum>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>0</number>
@@ -104,7 +104,7 @@
             <string>Basic.TransformWindow.Width</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -117,12 +117,12 @@
             <string>X</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QDoubleSpinBox" name="sizeX">
+          <widget class="OBS::DoubleSpinBox" name="sizeX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -169,7 +169,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QDoubleSpinBox" name="positionX">
+          <widget class="OBS::DoubleSpinBox" name="positionX">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -200,7 +200,7 @@
           </widget>
          </item>
          <item row="1" column="4">
-          <widget class="QDoubleSpinBox" name="rotation">
+          <widget class="OBS::DoubleSpinBox" name="rotation">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -245,7 +245,7 @@
             <string>Basic.TransformWindow.Size</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
            <property name="class" stdset="0">
             <string>subtitle</string>
@@ -261,7 +261,7 @@
             <string>Basic.TransformWindow.Position</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
            <property name="class" stdset="0">
             <string>subtitle</string>
@@ -271,7 +271,7 @@
          <item row="1" column="6">
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -290,12 +290,12 @@
             <string>Y</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="positionY">
+          <widget class="OBS::DoubleSpinBox" name="positionY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -326,7 +326,7 @@
           </widget>
          </item>
          <item row="2" column="3">
-          <widget class="QDoubleSpinBox" name="sizeY">
+          <widget class="OBS::DoubleSpinBox" name="sizeY">
            <property name="minimumSize">
             <size>
              <width>120</width>
@@ -368,17 +368,17 @@
             <string>Basic.TransformWindow.Height</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="1" column="5">
           <widget class="QFrame" name="alignmentWidget">
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Shape::NoFrame</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>0</number>
@@ -421,10 +421,10 @@
       <item>
        <widget class="QFrame" name="boundsSettings">
         <property name="frameShape">
-         <enum>QFrame::NoFrame</enum>
+         <enum>QFrame::Shape::NoFrame</enum>
         </property>
         <property name="frameShadow">
-         <enum>QFrame::Plain</enum>
+         <enum>QFrame::Shadow::Plain</enum>
         </property>
         <property name="lineWidth">
          <number>0</number>
@@ -496,7 +496,7 @@
          <item row="0" column="7" rowspan="4">
           <spacer name="horizontalSpacer_4">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -522,10 +522,10 @@
          <item row="1" column="3">
           <widget class="QFrame" name="alignmentWidget2">
            <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
+            <enum>QFrame::Shape::NoFrame</enum>
            </property>
            <property name="frameShadow">
-            <enum>QFrame::Plain</enum>
+            <enum>QFrame::Shadow::Plain</enum>
            </property>
            <property name="lineWidth">
             <number>0</number>
@@ -568,7 +568,7 @@
             <string>Basic.TransformWindow.Width</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -581,12 +581,12 @@
             <string>Basic.TransformWindow.Height</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QDoubleSpinBox" name="boundsWidth">
+          <widget class="OBS::DoubleSpinBox" name="boundsWidth">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -620,7 +620,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <widget class="QDoubleSpinBox" name="boundsHeight">
+          <widget class="OBS::DoubleSpinBox" name="boundsHeight">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -714,7 +714,7 @@
             <string>Left</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -724,12 +724,12 @@
             <string>Right</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="2" column="3">
-          <widget class="QSpinBox" name="cropBottom">
+          <widget class="OBS::SpinBox" name="cropBottom">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -762,7 +762,7 @@
          <item row="1" column="4">
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -773,7 +773,7 @@
           </spacer>
          </item>
          <item row="1" column="3">
-          <widget class="QSpinBox" name="cropRight">
+          <widget class="OBS::SpinBox" name="cropRight">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -804,7 +804,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QSpinBox" name="cropLeft">
+          <widget class="OBS::SpinBox" name="cropLeft">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -840,12 +840,12 @@
             <string>Top</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
          <item row="2" column="1">
-          <widget class="QSpinBox" name="cropTop">
+          <widget class="OBS::SpinBox" name="cropTop">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -894,7 +894,7 @@
             <string>Bottom</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -904,7 +904,7 @@
       <item>
        <widget class="QDialogButtonBox" name="buttonBox">
         <property name="standardButtons">
-         <set>QDialogButtonBox::Close|QDialogButtonBox::Reset</set>
+         <set>QDialogButtonBox::StandardButton::Close|QDialogButtonBox::StandardButton::Reset</set>
         </property>
        </widget>
       </item>
@@ -928,6 +928,18 @@
   <tabstop>cropTop</tabstop>
   <tabstop>cropBottom</tabstop>
  </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>OBS::SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBS::DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>DoubleSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

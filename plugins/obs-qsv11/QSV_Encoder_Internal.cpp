@@ -125,19 +125,21 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxVersion &version, bool useTexAlloc
 
 QSV_Encoder_Internal::~QSV_Encoder_Internal()
 {
-	if (m_pmfxENC)
+	if (m_pmfxENC) {
 		ClearData();
+	}
 }
 
 mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
-	if (m_bUseD3D11 | m_bUseTexAlloc)
+	if (m_bUseD3D11 | m_bUseTexAlloc) {
 		// Use texture surface
 		sts = Initialize(m_ver, &m_session, &m_mfxAllocator, &g_GFX_Handle, false, codec, &m_sessionData);
-	else
+	} else {
 		sts = Initialize(m_ver, &m_session, NULL, NULL, false, codec, &m_sessionData);
+	}
 
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
@@ -171,10 +173,12 @@ PRAGMA_WARN_DEPRECATION
 static inline bool HasOptimizedBRCSupport(const mfxPlatform &platform, const mfxVersion &version, mfxU16 rateControl)
 {
 #if (MFX_VERSION_MAJOR >= 2 && MFX_VERSION_MINOR >= 13) || MFX_VERSION_MAJOR > 2
-	if ((version.Major >= 2 && version.Minor >= 13) || version.Major > 2)
+	if ((version.Major >= 2 && version.Minor >= 13) || version.Major > 2) {
 		if (rateControl == MFX_RATECONTROL_CBR &&
-		    (platform.CodeName >= MFX_PLATFORM_BATTLEMAGE && platform.CodeName != MFX_PLATFORM_ALDERLAKE_N))
+		    (platform.CodeName >= MFX_PLATFORM_BATTLEMAGE && platform.CodeName != MFX_PLATFORM_ALDERLAKE_N)) {
 			return true;
+		}
+	}
 #endif
 	UNUSED_PARAMETER(platform);
 	UNUSED_PARAMETER(version);
@@ -186,10 +190,12 @@ static inline bool HasAV1ScreenContentSupport(const mfxPlatform &platform, const
 {
 #if (MFX_VERSION_MAJOR >= 2 && MFX_VERSION_MINOR >= 12) || MFX_VERSION_MAJOR > 2
 	// Platform enums needed are introduced in VPL version 2.12
-	if ((version.Major >= 2 && version.Minor >= 12) || version.Major > 2)
+	if ((version.Major >= 2 && version.Minor >= 12) || version.Major > 2) {
 		if (platform.CodeName >= MFX_PLATFORM_LUNARLAKE && platform.CodeName != MFX_PLATFORM_ALDERLAKE_N &&
-		    platform.CodeName != MFX_PLATFORM_ARROWLAKE)
+		    platform.CodeName != MFX_PLATFORM_ARROWLAKE) {
 			return true;
+		}
+	}
 #endif
 	UNUSED_PARAMETER(platform);
 	UNUSED_PARAMETER(version);
@@ -201,12 +207,13 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 {
 	memset(&m_mfxEncParams, 0, sizeof(m_mfxEncParams));
 
-	if (codec == QSV_CODEC_AVC)
+	if (codec == QSV_CODEC_AVC) {
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
-	else if (codec == QSV_CODEC_AV1)
+	} else if (codec == QSV_CODEC_AV1) {
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AV1;
-	else if (codec == QSV_CODEC_HEVC)
+	} else if (codec == QSV_CODEC_HEVC) {
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_HEVC;
+	}
 
 	if (codec == QSV_CODEC_HEVC) {
 		m_mfxEncParams.mfx.NumSlice = 0;
@@ -240,8 +247,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	PRAGMA_WARN_PUSH
 	PRAGMA_WARN_DEPRECATION
 	if (codec == QSV_CODEC_AVC || codec == QSV_CODEC_HEVC) {
-		if (platform.CodeName >= MFX_PLATFORM_DG2)
+		if (platform.CodeName >= MFX_PLATFORM_DG2) {
 			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+		}
 	} else if (codec == QSV_CODEC_AV1) {
 		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
 	}
@@ -287,13 +295,15 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
 	m_co2.Header.BufferId = MFX_EXTBUFF_CODING_OPTION2;
 	m_co2.Header.BufferSz = sizeof(m_co2);
-	if (pParams->bRepeatHeaders)
+	if (pParams->bRepeatHeaders) {
 		m_co2.RepeatPPS = MFX_CODINGOPTION_ON;
-	else
+	} else {
 		m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
+	}
 
-	if (pParams->nbFrames > 1)
+	if (pParams->nbFrames > 1) {
 		m_co2.BRefType = MFX_B_REF_PYRAMID;
+	}
 
 	PRAGMA_WARN_PUSH
 	PRAGMA_WARN_DEPRECATION
@@ -427,10 +437,11 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams, enum qsv_codec 
 	m_mfxEncParams.mfx.FrameInfo.Width = MSDK_ALIGN16(pParams->nWidth);
 	m_mfxEncParams.mfx.FrameInfo.Height = MSDK_ALIGN16(pParams->nHeight);
 
-	if (m_bUseTexAlloc)
+	if (m_bUseTexAlloc) {
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
-	else
+	} else {
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+	}
 
 	m_mfxEncParams.ExtParam = extendedBuffers.data();
 	m_mfxEncParams.NumExtParam = (mfxU16)extendedBuffers.size();
@@ -560,8 +571,9 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam(enum qsv_codec codec)
 	mfxStatus sts = m_pmfxENC->GetVideoParam(&m_parameter);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	if (codec == QSV_CODEC_HEVC)
+	if (codec == QSV_CODEC_HEVC) {
 		m_nVPSBufferSize = opt_vps.VPSBufSize;
+	}
 	m_nSPSBufferSize = opt.SPSBufSize;
 	m_nPPSBufferSize = opt.PPSBufSize;
 
@@ -638,15 +650,17 @@ mfxStatus QSV_Encoder_Internal::LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pD
 	const size_t line_size = w * 2;
 
 	// load Y plane
-	for (i = 0; i < h; i++)
+	for (i = 0; i < h; i++) {
 		memcpy(ptr + i * pitch, pDataY + i * strideY, line_size);
+	}
 
 	// load UV plane
 	h /= 2;
 	ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
 
-	for (i = 0; i < h; i++)
+	for (i = 0; i < h; i++) {
 		memcpy(ptr + i * pitch, pDataUV + i * strideUV, line_size);
+	}
 
 	return MFX_ERR_NONE;
 }
@@ -671,25 +685,30 @@ mfxStatus QSV_Encoder_Internal::LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pD
 	ptr = pData->Y + pInfo->CropX + pInfo->CropY * pData->Pitch;
 
 	// load Y plane
-	for (i = 0; i < h; i++)
+	for (i = 0; i < h; i++) {
 		memcpy(ptr + i * pitch, pDataY + i * strideY, w);
+	}
 
 	// load UV plane
 	h /= 2;
 	ptr = pData->UV + pInfo->CropX + (pInfo->CropY / 2) * pitch;
 
-	for (i = 0; i < h; i++)
+	for (i = 0; i < h; i++) {
 		memcpy(ptr + i * pitch, pDataUV + i * strideUV, w);
+	}
 
 	return MFX_ERR_NONE;
 }
 
 int QSV_Encoder_Internal::GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize)
 {
-	if (pTaskPool)
-		for (int i = 0; i < nPoolSize; i++)
-			if (!pTaskPool[i].syncp)
+	if (pTaskPool) {
+		for (int i = 0; i < nPoolSize; i++) {
+			if (!pTaskPool[i].syncp) {
 				return i;
+			}
+		}
+	}
 	return MFX_ERR_NOT_FOUND;
 }
 
@@ -769,16 +788,18 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 
 		if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) {
 			// Repeat the call if warning and no output
-			if (MFX_WRN_DEVICE_BUSY == sts)
+			if (MFX_WRN_DEVICE_BUSY == sts) {
 				MSDK_SLEEP(1); // Wait if device is busy, then repeat the same call
+			}
 		} else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) {
 			sts = MFX_ERR_NONE; // Ignore warnings if output is available
 			break;
 		} else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
 			// Allocate more bitstream buffer memory here if needed...
 			break;
-		} else
+		} else {
 			break;
+		}
 	}
 
 	return sts;
@@ -827,16 +848,18 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, void *tex, uint64_t lock
 
 		if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) {
 			// Repeat the call if warning and no output
-			if (MFX_WRN_DEVICE_BUSY == sts)
+			if (MFX_WRN_DEVICE_BUSY == sts) {
 				MSDK_SLEEP(1); // Wait if device is busy, then repeat the same call
+			}
 		} else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) {
 			sts = MFX_ERR_NONE; // Ignore warnings if output is available
 			break;
 		} else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
 			// Allocate more bitstream buffer memory here if needed...
 			break;
-		} else
+		} else {
 			break;
+		}
 	}
 
 	return sts;
@@ -868,13 +891,15 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		m_pmfxENC = NULL;
 	}
 
-	if (m_bUseTexAlloc)
+	if (m_bUseTexAlloc) {
 		m_mfxAllocator.Free(m_mfxAllocator.pthis, &m_mfxResponse);
+	}
 
 	if (m_pmfxSurfaces) {
 		for (int i = 0; i < m_nSurfNum; i++) {
-			if (!m_bUseTexAlloc)
+			if (!m_bUseTexAlloc) {
 				delete m_pmfxSurfaces[i]->Data.Y;
+			}
 
 			delete m_pmfxSurfaces[i];
 		}
@@ -882,8 +907,9 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	}
 
 	if (m_pTaskPool) {
-		for (int i = 0; i < m_nTaskPool; i++)
+		for (int i = 0; i < m_nTaskPool; i++) {
 			delete m_pTaskPool[i].mfxBS.Data;
+		}
 		MSDK_SAFE_DELETE_ARRAY(m_pTaskPool);
 	}
 
@@ -937,8 +963,9 @@ void QSV_Encoder_Internal::AddROI(mfxU32 left, mfxU32 top, mfxU32 right, mfxU32 
 	m_roi.NumROI++;
 
 	/* Right now ROI is the only thing we add so this is fine */
-	if (m_extbuf.empty())
+	if (m_extbuf.empty()) {
 		m_extbuf.push_back((mfxExtBuffer *)&m_roi);
+	}
 
 	m_ctrl.ExtParam = m_extbuf.data();
 	m_ctrl.NumExtParam = (mfxU16)m_extbuf.size();

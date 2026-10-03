@@ -82,11 +82,12 @@ private:
 	float displayInputPeakHold[MAX_AUDIO_CHANNELS];
 	uint64_t displayInputPeakHoldLastUpdateTime[MAX_AUDIO_CHANNELS];
 
+	void updateTickLabelTokenSize();
+
 	QPixmap backgroundCache;
 	void updateBackgroundCache(bool force = false);
 
-	QFont tickFont;
-	QRect tickTextTokenRect;
+	QSize tickTextTokenRect;
 
 	QColor backgroundNominalColor;
 	QColor backgroundWarningColor;
@@ -202,5 +203,5 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 
 private slots:
-	void handleSourceDestroyed() { deleteLater(); }
+	void onSourceDestroyed() { deleteLater(); }
 };

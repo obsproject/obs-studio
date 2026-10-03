@@ -49,10 +49,11 @@ static void decklink_update(void *data, obs_data_t *settings)
 	video_range_type colorRange = (video_range_type)obs_data_get_int(settings, COLOR_RANGE);
 	int chFmtInt = (int)obs_data_get_int(settings, CHANNEL_FORMAT);
 
-	if (chFmtInt == 7)
+	if (chFmtInt == 7) {
 		chFmtInt = SPEAKERS_5POINT1;
-	else if (chFmtInt < SPEAKERS_UNKNOWN || chFmtInt > SPEAKERS_7POINT1)
+	} else if (chFmtInt < SPEAKERS_UNKNOWN || chFmtInt > SPEAKERS_7POINT1) {
 		chFmtInt = 2;
+	}
 
 	speaker_layout channelFormat = (speaker_layout)chFmtInt;
 
@@ -87,8 +88,9 @@ static void decklink_hide(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
 
-	if (decklink->dwns && decklink->Capturing())
+	if (decklink->dwns && decklink->Capturing()) {
 		decklink->Deactivate();
+	}
 }
 
 static void decklink_get_defaults(obs_data_t *settings)

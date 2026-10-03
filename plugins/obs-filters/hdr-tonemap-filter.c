@@ -154,12 +154,13 @@ static void hdr_tonemap_filter_render(void *data, gs_effect_t *effect)
 	switch (source_space) {
 	case GS_CS_709_EXTENDED:
 	case GS_CS_709_SCRGB: {
-		float multiplier = (source_space == GS_CS_709_EXTENDED) ? obs_get_video_sdr_white_level() : 80.f;
-		multiplier *= (filter->transform == TRANSFORM_SDR_REINHARD) ? filter->sdr_white_level_nits_i : 0.0001f;
-
 		const enum gs_color_format format = gs_get_format_from_space(source_space);
 		if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
 								     OBS_NO_DIRECT_RENDERING)) {
+			float multiplier = (source_space == GS_CS_709_EXTENDED) ? obs_get_video_sdr_white_level()
+										: 80.f;
+			multiplier *= (filter->transform == TRANSFORM_SDR_REINHARD) ? filter->sdr_white_level_nits_i
+										    : 0.0001f;
 			gs_effect_set_float(filter->param_multiplier, multiplier);
 			gs_effect_set_float(filter->param_input_maximum_nits,
 					    (filter->transform == TRANSFORM_SDR_MAXRGB)

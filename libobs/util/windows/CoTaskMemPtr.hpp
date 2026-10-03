@@ -21,8 +21,9 @@ template<typename T> class CoTaskMemPtr {
 
 	inline void Clear()
 	{
-		if (ptr)
+		if (ptr) {
 			CoTaskMemFree(ptr);
+		}
 	}
 
 public:

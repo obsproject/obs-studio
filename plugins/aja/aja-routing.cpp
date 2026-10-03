@@ -37,8 +37,9 @@ bool Routing::ParseRouteString(const std::string &route, NTV2XptConnections &cnx
 	NTV2StringList lines;
 
 	lines = aja::split(route_strip, ';');
-	if (lines.empty())
+	if (lines.empty()) {
 		lines.push_back(route_strip);
+	}
 
 	int32_t parse_ok = 0;
 	for (const auto &l : lines) {
@@ -114,8 +115,9 @@ bool Routing::ParseRouteString(const std::string &route, NTV2XptConnections &cnx
 
 void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 {
-	if (!card)
+	if (!card) {
 		return;
+	}
 
 	auto inputSrc = props.InitialInputSource();
 	auto channel = props.Channel();
@@ -178,8 +180,9 @@ void Routing::StopSourceAudio(const SourceProps &props, CNTV2Card *card)
 
 bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV2Card *card, NTV2XptConnections &cnx)
 {
-	if (!card)
+	if (!card) {
 		return false;
+	}
 
 	auto deviceID = props.deviceID;
 	NTV2VideoFormat vf = props.videoFormat;
@@ -195,8 +198,9 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV
 		kind = ConnectionKind::SDI;
 		if (props.autoDetect) {
 			auto vpidList = props.vpids;
-			if (vpidList.size() > 0)
+			if (vpidList.size() > 0) {
 				vpidStandard = vpidList.at(0).Standard();
+			}
 		}
 		if (vpidStandard == VPIDStandard_Unknown) {
 			vpidStandard = DetermineVPIDStandard(props.ioSelect, props.videoFormat, props.pixelFormat,
@@ -252,8 +256,9 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV
 		aja::replace(route_string, channel_placeholder, aja::to_string(start_channel_index++));
 	}
 
-	if (!ParseRouteString(route_string, cnx))
+	if (!ParseRouteString(route_string, cnx)) {
 		return false;
+	}
 
 	card->ApplySignalRoute(cnx, false);
 
@@ -275,10 +280,11 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV
 
 	// Apply HDMI settings
 	if (aja::IsIOSelectionHDMI(props.ioSelect)) {
-		if (NTV2_IS_4K_VIDEO_FORMAT(props.videoFormat))
+		if (NTV2_IS_4K_VIDEO_FORMAT(props.videoFormat)) {
 			card->SetHDMIV2Mode(NTV2_HDMI_V2_4K_CAPTURE);
-		else
+		} else {
 			card->SetHDMIV2Mode(NTV2_HDMI_V2_HDSD_BIDIRECTIONAL);
+		}
 	}
 
 	// Apply Framestore settings
@@ -300,8 +306,9 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode, CNTV
 
 bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode, CNTV2Card *card, NTV2XptConnections &cnx)
 {
-	if (!card)
+	if (!card) {
 		return false;
+	}
 
 	auto deviceID = props.deviceID;
 	NTV2OutputDestinations outputDests;
@@ -379,8 +386,9 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode, CNTV
 		aja::replace(route_string, channel_placeholder, aja::to_string(start_channel_index++));
 	}
 
-	if (!ParseRouteString(route_string, cnx))
+	if (!ParseRouteString(route_string, cnx)) {
 		return false;
+	}
 
 	card->ApplySignalRoute(cnx, false);
 
@@ -424,8 +432,9 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode, CNTV
 
 void Routing::ConfigureOutputAudio(const OutputProps &props, CNTV2Card *card)
 {
-	if (!card)
+	if (!card) {
 		return;
+	}
 
 	auto deviceID = card->GetDeviceID();
 	auto audioSys = props.AudioSystem();

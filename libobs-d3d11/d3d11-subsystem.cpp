@@ -52,16 +52,19 @@ gs_obj::gs_obj(gs_device_t *device_, gs_type type) : device(device_), obj_type(t
 	prev_next = &device->first_obj;
 	next = device->first_obj;
 	device->first_obj = this;
-	if (next)
+	if (next) {
 		next->prev_next = &next;
+	}
 }
 
 gs_obj::~gs_obj()
 {
-	if (prev_next)
+	if (prev_next) {
 		*prev_next = next;
-	if (next)
+	}
+	if (next) {
 		next->prev_next = prev_next;
+	}
 }
 
 static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd, DXGI_SWAP_EFFECT effect)
@@ -71,10 +74,11 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd, DXGI_S
 		const HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hMonitor) {
 			const gs_monitor_color_info info = device->GetMonitorColorInfo(hMonitor);
-			if (info.hdr)
+			if (info.hdr) {
 				next_space = GS_CS_709_SCRGB;
-			else if (info.bits_per_color > 8)
+			} else if (info.bits_per_color > 8) {
 				next_space = GS_CS_SRGB_16F;
+			}
 		}
 	}
 
@@ -123,24 +127,27 @@ void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
 	target.height = cy;
 
 	hr = swap->GetBuffer(0, __uuidof(ID3D11Texture2D), (void **)target.texture.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to get swap buffer texture", hr);
+	}
 
 	D3D11_RENDER_TARGET_VIEW_DESC rtv;
 	rtv.Format = target.dxgiFormatView;
 	rtv.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
 	rtv.Texture2D.MipSlice = 0;
 	hr = device->device->CreateRenderTargetView(target.texture, &rtv, target.renderTarget[0].Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create swap RTV", hr);
+	}
 	if (target.dxgiFormatView == target.dxgiFormatViewLinear) {
 		target.renderTargetLinear[0] = target.renderTarget[0];
 	} else {
 		rtv.Format = target.dxgiFormatViewLinear;
 		hr = device->device->CreateRenderTargetView(target.texture, &rtv,
 							    target.renderTargetLinear[0].Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create linear swap RTV", hr);
+		}
 	}
 }
 
@@ -173,24 +180,28 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
 
 	if (cx == 0 || cy == 0) {
 		GetClientRect(hwnd, &clientRect);
-		if (cx == 0)
+		if (cx == 0) {
 			cx = clientRect.right;
-		if (cy == 0)
+		}
+		if (cy == 0) {
 			cy = clientRect.bottom;
+		}
 	}
 
 	const DXGI_FORMAT dxgi_format = ConvertGSTextureFormatView(format);
 	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy, dxgi_format, swapDesc.Flags);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to resize swap buffers", hr);
+	}
 	ComQIPtr<IDXGISwapChain3> swap3 = swap;
 	if (swap3) {
 		const DXGI_COLOR_SPACE_TYPE dxgi_space = (format == GS_RGBA16F)
 								 ? DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709
 								 : DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
 		hr = swap3->SetColorSpace1(dxgi_space);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to set color space", hr);
+		}
 	}
 
 	target.dxgiFormatResource = ConvertGSTextureFormatResource(format);
@@ -238,8 +249,9 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 
 	space = make_swap_desc(device, swapDesc, &initData, effect, flags);
 	HRESULT hr = device->factory->CreateSwapChain(device->device, &swapDesc, swap.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create swap chain", hr);
+	}
 
 	/* Ignore Alt+Enter */
 	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
@@ -257,22 +269,25 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 
 gs_swap_chain::~gs_swap_chain()
 {
-	if (hWaitable)
+	if (hWaitable) {
 		CloseHandle(hWaitable);
+	}
 }
 
 void gs_device::InitFactory()
 {
 	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
+	}
 }
 
 void gs_device::InitAdapter(uint32_t adapterIdx)
 {
 	HRESULT hr = factory->EnumAdapters1(adapterIdx, &adapter);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw UnsupportedHWError("Failed to enumerate DXGIAdapter", hr);
+	}
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] = {
@@ -544,8 +559,9 @@ static std::optional<HagsStatus> GetAdapterHagsStatus(const DXGI_ADAPTER_DESC *d
 		args.PrivateDriverDataSize = sizeof(ext_caps);
 		res = D3DKMTQueryAdapterInfo(&args);
 
-		if (SUCCEEDED(res))
+		if (SUCCEEDED(res)) {
 			status.SetDriverSupport(ext_caps.HwSchSupportState);
+		}
 
 		ret = status;
 	} else {
@@ -572,8 +588,9 @@ static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
 static bool FastClearSupported(UINT vendorId, uint64_t version)
 {
 	/* Always true for non-NVIDIA GPUs */
-	if (vendorId != 0x10de)
+	if (vendorId != 0x10de) {
 		return true;
+	}
 
 	const uint16_t aa = (version >> 48) & 0xffff;
 	const uint16_t bb = (version >> 32) & 0xffff;
@@ -607,14 +624,16 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	blog(LOG_INFO, "Loading up D3D11 on adapter %s (%" PRIu32 ")", adapterNameUTF8.Get(), adapterIdx);
 
 	hr = adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
-	if (SUCCEEDED(hr))
+	if (SUCCEEDED(hr)) {
 		driverVersion = umd.QuadPart;
+	}
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, createFlags, featureLevels,
 			       sizeof(featureLevels) / sizeof(D3D_FEATURE_LEVEL), D3D11_SDK_VERSION, device.Assign(),
 			       &levelUsed, context.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw UnsupportedHWError("Failed to create device", hr);
+	}
 
 	blog(LOG_INFO, "D3D11 loaded successfully, feature level used: %x", (unsigned int)levelUsed);
 
@@ -625,8 +644,9 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 
 	/* Log HAGS status */
 	bool hags_enabled = false;
-	if (auto hags_status = GetAdapterHagsStatus(&desc))
+	if (auto hags_status = GetAdapterHagsStatus(&desc)) {
 		hags_enabled = hags_status->enabled;
+	}
 
 	if (hags_enabled) {
 		blog(LOG_WARNING, "Hardware-Accelerated GPU Scheduling enabled on adapter!");
@@ -694,8 +714,9 @@ ID3D11DepthStencilState *gs_device::AddZStencilState()
 
 	SavedZStencilState savedState(zstencilState, dsd);
 	hr = device->CreateDepthStencilState(&dsd, savedState.state.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create depth stencil state", hr);
+	}
 
 	state = savedState.state;
 	zstencilStates.push_back(savedState);
@@ -719,8 +740,9 @@ ID3D11RasterizerState *gs_device::AddRasterState()
 
 	SavedRasterState savedState(rasterState, rd);
 	hr = device->CreateRasterizerState(&rd, savedState.state.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create rasterizer state", hr);
+	}
 
 	state = savedState.state;
 	rasterStates.push_back(savedState);
@@ -752,8 +774,9 @@ ID3D11BlendState *gs_device::AddBlendState()
 
 	SavedBlendState savedState(blendState, bd);
 	hr = device->CreateBlendState(&bd, savedState.state.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create blend state", hr);
+	}
 
 	state = savedState.state;
 	blendStates.push_back(savedState);
@@ -765,8 +788,9 @@ void gs_device::UpdateZStencilState()
 {
 	ID3D11DepthStencilState *state = NULL;
 
-	if (!zstencilStateChanged)
+	if (!zstencilStateChanged) {
 		return;
+	}
 
 	for (size_t i = 0; i < zstencilStates.size(); i++) {
 		SavedZStencilState &s = zstencilStates[i];
@@ -776,8 +800,9 @@ void gs_device::UpdateZStencilState()
 		}
 	}
 
-	if (!state)
+	if (!state) {
 		state = AddZStencilState();
+	}
 
 	if (state != curDepthStencilState) {
 		context->OMSetDepthStencilState(state, 0);
@@ -791,8 +816,9 @@ void gs_device::UpdateRasterState()
 {
 	ID3D11RasterizerState *state = NULL;
 
-	if (!rasterStateChanged)
+	if (!rasterStateChanged) {
 		return;
+	}
 
 	for (size_t i = 0; i < rasterStates.size(); i++) {
 		SavedRasterState &s = rasterStates[i];
@@ -802,8 +828,9 @@ void gs_device::UpdateRasterState()
 		}
 	}
 
-	if (!state)
+	if (!state) {
 		state = AddRasterState();
+	}
 
 	if (state != curRasterState) {
 		context->RSSetState(state);
@@ -817,8 +844,9 @@ void gs_device::UpdateBlendState()
 {
 	ID3D11BlendState *state = NULL;
 
-	if (!blendStateChanged)
+	if (!blendStateChanged) {
 		return;
+	}
 
 	for (size_t i = 0; i < blendStates.size(); i++) {
 		SavedBlendState &s = blendStates[i];
@@ -828,8 +856,9 @@ void gs_device::UpdateBlendState()
 		}
 	}
 
-	if (!state)
+	if (!state) {
 		state = AddBlendState();
+	}
 
 	if (state != curBlendState) {
 		float f[4] = {1.0f, 1.0f, 1.0f, 1.0f};
@@ -853,8 +882,9 @@ void gs_device::UpdateViewProjMatrix()
 	matrix4_mul(&curViewProjMatrix, &curViewMatrix, &curProjMatrix);
 	matrix4_transpose(&curViewProjMatrix, &curViewProjMatrix);
 
-	if (curVertexShader->viewProj)
+	if (curVertexShader->viewProj) {
 		gs_shader_set_matrix4(curVertexShader->viewProj, &curViewProjMatrix);
+	}
 }
 
 void gs_device::FlushOutputViews()
@@ -871,8 +901,9 @@ void gs_device::FlushOutputViews()
 			}
 		}
 		ID3D11DepthStencilView *dsv = nullptr;
-		if (curZStencilBuffer)
+		if (curZStencilBuffer) {
 			dsv = curZStencilBuffer->view;
+		}
 		context->OMSetRenderTargets(1, &rtv, dsv);
 		curFramebufferInvalidate = false;
 	}
@@ -925,25 +956,29 @@ static inline void EnumD3DAdapters(bool (*callback)(void *, const char *, uint32
 	UINT i;
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create DXGIFactory", hr);
+	}
 
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
 		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 
-		if (!callback(param, name, i))
+		if (!callback(param, name, i)) {
 			break;
+		}
 	}
 }
 
@@ -1143,8 +1178,9 @@ static ULONG GetSdrMaxNits(HMONITOR monitor)
 		header.size = sizeof(level);
 		header.adapterId = targetInfo.adapterId;
 		header.id = targetInfo.id;
-		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS)
+		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS) {
 			nits = (level.SDRWhiteLevel * 80) / 1000;
+		}
 	}
 
 	return nits;
@@ -1160,8 +1196,9 @@ gs_monitor_color_info gs_device::GetMonitorColorInfo(HMONITOR hMonitor)
 	}
 
 	for (const std::pair<HMONITOR, gs_monitor_color_info> &pair : monitor_to_hdr) {
-		if (pair.first == hMonitor)
+		if (pair.first == hMonitor) {
 			return pair.second;
+		}
 	}
 
 	ComPtr<IDXGIAdapter> adapter;
@@ -1210,8 +1247,9 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 	for (i = 0; adapter->EnumOutputs(i, &output) == S_OK; ++i) {
 		DXGI_OUTPUT_DESC desc;
-		if (FAILED(output->GetDesc(&desc)))
+		if (FAILED(output->GetDesc(&desc))) {
 			continue;
+		}
 
 		unsigned refresh = 0;
 
@@ -1336,20 +1374,23 @@ static inline void LogD3DAdapters()
 	blog(LOG_INFO, "Available Video Adapters: ");
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create DXGIFactory", hr);
+	}
 
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
 		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
@@ -1493,8 +1534,9 @@ void device_update_color_space(gs_device_t *device)
 	if (device->curSwapChain) {
 		const enum gs_color_space next_space =
 			get_next_space(device, device->curSwapChain->hwnd, device->curSwapChain->swapDesc.SwapEffect);
-		if (device->curSwapChain->space != next_space)
+		if (device->curSwapChain->space != next_space) {
 			device_resize_internal(device, 0, 0, next_space);
+		}
 	} else {
 		blog(LOG_WARNING, "device_update_color_space (D3D11): No active swap");
 	}
@@ -1650,8 +1692,9 @@ gs_shader_t *device_vertexshader_create(gs_device_t *device, const char *shader_
 
 	} catch (const ShaderError &error) {
 		const char *buf = (const char *)error.errors->GetBufferPointer();
-		if (error_string)
+		if (error_string) {
 			*error_string = bstrdup(buf);
+		}
 		blog(LOG_ERROR,
 		     "device_vertexshader_create (D3D11): "
 		     "Compile warnings/errors for %s:\n%s",
@@ -1680,8 +1723,9 @@ gs_shader_t *device_pixelshader_create(gs_device_t *device, const char *shader_s
 
 	} catch (const ShaderError &error) {
 		const char *buf = (const char *)error.errors->GetBufferPointer();
-		if (error_string)
+		if (error_string) {
 			*error_string = bstrdup(buf);
+		}
 		blog(LOG_ERROR,
 		     "device_pixelshader_create (D3D11): "
 		     "Compiler warnings/errors for %s:\n%s",
@@ -1759,8 +1803,9 @@ enum gs_texture_type device_get_texture_type(const gs_texture_t *texture)
 
 void gs_device::LoadVertexBufferData()
 {
-	if (curVertexBuffer == lastVertexBuffer && curVertexShader == lastVertexShader)
+	if (curVertexBuffer == lastVertexBuffer && curVertexShader == lastVertexShader) {
 		return;
+	}
 
 	ID3D11Buffer *buffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
 	uint32_t strides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
@@ -1788,8 +1833,9 @@ void gs_device::LoadVertexBufferData()
 
 void device_load_vertexbuffer(gs_device_t *device, gs_vertbuffer_t *vertbuffer)
 {
-	if (device->curVertexBuffer == vertbuffer)
+	if (device->curVertexBuffer == vertbuffer) {
 		return;
+	}
 
 	device->curVertexBuffer = vertbuffer;
 }
@@ -1799,8 +1845,9 @@ void device_load_indexbuffer(gs_device_t *device, gs_indexbuffer_t *indexbuffer)
 	DXGI_FORMAT format;
 	ID3D11Buffer *buffer;
 
-	if (device->curIndexBuffer == indexbuffer)
+	if (device->curIndexBuffer == indexbuffer) {
 		return;
+	}
 
 	if (indexbuffer) {
 		switch (indexbuffer->indexSize) {
@@ -1826,8 +1873,9 @@ void device_load_indexbuffer(gs_device_t *device, gs_indexbuffer_t *indexbuffer)
 static void device_load_texture_internal(gs_device_t *device, gs_texture_t *tex, int unit,
 					 ID3D11ShaderResourceView *view)
 {
-	if (device->curTextures[unit] == tex)
+	if (device->curTextures[unit] == tex) {
 		return;
+	}
 
 	device->curTextures[unit] = tex;
 	device->context->PSSetShaderResources(unit, 1, &view);
@@ -1836,20 +1884,22 @@ static void device_load_texture_internal(gs_device_t *device, gs_texture_t *tex,
 void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 {
 	ID3D11ShaderResourceView *view;
-	if (tex)
+	if (tex) {
 		view = tex->shaderRes;
-	else
+	} else {
 		view = NULL;
+	}
 	return device_load_texture_internal(device, tex, unit, view);
 }
 
 void device_load_texture_srgb(gs_device_t *device, gs_texture_t *tex, int unit)
 {
 	ID3D11ShaderResourceView *view;
-	if (tex)
+	if (tex) {
 		view = tex->shaderResLinear;
-	else
+	} else {
 		view = NULL;
+	}
 	return device_load_texture_internal(device, tex, unit, view);
 }
 
@@ -1857,11 +1907,13 @@ void device_load_samplerstate(gs_device_t *device, gs_samplerstate_t *samplersta
 {
 	ID3D11SamplerState *state = NULL;
 
-	if (device->curSamplers[unit] == samplerstate)
+	if (device->curSamplers[unit] == samplerstate) {
 		return;
+	}
 
-	if (samplerstate)
+	if (samplerstate) {
 		state = samplerstate->state;
+	}
 
 	device->curSamplers[unit] = samplerstate;
 	device->context->PSSetSamplers(unit, 1, &state);
@@ -1873,8 +1925,9 @@ void device_load_vertexshader(gs_device_t *device, gs_shader_t *vertshader)
 	ID3D11InputLayout *layout = NULL;
 	ID3D11Buffer *constants = NULL;
 
-	if (device->curVertexShader == vertshader)
+	if (device->curVertexShader == vertshader) {
 		return;
+	}
 
 	gs_vertex_shader *vs = static_cast<gs_vertex_shader *>(vertshader);
 
@@ -1911,8 +1964,9 @@ void device_load_pixelshader(gs_device_t *device, gs_shader_t *pixelshader)
 	ID3D11Buffer *constants = NULL;
 	ID3D11SamplerState *states[GS_MAX_TEXTURES];
 
-	if (device->curPixelShader == pixelshader)
+	if (device->curPixelShader == pixelshader) {
 		return;
+	}
 
 	gs_pixel_shader *ps = static_cast<gs_pixel_shader *>(pixelshader);
 
@@ -1938,9 +1992,11 @@ void device_load_pixelshader(gs_device_t *device, gs_shader_t *pixelshader)
 	device->context->PSSetConstantBuffers(0, 1, &constants);
 	device->context->PSSetSamplers(0, GS_MAX_TEXTURES, states);
 
-	for (int i = 0; i < GS_MAX_TEXTURES; i++)
-		if (device->curSamplers[i] && device->curSamplers[i]->state != states[i])
+	for (int i = 0; i < GS_MAX_TEXTURES; i++) {
+		if (device->curSamplers[i] && device->curSamplers[i]->state != states[i]) {
 			device->curSamplers[i] = nullptr;
+		}
+	}
 }
 
 void device_load_default_samplerstate(gs_device_t *device, bool b_3d, int unit)
@@ -1963,16 +2019,18 @@ gs_shader_t *device_get_pixel_shader(const gs_device_t *device)
 
 gs_texture_t *device_get_render_target(const gs_device_t *device)
 {
-	if (device->curRenderTarget == &device->curSwapChain->target)
+	if (device->curRenderTarget == &device->curSwapChain->target) {
 		return NULL;
+	}
 
 	return device->curRenderTarget;
 }
 
 gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device)
 {
-	if (device->curZStencilBuffer == &device->curSwapChain->zs)
+	if (device->curZStencilBuffer == &device->curSwapChain->zs) {
 		return NULL;
+	}
 
 	return device->curZStencilBuffer;
 }
@@ -1981,10 +2039,12 @@ static void device_set_render_target_internal(gs_device_t *device, gs_texture_t 
 					      enum gs_color_space space)
 {
 	if (device->curSwapChain) {
-		if (!tex)
+		if (!tex) {
 			tex = &device->curSwapChain->target;
-		if (!zstencil)
+		}
+		if (!zstencil) {
 			zstencil = &device->curSwapChain->zs;
+		}
 	}
 
 	if (device->curRenderTarget == tex && device->curZStencilBuffer == zstencil) {
@@ -2025,12 +2085,14 @@ void device_set_cube_render_target(gs_device_t *device, gs_texture_t *tex, int s
 			side = 0;
 		}
 
-		if (!zstencil)
+		if (!zstencil) {
 			zstencil = &device->curSwapChain->zs;
+		}
 	}
 
-	if (device->curRenderTarget == tex && device->curRenderSide == side && device->curZStencilBuffer == zstencil)
+	if (device->curRenderTarget == tex && device->curRenderSide == side && device->curZStencilBuffer == zstencil) {
 		return;
+	}
 
 	if (tex->type != GS_TEXTURE_CUBE) {
 		blog(LOG_ERROR, "device_set_cube_render_target (D3D11): "
@@ -2065,8 +2127,9 @@ bool device_framebuffer_srgb_enabled(gs_device_t *device)
 void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y, gs_texture_t *src, uint32_t src_x,
 			uint32_t src_y, uint32_t src_w, uint32_t src_h)
 {
-	if (src->type != GS_TEXTURE_2D)
+	if (src->type != GS_TEXTURE_2D) {
 		throw "Source texture must be a 2D texture";
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(src);
 
@@ -2076,16 +2139,18 @@ void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x, uint32_t dst_y, gs
 		D3D11_BOX sbox;
 
 		sbox.left = src_x;
-		if (src_w > 0)
+		if (src_w > 0) {
 			sbox.right = src_x + src_w;
-		else
+		} else {
 			sbox.right = tex2d->width - 1;
+		}
 
 		sbox.top = src_y;
-		if (src_h > 0)
+		if (src_h > 0) {
 			sbox.bottom = src_y + src_h;
-		else
+		} else {
 			sbox.bottom = tex2d->height - 1;
+		}
 
 		sbox.front = 0;
 		sbox.back = 1;
@@ -2115,15 +2180,19 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst, uint32_t
 		gs_texture_2d *src2d = static_cast<gs_texture_2d *>(src);
 		gs_texture_2d *dst2d = static_cast<gs_texture_2d *>(dst);
 
-		if (!src)
+		if (!src) {
 			throw "Source texture is NULL";
-		if (!dst)
+		}
+		if (!dst) {
 			throw "Destination texture is NULL";
-		if (src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D)
+		}
+		if (src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D) {
 			throw "Source and destination textures must be a 2D "
 			      "textures";
-		if (get_copy_compare_format(dst->format) != get_copy_compare_format(src->format))
+		}
+		if (get_copy_compare_format(dst->format) != get_copy_compare_format(src->format)) {
 			throw "Source and destination formats do not match";
+		}
 
 		/* apparently casting to the same type that the variable
 		 * already exists as is supposed to prevent some warning
@@ -2134,9 +2203,10 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst, uint32_t
 		uint32_t dstWidth = dst2d->width - dst_x;
 		uint32_t dstHeight = dst2d->height - dst_y;
 
-		if (dstWidth < copyWidth || dstHeight < copyHeight)
+		if (dstWidth < copyWidth || dstHeight < copyHeight) {
 			throw "Destination texture region is not big "
 			      "enough to hold the source region";
+		}
 
 		if (dst_x == 0 && dst_y == 0 && src_x == 0 && src_y == 0 && src_w == 0 && src_h == 0) {
 			copyWidth = 0;
@@ -2160,17 +2230,22 @@ void device_stage_texture(gs_device_t *device, gs_stagesurf_t *dst, gs_texture_t
 	try {
 		gs_texture_2d *src2d = static_cast<gs_texture_2d *>(src);
 
-		if (!src)
+		if (!src) {
 			throw "Source texture is NULL";
-		if (src->type != GS_TEXTURE_2D)
+		}
+		if (src->type != GS_TEXTURE_2D) {
 			throw "Source texture must be a 2D texture";
-		if (!dst)
+		}
+		if (!dst) {
 			throw "Destination surface is NULL";
-		if (dst->format != GS_UNKNOWN && dst->format != src->format)
+		}
+		if (dst->format != GS_UNKNOWN && dst->format != src->format) {
 			throw "Source and destination formats do not match";
-		if (dst->width != src2d->width || dst->height != src2d->height)
+		}
+		if (dst->width != src2d->width || dst->height != src2d->height) {
 			throw "Source and destination must have the same "
 			      "dimensions";
+		}
 
 		device->CopyTex(dst->texture, 0, 0, src, 0, 0, 0, 0);
 
@@ -2197,23 +2272,28 @@ void device_begin_scene(gs_device_t *device)
 void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t start_vert, uint32_t num_verts)
 {
 	try {
-		if (!device->curVertexShader)
+		if (!device->curVertexShader) {
 			throw "No vertex shader specified";
+		}
 
-		if (!device->curPixelShader)
+		if (!device->curPixelShader) {
 			throw "No pixel shader specified";
+		}
 
-		if (!device->curVertexBuffer && (num_verts == 0))
+		if (!device->curVertexBuffer && (num_verts == 0)) {
 			throw "No vertex buffer specified";
+		}
 
-		if (!device->curSwapChain && !device->curRenderTarget)
+		if (!device->curSwapChain && !device->curRenderTarget) {
 			throw "No render target or swap chain to render to";
+		}
 
 		device->FlushOutputViews();
 
 		gs_effect_t *effect = gs_get_effect();
-		if (effect)
+		if (effect) {
 			gs_effect_update_params(effect);
+		}
 
 		device->LoadVertexBufferData();
 		device->UpdateBlendState();
@@ -2240,12 +2320,14 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode, uint32_t star
 	}
 
 	if (device->curIndexBuffer) {
-		if (num_verts == 0)
+		if (num_verts == 0) {
 			num_verts = (uint32_t)device->curIndexBuffer->num;
+		}
 		device->context->DrawIndexed(num_verts, start_vert, 0);
 	} else {
-		if (num_verts == 0)
+		if (num_verts == 0) {
 			num_verts = (uint32_t)device->curVertexBuffer->numVerts;
+		}
 		device->context->Draw(num_verts, start_vert);
 	}
 }
@@ -2263,10 +2345,12 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
 	bool is_cube = device->curRenderTarget ? (device->curRenderTarget->type == GS_TEXTURE_CUBE) : false;
 
 	if (device->curSwapChain) {
-		if (target == &device->curSwapChain->target)
+		if (target == &device->curSwapChain->target) {
 			target = NULL;
-		if (zs == &device->curSwapChain->zs)
+		}
+		if (zs == &device->curSwapChain->zs) {
 			zs = NULL;
+		}
 	}
 
 	device->curSwapChain = swapchain;
@@ -2293,13 +2377,16 @@ void device_clear(gs_device_t *device, uint32_t clear_flags, const struct vec4 *
 
 	if (device->curZStencilBuffer) {
 		uint32_t flags = 0;
-		if ((clear_flags & GS_CLEAR_DEPTH) != 0)
+		if ((clear_flags & GS_CLEAR_DEPTH) != 0) {
 			flags |= D3D11_CLEAR_DEPTH;
-		if ((clear_flags & GS_CLEAR_STENCIL) != 0)
+		}
+		if ((clear_flags & GS_CLEAR_STENCIL) != 0) {
 			flags |= D3D11_CLEAR_STENCIL;
+		}
 
-		if (flags && device->curZStencilBuffer->view)
+		if (flags && device->curZStencilBuffer->view) {
 			device->context->ClearDepthStencilView(device->curZStencilBuffer->view, flags, depth, stencil);
+		}
 	}
 }
 
@@ -2341,8 +2428,9 @@ void device_flush(gs_device_t *device)
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
 {
-	if (mode == device->rasterState.cullMode)
+	if (mode == device->rasterState.cullMode) {
 		return;
+	}
 
 	device->rasterState.cullMode = mode;
 	device->rasterStateChanged = true;
@@ -2355,8 +2443,9 @@ enum gs_cull_mode device_get_cull_mode(const gs_device_t *device)
 
 void device_enable_blending(gs_device_t *device, bool enable)
 {
-	if (enable == device->blendState.blendEnabled)
+	if (enable == device->blendState.blendEnabled) {
 		return;
+	}
 
 	device->blendState.blendEnabled = enable;
 	device->blendStateChanged = true;
@@ -2364,8 +2453,9 @@ void device_enable_blending(gs_device_t *device, bool enable)
 
 void device_enable_depth_test(gs_device_t *device, bool enable)
 {
-	if (enable == device->zstencilState.depthEnabled)
+	if (enable == device->zstencilState.depthEnabled) {
 		return;
+	}
 
 	device->zstencilState.depthEnabled = enable;
 	device->zstencilStateChanged = true;
@@ -2373,8 +2463,9 @@ void device_enable_depth_test(gs_device_t *device, bool enable)
 
 void device_enable_stencil_test(gs_device_t *device, bool enable)
 {
-	if (enable == device->zstencilState.stencilEnabled)
+	if (enable == device->zstencilState.stencilEnabled) {
 		return;
+	}
 
 	device->zstencilState.stencilEnabled = enable;
 	device->zstencilStateChanged = true;
@@ -2382,8 +2473,9 @@ void device_enable_stencil_test(gs_device_t *device, bool enable)
 
 void device_enable_stencil_write(gs_device_t *device, bool enable)
 {
-	if (enable == device->zstencilState.stencilWriteEnabled)
+	if (enable == device->zstencilState.stencilWriteEnabled) {
 		return;
+	}
 
 	device->zstencilState.stencilWriteEnabled = enable;
 	device->zstencilStateChanged = true;
@@ -2392,8 +2484,9 @@ void device_enable_stencil_write(gs_device_t *device, bool enable)
 void device_enable_color(gs_device_t *device, bool red, bool green, bool blue, bool alpha)
 {
 	if (device->blendState.redEnabled == red && device->blendState.greenEnabled == green &&
-	    device->blendState.blueEnabled == blue && device->blendState.alphaEnabled == alpha)
+	    device->blendState.blueEnabled == blue && device->blendState.alphaEnabled == alpha) {
 		return;
+	}
 
 	device->blendState.redEnabled = red;
 	device->blendState.greenEnabled = green;
@@ -2405,8 +2498,9 @@ void device_enable_color(gs_device_t *device, bool red, bool green, bool blue, b
 void device_blend_function(gs_device_t *device, enum gs_blend_type src, enum gs_blend_type dest)
 {
 	if (device->blendState.srcFactorC == src && device->blendState.destFactorC == dest &&
-	    device->blendState.srcFactorA == src && device->blendState.destFactorA == dest)
+	    device->blendState.srcFactorA == src && device->blendState.destFactorA == dest) {
 		return;
+	}
 
 	device->blendState.srcFactorC = src;
 	device->blendState.destFactorC = dest;
@@ -2419,8 +2513,9 @@ void device_blend_function_separate(gs_device_t *device, enum gs_blend_type src_
 				    enum gs_blend_type src_a, enum gs_blend_type dest_a)
 {
 	if (device->blendState.srcFactorC == src_c && device->blendState.destFactorC == dest_c &&
-	    device->blendState.srcFactorA == src_a && device->blendState.destFactorA == dest_a)
+	    device->blendState.srcFactorA == src_a && device->blendState.destFactorA == dest_a) {
 		return;
+	}
 
 	device->blendState.srcFactorC = src_c;
 	device->blendState.destFactorC = dest_c;
@@ -2431,8 +2526,9 @@ void device_blend_function_separate(gs_device_t *device, enum gs_blend_type src_
 
 void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
 {
-	if (device->blendState.op == op)
+	if (device->blendState.op == op) {
 		return;
+	}
 
 	device->blendState.op = op;
 	device->blendStateChanged = true;
@@ -2440,8 +2536,9 @@ void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
 
 void device_depth_function(gs_device_t *device, enum gs_depth_test test)
 {
-	if (device->zstencilState.depthFunc == test)
+	if (device->zstencilState.depthFunc == test) {
 		return;
+	}
 
 	device->zstencilState.depthFunc = test;
 	device->zstencilStateChanged = true;
@@ -2449,8 +2546,9 @@ void device_depth_function(gs_device_t *device, enum gs_depth_test test)
 
 static inline void update_stencilside_test(gs_device_t *device, StencilSide &side, gs_depth_test test)
 {
-	if (side.test == test)
+	if (side.test == test) {
 		return;
+	}
 
 	side.test = test;
 	device->zstencilStateChanged = true;
@@ -2460,17 +2558,20 @@ void device_stencil_function(gs_device_t *device, enum gs_stencil_side side, enu
 {
 	int sideVal = (int)side;
 
-	if (sideVal & GS_STENCIL_FRONT)
+	if (sideVal & GS_STENCIL_FRONT) {
 		update_stencilside_test(device, device->zstencilState.stencilFront, test);
-	if (sideVal & GS_STENCIL_BACK)
+	}
+	if (sideVal & GS_STENCIL_BACK) {
 		update_stencilside_test(device, device->zstencilState.stencilBack, test);
+	}
 }
 
 static inline void update_stencilside_op(gs_device_t *device, StencilSide &side, enum gs_stencil_op_type fail,
 					 enum gs_stencil_op_type zfail, enum gs_stencil_op_type zpass)
 {
-	if (side.fail == fail && side.zfail == zfail && side.zpass == zpass)
+	if (side.fail == fail && side.zfail == zfail && side.zpass == zpass) {
 		return;
+	}
 
 	side.fail = fail;
 	side.zfail = zfail;
@@ -2483,10 +2584,12 @@ void device_stencil_op(gs_device_t *device, enum gs_stencil_side side, enum gs_s
 {
 	int sideVal = (int)side;
 
-	if (sideVal & GS_STENCIL_FRONT)
+	if (sideVal & GS_STENCIL_FRONT) {
 		update_stencilside_op(device, device->zstencilState.stencilFront, fail, zfail, zpass);
-	if (sideVal & GS_STENCIL_BACK)
+	}
+	if (sideVal & GS_STENCIL_BACK) {
 		update_stencilside_op(device, device->zstencilState.stencilBack, fail, zfail, zpass);
+	}
 }
 
 void device_set_viewport(gs_device_t *device, int x, int y, int width, int height)
@@ -2588,8 +2691,9 @@ void device_projection_push(gs_device_t *device)
 
 void device_projection_pop(gs_device_t *device)
 {
-	if (device->projStack.empty())
+	if (device->projStack.empty()) {
 		return;
+	}
 
 	const mat4float &mat = device->projStack.back();
 	memcpy(&device->curProjMatrix, &mat, sizeof(matrix4));
@@ -2598,8 +2702,9 @@ void device_projection_pop(gs_device_t *device)
 
 void gs_swapchain_destroy(gs_swapchain_t *swapchain)
 {
-	if (swapchain->device->curSwapChain == swapchain)
+	if (swapchain->device->curSwapChain == swapchain) {
 		device_load_swapchain(swapchain->device, nullptr);
+	}
 
 	delete swapchain;
 }
@@ -2611,24 +2716,27 @@ void gs_texture_destroy(gs_texture_t *tex)
 
 uint32_t gs_texture_get_width(const gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return 0;
+	}
 
 	return static_cast<const gs_texture_2d *>(tex)->width;
 }
 
 uint32_t gs_texture_get_height(const gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return 0;
+	}
 
 	return static_cast<const gs_texture_2d *>(tex)->height;
 }
 
 enum gs_color_format gs_texture_get_color_format(const gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return GS_UNKNOWN;
+	}
 
 	return static_cast<const gs_texture_2d *>(tex)->format;
 }
@@ -2637,15 +2745,17 @@ bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 {
 	HRESULT hr;
 
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return false;
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(tex);
 
 	D3D11_MAPPED_SUBRESOURCE map;
 	hr = tex2d->device->context->Map(tex2d->texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return false;
+	}
 
 	*ptr = (uint8_t *)map.pData;
 	*linesize = map.RowPitch;
@@ -2654,8 +2764,9 @@ bool gs_texture_map(gs_texture_t *tex, uint8_t **ptr, uint32_t *linesize)
 
 void gs_texture_unmap(gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return;
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(tex);
 	tex2d->device->context->Unmap(tex2d->texture, 0);
@@ -2663,8 +2774,9 @@ void gs_texture_unmap(gs_texture_t *tex)
 
 void *gs_texture_get_obj(gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return nullptr;
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(tex);
 	return tex2d->texture.Get();
@@ -2677,8 +2789,9 @@ void gs_cubetexture_destroy(gs_texture_t *cubetex)
 
 uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 {
-	if (cubetex->type != GS_TEXTURE_CUBE)
+	if (cubetex->type != GS_TEXTURE_CUBE) {
 		return 0;
+	}
 
 	const gs_texture_2d *tex = static_cast<const gs_texture_2d *>(cubetex);
 	return tex->width;
@@ -2686,8 +2799,9 @@ uint32_t gs_cubetexture_get_size(const gs_texture_t *cubetex)
 
 enum gs_color_format gs_cubetexture_get_color_format(const gs_texture_t *cubetex)
 {
-	if (cubetex->type != GS_TEXTURE_CUBE)
+	if (cubetex->type != GS_TEXTURE_CUBE) {
 		return GS_UNKNOWN;
+	}
 
 	const gs_texture_2d *tex = static_cast<const gs_texture_2d *>(cubetex);
 	return tex->format;
@@ -2749,8 +2863,9 @@ enum gs_color_format gs_stagesurface_get_color_format(const gs_stagesurf_t *stag
 bool gs_stagesurface_map(gs_stagesurf_t *stagesurf, uint8_t **data, uint32_t *linesize)
 {
 	D3D11_MAPPED_SUBRESOURCE map;
-	if (FAILED(stagesurf->device->context->Map(stagesurf->texture, 0, D3D11_MAP_READ, 0, &map)))
+	if (FAILED(stagesurf->device->context->Map(stagesurf->texture, 0, D3D11_MAP_READ, 0, &map))) {
 		return false;
+	}
 
 	*data = (uint8_t *)map.pData;
 	*linesize = map.RowPitch;
@@ -2769,21 +2884,26 @@ void gs_zstencil_destroy(gs_zstencil_t *zstencil)
 
 void gs_samplerstate_destroy(gs_samplerstate_t *samplerstate)
 {
-	if (!samplerstate)
+	if (!samplerstate) {
 		return;
+	}
 
-	if (samplerstate->device)
-		for (int i = 0; i < GS_MAX_TEXTURES; i++)
-			if (samplerstate->device->curSamplers[i] == samplerstate)
+	if (samplerstate->device) {
+		for (int i = 0; i < GS_MAX_TEXTURES; i++) {
+			if (samplerstate->device->curSamplers[i] == samplerstate) {
 				samplerstate->device->curSamplers[i] = nullptr;
+			}
+		}
+	}
 
 	delete samplerstate;
 }
 
 void gs_vertexbuffer_destroy(gs_vertbuffer_t *vertbuffer)
 {
-	if (vertbuffer && vertbuffer->device->lastVertexBuffer == vertbuffer)
+	if (vertbuffer && vertbuffer->device->lastVertexBuffer == vertbuffer) {
 		vertbuffer->device->lastVertexBuffer = nullptr;
+	}
 	delete vertbuffer;
 }
 
@@ -2797,17 +2917,21 @@ static inline void gs_vertexbuffer_flush_internal(gs_vertbuffer_t *vertbuffer, c
 		return;
 	}
 
-	if (data->points)
+	if (data->points) {
 		vertbuffer->FlushBuffer(vertbuffer->vertexBuffer, data->points, sizeof(vec3));
+	}
 
-	if (vertbuffer->normalBuffer && data->normals)
+	if (vertbuffer->normalBuffer && data->normals) {
 		vertbuffer->FlushBuffer(vertbuffer->normalBuffer, data->normals, sizeof(vec3));
+	}
 
-	if (vertbuffer->tangentBuffer && data->tangents)
+	if (vertbuffer->tangentBuffer && data->tangents) {
 		vertbuffer->FlushBuffer(vertbuffer->tangentBuffer, data->tangents, sizeof(vec3));
+	}
 
-	if (vertbuffer->colorBuffer && data->colors)
+	if (vertbuffer->colorBuffer && data->colors) {
 		vertbuffer->FlushBuffer(vertbuffer->colorBuffer, data->colors, sizeof(uint32_t));
+	}
 
 	for (size_t i = 0; i < num_tex; i++) {
 		gs_tvertarray &tv = data->tvarray[i];
@@ -2839,13 +2963,15 @@ static inline void gs_indexbuffer_flush_internal(gs_indexbuffer_t *indexbuffer, 
 {
 	HRESULT hr;
 
-	if (!indexbuffer->dynamic)
+	if (!indexbuffer->dynamic) {
 		return;
+	}
 
 	D3D11_MAPPED_SUBRESOURCE map;
 	hr = indexbuffer->device->context->Map(indexbuffer->indexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &map);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return;
+	}
 
 	memcpy(map.pData, data, indexbuffer->num * indexbuffer->indexSize);
 
@@ -2904,8 +3030,9 @@ bool gs_timer_get_data(gs_timer_t *timer, uint64_t *ticks)
 	} while (hr_end == S_FALSE);
 
 	const bool succeeded = SUCCEEDED(hr_begin) && SUCCEEDED(hr_end);
-	if (succeeded)
+	if (succeeded) {
 		*ticks = end - begin;
+	}
 
 	return succeeded;
 }
@@ -3025,15 +3152,18 @@ extern "C" EXPORT void *gs_texture_get_dc(gs_texture_t *tex)
 {
 	HDC hDC = nullptr;
 
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return nullptr;
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(tex);
-	if (!TextureGDICompatible(tex2d, "gs_texture_get_dc"))
+	if (!TextureGDICompatible(tex2d, "gs_texture_get_dc")) {
 		return nullptr;
+	}
 
-	if (!tex2d->gdiSurface)
+	if (!tex2d->gdiSurface) {
 		return nullptr;
+	}
 
 	tex2d->gdiSurface->GetDC(true, &hDC);
 	return hDC;
@@ -3041,12 +3171,14 @@ extern "C" EXPORT void *gs_texture_get_dc(gs_texture_t *tex)
 
 extern "C" EXPORT void gs_texture_release_dc(gs_texture_t *tex)
 {
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return;
+	}
 
 	gs_texture_2d *tex2d = static_cast<gs_texture_2d *>(tex);
-	if (!TextureGDICompatible(tex2d, "gs_texture_release_dc"))
+	if (!TextureGDICompatible(tex2d, "gs_texture_release_dc")) {
 		return;
+	}
 
 	tex2d->gdiSurface->ReleaseDC(nullptr);
 }
@@ -3084,8 +3216,9 @@ extern "C" EXPORT gs_texture_t *device_texture_open_nt_shared(gs_device_t *devic
 extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return GS_INVALID_HANDLE;
+	}
 
 	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
 }
@@ -3108,15 +3241,18 @@ extern "C" EXPORT gs_texture_t *device_texture_wrap_obj(gs_device_t *device, voi
 int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return -1;
+	}
 
-	if (tex2d->acquired)
+	if (tex2d->acquired) {
 		return 0;
+	}
 
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
-	if (!keyedMutex)
+	if (!keyedMutex) {
 		return -1;
+	}
 
 	HRESULT hr = keyedMutex->AcquireSync(key, ms);
 	if (hr == S_OK) {
@@ -3132,15 +3268,18 @@ int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex, uint64_t key)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
-	if (tex->type != GS_TEXTURE_2D)
+	if (tex->type != GS_TEXTURE_2D) {
 		return -1;
+	}
 
-	if (!tex2d->acquired)
+	if (!tex2d->acquired) {
 		return 0;
+	}
 
 	ComQIPtr<IDXGIKeyedMutex> keyedMutex(tex2d->texture);
-	if (!keyedMutex)
+	if (!keyedMutex) {
 		return -1;
+	}
 
 	HRESULT hr = keyedMutex->ReleaseSync(key);
 	if (hr == S_OK) {
@@ -3154,8 +3293,9 @@ extern "C" EXPORT int device_texture_release_sync(gs_texture_t *tex, uint64_t ke
 extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device, gs_texture_t **p_tex_y, gs_texture_t **p_tex_uv,
 						  uint32_t width, uint32_t height, uint32_t flags)
 {
-	if (!device->nv12Supported)
+	if (!device->nv12Supported) {
 		return false;
+	}
 
 	*p_tex_y = nullptr;
 	*p_tex_uv = nullptr;
@@ -3188,8 +3328,9 @@ extern "C" EXPORT bool device_texture_create_nv12(gs_device_t *device, gs_textur
 extern "C" EXPORT bool device_texture_create_p010(gs_device_t *device, gs_texture_t **p_tex_y, gs_texture_t **p_tex_uv,
 						  uint32_t width, uint32_t height, uint32_t flags)
 {
-	if (!device->p010Supported)
+	if (!device->p010Supported) {
 		return false;
+	}
 
 	*p_tex_y = nullptr;
 	*p_tex_uv = nullptr;

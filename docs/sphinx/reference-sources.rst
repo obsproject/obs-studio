@@ -479,7 +479,15 @@ Source Definition Structure (obs_source_info)
    - **OBS_ICON_TYPE_TEXT**            - Text
    - **OBS_ICON_TYPE_MEDIA**           - Media
    - **OBS_ICON_TYPE_BROWSER**         - Browser
-   - **OBS_ICON_TYPE_CUSTOM**          - Custom (not implemented yet)
+   - **OBS_ICON_TYPE_CUSTOM**          - Custom
+
+.. member:: const char *(*obs_source_info.get_dark_icon)(void *type_data)
+
+   Gets the icon file path used for dark themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
+
+.. member:: const char *(*obs_source_info.get_light_icon)(void *type_data)
+
+   Gets the icon file path used for light themes. Make sure icon_type is set to OBS_ICON_TYPE_CUSTOM.
 
 .. member:: void (*obs_source_info.media_play_pause)(void *data, bool pause)
 
@@ -968,6 +976,8 @@ General Source Functions
    Gets/sets the hidden property that determines whether it should be hidden from the user.
    Used when the source is still alive but should not be referenced.
 
+   .. deprecated:: 33.0
+
 ---------------------
 
 .. function:: uint32_t obs_source_get_output_flags(const obs_source_t *source)
@@ -1202,11 +1212,24 @@ General Source Functions
 .. function:: void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
               enum obs_monitoring_type obs_source_get_monitoring_type(obs_source_t *source)
 
+   .. deprecated:: 33.0
+   Use :c:func:`obs_source_set_monitoring_enabled` and :c:func:`obs_source_get_monitoring_enabled` instead.
+
    Sets/gets the desktop audio monitoring type.
 
    :param order: | OBS_MONITORING_TYPE_NONE - Do not monitor
                  | OBS_MONITORING_TYPE_MONITOR_ONLY - Send to monitor device, no outputs
                  | OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT - Send to monitor device and outputs
+
+---------------------
+
+.. function:: void obs_source_set_monitoring_enabled(obs_source_t *source, bool enable)
+              bool obs_source_get_monitoring_enabled(const obs_source_t *source)
+              
+
+   Sets/gets the audio monitoring enabled state for the source.
+
+   .. versionadded:: 33.0
 
 ---------------------
 
@@ -1434,6 +1457,18 @@ General Source Functions
 .. function:: enum obs_icon_type obs_source_get_icon_type(const char *id)
 
    Calls the :c:member:`obs_source_info.icon_type` to get the icon type.
+
+---------------------
+
+.. function:: const char *obs_source_get_dark_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_dark_icon` to get the dark icon.
+
+---------------------
+
+.. function:: const char *obs_source_get_light_icon(const char *id)
+
+   Calls the :c:member:`obs_source_info.get_light_icon` to get the light icon.
 
 ---------------------
 

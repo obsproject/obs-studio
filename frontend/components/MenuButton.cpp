@@ -26,10 +26,11 @@ void MenuButton::keyPressEvent(QKeyEvent *event)
 void MenuButton::mousePressEvent(QMouseEvent *event)
 {
 	if (menu()) {
-		if (width() - event->pos().x() <= 30)
+		if (width() - event->pos().x() <= 30) {
 			showMenu();
-		else
+		} else {
 			setDown(true);
+		}
 	} else {
 		QPushButton::mousePressEvent(event);
 	}

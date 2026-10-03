@@ -78,9 +78,7 @@ private:
 
 	bool showToolbar{true};
 
-	QFrame *mixerFrame{nullptr};
 	QVBoxLayout *mainLayout{nullptr};
-	QVBoxLayout *mixerLayout{nullptr};
 
 	QStackedWidget *stackedMixerArea{nullptr};
 	QToolBar *mixerToolbar{nullptr};

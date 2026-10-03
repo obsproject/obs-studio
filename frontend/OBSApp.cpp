@@ -30,9 +30,6 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-#include <qpa/qplatformnativeinterface.h>
-#endif
 #endif
 #include <qt-wrappers.hpp>
 
@@ -48,9 +45,9 @@
 #endif
 
 #include <chrono>
+#include <sstream>
 
 #ifdef _WIN32
-#include <sstream>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -81,12 +78,43 @@ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
+constexpr double kDefaultSnapDistance = 5.0;
+
 namespace {
 
 typedef struct UncleanLaunchAction {
 	bool useSafeMode = false;
 	bool sendCrashReport = false;
 } UncleanLaunchAction;
+
+enum class PluginFailureAction { Continue, OpenPluginManager };
+
+PluginFailureAction handlePluginFailure()
+{
+	QMessageBox pluginWarning;
+
+	pluginWarning.setIcon(QMessageBox::Warning);
+
+	pluginWarning.setWindowTitle(QTStr("PluginFailure.Dialog.Title"));
+	pluginWarning.setText(QTStr("PluginFailure.Labels.Text"));
+
+	QPushButton *continueButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Continue"), QMessageBox::RejectRole);
+	QPushButton *handleButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Open"), QMessageBox::AcceptRole);
+
+	pluginWarning.setDefaultButton(continueButton);
+
+	pluginWarning.exec();
+
+	bool openPluginManager = pluginWarning.clickedButton() == handleButton;
+
+	if (openPluginManager) {
+		return PluginFailureAction::OpenPluginManager;
+	} else {
+		return PluginFailureAction::Continue;
+	}
+}
 
 UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 {
@@ -97,9 +125,7 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 	QMessageBox crashWarning;
 
 	crashWarning.setIcon(QMessageBox::Warning);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
 	crashWarning.setOption(QMessageBox::Option::DontUseNativeDialog);
-#endif
 	crashWarning.setWindowTitle(QTStr("CrashHandling.Dialog.Title"));
 	crashWarning.setText(QTStr("CrashHandling.Labels.Text"));
 
@@ -143,8 +169,9 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 QAccessibleInterface *alignmentSelectorFactory(const QString &classname, QObject *object)
 {
 	if (classname == QLatin1String("AlignmentSelector")) {
-		if (auto *w = qobject_cast<AlignmentSelector *>(object))
+		if (auto *w = qobject_cast<AlignmentSelector *>(object)) {
 			return new AccessibleAlignmentSelector(w);
+		}
 	}
 	return nullptr;
 }
@@ -154,8 +181,9 @@ QObject *CreateShortcutFilter()
 {
 	return new OBSEventFilter([](QObject *obj, QEvent *event) {
 		auto mouse_event = [](QMouseEvent &event) {
-			if (!App()->HotkeysEnabledInFocus() && event.button() != Qt::LeftButton)
+			if (!App()->HotkeysEnabledInFocus() && event.button() != Qt::LeftButton) {
 				return true;
+			}
 
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event.type() == QEvent::MouseButtonPress;
@@ -359,7 +387,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ScreenSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "SourceSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "CenterSnapping", false);
-	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", 10.0);
+	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", kDefaultSnapDistance);
 	config_set_default_bool(userConfig, "BasicWindow", "SpacingHelpersEnabled", true);
 	config_set_default_bool(userConfig, "BasicWindow", "RecordWhenStreaming", false);
 	config_set_default_bool(userConfig, "BasicWindow", "KeepRecordingWhenStreamStops", false);
@@ -407,39 +435,49 @@ static bool MakeUserDirs()
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/basic") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/basic") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
+	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/logs") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
+	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/profiler_data") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
+	}
 
 #ifdef _WIN32
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/crashes") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
+	}
 #endif
 
-#ifdef WHATSNEW_ENABLED
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/updates") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/updates") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
-#endif
+	}
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
 		return false;
-	if (!do_mkdir(path))
+	}
+	if (!do_mkdir(path)) {
 		return false;
+	}
 
 	return true;
 }
@@ -492,8 +530,9 @@ static bool MakeUserProfileDirs()
 
 bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 {
-	if (!layout)
+	if (!layout) {
 		return false;
+	}
 
 	if (astrcmpi(layout, "horizontaltop") == 0) {
 		config_set_int(userConfig, "BasicWindow", "MultiviewLayout",
@@ -615,7 +654,8 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t 
 
 void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 {
-	bool hasChanges = false;
+	bool hasUserConfigChanges = false;
+	bool hasGlobalConfigChanges = false;
 
 	const uint32_t v19 = MAKE_SEMANTIC_VERSION(19, 0, 0);
 	const uint32_t v21 = MAKE_SEMANTIC_VERSION(21, 0, 0);
@@ -631,7 +671,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			bool useOldDefaults = lastVersion && lastVersion < version;
 			config_set_bool(userConfig, "General", configKey.c_str(), useOldDefaults);
 
-			hasChanges = true;
+			hasUserConfigChanges = true;
 		}
 	}
 
@@ -640,7 +680,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 
 		bool layoutUpdated = UpdatePre22MultiviewLayout(layout);
 
-		hasChanges = hasChanges | layoutUpdated;
+		hasUserConfigChanges = hasUserConfigChanges | layoutUpdated;
 	}
 
 	if (lastVersion && lastVersion < v24) {
@@ -650,11 +690,33 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			config_set_string(userConfig, "General", "HotkeyFocusType", "DisableHotkeysInFocus");
 		}
 
-		hasChanges = true;
+		hasUserConfigChanges = true;
 	}
 
-	if (hasChanges) {
+	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(33, 0, 0)) {
+		bool migratedUserSettings = config_has_user_value(appConfig, "General", "Pre33.0Migrated");
+
+		if (!migratedUserSettings) {
+			double currentSnapDistance = config_get_double(userConfig, "BasicWindow", "SnapDistance");
+
+			if (currentSnapDistance == 10.0) {
+				double newDefaultSnapDistance = kDefaultSnapDistance;
+				config_set_double(userConfig, "BasicWindow", "SnapDistance", newDefaultSnapDistance);
+			}
+
+			config_set_bool(appConfig, "General", "Pre33.0Migrated", true);
+
+			hasUserConfigChanges = true;
+			hasGlobalConfigChanges = true;
+		}
+	}
+
+	if (hasUserConfigChanges) {
 		userConfig.SaveSafe("tmp");
+	}
+
+	if (hasGlobalConfigChanges) {
+		appConfig.SaveSafe("tmp");
 	}
 }
 
@@ -705,14 +767,16 @@ bool OBSApp::InitLocale()
 
 	const char *lang = config_get_string(userConfig, "General", "Language");
 	bool userLocale = config_has_user_value(userConfig, "General", "Language");
-	if (!userLocale || !lang || lang[0] == '\0')
+	if (!userLocale || !lang || lang[0] == '\0') {
 		lang = DEFAULT_LANG;
+	}
 
 	locale = lang;
 
 	// set basic default application locale
-	if (!locale.empty())
+	if (!locale.empty()) {
 		QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
+	}
 
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
@@ -728,30 +792,35 @@ bool OBSApp::InitLocale()
 
 	bool defaultLang = astrcmpi(lang, DEFAULT_LANG) == 0;
 
-	if (userLocale && defaultLang)
+	if (userLocale && defaultLang) {
 		return true;
+	}
 
 	if (!userLocale && defaultLang) {
 		for (auto &locale_ : GetPreferredLocales()) {
-			if (locale_ == lang)
+			if (locale_ == lang) {
 				return true;
+			}
 
 			stringstream file;
 			file << "locale/" << locale_ << ".ini";
 
 			string path;
-			if (!GetDataFilePath(file.str().c_str(), path))
+			if (!GetDataFilePath(file.str().c_str(), path)) {
 				continue;
+			}
 
-			if (!text_lookup_add(textLookup, path.c_str()))
+			if (!text_lookup_add(textLookup, path.c_str())) {
 				continue;
+			}
 
 			blog(LOG_INFO, "Using preferred locale '%s'", locale_.c_str());
 			locale = locale_;
 
 			// set application default locale to the new chosen one
-			if (!locale.empty())
+			if (!locale.empty()) {
 				QLocale::setDefault(QLocale(QString::fromStdString(locale).replace('-', '_')));
+			}
 
 			return true;
 		}
@@ -764,8 +833,9 @@ bool OBSApp::InitLocale()
 
 	string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
-		if (!text_lookup_add(textLookup, path.c_str()))
+		if (!text_lookup_add(textLookup, path.c_str())) {
 			blog(LOG_ERROR, "Failed to add locale file '%s'", path.c_str());
+		}
 	} else {
 		blog(LOG_ERROR, "Could not find locale file '%s'", file.str().c_str());
 	}
@@ -788,11 +858,13 @@ void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 
 	for (const JsonBranch &json_branch : branches) {
 #ifdef _WIN32
-		if (!json_branch.windows)
+		if (!json_branch.windows) {
 			continue;
+		}
 #elif defined(__APPLE__)
-		if (!json_branch.macos)
+		if (!json_branch.macos) {
 			continue;
+		}
 #endif
 
 		UpdateBranch branch = {
@@ -826,8 +898,9 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 	}
 
 	ParseBranchesJson(branchesText, out, error);
-	if (error.empty())
+	if (error.empty()) {
 		return !out.empty();
+	}
 
 fail:
 	blog(LOG_WARNING, "Loading branches from file failed: %s", error.c_str());
@@ -848,8 +921,9 @@ void OBSApp::SetBranchData(const string &data)
 		return;
 	}
 
-	if (!result.empty())
+	if (!result.empty()) {
 		updateBranches = result;
+	}
 
 	branches_loaded = true;
 #else
@@ -866,16 +940,18 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (!branches_loaded) {
 		vector<UpdateBranch> result;
-		if (LoadBranchesFile(result))
+		if (LoadBranchesFile(result)) {
 			updateBranches = result;
+		}
 
 		branches_loaded = true;
 	}
 #endif
 
 	/* Copy additional branches to result (if any) */
-	if (!updateBranches.empty())
+	if (!updateBranches.empty()) {
 		out.insert(out.end(), updateBranches.begin(), updateBranches.end());
+	}
 
 	return out;
 }
@@ -889,8 +965,9 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 
 	/* fix float handling */
 #if defined(Q_OS_UNIX)
-	if (!setlocale(LC_NUMERIC, "C"))
+	if (!setlocale(LC_NUMERIC, "C")) {
 		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
+	}
 #endif
 
 #ifndef _WIN32
@@ -929,6 +1006,7 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #endif
 
 	setDesktopFileName("com.obsproject.Studio");
+
 	pluginManager_ = std::make_unique<OBS::PluginManager>();
 }
 
@@ -1051,14 +1129,18 @@ void OBSApp::AppInit()
 
 	QAccessible::installFactory(alignmentSelectorFactory);
 
-	if (!MakeUserDirs())
+	if (!MakeUserDirs()) {
 		throw "Failed to create required user directories";
-	if (!InitGlobalConfig())
+	}
+	if (!InitGlobalConfig()) {
 		throw "Failed to initialize global config";
-	if (!InitLocale())
+	}
+	if (!InitLocale()) {
 		throw "Failed to load locale";
-	if (!InitTheme())
+	}
+	if (!InitTheme()) {
 		throw "Failed to load theme";
+	}
 
 	config_set_default_string(userConfig, "Basic", "Profile", Str("Untitled"));
 	config_set_default_string(userConfig, "Basic", "ProfileDir", Str("Untitled"));
@@ -1082,13 +1164,15 @@ void OBSApp::AppInit()
 
 #ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
-	if (disableAudioDucking)
+	if (disableAudioDucking) {
 		DisableAudioDucking(true);
+	}
 #endif
 
 #ifdef __APPLE__
-	if (config_get_bool(appConfig, "Video", "DisableOSXVSync"))
+	if (config_get_bool(appConfig, "Video", "DisableOSXVSync")) {
 		EnableOSXVSync(false);
+	}
 #endif
 
 	UpdateHotkeyFocusSetting(false);
@@ -1096,8 +1180,9 @@ void OBSApp::AppInit()
 	move_basic_to_profiles();
 	move_basic_to_scene_collections();
 
-	if (!MakeUserProfileDirs())
+	if (!MakeUserProfileDirs()) {
 		throw "Failed to create profile directories";
+	}
 }
 
 void OBSApp::checkForUncleanShutdown()
@@ -1135,8 +1220,9 @@ static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 {
 	char path[512];
 
-	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0)
+	if (GetAppConfigPath(path, sizeof(path), "obs-studio/plugin_config") <= 0) {
 		return false;
+	}
 
 	return obs_startup(locale, path, store);
 }
@@ -1159,8 +1245,9 @@ void OBSApp::UpdateHotkeyFocusSetting(bool resetState)
 		enableHotkeysOutOfFocus = false;
 	}
 
-	if (resetState)
+	if (resetState) {
 		ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+	}
 }
 
 void OBSApp::DisableHotkeys()
@@ -1181,7 +1268,7 @@ static void ui_task_handler(obs_task_t task, void *param, bool wait)
 		/* to get clang-format to behave */
 		task(param);
 	};
-	QMetaObject::invokeMethod(App(), "Exec", wait ? WaitConnection() : Qt::AutoConnection, Q_ARG(VoidFunc, doTask));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, wait ? WaitConnection() : Qt::AutoConnection, doTask);
 }
 
 bool OBSApp::OBSInit()
@@ -1192,11 +1279,9 @@ bool OBSApp::OBSInit()
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	if (QApplication::platformName() == "xcb") {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
 
@@ -1205,11 +1290,9 @@ bool OBSApp::OBSInit()
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_WAYLAND);
 		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
@@ -1218,18 +1301,15 @@ bool OBSApp::OBSInit()
 	}
 #endif
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-	QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-	obs_set_nix_platform_display(native->nativeResourceForIntegration("display"));
-#endif
 #endif
 
 #ifdef __APPLE__
 	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 #endif
 
-	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
+	if (!StartupOBS(locale.c_str(), GetProfilerNameStore())) {
 		return false;
+	}
 
 	libobs_initialized = true;
 
@@ -1262,23 +1342,11 @@ bool OBSApp::OBSInit()
 
 	setQuitOnLastWindowClosed(false);
 
+	thumbnailManager = new ThumbnailManager(this);
+
 	mainWindow = new OBSBasic();
 
 	mainWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-
-#ifndef __APPLE__
-	connect(QApplication::instance(), &QApplication::aboutToQuit, this, [this]() {
-		if (mainWindow) {
-			QPointer<OBSBasic> basicWindow = static_cast<OBSBasic *>(mainWindow.get());
-
-			basicWindow->closeWindow();
-		}
-
-		if (libobs_initialized) {
-			applicationShutdown();
-		}
-	});
-#endif
 
 	mainWindow->OBSInit();
 
@@ -1309,10 +1377,11 @@ string OBSApp::GetVersionString(bool platform) const
 	if (platform) {
 		ver << " (";
 #ifdef _WIN32
-		if (sizeof(void *) == 8)
+		if (sizeof(void *) == 8) {
 			ver << "64-bit, ";
-		else
+		} else {
 			ver << "32-bit, ";
+		}
 
 		ver << "windows)";
 #elif __APPLE__
@@ -1427,8 +1496,9 @@ OBS::LogFileState OBSApp::getLogFileState(OBS::LogFileType type) const
 bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 {
 	for (obs_frontend_translate_ui_cb cb : translatorHooks) {
-		if (cb(lookupVal, out))
+		if (cb(lookupVal, out)) {
 			return true;
+		}
 	}
 
 	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
@@ -1451,28 +1521,33 @@ bool OBSApp::notify(QObject *receiver, QEvent *e)
 	QWindow *window;
 	int windowType;
 
-	if (!receiver->isWidgetType())
+	if (!receiver->isWidgetType()) {
 		goto skip;
+	}
 
-	if (e->type() != QEvent::Show)
+	if (e->type() != QEvent::Show) {
 		goto skip;
+	}
 
 	w = qobject_cast<QWidget *>(receiver);
 
-	if (!w->isWindow())
+	if (!w->isWindow()) {
 		goto skip;
+	}
 
 	window = w->windowHandle();
-	if (!window)
+	if (!window) {
 		goto skip;
+	}
 
 	windowType = window->flags() & Qt::WindowType::WindowType_Mask;
 
 	if (windowType == Qt::WindowType::Dialog || windowType == Qt::WindowType::Window ||
 	    windowType == Qt::WindowType::Tool) {
 		OBSBasic *main = OBSBasic::Get();
-		if (main)
+		if (main) {
 			main->SetDisplayAffinity(window);
+		}
 	}
 
 skip:
@@ -1503,12 +1578,14 @@ static void FindBestFilename(string &strPath, bool noSpace)
 {
 	int num = 2;
 
-	if (!os_file_exists(strPath.c_str()))
+	if (!os_file_exists(strPath.c_str())) {
 		return;
+	}
 
 	const char *ext = strrchr(strPath.c_str(), '.');
-	if (!ext)
+	if (!ext) {
 		return;
+	}
 
 	int extStart = int(ext - strPath.c_str());
 	for (;;) {
@@ -1517,8 +1594,9 @@ static void FindBestFilename(string &strPath, bool noSpace)
 
 		numStr = noSpace ? "_" : " (";
 		numStr += to_string(num++);
-		if (!noSpace)
+		if (!noSpace) {
 			numStr += ")";
+		}
 
 		testPath.insert(extStart, numStr);
 
@@ -1534,8 +1612,9 @@ static void ensure_directory_exists(string &path)
 	replace(path.begin(), path.end(), '\\', '/');
 
 	size_t last = path.rfind('/');
-	if (last == string::npos)
+	if (last == string::npos) {
 		return;
+	}
 
 	string directory = path.substr(0, last);
 	os_mkdirs(directory.c_str());
@@ -1562,26 +1641,30 @@ string GetFormatString(const char *format, const char *prefix, const char *suffi
 	if (prefix && *prefix) {
 		string str_prefix = prefix;
 
-		if (str_prefix.back() != ' ')
+		if (str_prefix.back() != ' ') {
 			str_prefix += " ";
+		}
 
 		size_t insert_pos = 0;
 		size_t tmp;
 
 		tmp = f.find_last_of('/');
-		if (tmp != string::npos && tmp > insert_pos)
+		if (tmp != string::npos && tmp > insert_pos) {
 			insert_pos = tmp + 1;
+		}
 
 		tmp = f.find_last_of('\\');
-		if (tmp != string::npos && tmp > insert_pos)
+		if (tmp != string::npos && tmp > insert_pos) {
 			insert_pos = tmp + 1;
+		}
 
 		f.insert(insert_pos, str_prefix);
 	}
 
 	if (suffix && *suffix) {
-		if (*suffix != ' ')
+		if (*suffix != ' ') {
 			f += " ";
+		}
 		f += suffix;
 	}
 
@@ -1593,14 +1676,15 @@ string GetFormatString(const char *format, const char *prefix, const char *suffi
 string GetFormatExt(const char *container)
 {
 	string ext = container;
-	if (ext == "fragmented_mp4" || ext == "hybrid_mp4")
+	if (ext == "fragmented_mp4" || ext == "hybrid_mp4") {
 		ext = "mp4";
-	else if (ext == "fragmented_mov" || ext == "hybrid_mov")
+	} else if (ext == "fragmented_mov" || ext == "hybrid_mov") {
 		ext = "mov";
-	else if (ext == "hls")
+	} else if (ext == "hls") {
 		ext = "m3u8";
-	else if (ext == "mpegts")
+	} else if (ext == "mpegts") {
 		ext = "ts";
+	}
 
 	return ext;
 }
@@ -1612,10 +1696,11 @@ string GetOutputFilename(const char *path, const char *container, bool noSpace, 
 	os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
 
 	if (!dir) {
-		if (main->isVisible())
+		if (main->isVisible()) {
 			OBSMessageBox::warning(main, QTStr("Output.BadPath.Title"), QTStr("Output.BadPath.Text"));
-		else
+		} else {
 			main->SysTrayNotify(QTStr("Output.BadPath.Text"), QSystemTrayIcon::Warning);
+		}
 		return "";
 	}
 
@@ -1625,14 +1710,16 @@ string GetOutputFilename(const char *path, const char *container, bool noSpace, 
 	strPath += path;
 
 	char lastChar = strPath.back();
-	if (lastChar != '/' && lastChar != '\\')
+	if (lastChar != '/' && lastChar != '\\') {
 		strPath += "/";
+	}
 
 	string ext = GetFormatExt(container);
 	strPath += GenerateSpecifiedFilename(ext.c_str(), noSpace, format);
 	ensure_directory_exists(strPath);
-	if (!overwrite)
+	if (!overwrite) {
 		FindBestFilename(strPath, noSpace);
+	}
 
 	return strPath;
 }
@@ -1640,12 +1727,14 @@ string GetOutputFilename(const char *path, const char *container, bool noSpace, 
 vector<pair<string, string>> GetLocaleNames()
 {
 	string path;
-	if (!GetDataFilePath("locale.ini", path))
+	if (!GetDataFilePath("locale.ini", path)) {
 		throw "Could not find locale.ini path";
+	}
 
 	ConfigFile ini;
-	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0)
+	if (ini.Open(path.c_str(), CONFIG_OPEN_EXISTING) != 0) {
 		throw "Could not open locale.ini";
+	}
 
 	size_t sections = config_num_sections(ini);
 
@@ -1726,8 +1815,9 @@ bool GetFileSafeName(const char *name, std::string &file)
 	size_t len = os_utf8_to_wcs(name, base_len, nullptr, 0);
 	std::wstring wfile;
 
-	if (!len)
+	if (!len) {
 		return false;
+	}
 
 	wfile.resize(len);
 	os_utf8_to_wcs(name, base_len, &wfile[0], len + 1);
@@ -1742,12 +1832,14 @@ bool GetFileSafeName(const char *name, std::string &file)
 		}
 	}
 
-	if (wfile.size() == 0)
+	if (wfile.size() == 0) {
 		wfile = L"characters_only";
+	}
 
 	len = os_wcs_to_utf8(wfile.c_str(), wfile.size(), nullptr, 0);
-	if (!len)
+	if (!len) {
 		return false;
+	}
 
 	file.resize(len);
 	os_wcs_to_utf8(wfile.c_str(), wfile.size(), &file[0], len + 1);
@@ -1762,8 +1854,9 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 		path += extension;
 	}
 
-	if (!os_file_exists(path.c_str()))
+	if (!os_file_exists(path.c_str())) {
 		return true;
+	}
 
 	int index = 1;
 
@@ -1782,8 +1875,9 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 bool WindowPositionValid(QRect rect)
 {
 	for (QScreen *screen : QGuiApplication::screens()) {
-		if (screen->availableGeometry().intersects(rect))
+		if (screen->availableGeometry().intersects(rect)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -1943,8 +2037,9 @@ void OBSApp::applicationShutdown() noexcept
 {
 #ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(appConfig, "Audio", "DisableAudioDucking");
-	if (disableAudioDucking)
+	if (disableAudioDucking) {
 		DisableAudioDucking(false);
+	}
 #else
 	auto disconnectSignal = [this](std::array<int, 2> &fileDescriptor,
 				       QPointer<QSocketNotifier> &notifier) -> void {
@@ -1964,8 +2059,9 @@ void OBSApp::applicationShutdown() noexcept
 #ifdef __APPLE__
 	bool vsyncDisabled = config_get_bool(appConfig, "Video", "DisableOSXVSync");
 	bool resetVSync = config_get_bool(appConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDisabled && resetVSync)
+	if (vsyncDisabled && resetVSync) {
 		EnableOSXVSync(true);
+	}
 #endif
 
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
@@ -1982,16 +2078,27 @@ void OBSApp::addLogLine(int logLevel, const QString &message)
 	emit logLineAdded(logLevel, message);
 }
 
-void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
+void OBSApp::loadAppModules()
 {
-	pluginManager_->preLoad();
-	blog(LOG_INFO, "---------------------------------");
-	obs_load_all_modules2(&mfi);
-	blog(LOG_INFO, "---------------------------------");
-	obs_log_loaded_modules();
-	blog(LOG_INFO, "---------------------------------");
-	obs_post_load_modules();
-	pluginManager_->postLoad();
+	using PluginMode = OBS::PluginManager::Mode;
+	PluginMode mode = (disable_3p_plugins || safe_mode) ? PluginMode::CoreOnly : PluginMode::Full;
+	pluginManager_->setPluginMode(mode);
+
+	pluginManager_->loadAllPlugins(portable_mode);
+}
+
+void OBSApp::handlePluginLoadState()
+{
+	using PluginState = OBS::PluginManager::State;
+	PluginState loadState = pluginManager_->loadState();
+
+	if (loadState != PluginState::Success) {
+		PluginFailureAction action = handlePluginFailure();
+
+		if (action == PluginFailureAction::OpenPluginManager) {
+			pluginManagerOpenDialog();
+		}
+	}
 }
 
 void OBSApp::pluginManagerOpenDialog()
