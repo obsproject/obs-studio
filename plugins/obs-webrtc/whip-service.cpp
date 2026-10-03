@@ -28,7 +28,11 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 {
 	// For now, ensure maximum compatibility with webrtc peers
 	if (video_settings) {
-		obs_data_set_int(video_settings, "bf", 0);
+		const char *codec = obs_data_get_string(video_settings, "codec");
+		bool isAv1 = strcmp(codec, "av1") == 0;
+		if (!isAv1) {
+			obs_data_set_int(video_settings, "bf", 0);
+		}
 		obs_data_set_bool(video_settings, "repeat_headers", true);
 	}
 }
