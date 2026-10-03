@@ -1138,6 +1138,9 @@ void OBSApp::AppInit()
 	if (!InitLocale()) {
 		throw "Failed to load locale";
 	}
+	if (QLocale().textDirection() == Qt::RightToLeft) {
+		setLayoutDirection(Qt::RightToLeft);
+	}
 	if (!InitTheme()) {
 		throw "Failed to load theme";
 	}
