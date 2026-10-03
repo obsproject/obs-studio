@@ -999,7 +999,7 @@ static inline bool modifiers_match(obs_hotkey_binding_t *binding, uint32_t modif
 		return modifiers == modifiers_;
 }
 
-static inline bool is_pressed(obs_key_t key)
+static inline enum obs_hotkey_platform_pressed_state get_pressed_state(obs_key_t key)
 {
 	return obs_hotkeys_platform_is_pressed(obs->hotkeys.platform_context, key);
 }
@@ -1050,8 +1050,16 @@ static inline void handle_binding(obs_hotkey_binding_t *binding, uint32_t modifi
 	if ((!binding->modifiers_match && !modifiers_only) || !modifiers_match_)
 		goto reset;
 
-	if ((pressed && !*pressed) || (!pressed && !is_pressed(binding->key.key)))
+	if (pressed && !*pressed)
 		goto reset;
+
+	if (!pressed) {
+		enum obs_hotkey_platform_pressed_state pressed_state = get_pressed_state(binding->key.key);
+		if (pressed_state == OBS_HOTKEY_PLATFORM_UNKNOWN)
+			return;
+		if (pressed_state == OBS_HOTKEY_PLATFORM_NOT_PRESSED)
+			goto reset;
+	}
 
 	if (binding->pressed || no_press)
 		return;
@@ -1077,16 +1085,36 @@ static inline bool inject_hotkey(void *data, size_t idx, obs_hotkey_binding_t *b
 {
 	UNUSED_PARAMETER(idx);
 	struct obs_hotkey_internal_inject *event = data;
+	bool modifiers_match_ = modifiers_match(binding, event->hotkey.modifiers, event->strict_modifiers);
+	bool modifiers_only = binding->key.key == OBS_KEY_NONE;
+	bool key_matches = binding->key.key == event->hotkey.key;
 
-	if (modifiers_match(binding, event->hotkey.modifiers, event->strict_modifiers)) {
-		bool pressed = binding->key.key == event->hotkey.key && event->pressed;
-		if (binding->key.key == OBS_KEY_NONE)
-			pressed = true;
+	if (event->hotkey.key == OBS_KEY_NONE && binding->pressed && !modifiers_match_) {
+		release_pressed_binding(binding);
+		return true;
+	}
 
-		if (pressed) {
+	if (modifiers_only) {
+		if (event->pressed && modifiers_match_) {
 			binding->modifiers_match = true;
 			if (!binding->pressed)
 				press_released_binding(binding);
+		}
+
+		return true;
+	}
+
+	if (key_matches) {
+		if (event->pressed) {
+			if (!modifiers_match_)
+				return true;
+
+			binding->modifiers_match = true;
+			if (!binding->pressed)
+				press_released_binding(binding);
+
+		} else if (binding->pressed) {
+			release_pressed_binding(binding);
 		}
 	}
 
@@ -1118,6 +1146,7 @@ void obs_hotkey_enable_background_press(bool enable)
 
 struct obs_query_hotkeys_helper {
 	uint32_t modifiers;
+	bool modifiers_known;
 	bool no_press;
 	bool strict_modifiers;
 };
@@ -1127,7 +1156,21 @@ static inline bool query_hotkey(void *data, size_t idx, obs_hotkey_binding_t *bi
 	UNUSED_PARAMETER(idx);
 
 	struct obs_query_hotkeys_helper *param = (struct obs_query_hotkeys_helper *)data;
+	if (!param->modifiers_known)
+		return true;
+
 	handle_binding(binding, param->modifiers, param->no_press, param->strict_modifiers, NULL);
+
+	return true;
+}
+
+static inline bool query_modifier(obs_key_t key, uint32_t modifier, uint32_t *modifiers)
+{
+	enum obs_hotkey_platform_pressed_state pressed_state = get_pressed_state(key);
+	if (pressed_state == OBS_HOTKEY_PLATFORM_UNKNOWN)
+		return false;
+	if (pressed_state == OBS_HOTKEY_PLATFORM_PRESSED)
+		*modifiers |= modifier;
 
 	return true;
 }
@@ -1135,17 +1178,14 @@ static inline bool query_hotkey(void *data, size_t idx, obs_hotkey_binding_t *bi
 static inline void query_hotkeys()
 {
 	uint32_t modifiers = 0;
-	if (is_pressed(OBS_KEY_SHIFT))
-		modifiers |= INTERACT_SHIFT_KEY;
-	if (is_pressed(OBS_KEY_CONTROL))
-		modifiers |= INTERACT_CONTROL_KEY;
-	if (is_pressed(OBS_KEY_ALT))
-		modifiers |= INTERACT_ALT_KEY;
-	if (is_pressed(OBS_KEY_META))
-		modifiers |= INTERACT_COMMAND_KEY;
+	bool modifiers_known = query_modifier(OBS_KEY_SHIFT, INTERACT_SHIFT_KEY, &modifiers) &&
+			       query_modifier(OBS_KEY_CONTROL, INTERACT_CONTROL_KEY, &modifiers) &&
+			       query_modifier(OBS_KEY_ALT, INTERACT_ALT_KEY, &modifiers) &&
+			       query_modifier(OBS_KEY_META, INTERACT_COMMAND_KEY, &modifiers);
 
 	struct obs_query_hotkeys_helper param = {
 		modifiers,
+		modifiers_known,
 		obs->hotkeys.thread_disable_press,
 		obs->hotkeys.strict_modifiers,
 	};
