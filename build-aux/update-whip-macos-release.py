@@ -102,6 +102,9 @@ def main():
     if marker not in body:
         raise ValueError("Release notes no longer match the expected unsigned-release handoff")
     body = body.replace(marker, "with Developer ID signed and Apple-notarized Mac apps; Windows packages remain unsigned")
+    body = body.replace(
+        "**The public Mac archives remain ad-hoc-signed and unnotarized pending Apple notarization credentials.**",
+        "**The Mac archives are now Developer ID signed and Apple-notarized, with stapled tickets and verified Gatekeeper acceptance.**")
     body += "\n### Mac signing and runtime validation\n\n" + args.validation_notes.read_text().strip() + "\n\n"
     body += ("The original CI binaries and patched dependency are retained. `BUILD-PROVENANCE.json` keeps each "
              "original Mac artifact under `original_build_package` and records signing/notarization separately "
