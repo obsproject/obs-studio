@@ -166,6 +166,8 @@ EXPORT int os_safe_replace(const char *target_path, const char *from_path, const
 
 EXPORT char *os_generate_formatted_filename(const char *extension, bool space, const char *format);
 
+EXPORT size_t os_strftime_utf8(char *dst, size_t dst_size, const char *format, const struct tm *tm);
+
 struct os_inhibit_info;
 typedef struct os_inhibit_info os_inhibit_t;
 
