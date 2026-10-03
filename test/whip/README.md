@@ -39,14 +39,122 @@ macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
 require its runtime libraries. Building successfully does not certify live TURN
 operation.
 
-**Mac signing handoff:** the current releases use ad-hoc signing and are not
-Developer ID signed or Apple-notarized. Steve plans to set this up from his Mac.
-On 2026-10-03, the fork had no GitHub Actions repository secrets or environments
-configured. `build-aux/build-whip.py` sets `OBS_CODESIGN_IDENTITY=-`; the dedicated
-WHIP workflow does not invoke the existing upstream signing/notarization actions.
-Completing that integration and replacing the Mac release assets remains pending.
-The replacement packages must retain the patched WebRTC dependency; update the
-release checksums and provenance when their bytes change.
+**Mac signing handoff (updated 2026-10-03):** the public releases still contain
+ad-hoc-signed, unnotarized Mac packages. All four original Mac archives were
+downloaded and checked against the published checksums and `whip-build.json`.
+Local copies are now signed with Steve Seguin's Developer ID Application identity
+(team `H3CKR5XB3J`), secure timestamps, and hardened runtime. Strict verification
+passed for every nested Mach-O and bundle, with original entitlements preserved.
+Comparisons after removing signatures and normalizing the signature segment's VM
+allocation confirmed unchanged executable payloads, including patched libdatachannel.
+No source rebuild was needed.
+
+Apple notarization, stapling, Gatekeeper acceptance, and replacement of the public
+assets remain pending notarization credentials. The Developer ID certificate,
+encrypted certificate password, and identity are configured as GitHub repository
+secrets. No notarization username/password secrets or usable local `notarytool`
+profile were found. Do not describe the public packages as notarized until the
+release gate below succeeds.
+
+### Signed Mac runtime checks — 2026-10-03
+
+Both 32.2.2 and 33.0.0-beta6 launched on macOS 26.4.1 / Apple M1, with arm64
+running natively and x86_64 under Rosetta. The test used a temporary OBS
+configuration, generated 720p30 video and tone audio, x264 and Opus, and the
+production `whip.vdo.ninja` endpoint. The user's original OBS configuration was
+restored after each run; no VDO.Ninja application source was changed.
+
+**All 12 Chrome cases failed media delivery:** both versions / both architectures,
+each with default routing, `&relay`, and `&relay&tcp`. OBS logged Mbed TLS DTLS
+handshake failures (`The requested feature is not available`). Selected browser
+candidates confirmed TURN/UDP and TURN/TLS on the retried Intel and preview tests,
+but no decoded media followed. The existing DTLS workaround applies only to
+Windows, so the prior Windows media passes must not be generalized to macOS.
+Signing did not alter the executable payloads; these are runtime limitations of
+the retained CI binaries.
+
+An additional Firefox 142.0.1 check on stable arm64 received increasing Opus audio
+bytes in both relay attempts, but decoded no video. This test browser reported no
+H.264 receive codec, and the default attempt encountered a closed-peer statistics
+error. These attempts are **not** successful full-media interoperability tests.
+An additional local browser-source render probe returned black frames on all four
+signed apps and on the original ad-hoc stable arm64 app. It does not establish a
+signing regression or a successful CEF render test. Physical Intel hardware, a
+current Firefox with H.264, and an OBS network blocking UDP were not tested. Detailed local reports and logs are retained under ignored
+`build_whip_signing/smoke/`.
+
+### Mac release signing and publication
+
+`build-aux/sign-whip-macos.py` signs the nested Mach-O files and bundles from the
+inside out, preserving their embedded OBS/CEF entitlements. It refuses ad-hoc
+identities and debug entitlements. Its `release` command requires Apple's explicit
+`Accepted` result, staples and validates the ticket, checks Gatekeeper, then
+extracts and verifies the final tar archive again. Interrupted submissions retain
+their ID and app signature hash under the evidence directory.
+
+Configure credentials locally using Apple's secure password prompt (never put the
+password in the command, repository, or chat):
+
+```sh
+xcrun notarytool store-credentials OBS-WHIP --team-id H3CKR5XB3J --apple-id YOUR_APPLE_ID
+```
+
+The current staging directories and original downloads are in ignored
+`build_whip_signing/stage/` and `build_whip_signing/original/{stable,preview}/`.
+For each already-signed package, use the corresponding staging directory:
+
+```sh
+python3 build-aux/sign-whip-macos.py release \
+  --stage build_whip_signing/stage/obs-whip-32.2.2-darwin-arm64 \
+  --team-id H3CKR5XB3J --keychain-profile OBS-WHIP \
+  --output build_whip_signing/signed/stable/obs-whip-32.2.2-darwin-arm64.tar.gz \
+  --evidence build_whip_signing/evidence/obs-whip-32.2.2-darwin-arm64
+```
+
+Repeat for Intel and preview. For a fresh unsigned staging tree, use `all` instead
+of `release` and supply `--identity 'Developer ID Application: Steve Seguin (H3CKR5XB3J)'`.
+The archive retains the original `whip-build.json`; the separate
+`macos-signing.json` records signing, unchanged code hashes, Apple's submission ID,
+and verification results.
+
+`build-aux/update-whip-macos-release.py` prepares updated checksums, provenance,
+and notes from these verified packages. It preserves Windows/Linux package entries
+and retains the entire original Mac package entry as `original_build_package`,
+with signing/notarization in `signing`. It checks that the live release metadata
+has not changed before uploading; `--publish` explicitly enables replacement and
+public-download verification. Supply accurate runtime findings in a text file:
+
+```sh
+python3 build-aux/update-whip-macos-release.py \
+  --original build_whip_signing/original/stable \
+  --signed build_whip_signing/signed/stable \
+  --evidence build_whip_signing/evidence \
+  --validation-notes build_whip_signing/stable-validation.txt \
+  --tag v32.2.2-whip-relay
+```
+
+Review its generated notes, then rerun with `--publish`. Repeat with `preview`
+and `v33.0.0-beta6-whip-relay`. Stable remains Latest; preview remains Prerelease.
+Publication fails if any Mac archive lacks verified notarization/stapling.
+
+For future CI builds, manually dispatch **WHIP builds** on `master` with
+`notarize_macos=true`. This requires `MACOS_SIGNING_IDENTITY`, `MACOS_SIGNING_CERT`
+(base64 PKCS12), `MACOS_SIGNING_CERT_PASSWORD`, `MACOS_NOTARIZATION_USERNAME`, and
+`MACOS_NOTARIZATION_PASSWORD` repository secrets. Missing credentials fail the job;
+there is no fallback to ad-hoc signing in release mode. The workflow imports the
+identity into a temporary Keychain, validates the notarization credentials, calls
+`build-whip.py --macos-release`, and uploads an artifact ending in `-notarized`
+only after all gates pass. Credentials are removed in an `always()` cleanup step.
+Ordinary push/PR builds remain explicitly unofficial, unnotarized test artifacts.
+The workflow does not automatically publish GitHub releases.
+
+Run the portable release-gate regressions with:
+
+```sh
+python3 test/whip/test-macos-signing.py
+python3 test/whip/test-macos-release.py
+```
+
 
 With the platform's OBS build prerequisites installed:
 

@@ -13,6 +13,11 @@ on:
       - 'CMakePresets.json'
       - '.github/workflows/whip-builds.yaml'
   workflow_dispatch:
+    inputs:
+      notarize_macos:
+        description: 'Require Developer ID signed and notarized Mac release packages (master only)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -27,9 +32,16 @@ jobs:
     outputs:
       matrix: ${{ steps.versions.outputs.matrix }}
     steps:
+      - name: Restrict signed builds to master
+        if: inputs.notarize_macos && github.ref != 'refs/heads/master'
+        run: exit 1
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
+      - name: Test Mac release gates
+        run: |
+          python3 test/whip/test-macos-signing.py
+          python3 test/whip/test-macos-release.py
       - name: Resolve OBS versions
         id: versions
         env:
@@ -114,17 +126,62 @@ jobs:
         run: |
           brew install cmake ninja
           sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Require Mac release credentials
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        env:
+          SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          SIGNING_CERT: ${{ secrets.MACOS_SIGNING_CERT }}
+          SIGNING_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          NOTARY_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          for name in SIGNING_IDENTITY SIGNING_CERT SIGNING_PASSWORD NOTARY_USER NOTARY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required signing/notarization secret: $name"
+              exit 1
+            fi
+          done
+          [[ "$SIGNING_IDENTITY" == 'Developer ID Application:'* ]]
+      - name: Set up Mac release signing
+        id: signing
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        uses: ./.github/actions/setup-macos-codesigning
+        with:
+          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
+          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      - name: Store and validate notarization credentials
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        env:
+          SIGNING_IDENTITY: ${{ steps.signing.outputs.codesignIdent }}
+          SIGNING_TEAM: ${{ steps.signing.outputs.codesignTeam }}
+          NOTARY_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials OBS-WHIP-CI --apple-id "$NOTARY_USER" \
+            --team-id "$SIGNING_TEAM" --password "$NOTARY_PASSWORD" \
+            --keychain "$RUNNER_TEMP/app-signing.keychain-db" >/dev/null
+          {
+            echo "MACOS_SIGNING_IDENTITY=$SIGNING_IDENTITY"
+            echo "MACOS_SIGNING_TEAM=$SIGNING_TEAM"
+            echo 'MACOS_NOTARY_PROFILE=OBS-WHIP-CI'
+          } >> "$GITHUB_ENV"
       - name: Build patched OBS and run ICE regressions
         env:
           OBS_VERSION: ${{ matrix.version }}
           OBS_ARCH: ${{ matrix.arch }}
+          MACOS_RELEASE: ${{ runner.os == 'macOS' && inputs.notarize_macos }}
         run: |
           cd "$OBS_SOURCE"
-          python build-aux/build-whip.py --version "$OBS_VERSION" --arch "$OBS_ARCH" --jobs 4
+          args=()
+          if [[ "$MACOS_RELEASE" == true ]]; then args+=(--macos-release); fi
+          python build-aux/build-whip.py --version "$OBS_VERSION" --arch "$OBS_ARCH" --jobs 4 "${args[@]}"
       - name: Upload build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: obs-whip-${{ matrix.track }}-${{ matrix.version }}-${{ matrix.platform }}-${{ matrix.arch }}
+          name: obs-whip-${{ matrix.track }}-${{ matrix.version }}-${{ matrix.platform }}-${{ matrix.arch }}${{ runner.os == 'macOS' && inputs.notarize_macos && '-notarized' || '' }}
           path: ${{ env.OBS_SOURCE }}/build_whip/obs-whip-*
           if-no-files-found: error
           retention-days: 14
@@ -137,4 +194,13 @@ jobs:
             ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/manifest.json
             ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/tests/Testing/Temporary/LastTest.log
             ${{ env.OBS_SOURCE }}/build_whip/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ env.OBS_SOURCE }}/build_whip/macos-notarization/*.json
+            ${{ env.OBS_SOURCE }}/build_whip/macos-notarization/gatekeeper.txt
           retention-days: 14
+      - name: Remove temporary signing credentials
+        if: always() && runner.os == 'macOS' && inputs.notarize_macos
+        run: |
+          if [[ -f "$RUNNER_TEMP/app-signing.keychain-db" ]]; then
+            security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db"
+          fi
+          rm -f "$RUNNER_TEMP/build_certificate.p12"

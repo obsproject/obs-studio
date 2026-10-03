@@ -28,7 +28,7 @@ def main():
     subprocess.run(["git", "-C", str(ROOT), "worktree", "add", "--detach", str(destination), revision], check=True)
     subprocess.run(["git", "-C", str(destination), "apply", "--check", "--ignore-space-change", "-"], input=patch, check=True)
     subprocess.run(["git", "-C", str(destination), "apply", "--ignore-space-change", "-"], input=patch, check=True)
-    for name in ("build-whip-dependency.py", "build-whip.py"):
+    for name in ("build-whip-dependency.py", "build-whip.py", "sign-whip-macos.py", "update-whip-macos-release.py"):
         shutil.copy2(ROOT / "build-aux" / name, destination / "build-aux" / name)
     shutil.copytree(ROOT / "build-aux/whip-dependency", destination / "build-aux/whip-dependency")
     shutil.copytree(ROOT / "test/whip", destination / "test/whip")

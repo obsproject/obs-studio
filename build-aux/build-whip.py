@@ -25,8 +25,19 @@ def main():
     parser.add_argument("--generator")
     parser.add_argument("--jobs", type=int, default=min(4, max(1, (os.cpu_count() or 2) // 2)))
     parser.add_argument("--configure-only", action="store_true")
+    parser.add_argument("--macos-release", action="store_true",
+                        help="Require Developer ID signing, accepted notarization, stapling, and Gatekeeper verification")
     args = parser.parse_args()
     system = platform.system()
+    identity = os.environ.get("MACOS_SIGNING_IDENTITY", "-")
+    team = os.environ.get("MACOS_SIGNING_TEAM", "")
+    profile = os.environ.get("MACOS_NOTARY_PROFILE", "")
+    if args.macos_release:
+        if system != "Darwin" or args.configure_only:
+            parser.error("--macos-release requires a complete macOS build")
+        if not identity.startswith("Developer ID Application:") or not team or not profile:
+            parser.error("--macos-release requires MACOS_SIGNING_IDENTITY, MACOS_SIGNING_TEAM, and MACOS_NOTARY_PROFILE")
+        run("xcrun", "notarytool", "history", "--keychain-profile", profile, "--output-format", "json")
     build = args.build_dir.resolve()
     preset = f"windows-{args.arch}" if system == "Windows" else "macos" if system == "Darwin" else "ubuntu"
     options = [f"-DOBS_VERSION_OVERRIDE={args.version}-whip", "-DENABLE_WEBRTC=OFF", "-DENABLE_AJA=OFF",
@@ -36,7 +47,8 @@ def main():
     if system == "Windows":
         options += ["-A", args.arch]
     elif system == "Darwin":
-        options += [f"-DCMAKE_OSX_ARCHITECTURES={args.arch}", "-DOBS_CODESIGN_IDENTITY=-", "-DENABLE_VIRTUALCAM=OFF"]
+        options += [f"-DCMAKE_OSX_ARCHITECTURES={args.arch}", f"-DOBS_CODESIGN_IDENTITY={identity}",
+                    "-DENABLE_VIRTUALCAM=OFF"]
     else:
         presets = json.loads((ROOT / "CMakePresets.json").read_text())
         dependencies = next(p for p in presets["configurePresets"] if p["name"] == "dependencies")["vendor"]["obsproject.com/obs-studio"]["dependencies"]
@@ -60,13 +72,19 @@ def main():
             shutil.copy2(dependency, runtime / "bin/64bit/datachannel.dll")
         (stage / "portable_mode.txt").touch()
     shutil.copy2(build / "whip-dependency/manifest.json", stage / "whip-build.json")
+    signing_notice = "Not notarized; signing has not been verified for distribution." if system == "Darwin" else "Unsigned and not notarized."
     (stage / "WHIP-BUILD.txt").write_text(
-        "Unofficial OBS WHIP test build. Unsigned and not notarized.\n"
+        f"Unofficial OBS WHIP test build. {signing_notice}\n"
         "AJA and scripting are disabled; macOS virtual camera is disabled.\n"
         "Browser, WebSocket, H.264/Opus and patched WebRTC are enabled.\n"
         "Build success is not a live TURN/NAT interoperability test.\n")
     archive = build / f"obs-whip-{args.version}-{system.lower()}-{args.arch}"
-    shutil.make_archive(str(archive), "zip" if system == "Windows" else "gztar", stage)
+    if args.macos_release:
+        run(sys.executable, ROOT / "build-aux/sign-whip-macos.py", "all", "--stage", stage,
+            "--identity", identity, "--team-id", team, "--keychain-profile", profile,
+            "--output", str(archive) + ".tar.gz", "--evidence", build / "macos-notarization")
+    else:
+        shutil.make_archive(str(archive), "zip" if system == "Windows" else "gztar", stage)
 
 
 if __name__ == "__main__":
