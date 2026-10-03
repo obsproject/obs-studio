@@ -647,12 +647,14 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		"\trc_max_bitrate:        %d (kbps)\n"
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
+		"\tbframes:               %s\n"
 		"\tspatial_aq:            %s\n"
 		"\tprofile:               %s\n"
 		"\tcodec_type:            %.4s\n",
 		enc->vt_encoder_id, enc->rate_control, enc->bitrate, enc->quality, enc->fps_num, enc->fps_den,
 		enc->width, enc->height, enc->keyint, enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
-		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off", enc->spatial_aq ? "on" : "off",
+		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off", enc->bframes ? "on" : "off",
+		enc->spatial_aq ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile : "default",
 		codec_type_to_print_fmt(enc->codec_type));
 }

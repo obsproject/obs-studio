@@ -29,6 +29,8 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 	// For now, ensure maximum compatibility with webrtc peers
 	if (video_settings) {
 		obs_data_set_int(video_settings, "bf", 0);
+		// VideoToolbox uses a boolean instead of the shared integer override.
+		obs_data_set_bool(video_settings, "bframes", false);
 		obs_data_set_bool(video_settings, "repeat_headers", true);
 	}
 }

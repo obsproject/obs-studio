@@ -11,7 +11,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # unrelated OBS development when testing stable and prerelease versions.
 UPSTREAM_BASE = "cffa83ba5"
 WHIP_FILES = ["plugins/obs-webrtc/obs-webrtc.cpp", "plugins/obs-webrtc/whip-output.cpp",
-              "plugins/obs-webrtc/whip-output.h", "plugins/obs-webrtc/whip-utils.h"]
+              "plugins/obs-webrtc/whip-output.h", "plugins/obs-webrtc/whip-utils.h",
+              "plugins/obs-webrtc/whip-service.cpp", "plugins/mac-videotoolbox/encoder.c"]
 
 
 def main():
