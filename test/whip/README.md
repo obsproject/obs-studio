@@ -39,67 +39,72 @@ macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
 require its runtime libraries. Building successfully does not certify live TURN
 operation.
 
-**Mac signing completed (2026-10-03):** both public releases now contain
-Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64. All four
-original Mac archives were
-downloaded and checked against the published checksums and `whip-build.json`.
-The replacements are signed with Steve Seguin's Developer ID Application identity
-(team `H3CKR5XB3J`), secure timestamps, and hardened runtime. Strict verification
-passed for every nested Mach-O and bundle, with original entitlements preserved.
-Comparisons after removing signatures and normalizing the signature segment's VM
-allocation confirmed unchanged executable payloads, including patched libdatachannel.
-No source rebuild was needed.
+**Mac signing and WHIP correction completed (2026-10-03):** both releases
+contain Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64.
+The final Mac binaries use WHIP revision `786910b5013428ba9b25740435a6bc21c270355c` from
+[signed CI run 37157278999](https://github.com/steveseguin/obs-studio/actions/runs/37157278999); all 12 cross-platform builds passed.
+Stable was prepared from upstream OBS 32.2.2 (`ba2f32bdf791005443988a4955e963663e16b1ed`),
+and preview from 33.0.0-beta6 (`cffa83ba552f1ef6a0a05851c3aa07b3811d7e58`).
+The pinned libdatachannel/libjuice revisions and dependency patch hash are unchanged.
 
-Apple accepted all four submissions with no issues. Tickets were stapled and
-validated, and Gatekeeper reported `Notarized Developer ID`. The final archives
-were extracted and verified again before publication. The four Mac assets,
-checksums, and provenance were replaced; the original CI provenance is retained
-under `original_build_package` and signing/notarization is recorded separately in
-`signing`. Windows/Linux assets and their provenance entries are unchanged.
-Stable remains Latest and preview remains Prerelease.
+The original Mac binaries were first signed without changing executable payloads.
+Live tests then exposed the same Mbed TLS/Chrome DTLS failure previously fixed on
+Windows. The final rebuild extends that exact-host `whip.vdo.ninja` active-role
+workaround to macOS. Other WHIP hosts retain actpass; Linux retains its OpenSSL
+behavior. No VDO.Ninja application source was changed.
 
-The local Keychain profile is `OBS-WHIP`; all five signing/notarization GitHub
-repository secrets are configured. Credentials were transferred securely from an
-existing local configuration and are not stored in this repository.
+The apps are signed with Steve Seguin's Developer ID Application identity (team
+`H3CKR5XB3J`), secure timestamps, hardened runtime, and preserved OBS/CEF
+entitlements. Apple accepted all four submissions with no issues. Strict nested
+signature checks, stapled-ticket validation, and Gatekeeper assessment passed on
+the extracted final distribution archives. Future signed CI builds require these
+checks before emitting a notarized artifact; routine pushes cannot cancel a
+signed release run.
 
 | OBS version | Architecture | Accepted Apple submission |
 | --- | --- | --- |
-| 32.2.2 | arm64 | `4ef3da38-2f7a-4492-99ad-89ad74ccc391` |
-| 32.2.2 | x86_64 | `da305505-23cd-4a4c-b89c-b866a84043b2` |
-| 33.0.0-beta6 | arm64 | `94d7621d-0aab-4e57-8041-0e9c625c431e` |
-| 33.0.0-beta6 | x86_64 | `b86c4de1-baa7-4b7c-b280-90be64b8ea1e` |
+| 32.2.2 | arm64 | `ac063b48-4aaf-4ff2-b165-e39a2a1b2e6a` |
+| 32.2.2 | x86_64 | `cfb38e58-f71b-4cac-8e25-869d7924176f` |
+| 33.0.0-beta6 | arm64 | `0cc87c30-e14a-4493-b7fd-ccd3392552a5` |
+| 33.0.0-beta6 | x86_64 | `be1efa73-2cd3-4e2e-9c58-d5e2e14c2100` |
 
-Local receipts, Apple logs, final archive checksums, and public verification
-records are retained under ignored `build_whip_signing/evidence/` and
-`build_whip_signing/signed/`. The GitHub release provenance includes the same
-signing records and Apple results.
+`BUILD-PROVENANCE.json` retains the original CI package in
+`original_build_package`, prior signing records in `superseded_packages`, and the
+new Mac CI artifact/manifest in `rebuild` and `manifest`. Current signing and Apple
+results are separate under `signing`. Windows/Linux archives, checksums, and
+provenance entries remain unchanged at WHIP revision `bd9377113d4445be6ca40e71e674511179daba2d`.
+Stable remains Latest; preview remains Prerelease. Release tags still identify the
+original tooling revision; use each archive's manifest for its exact sources.
+
+The local Keychain profile is `OBS-WHIP`; the five signing/notarization repository
+secrets are configured. No credentials are stored in this repository. Final CI
+receipts, Apple logs, downloaded artifacts, runtime results, and public-download
+verification are retained under ignored `build_whip_runtime/`; the initial
+conversion evidence remains under ignored `build_whip_signing/`.
 
 ### Signed Mac runtime checks — 2026-10-03
 
-Both 32.2.2 and 33.0.0-beta6 launched on macOS 26.4.1 / Apple M1, with arm64
-running natively and x86_64 under Rosetta. The test used a temporary OBS
-configuration, generated 720p30 video and tone audio, x264 and Opus, and the
-production `whip.vdo.ninja` endpoint. The user's original OBS configuration was
-restored after each run; no VDO.Ninja application source was changed.
+Both versions launched on macOS 26.4.1 / Apple M1: arm64 natively and x86_64 under
+Rosetta. **All 24 direct production WHIP cases passed** with automated Chrome
+154.0.8037.93 and Firefox 155.0 receivers (Mozilla-listed OpenH264 2.6.0 installed
+and checksum-verified). Each app/browser combination passed default routing,
+`&relay` (selected TURN/UDP), and `&relay&tcp` (selected TURN/TLS).
 
-**All 12 Chrome cases failed media delivery:** both versions / both architectures,
-each with default routing, `&relay`, and `&relay&tcp`. OBS logged Mbed TLS DTLS
-handshake failures (`The requested feature is not available`). Selected browser
-candidates confirmed TURN/UDP and TURN/TLS on the retried Intel and preview tests,
-but no decoded media followed. The existing DTLS workaround applies only to
-Windows, so the prior Windows media passes must not be generalized to macOS.
-Signing did not alter the executable payloads; these are runtime limitations of
-the retained CI binaries.
+Tests generated 720p30 video and tone audio, encoded with x264/Opus. Each pass
+required advancing decoded video frames, increasing audio bytes, a playing video
+element, and the expected selected relay transport. Final tests used the production
+endpoint directly, without the diagnostic role-rewriting proxy used to isolate
+the original failure. Temporary OBS profiles were removed from the active config
+path after every run and the user's original configuration restored.
 
-An additional Firefox 142.0.1 check on stable arm64 received increasing Opus audio
-bytes in both relay attempts, but decoded no video. This test browser reported no
-H.264 receive codec, and the default attempt encountered a closed-peer statistics
-error. These attempts are **not** successful full-media interoperability tests.
-An additional local browser-source render probe returned black frames on all four
-signed apps and on the original ad-hoc stable arm64 app. It does not establish a
-signing regression or a successful CEF render test. Physical Intel hardware, a
-current Firefox with H.264, and an OBS network blocking UDP were not tested. Detailed local reports and logs are retained under ignored
-`build_whip_signing/smoke/`.
+Browser-source rendering remains unresolved on this host. Local-file probes
+returned black frames on signed apps and the original ad-hoc stable-arm64 baseline. HTTP probes
+also returned black frames on rebuilt apps, although one earlier signed
+stable-arm64 HTTP probe rendered an animated page successfully.
+No general CEF rendering pass is claimed. Physical Intel hardware, hardware
+capture, Linux live publishers, extended endurance, and an OBS network blocking
+outbound UDP remain untested. `&relay&tcp` uses TLS on the browser-to-TURN leg;
+OBS still uses UDP.
 
 ### Mac release signing and publication
 
@@ -142,7 +147,12 @@ and notes from these verified packages. It preserves Windows/Linux package entri
 and retains the entire original Mac package entry as `original_build_package`,
 with signing/notarization in `signing`. It checks that the live release metadata
 has not changed before uploading; `--publish` explicitly enables replacement and
-public-download verification. Supply accurate runtime findings in a text file:
+public-download verification. For a corrected Mac rebuild, additionally supply
+`--rebuild-run RUN_ID --release-notes REVIEWED_NOTES_FILE`. This requires a
+successful WHIP CI run on master and matching notarized artifacts; it permits only
+the WHIP revision to change in the manifest, preserving the OBS base and patched
+dependency. Previous signed records remain in `superseded_packages`.
+Supply accurate runtime findings in a text file:
 
 ```sh
 python3 build-aux/update-whip-macos-release.py \
@@ -202,8 +212,9 @@ python build-aux/build-whip-dependency.py --obs-build build_whip_review/dev --jo
 
 `&relay&tcp` verifies browser-to-TURN TCP/TLS transport. OBS still uses UDP with
 the current libjuice backend; this is not a test of an OBS network blocking UDP.
-The Windows DTLS workaround remains restricted to the exact `whip.vdo.ninja`
-hostname. macOS/Linux publisher runtime interoperability needs separate testing.
+The Windows/macOS DTLS workaround remains restricted to the exact `whip.vdo.ninja`
+hostname. Mac runtime coverage is recorded above; Linux publisher runtime
+interoperability still needs separate testing.
 
 ## Fresh Windows interoperability results
 
@@ -292,8 +303,8 @@ was preserved.
   match a different header with the same prefix. Match the exact name and colon.
 - SDP construction could throw outside the error handler. Reject malformed SDP
   inside the handler and DELETE the allocated session on failure.
-- Windows' bundled Mbed TLS rejected current Chrome's DTLS ClientHello with
-  `The requested feature is not available`. For **Windows and the exact host
+- Windows/macOS bundled Mbed TLS rejected current Chrome's DTLS ClientHello with
+  `The requested feature is not available`. For **Windows/macOS and the exact host
   `whip.vdo.ninja` only**, offer the active DTLS role. Other hosts and platforms
   retain actpass. This offer is permitted by
   [RFC 9725 section 4.4.4](https://www.rfc-editor.org/rfc/rfc9725.html#section-4.4.4).
@@ -408,9 +419,9 @@ role/integrity cases passed. The dependency helper's final build log is
 ## Limits
 
 KRD's Windows 10 LTSC 1809, Broadwell QuickSync/ICQ, high bitrates, extended
-endurance, Safari, and macOS/Linux publishers were not tested. The local
-upstream-master build identifies as OBS 33 development, not KRD's OBS 32.2.2.
-The Windows/VDO DTLS workaround is deliberately scoped; other WHIP providers
+endurance, Safari, and Linux publishers were not tested. Mac coverage is recorded
+above. The local upstream-master build identifies as OBS 33 development, not KRD's OBS 32.2.2.
+The Windows/macOS VDO DTLS workaround is deliberately scoped; other WHIP providers
 have not been certified. No VDO.Ninja application or production server code was
 changed. Build/test outputs and local detailed logs are under ignored build
 and test-results directories.
