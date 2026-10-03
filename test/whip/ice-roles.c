@@ -1,5 +1,7 @@
 #include "stun.h"
+#include "agent.h"
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 int test_stun(void);
@@ -35,6 +37,37 @@ int main(void)
 			}
 		}
 	}
-	puts("STUN vectors and 8 ICE role/integrity cases passed");
+	/* Exercise role conflict decisions, including a present zero tie-breaker.
+	 * No socket is created: sending the 487 response may fail, but the local
+	 * role must still follow RFC 8445 section 7.3.1.1. */
+	for (unsigned int controlling = 0; controlling < 2; controlling++) {
+		for (uint64_t remote = 0; remote < 3; remote++) {
+			juice_agent_t *agent = calloc(1, sizeof(*agent));
+			if (!agent) {
+				return 1;
+			}
+			agent->mode = controlling ? AGENT_MODE_CONTROLLING : AGENT_MODE_CONTROLLED;
+			agent->ice_tiebreaker = 1;
+			stun_message_t request = {0};
+			request.msg_class = STUN_CLASS_REQUEST;
+			request.msg_method = STUN_METHOD_BINDING;
+			request.has_ice_controlling = controlling != 0;
+			request.has_ice_controlled = controlling == 0;
+			request.ice_controlling = controlling ? remote : 0;
+			request.ice_controlled = controlling ? 0 : remote;
+			agent_stun_entry_t entry = {0};
+			entry.type = AGENT_STUN_ENTRY_TYPE_CHECK;
+			agent_process_stun_binding(agent, &request, &entry, NULL, NULL);
+			agent_mode_t expected = remote <= 1 ? AGENT_MODE_CONTROLLING : AGENT_MODE_CONTROLLED;
+			bool valid = agent->mode == expected;
+			free(agent);
+			if (!valid) {
+				fprintf(stderr, "ICE conflict failed: controlling=%u, remote=%llu\n", controlling,
+					(unsigned long long)remote);
+				return 1;
+			}
+		}
+	}
+	puts("STUN vectors, 8 ICE role/integrity cases and 6 role conflicts passed");
 	return 0;
 }

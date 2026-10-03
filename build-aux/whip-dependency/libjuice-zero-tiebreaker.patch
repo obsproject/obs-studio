@@ -1,5 +1,5 @@
 diff --git a/src/agent.c b/src/agent.c
-index 00bbecb..eeb5820 100644
+index 00bbecb..7e9687b 100644
 --- a/src/agent.c
 +++ b/src/agent.c
 @@ -1431,7 +1431,7 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
@@ -20,15 +20,18 @@ index 00bbecb..eeb5820 100644
  			JLOG_WARN("ICE role conflict (both controlling)");
  			if (agent->ice_tiebreaker >= msg->ice_controlling) {
  				JLOG_DEBUG("Asking remote peer to switch roles");
-@@ -1465,7 +1465,7 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
+@@ -1465,9 +1465,9 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
  		//  * If the agent's tiebreaker value is less than the contents of the ICE-CONTROLLED
  		//  attribute, the agent generates a Binding error response and includes an ERROR-CODE
  		//  attribute with a value of 487 (Role Conflict) but retains its role.
 -		if (agent->mode == AGENT_MODE_CONTROLLED && msg->ice_controlled) {
 +		if (agent->mode == AGENT_MODE_CONTROLLED && msg->has_ice_controlled) {
  			JLOG_WARN("ICE role conflict (both controlled)");
- 			if (agent->ice_tiebreaker >= msg->ice_controlling) {
+-			if (agent->ice_tiebreaker >= msg->ice_controlling) {
++			if (agent->ice_tiebreaker >= msg->ice_controlled) {
  				JLOG_DEBUG("Switching to controlling role");
+ 				agent->mode = AGENT_MODE_CONTROLLING;
+ 				agent_update_candidate_pairs(agent);
 @@ -1479,7 +1479,7 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
  			break;
  		}

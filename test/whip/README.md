@@ -1,5 +1,113 @@
 # WHIP fork review — 2026-10-03
 
+## Reproducible compatibility builds
+
+The `WHIP builds` GitHub workflow builds the current fork, the latest stable OBS
+release, and the latest applicable prerelease on Windows x64, macOS arm64/x86_64,
+and Linux x86_64. It runs on relevant pushes, pull requests, and manual dispatch.
+Stable/preview builds apply only the four WHIP source files changed since upstream
+`cffa83ba5`; an incompatible patch fails the job instead of silently omitting fixes.
+
+[GitHub run 37140356507](https://github.com/steveseguin/obs-studio/actions/runs/37140356507)
+passed all 12 builds and their ICE regressions on 2026-10-03: fork, stable 32.2.2,
+and preview 33.0.0-beta6 across all four platform/architecture combinations.
+Download the `obs-whip-*` artifacts from that run; retention is 14 days.
+
+Each build explicitly enables WebRTC, rebuilds pinned libdatachannel/libjuice with
+the checked-in patch, and runs the STUN integrity and ICE role-conflict tests.
+The patch also fixes the controlled-role conflict comparison to use the remote
+ICE-CONTROLLED tie-breaker. The added test failed before this correction.
+Build manifests record the source revisions and dependency patch SHA-256.
+
+The workflow produces **unofficial test builds** as downloadable artifacts, with
+file permissions preserved inside ZIP/tar.gz archives. It does not publish a
+release or use OBS Project signing credentials. AJA and scripting are disabled;
+macOS virtual camera is disabled. Linux artifacts target Ubuntu 26.04 and require
+its runtime libraries. Building successfully does not certify live TURN operation.
+
+With the platform's OBS build prerequisites installed:
+
+```powershell
+python build-aux/build-whip.py --version 33.0.0-beta6 --generator "Visual Studio 17 2022" --jobs 4
+```
+
+On macOS/Linux omit `--generator`; use `--arch arm64` or `--arch x86_64` on macOS.
+Linux additionally needs the matching CEF archive and distribution development
+packages, as installed by the workflow. To configure an upstream stable checkout:
+
+```powershell
+python build-aux/prepare-whip-source.py --ref 32.2.2 --destination build_whip_stable/source
+python build_whip_stable/source/build-aux/build-whip.py --version 32.2.2 --generator "Visual Studio 17 2022" --jobs 4
+```
+
+The dependency helper can also update an existing configured OBS build:
+
+```powershell
+python build-aux/build-whip-dependency.py --obs-build build_whip_review/dev --jobs 4
+```
+
+`&relay&tcp` verifies browser-to-TURN TCP/TLS transport. OBS still uses UDP with
+the current libjuice backend; this is not a test of an OBS network blocking UDP.
+The Windows DTLS workaround remains restricted to the exact `whip.vdo.ninja`
+hostname. macOS/Linux publisher runtime interoperability needs separate testing.
+
+## Fresh Windows interoperability results
+
+On 2026-10-03, official OBS 32.2.2 and 33.0.0-beta6 ZIPs were downloaded and
+checked against their GitHub release SHA-256 values. Separate portable directories
+kept the installed OBS and other running OBS instances untouched. The stable test
+directory replaced only `obs-webrtc.dll` and `datachannel.dll`; the development
+test used a full local build of this fork.
+
+The downloadable Windows stable and preview artifacts from GitHub run
+`37138506023` were also extracted and tested directly against production VDO.Ninja.
+OBS 32.2.2 and 33.0.0-beta6 each passed all six Chrome/Firefox routing cases.
+Their reports are `WhipMatrix_1791047821204/report.json` and
+`WhipMatrix_1791047984986/report.json` in the same VDO.Ninja artifact directory.
+These checks include the packaged patched dependency, not just local builds.
+
+Chrome for Testing 154.0.8037.92 and Playwright Firefox 155.0 (OpenH264 2.6.0)
+received synthetic H.264 720p30 video and Opus audio through the live WHIP service.
+Both `https://vdo.ninja` and the supplied local frontend were tested, with no
+frontend DTLS experiment enabled.
+
+| Windows publisher | Default | `&relay` | `&relay&tcp` |
+| --- | --- | --- | --- |
+| Stock 32.2.2, Chrome / production | Fail | Fail | Fail |
+| Stock 32.2.2, Firefox / production | Pass | Fail | Fail |
+| Stock 33.0.0-beta6, Chrome / local frontend | Fail | Fail | Fail |
+| Patched 32.2.2, both browsers / both frontends | 4/4 pass | 4/4 pass | 4/4 pass |
+| Patched development fork, both browsers / both frontends | 4/4 pass | 4/4 pass | 4/4 pass |
+
+All 24 patched matrix cases required advancing decoded video, increasing audio
+bytes, and a playing video element. Relay cases also required the selected local
+candidate to be `relay`; TCP cases required the selected TURN transport to be
+TCP/TLS. The observed relay routes used UDP on port 3478 and TLS on port 443.
+An additional 60-second Chrome/TLS test advanced from 17 to 1816 decoded frames
+with increasing audio bytes. Typical connection time was 3–4 seconds and stream
+stop took about 0.5 seconds. An ordinary browser publisher also passed both relay
+routes as a positive control.
+
+Five proxy fault probes passed: delayed POST drained late candidates with exactly
+one final end-of-candidates PATCH; OPTIONS without ICE-server links still connected through relay;
+absent ETag connected without PATCH; a five-second PATCH was cancelled during
+stop in 502 ms; malformed answer SDP stopped the output. Every probe DELETEd
+its allocated session. Header parsing tests, existing STUN vectors, eight
+role/integrity cases, and six role-conflict decisions passed locally.
+
+Evidence is retained in ignored local artifacts. In the sibling VDO.Ninja checkout,
+`tests/playwright/test-results/WhipMatrix_1791045778296/report.json` contains the
+stable matrix, `WhipMatrix_1791046057560/report.json` the development matrix, and
+`WhipMatrix_1791046309656/report.json` the 60-second observation. OBS artifacts
+include `build_whip_review/fault-summary.json` and `probe-*.json`. The VDO.Ninja
+`tests/playwright/obs-whip-review.md` documents the harness invocation.
+
+These checks prove the selected viewer TURN routes in this network, not every NAT
+topology or a UDP-blocked OBS publisher. Mobile, macOS/Linux publishers, and long-duration streaming were not
+retested in this fresh matrix. No VDO.Ninja application source was changed.
+
+## Original review record
+
 Local `master` includes origin/master `a3dbbc6a7` and OBS upstream/master
 `cffa83ba5` through merge `d2360bd95`. The changes described below are local
 working-tree changes; nothing was pushed. The pre-existing reverse-trickle plan

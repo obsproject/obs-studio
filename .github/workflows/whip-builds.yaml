@@ -1,0 +1,144 @@
+name: WHIP builds
+on:
+  push:
+    paths:
+      - 'plugins/obs-webrtc/**'
+      - 'build-aux/*whip*'
+      - 'build-aux/whip-dependency/**'
+      - 'test/whip/**'
+      - 'CMakePresets.json'
+      - '.github/workflows/whip-builds.yaml'
+  pull_request:
+    paths:
+      - 'plugins/obs-webrtc/**'
+      - 'build-aux/*whip*'
+      - 'build-aux/whip-dependency/**'
+      - 'test/whip/**'
+      - 'CMakePresets.json'
+      - '.github/workflows/whip-builds.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: whip-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Resolve OBS versions
+        id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          releases = json.loads(subprocess.check_output(['gh', 'api', 'repos/obsproject/obs-studio/releases?per_page=30']))
+          stable = next(r['tag_name'] for r in releases if not r['draft'] and not r['prerelease'])
+          preview = next((r['tag_name'] for r in releases if not r['draft'] and r['prerelease']), None)
+          for tag in [stable] + ([preview] if preview else []):
+              subprocess.run(['git', 'fetch', '--no-tags', 'https://github.com/obsproject/obs-studio.git', 'tag', tag], check=True)
+          fork_version = subprocess.check_output(['git', 'describe', '--tags', '--match', '[0-9]*', '--abbrev=0'], text=True).strip()
+          versions = [{'track': 'fork', 'ref': '', 'version': fork_version}, {'track': 'stable', 'ref': stable, 'version': stable}]
+          def release_version(tag):
+              return tuple(int(n) for n in re.match(r'^(\d+)\.(\d+)\.(\d+)', tag).groups())
+          if preview and release_version(preview) > release_version(stable):
+              versions.append({'track': 'preview', 'ref': preview, 'version': preview})
+          platforms = [('windows-2025-vs2026', 'windows', 'x64', ''), ('macos-26', 'macos', 'arm64', ''), ('macos-26', 'macos', 'x86_64', ''), ('ubuntu-24.04', 'linux', 'x86_64', 'ubuntu:26.04')]
+          matrix = {'include': [dict(v, runner=r, platform=p, arch=a, container=c) for v in versions for r, p, a, c in platforms]}
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('matrix=' + json.dumps(matrix) + '\n')
+          PY
+
+  build:
+    needs: versions
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.versions.outputs.matrix) }}
+    name: ${{ matrix.track }} / ${{ matrix.platform }} / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Set up Linux container
+        if: matrix.platform == 'linux'
+        run: |
+          apt-get update -qq
+          apt-get install -y git sudo python3 python-is-python3 curl ca-certificates
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Prepare compatibility source
+        env:
+          OBS_REF: ${{ matrix.ref }}
+          OBS_VERSION: ${{ matrix.version }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Nested Windows capture builds discover their version from git tags.
+          git fetch --no-tags https://github.com/obsproject/obs-studio.git tag "$OBS_VERSION"
+          if [[ -n "$OBS_REF" ]]; then
+            python build-aux/prepare-whip-source.py --ref "$OBS_REF" --destination build_whip_ci/source
+            echo 'OBS_SOURCE=build_whip_ci/source' >> "$GITHUB_ENV"
+          else
+            echo 'OBS_SOURCE=.' >> "$GITHUB_ENV"
+          fi
+      - name: Set up Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y zsh ninja-build libssl-dev jq xz-utils cmake pkg-config libnss3 libnspr4 libxrandr2
+          cd "$OBS_SOURCE"
+          zsh --no-rcs --errexit --pipefail -c '
+            project_root=$PWD
+            target=ubuntu-x86_64
+            _loglevel=1
+            fpath=($PWD/.github/scripts/utils.zsh $fpath)
+            autoload -Uz setup_ubuntu
+            setup_ubuntu
+          '
+      - name: Set up macOS dependencies
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_INSTALL_CLEANUP: '1'
+        run: |
+          brew install cmake ninja
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Build patched OBS and run ICE regressions
+        env:
+          OBS_VERSION: ${{ matrix.version }}
+          OBS_ARCH: ${{ matrix.arch }}
+        run: |
+          cd "$OBS_SOURCE"
+          python build-aux/build-whip.py --version "$OBS_VERSION" --arch "$OBS_ARCH" --jobs 4
+      - name: Upload build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: obs-whip-${{ matrix.track }}-${{ matrix.version }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: ${{ env.OBS_SOURCE }}/build_whip/obs-whip-*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diagnostics-${{ matrix.track }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/manifest.json
+            ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/tests/Testing/Temporary/LastTest.log
+            ${{ env.OBS_SOURCE }}/build_whip/CMakeFiles/CMakeConfigureLog.yaml
+          retention-days: 14
