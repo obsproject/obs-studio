@@ -4,7 +4,10 @@
 
 The `WHIP builds` GitHub workflow builds the current fork, the latest stable OBS
 release, and the latest applicable prerelease on Windows x64, macOS arm64/x86_64,
-and Linux x86_64. It runs on relevant pushes, pull requests, and manual dispatch.
+and Linux x86_64. It runs on code pushes, WHIP-related pull requests, and manual
+dispatch. In `steveseguin/obs-studio`, this replaces the inherited Push workflow's
+build job, which does not apply the patched ICE dependency. Formatting, service,
+and compatibility checks remain enabled.
 Stable/preview builds apply only the four WHIP source files changed since upstream
 `cffa83ba5`; an incompatible patch fails the job instead of silently omitting fixes.
 
@@ -52,6 +55,16 @@ The Windows DTLS workaround remains restricted to the exact `whip.vdo.ninja`
 hostname. macOS/Linux publisher runtime interoperability needs separate testing.
 
 ## Fresh Windows interoperability results
+
+After the reviewed server deployment, both GitHub-built Windows versions passed
+all six production Chrome/Firefox routing cases again (12/12 total), plus a
+60-second TLS-relay observation, six live signaling checks and five proxy fault
+scenarios. A separate pre-merge UDP check then ran `&relay` for 30 seconds in both
+browsers on OBS 32.2.2 and 33.0.0-beta6: all four cases passed with the selected
+candidate explicitly reporting `relayProtocol: udp`. Video advanced by 885–900
+frames per case and Opus audio bytes increased. This required no VDO.Ninja
+application changes. The UDP summary is retained locally at
+`build_whip_review/udp-merge-1791053340355/summary.json`.
 
 On 2026-10-03, official OBS 32.2.2 and 33.0.0-beta6 ZIPs were downloaded and
 checked against their GitHub release SHA-256 values. Separate portable directories

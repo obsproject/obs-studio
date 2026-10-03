@@ -1,13 +1,9 @@
 name: WHIP builds
 on:
   push:
-    paths:
-      - 'plugins/obs-webrtc/**'
-      - 'build-aux/*whip*'
-      - 'build-aux/whip-dependency/**'
-      - 'test/whip/**'
-      - 'CMakePresets.json'
-      - '.github/workflows/whip-builds.yaml'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     paths:
       - 'plugins/obs-webrtc/**'
