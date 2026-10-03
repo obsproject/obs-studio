@@ -71,7 +71,7 @@ static inline void cf_convert_from_escape_literal(char **p_dst, const char **p_s
 
 	/* oct */
 	default:
-		if (isdigit(*src)) {
+		if (isdigit((unsigned char)*src)) {
 			*(dst++) = (char)strtoul(src, NULL, 8);
 			src += 3;
 		}
