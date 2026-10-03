@@ -61,7 +61,7 @@ jobs:
     needs: versions
     strategy:
       fail-fast: false
-      max-parallel: 4
+      max-parallel: 12
       matrix: ${{ fromJSON(needs.versions.outputs.matrix) }}
     name: ${{ matrix.track }} / ${{ matrix.platform }} / ${{ matrix.arch }}
     runs-on: ${{ matrix.runner }}
@@ -85,6 +85,7 @@ jobs:
           OBS_REF: ${{ matrix.ref }}
           OBS_VERSION: ${{ matrix.version }}
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           # Nested Windows capture builds discover their version from git tags.
           git fetch --no-tags https://github.com/obsproject/obs-studio.git tag "$OBS_VERSION"
           if [[ -n "$OBS_REF" ]]; then
