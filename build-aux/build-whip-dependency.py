@@ -63,12 +63,13 @@ def main():
         for name in ("agent.c", "stun.c", "stun.h"):
             path = juice / "src" / name
             path.write_bytes(path.read_bytes().replace(b"\r\n", b"\n"))
-    generator = ["-G", cache["CMAKE_GENERATOR"]]
+    generator = ["-G", "Ninja" if platform.system() == "Darwin" else cache["CMAKE_GENERATOR"]]
     if cache.get("CMAKE_GENERATOR_PLATFORM"):
         generator += ["-A", cache["CMAKE_GENERATOR_PLATFORM"]]
     if cache.get("CMAKE_GENERATOR_TOOLSET"):
         generator += ["-T", cache["CMAKE_GENERATOR_TOOLSET"]]
-    options = ["-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5", "-DCMAKE_INSTALL_LIBDIR=lib"]
+    options = ["-DCMAKE_BUILD_TYPE=Release", "-DCMAKE_POLICY_VERSION_MINIMUM=3.5", "-DCMAKE_INSTALL_LIBDIR=lib",
+               "-DENABLE_WARNINGS_AS_ERRORS=OFF"]
     for key in ("CMAKE_PREFIX_PATH", "CMAKE_OSX_ARCHITECTURES", "CMAKE_OSX_DEPLOYMENT_TARGET"):
         if cache.get(key):
             options.append(f"-D{key}={cache[key]}")

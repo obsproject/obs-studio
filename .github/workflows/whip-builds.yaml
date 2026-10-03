@@ -83,7 +83,10 @@ jobs:
       - name: Prepare compatibility source
         env:
           OBS_REF: ${{ matrix.ref }}
+          OBS_VERSION: ${{ matrix.version }}
         run: |
+          # Nested Windows capture builds discover their version from git tags.
+          git fetch --no-tags https://github.com/obsproject/obs-studio.git tag "$OBS_VERSION"
           if [[ -n "$OBS_REF" ]]; then
             python build-aux/prepare-whip-source.py --ref "$OBS_REF" --destination build_whip_ci/source
             echo 'OBS_SOURCE=build_whip_ci/source' >> "$GITHUB_ENV"
@@ -94,7 +97,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y zsh ninja-build libssl-dev
+          sudo apt-get install -y zsh ninja-build libssl-dev jq xz-utils cmake pkg-config
           cd "$OBS_SOURCE"
           zsh --no-rcs --errexit --pipefail -c '
             project_root=$PWD
@@ -106,6 +109,9 @@ jobs:
           '
       - name: Set up macOS dependencies
         if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_INSTALL_CLEANUP: '1'
         run: |
           brew install cmake ninja
           sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer

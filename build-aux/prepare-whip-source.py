@@ -22,7 +22,7 @@ def main():
     destination = args.destination.resolve()
     if destination.exists():
         parser.error("destination must not exist; existing worktrees are preserved")
-    subprocess.run(["git", "-C", str(ROOT), "fetch", "--no-tags", "https://github.com/obsproject/obs-studio.git", args.ref], check=True)
+    subprocess.run(["git", "-C", str(ROOT), "fetch", "--no-tags", "https://github.com/obsproject/obs-studio.git", "tag", args.ref], check=True)
     revision = subprocess.check_output(["git", "-C", str(ROOT), "rev-parse", "FETCH_HEAD"], text=True).strip()
     patch = subprocess.check_output(["git", "-C", str(ROOT), "diff", "--binary", UPSTREAM_BASE, "--", *WHIP_FILES])
     subprocess.run(["git", "-C", str(ROOT), "worktree", "add", "--detach", str(destination), revision], check=True)

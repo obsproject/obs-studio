@@ -43,8 +43,9 @@ int main(void)
 	for (unsigned int controlling = 0; controlling < 2; controlling++) {
 		for (uint64_t remote = 0; remote < 3; remote++) {
 			juice_agent_t *agent = calloc(1, sizeof(*agent));
-			if (!agent)
+			if (!agent) {
 				return 1;
+			}
 			agent->mode = controlling ? AGENT_MODE_CONTROLLING : AGENT_MODE_CONTROLLED;
 			agent->ice_tiebreaker = 1;
 			stun_message_t request = {0};
