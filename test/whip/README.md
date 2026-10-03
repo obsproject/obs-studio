@@ -14,7 +14,16 @@ Stable/preview builds apply only the four WHIP source files changed since upstre
 [GitHub run 37140356507](https://github.com/steveseguin/obs-studio/actions/runs/37140356507)
 passed all 12 builds and their ICE regressions on 2026-10-03: fork, stable 32.2.2,
 and preview 33.0.0-beta6 across all four platform/architecture combinations.
-Download the `obs-whip-*` artifacts from that run; retention is 14 days.
+The subsequent [master build 37145895603](https://github.com/steveseguin/obs-studio/actions/runs/37145895603)
+also passed all 12 jobs at `bd9377113`. Its verified stable and preview packages
+are published as permanent release assets:
+
+- [OBS 32.2.2 with WHIP and TURN fixes (Latest)](https://github.com/steveseguin/obs-studio/releases/tag/v32.2.2-whip-relay).
+- [OBS 33.0.0-beta6 with WHIP and TURN fixes (Prerelease)](https://github.com/steveseguin/obs-studio/releases/tag/v33.0.0-beta6-whip-relay).
+
+Each release includes Windows x64, macOS arm64/x86_64, and Linux x86_64 archives,
+SHA-256 checksums, and build provenance. Public downloads and uploaded hashes
+were verified. Actions artifacts remain available for 14 days.
 
 Each build explicitly enables WebRTC, rebuilds pinned libdatachannel/libjuice with
 the checked-in patch, and runs the STUN integrity and ICE role-conflict tests.
@@ -23,10 +32,21 @@ ICE-CONTROLLED tie-breaker. The added test failed before this correction.
 Build manifests record the source revisions and dependency patch SHA-256.
 
 The workflow produces **unofficial test builds** as downloadable artifacts, with
-file permissions preserved inside ZIP/tar.gz archives. It does not publish a
-release or use OBS Project signing credentials. AJA and scripting are disabled;
-macOS virtual camera is disabled. Linux artifacts target Ubuntu 26.04 and require
-its runtime libraries. Building successfully does not certify live TURN operation.
+file permissions preserved inside ZIP/tar.gz archives. Release publication is a
+separate step; the workflow does not publish releases or use OBS Project signing
+credentials. AJA and scripting are disabled; macOS virtual camera is disabled.
+macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
+require its runtime libraries. Building successfully does not certify live TURN
+operation.
+
+**Mac signing handoff:** the current releases use ad-hoc signing and are not
+Developer ID signed or Apple-notarized. Steve plans to set this up from his Mac.
+On 2026-10-03, the fork had no GitHub Actions repository secrets or environments
+configured. `build-aux/build-whip.py` sets `OBS_CODESIGN_IDENTITY=-`; the dedicated
+WHIP workflow does not invoke the existing upstream signing/notarization actions.
+Completing that integration and replacing the Mac release assets remains pending.
+The replacement packages must retain the patched WebRTC dependency; update the
+release checksums and provenance when their bytes change.
 
 With the platform's OBS build prerequisites installed:
 
