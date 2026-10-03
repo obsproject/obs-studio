@@ -60,7 +60,6 @@ QList<QString> sortedSceneCollections{};
 
 void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
 {
-	const QLocale locale = QLocale::system();
 	QList<QString> newList{};
 
 	for (auto [collectionName, _] : collections) {
@@ -68,11 +67,7 @@ void updateSortedSceneCollections(const OBSSceneCollectionCache &collections)
 		newList.append(entry);
 	}
 
-	std::sort(newList.begin(), newList.end(), [&locale](const QString &lhs, const QString &rhs) -> bool {
-		int result = QString::localeAwareCompare(locale.toLower(lhs), locale.toLower(rhs));
-
-		return (result < 0);
-	});
+	NaturalSort(newList);
 
 	sortedSceneCollections.swap(newList);
 }
