@@ -3285,7 +3285,7 @@
                            <item row="0" column="1">
                             <widget class="QStackedWidget" name="advStreamTrackWidget">
                              <property name="sizePolicy">
-                              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                              <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
                                <horstretch>0</horstretch>
                                <verstretch>0</verstretch>
                               </sizepolicy>
