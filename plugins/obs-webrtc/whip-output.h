@@ -64,6 +64,8 @@ private:
 	void SendEndOfCandidates();
 	void SendTrickleIcePatch(const std::string &sdp_frag);
 	void ApplyIncomingRemoteCandidates(const std::string &sdp_frag);
+	void TrickleThread();
+	void StopTrickle();
 
 	obs_output_t *output;
 
@@ -77,7 +79,6 @@ private:
 	std::condition_variable ice_gathering_cv;
 	std::atomic<bool> ice_gathering_complete;
 	std::atomic<bool> has_first_candidate;
-	std::atomic<bool> offer_sent;
 	std::atomic<bool> trickle_enabled;
 	bool has_ice_servers;
 
@@ -90,7 +91,9 @@ private:
 	std::vector<std::string> trickle_bundle_mids;
 	std::vector<rtc::Candidate> pending_candidates; // Queued until POST completes
 	std::mutex pending_candidates_mutex;
-	std::atomic<bool> post_response_gather_started; // Distinguishes pre-offer vs final gather
+	std::condition_variable pending_candidates_cv;
+	std::atomic<bool> trickle_stop{false};
+	std::thread trickle_thread;
 
 	std::atomic<bool> running;
 

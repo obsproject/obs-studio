@@ -12,6 +12,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 bool obs_module_load()
 {
+	rtc::InitLogger(rtc::LogLevel::Warning, [](rtc::LogLevel level, std::string message) {
+		blog(level <= rtc::LogLevel::Error ? LOG_ERROR : LOG_WARNING, "[obs-webrtc] %s", message.c_str());
+	});
+
 	register_whip_output();
 	register_whip_service();
 

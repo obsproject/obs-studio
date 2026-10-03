@@ -43,7 +43,6 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  ice_gathering_cv(),
 	  ice_gathering_complete(false),
 	  has_first_candidate(false),
-	  offer_sent(false),
 	  trickle_enabled(false),
 	  has_ice_servers(false),
 	  ice_ufrag(),
@@ -53,7 +52,6 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  trickle_bundle_mids(),
 	  pending_candidates(),
 	  pending_candidates_mutex(),
-	  post_response_gather_started(false),
 	  running(false),
 	  start_stop_mutex(),
 	  start_stop_thread(),
@@ -380,11 +378,11 @@ bool WHIPOutput::Setup()
 
 	ice_gathering_complete = false;
 	has_first_candidate = false;
-	offer_sent = false;
 	trickle_enabled = false;
-	post_response_gather_started = false;
+	trickle_stop = false;
 	ice_ufrag.clear();
 	ice_pwd.clear();
+	resource_url.clear();
 	{
 		std::lock_guard<std::mutex> lock(resource_etag_mutex);
 		resource_etag.clear();
@@ -412,37 +410,25 @@ bool WHIPOutput::Setup()
 				ice_gathering_cv.notify_one();
 			}
 		}
-		// If offer already sent, trickle this candidate immediately
-		// Otherwise queue it - it will be sent after POST completes if the
-		// session can legally use conditional PATCH requests.
-		bool should_send = false;
+		// HTTP must not block the PeerConnection callback thread. The worker
+		// starts after the answer is applied and sends candidates in order.
 		{
 			std::lock_guard<std::mutex> lock(pending_candidates_mutex);
-			if (offer_sent) {
-				should_send = trickle_enabled.load();
-			} else {
+			if (!trickle_stop) {
 				pending_candidates.push_back(candidate);
 			}
 		}
-		if (should_send) {
-			SendTrickleCandidate(candidate);
-		}
+		pending_candidates_cv.notify_one();
 	});
 
 	// Set up async ICE gathering completion notification
 	peer_connection->onGatheringStateChange([this](rtc::PeerConnection::GatheringState state) {
 		if (state == rtc::PeerConnection::GatheringState::Complete) {
 			{
-				std::lock_guard<std::mutex> lock(ice_gathering_mutex);
+				std::lock_guard<std::mutex> lock(pending_candidates_mutex);
 				ice_gathering_complete = true;
-				ice_gathering_cv.notify_one();
 			}
-			// Only send end-of-candidates after the final (post-response) gather
-			// completes, not after the pre-offer OPTIONS gather. This ensures
-			// candidates from POST response ICE servers aren't ignored (RFC 8840).
-			if (trickle_enabled && post_response_gather_started) {
-				SendEndOfCandidates();
-			}
+			pending_candidates_cv.notify_one();
 		}
 	});
 
@@ -577,9 +563,8 @@ bool WHIPOutput::Connect()
 		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
 		headers = curl_slist_append(headers, bearer_token_header.c_str());
 	}
-	// Advertise reverse trickle ICE support so the server can send browser candidates
-	// back in PATCH response bodies (non-standard WHIP extension).
-	headers = curl_slist_append(headers, "X-WHIP-Trickle-In: 1");
+	// Use the complete candidate list in the WHIP answer. Advertising reverse
+	// trickle is unsafe without a channel for candidates arriving after our last PATCH.
 
 	std::string read_buffer;
 	std::vector<std::string> http_headers;
@@ -601,6 +586,24 @@ bool WHIPOutput::Connect()
 #endif
 
 	auto offer_sdp = std::string(peer_connection->localDescription().value());
+
+#ifdef _WIN32
+	// The Windows Mbed TLS dependency rejects current Chrome's DTLS ClientHello.
+	// VDO.Ninja supports the passive role, so offer active for this endpoint only.
+	// Keep normal actpass negotiation for other WHIP services (RFC 9725, 4.4.4).
+	CURLU *endpoint = curl_url();
+	char *endpoint_host = nullptr;
+	if (endpoint && curl_url_set(endpoint, CURLUPART_URL, endpoint_url.c_str(), 0) == CURLUE_OK &&
+	    curl_url_get(endpoint, CURLUPART_HOST, &endpoint_host, 0) == CURLUE_OK &&
+	    astrcmpi(endpoint_host, "whip.vdo.ninja") == 0) {
+		const std::string actpass = "a=setup:actpass\r\n";
+		for (auto pos = offer_sdp.find(actpass); pos != std::string::npos; pos = offer_sdp.find(actpass)) {
+			offer_sdp.replace(pos, actpass.size(), "a=setup:active\r\n");
+		}
+	}
+	curl_free(endpoint_host);
+	curl_url_cleanup(endpoint);
+#endif
 
 	// Extract ICE credentials for trickle PATCH requests
 	std::regex re_ufrag("a=ice-ufrag:([^\\r\\n]+)");
@@ -778,8 +781,8 @@ bool WHIPOutput::Connect()
 		}
 	}
 
-	rtc::Description answer(response, "answer");
 	try {
+		rtc::Description answer(response, "answer");
 		peer_connection->setRemoteDescription(answer);
 	} catch (const std::invalid_argument &err) {
 		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s", err.what());
@@ -802,28 +805,12 @@ bool WHIPOutput::Connect()
 	}
 	doCleanup(false);
 
-	// Flush any candidates that arrived during the POST request (trickle ICE only)
-	// after the answer is applied, so PATCH response candidates can be accepted.
-	std::vector<rtc::Candidate> candidates_to_send;
-	{
-		std::lock_guard<std::mutex> lock(pending_candidates_mutex);
-		offer_sent = true;
-		if (trickle_enabled) {
-			candidates_to_send = std::move(pending_candidates);
-		}
-		pending_candidates.clear();
-	}
-	for (const auto &candidate : candidates_to_send) {
-		SendTrickleCandidate(candidate);
-	}
-
 #if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
-	// Always gather with POST response servers to:
-	// 1. Get host candidates even if no ICE servers provided
-	// 2. Incorporate any TURN servers/credentials from the POST response
-	// Mark that this is the final gather - end-of-candidates will be sent when complete
-	post_response_gather_started = true;
-	peer_connection->gatherLocalCandidates(iceServers);
+	// libdatachannel only permits one gathering pass. If OPTIONS did not
+	// start it, use the servers from POST; otherwise drain the existing pass.
+	if (!has_ice_servers) {
+		peer_connection->gatherLocalCandidates(iceServers);
+	}
 #endif
 
 	return true;
@@ -844,9 +831,13 @@ void WHIPOutput::StartThread()
 		peer_connection = nullptr;
 		audio_track = nullptr;
 		video_track = nullptr;
+		SendDelete();
 		return;
 	}
 
+	if (trickle_enabled) {
+		trickle_thread = std::thread(&WHIPOutput::TrickleThread, this);
+	}
 	obs_output_begin_data_capture(output, 0);
 	running = true;
 }
@@ -909,6 +900,8 @@ void WHIPOutput::SendDelete()
 
 void WHIPOutput::StopThread(bool signal)
 {
+	StopTrickle();
+
 	if (peer_connection != nullptr) {
 		peer_connection->close();
 		peer_connection = nullptr;
@@ -1081,7 +1074,7 @@ bool WHIPOutput::BuildTrickleSdpFragment(const std::string &mid, const std::stri
 
 void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
 {
-	if (!trickle_enabled) {
+	if (!trickle_enabled || trickle_stop) {
 		return;
 	}
 
@@ -1120,8 +1113,19 @@ void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
 	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
 	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
 	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer.data());
+	curl_easy_setopt(c, CURLOPT_NOPROGRESS, 0L);
+	curl_easy_setopt(c, CURLOPT_XFERINFODATA, this);
+	curl_easy_setopt(
+		c, CURLOPT_XFERINFOFUNCTION, +[](void *data, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
+			return static_cast<WHIPOutput *>(data)->trickle_stop ? 1 : 0;
+		});
 
 	CURLcode res = curl_easy_perform(c);
+	if (trickle_stop) {
+		curl_easy_cleanup(c);
+		curl_slist_free_all(headers);
+		return;
+	}
 	if (res != CURLE_OK) {
 		do_log(LOG_WARNING, "Trickle ICE PATCH failed: %s",
 		       error_buffer[0] ? error_buffer.data() : curl_easy_strerror(res));
@@ -1190,9 +1194,48 @@ void WHIPOutput::ApplyIncomingRemoteCandidates(const std::string &sdp_frag)
 				do_log(LOG_WARNING, "Failed to add remote candidate: %s", e.what());
 			}
 		}
-		// a=end-of-candidates: libdatachannel handles end-of-candidates
-		// automatically when the remote description has no candidates and
-		// no further addRemoteCandidate() calls are made. No explicit API needed.
+		// libdatachannel has no API for a remote end-of-candidates indication.
+	}
+}
+
+void WHIPOutput::TrickleThread()
+{
+	while (!trickle_stop && trickle_enabled) {
+		std::vector<rtc::Candidate> candidates;
+		bool complete = false;
+		{
+			std::unique_lock<std::mutex> lock(pending_candidates_mutex);
+			pending_candidates_cv.wait(lock, [this] {
+				return trickle_stop || !pending_candidates.empty() || ice_gathering_complete;
+			});
+			if (trickle_stop) {
+				return;
+			}
+			candidates.swap(pending_candidates);
+			complete = ice_gathering_complete;
+		}
+		for (const auto &candidate : candidates) {
+			if (trickle_stop || !trickle_enabled) {
+				return;
+			}
+			SendTrickleCandidate(candidate);
+		}
+		if (complete) {
+			SendEndOfCandidates();
+			return;
+		}
+	}
+}
+
+void WHIPOutput::StopTrickle()
+{
+	{
+		std::lock_guard<std::mutex> lock(pending_candidates_mutex);
+		trickle_stop = true;
+	}
+	pending_candidates_cv.notify_one();
+	if (trickle_thread.joinable()) {
+		trickle_thread.join();
 	}
 }
 
