@@ -5,6 +5,15 @@
 #include <mbedtls/threading.h>
 #endif
 
+#if defined(USE_MBEDTLS)
+#include <mbedtls/version.h>
+
+#if MBEDTLS_VERSION_MAJOR >= 4
+#include <psa/crypto.h>
+#endif
+
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-outputs", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
@@ -56,6 +65,10 @@ bool obs_module_load(void)
 	WSAStartup(MAKEWORD(2, 2), &wsad);
 #endif
 
+#if defined(USE_MBEDTLS) && MBEDTLS_VERSION_MAJOR >= 4
+	psa_crypto_init();
+#endif
+
 #if defined(_WIN32) && defined(MBEDTLS_THREADING_ALT)
 	mbedtls_threading_set_alt(mbed_mutex_init, mbed_mutex_free, mbed_mutex_lock, mbed_mutex_unlock);
 #endif
@@ -70,6 +83,10 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+#if defined(USE_MBEDTLS) && MBEDTLS_VERSION_MAJOR >= 4
+	mbedtls_psa_crypto_free();
+#endif
+
 #ifdef _WIN32
 #ifdef MBEDTLS_THREADING_ALT
 	mbedtls_threading_free_alt();
