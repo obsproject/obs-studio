@@ -229,7 +229,7 @@ void DeleteCookies()
 #endif
 }
 
-void DuplicateCurrentCookieProfile(ConfigFile &config)
+void DuplicateCurrentCookieProfile()
 {
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
@@ -267,7 +267,6 @@ void DuplicateCurrentCookieProfile(ConfigFile &config)
 			}
 		}
 
-		config_set_string(config, "Panels", "CookieId", cookie_id.c_str());
 		config_set_string(main->Config(), "Panels", "CookieId", new_id.c_str());
 	}
 #else
