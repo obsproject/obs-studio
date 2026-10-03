@@ -1225,6 +1225,7 @@ static inline bool init_events(struct game_capture *gc)
 			warn("init_events: failed to get hook_stop event: %lu", GetLastError());
 			return false;
 		}
+		ResetEvent(gc->hook_stop);
 	}
 
 	if (!gc->hook_init) {
