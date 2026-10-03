@@ -23,6 +23,7 @@
 #include "formats.h"
 
 #include <util/darray.h>
+#include <util/platform.h>
 
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
@@ -671,6 +672,13 @@ static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 	}
 
 	buffer = b->buffer;
+	struct spa_meta_header *header = spa_buffer_find_meta_data(buffer, SPA_META_Header, sizeof(*header));
+	if (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) > 0) {
+		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
+		return_unused_pw_buffer(obs_pw_stream->stream, b);
+		return;
+	}
+
 	has_buffer = buffer->datas[0].chunk->size != 0;
 
 	if (!has_buffer)
@@ -684,6 +692,12 @@ static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 	if (!prepare_obs_frame(obs_pw_stream, &out)) {
 		blog(LOG_ERROR, "[pipewire] Couldn't prepare frame");
 		goto done;
+	}
+
+	if (header && header->pts != -1 && header->pts != 0) {
+		out.timestamp = (uint64_t)header->pts;
+	} else {
+		out.timestamp = os_gettime_ns();
 	}
 
 	for (uint32_t i = 0; i < buffer->n_datas && i < MAX_AV_PLANES; i++) {
