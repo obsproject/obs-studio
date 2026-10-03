@@ -8,6 +8,11 @@ and Linux x86_64. It runs on relevant pushes, pull requests, and manual dispatch
 Stable/preview builds apply only the four WHIP source files changed since upstream
 `cffa83ba5`; an incompatible patch fails the job instead of silently omitting fixes.
 
+[GitHub run 37140356507](https://github.com/steveseguin/obs-studio/actions/runs/37140356507)
+passed all 12 builds and their ICE regressions on 2026-10-03: fork, stable 32.2.2,
+and preview 33.0.0-beta6 across all four platform/architecture combinations.
+Download the `obs-whip-*` artifacts from that run; retention is 14 days.
+
 Each build explicitly enables WebRTC, rebuilds pinned libdatachannel/libjuice with
 the checked-in patch, and runs the STUN integrity and ICE role-conflict tests.
 The patch also fixes the controlled-role conflict comparison to use the remote
