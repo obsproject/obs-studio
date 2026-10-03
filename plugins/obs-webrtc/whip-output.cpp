@@ -7,11 +7,11 @@
 #include <obs.hpp>
 
 /*
- * Sets the maximum size for a video fragment. Effective range is
- * 576-1470, with a lower value equating to more packets created,
- * but also better network compatability.
+ * Keep codec fragments small across all encoders. RTP extensions, SRTP, UDP/IP,
+ * and TURN add overhead, so this is deliberately below a 1400-byte path MTU.
+ * This limits RTP payload fragments, not encoded video frame size.
  */
-static uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
+static constexpr uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
 
 const int signaling_media_id_length = 16;
 const char signaling_media_id_valid_char[] = "0123456789"

@@ -1,5 +1,7 @@
 #include "whip-service.h"
 
+#include <cstring>
+
 const char *audio_codecs[] = {"opus", nullptr};
 const char *video_codecs[] = {"h264", "hevc", "av1", nullptr};
 
@@ -32,6 +34,10 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 		// VideoToolbox uses a boolean instead of the shared integer override.
 		obs_data_set_bool(video_settings, "bframes", false);
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+		// NVENC's UHQ mode forces at least four B-frames even when bf is zero.
+		if (std::strcmp(obs_data_get_string(video_settings, "tune"), "uhq") == 0) {
+			obs_data_set_string(video_settings, "tune", "hq");
+		}
 	}
 }
 

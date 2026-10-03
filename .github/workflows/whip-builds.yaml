@@ -8,6 +8,7 @@ on:
     paths:
       - 'plugins/obs-webrtc/**'
       - 'plugins/mac-videotoolbox/**'
+      - 'plugins/obs-x264/**'
       - 'build-aux/*whip*'
       - 'build-aux/whip-dependency/**'
       - 'test/whip/**'
