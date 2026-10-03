@@ -23,7 +23,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: whip-${{ github.workflow }}-${{ github.ref }}
+  # Routine pushes must not interrupt an Apple notarization submission.
+  group: whip-${{ github.workflow }}-${{ github.ref }}-${{ inputs.notarize_macos && 'release' || 'test' }}
   cancel-in-progress: true
 
 jobs:
