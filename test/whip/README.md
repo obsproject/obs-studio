@@ -39,22 +39,40 @@ macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
 require its runtime libraries. Building successfully does not certify live TURN
 operation.
 
-**Mac signing handoff (updated 2026-10-03):** the public releases still contain
-ad-hoc-signed, unnotarized Mac packages. All four original Mac archives were
+**Mac signing completed (2026-10-03):** both public releases now contain
+Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64. All four
+original Mac archives were
 downloaded and checked against the published checksums and `whip-build.json`.
-Local copies are now signed with Steve Seguin's Developer ID Application identity
+The replacements are signed with Steve Seguin's Developer ID Application identity
 (team `H3CKR5XB3J`), secure timestamps, and hardened runtime. Strict verification
 passed for every nested Mach-O and bundle, with original entitlements preserved.
 Comparisons after removing signatures and normalizing the signature segment's VM
 allocation confirmed unchanged executable payloads, including patched libdatachannel.
 No source rebuild was needed.
 
-Apple notarization, stapling, Gatekeeper acceptance, and replacement of the public
-assets remain pending notarization credentials. The Developer ID certificate,
-encrypted certificate password, and identity are configured as GitHub repository
-secrets. No notarization username/password secrets or usable local `notarytool`
-profile were found. Do not describe the public packages as notarized until the
-release gate below succeeds.
+Apple accepted all four submissions with no issues. Tickets were stapled and
+validated, and Gatekeeper reported `Notarized Developer ID`. The final archives
+were extracted and verified again before publication. The four Mac assets,
+checksums, and provenance were replaced; the original CI provenance is retained
+under `original_build_package` and signing/notarization is recorded separately in
+`signing`. Windows/Linux assets and their provenance entries are unchanged.
+Stable remains Latest and preview remains Prerelease.
+
+The local Keychain profile is `OBS-WHIP`; all five signing/notarization GitHub
+repository secrets are configured. Credentials were transferred securely from an
+existing local configuration and are not stored in this repository.
+
+| OBS version | Architecture | Accepted Apple submission |
+| --- | --- | --- |
+| 32.2.2 | arm64 | `4ef3da38-2f7a-4492-99ad-89ad74ccc391` |
+| 32.2.2 | x86_64 | `da305505-23cd-4a4c-b89c-b866a84043b2` |
+| 33.0.0-beta6 | arm64 | `94d7621d-0aab-4e57-8041-0e9c625c431e` |
+| 33.0.0-beta6 | x86_64 | `b86c4de1-baa7-4b7c-b280-90be64b8ea1e` |
+
+Local receipts, Apple logs, final archive checksums, and public verification
+records are retained under ignored `build_whip_signing/evidence/` and
+`build_whip_signing/signed/`. The GitHub release provenance includes the same
+signing records and Apple results.
 
 ### Signed Mac runtime checks — 2026-10-03
 
@@ -101,7 +119,8 @@ xcrun notarytool store-credentials OBS-WHIP --team-id H3CKR5XB3J --apple-id YOUR
 
 The current staging directories and original downloads are in ignored
 `build_whip_signing/stage/` and `build_whip_signing/original/{stable,preview}/`.
-For each already-signed package, use the corresponding staging directory:
+The completed conversion used the following command for each signed staging
+directory (the stored submission ID supports resuming an interrupted run):
 
 ```sh
 python3 build-aux/sign-whip-macos.py release \
@@ -117,7 +136,8 @@ The archive retains the original `whip-build.json`; the separate
 `macos-signing.json` records signing, unchanged code hashes, Apple's submission ID,
 and verification results.
 
-`build-aux/update-whip-macos-release.py` prepares updated checksums, provenance,
+`build-aux/update-whip-macos-release.py` converts an existing unsigned release,
+preparing updated checksums, provenance,
 and notes from these verified packages. It preserves Windows/Linux package entries
 and retains the entire original Mac package entry as `original_build_package`,
 with signing/notarization in `signing`. It checks that the live release metadata
@@ -133,9 +153,12 @@ python3 build-aux/update-whip-macos-release.py \
   --tag v32.2.2-whip-relay
 ```
 
-Review its generated notes, then rerun with `--publish`. Repeat with `preview`
+For a fresh unsigned release, review its generated notes, then rerun with
+`--publish`. Repeat with `preview`
 and `v33.0.0-beta6-whip-relay`. Stable remains Latest; preview remains Prerelease.
-Publication fails if any Mac archive lacks verified notarization/stapling.
+Publication fails if any Mac archive lacks verified notarization/stapling. The
+completed releases intentionally cannot be overwritten using the stale original
+metadata snapshots; the updater detects changed live metadata.
 
 For future CI builds, manually dispatch **WHIP builds** on `master` with
 `notarize_macos=true`. This requires `MACOS_SIGNING_IDENTITY`, `MACOS_SIGNING_CERT`
