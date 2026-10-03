@@ -54,6 +54,13 @@ kept the installed OBS and other running OBS instances untouched. The stable tes
 directory replaced only `obs-webrtc.dll` and `datachannel.dll`; the development
 test used a full local build of this fork.
 
+The downloadable Windows stable and preview artifacts from GitHub run
+`37138506023` were also extracted and tested directly against production VDO.Ninja.
+OBS 32.2.2 and 33.0.0-beta6 each passed all six Chrome/Firefox routing cases.
+Their reports are `WhipMatrix_1791047821204/report.json` and
+`WhipMatrix_1791047984986/report.json` in the same VDO.Ninja artifact directory.
+These checks include the packaged patched dependency, not just local builds.
+
 Chrome for Testing 154.0.8037.92 and Playwright Firefox 155.0 (OpenH264 2.6.0)
 received synthetic H.264 720p30 video and Opus audio through the live WHIP service.
 Both `https://vdo.ninja` and the supplied local frontend were tested, with no

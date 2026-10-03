@@ -100,7 +100,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y zsh ninja-build libssl-dev jq xz-utils cmake pkg-config
+          sudo apt-get install -y zsh ninja-build libssl-dev jq xz-utils cmake pkg-config libnss3 libnspr4 libxrandr2
           cd "$OBS_SOURCE"
           zsh --no-rcs --errexit --pipefail -c '
             project_root=$PWD
