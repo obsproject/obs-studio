@@ -54,13 +54,13 @@ try {
     $existingDiff = ((git -C $juice diff --binary) -join "`n").Trim()
     $expectedDiff = [IO.File]::ReadAllText($patch).Replace("`r`n", "`n").Trim()
     if (!$existingDiff) {
-        Invoke-Checked git @('-C', $juice, 'apply', '--check', $patch)
-        Invoke-Checked git @('-C', $juice, 'apply', $patch)
+        Invoke-Checked git @('-C', $juice, 'apply', '--check', '--ignore-space-change', $patch)
+        Invoke-Checked git @('-C', $juice, 'apply', '--ignore-space-change', $patch)
     } elseif ($existingDiff -ne $expectedDiff) {
         throw 'Unexpected libjuice edits; existing checkout preserved'
     }
     Invoke-Checked $cmake @('-S', $source, '-B', $dependencyBuild, '-G', $generator, '-A', 'x64',
-        '-DUSE_MBEDTLS=ON', '-DNO_WEBSOCKET=ON', '-DNO_TESTS=ON', '-DNO_EXAMPLES=ON', '-DBUILD_SHARED_LIBS=ON',
+        '-DUSE_MBEDTLS=ON', '-DNO_WEBSOCKET=ON', '-DNO_TESTS=ON', '-DNO_EXAMPLES=ON', '-DBUILD_SHARED_LIBS=ON', '-DCMAKE_POLICY_VERSION_MINIMUM=3.5',
         "-DCMAKE_PREFIX_PATH=$prebuilt", "-DCMAKE_INSTALL_PREFIX=$install")
     Invoke-Checked $cmake @('--build', $dependencyBuild, '--config', 'Release', '--target', 'datachannel', '--parallel', "$Jobs", '--', '/p:CL_MPCount=1')
     Invoke-Checked $cmake @('-S', "$repoRoot/test/whip", '-B', $testBuild, '-G', $generator, '-A', 'x64', "-DLIBJUICE_SOURCE_DIR=$juice")

@@ -1,5 +1,53 @@
 # WHIP fork review — 2026-10-03
 
+## Reproducible compatibility builds
+
+The `WHIP builds` GitHub workflow builds the current fork, the latest stable OBS
+release, and the latest applicable prerelease on Windows x64, macOS arm64/x86_64,
+and Linux x86_64. It runs on relevant pushes, pull requests, and manual dispatch.
+Stable/preview builds apply only the four WHIP source files changed since upstream
+`cffa83ba5`; an incompatible patch fails the job instead of silently omitting fixes.
+
+Each build explicitly enables WebRTC, rebuilds pinned libdatachannel/libjuice with
+the checked-in patch, and runs the STUN integrity and ICE role-conflict tests.
+The patch also fixes the controlled-role conflict comparison to use the remote
+ICE-CONTROLLED tie-breaker. The added test failed before this correction.
+Build manifests record the source revisions and dependency patch SHA-256.
+
+The workflow produces **unofficial test builds** as downloadable artifacts, with
+file permissions preserved inside ZIP/tar.gz archives. It does not publish a
+release or use OBS Project signing credentials. AJA and scripting are disabled;
+macOS virtual camera is disabled. Linux artifacts target Ubuntu 26.04 and require
+its runtime libraries. Building successfully does not certify live TURN operation.
+
+With the platform's OBS build prerequisites installed:
+
+```powershell
+python build-aux/build-whip.py --version 33.0.0-beta6 --generator "Visual Studio 17 2022" --jobs 4
+```
+
+On macOS/Linux omit `--generator`; use `--arch arm64` or `--arch x86_64` on macOS.
+Linux additionally needs the matching CEF archive and distribution development
+packages, as installed by the workflow. To configure an upstream stable checkout:
+
+```powershell
+python build-aux/prepare-whip-source.py --ref 32.2.2 --destination build_whip_stable/source
+python build_whip_stable/source/build-aux/build-whip.py --version 32.2.2 --generator "Visual Studio 17 2022" --jobs 4
+```
+
+The dependency helper can also update an existing configured OBS build:
+
+```powershell
+python build-aux/build-whip-dependency.py --obs-build build_whip_review/dev --jobs 4
+```
+
+`&relay&tcp` verifies browser-to-TURN TCP/TLS transport. OBS still uses UDP with
+the current libjuice backend; this is not a test of an OBS network blocking UDP.
+The Windows DTLS workaround remains restricted to the exact `whip.vdo.ninja`
+hostname. macOS/Linux publisher runtime interoperability needs separate testing.
+
+## Original review record
+
 Local `master` includes origin/master `a3dbbc6a7` and OBS upstream/master
 `cffa83ba5` through merge `d2360bd95`. The changes described below are local
 working-tree changes; nothing was pushed. The pre-existing reverse-trickle plan
