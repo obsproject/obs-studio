@@ -41,7 +41,7 @@ jobs:
         shell: bash
         run: |
           python3 - <<'PY'
-          import json, os, subprocess
+          import json, os, re, subprocess
           releases = json.loads(subprocess.check_output(['gh', 'api', 'repos/obsproject/obs-studio/releases?per_page=30']))
           stable = next(r['tag_name'] for r in releases if not r['draft'] and not r['prerelease'])
           preview = next((r['tag_name'] for r in releases if not r['draft'] and r['prerelease']), None)
@@ -49,7 +49,9 @@ jobs:
               subprocess.run(['git', 'fetch', '--no-tags', 'https://github.com/obsproject/obs-studio.git', 'tag', tag], check=True)
           fork_version = subprocess.check_output(['git', 'describe', '--tags', '--match', '[0-9]*', '--abbrev=0'], text=True).strip()
           versions = [{'track': 'fork', 'ref': '', 'version': fork_version}, {'track': 'stable', 'ref': stable, 'version': stable}]
-          if preview and int(preview.split('.')[0]) >= int(stable.split('.')[0]):
+          def release_version(tag):
+              return tuple(int(n) for n in re.match(r'^(\d+)\.(\d+)\.(\d+)', tag).groups())
+          if preview and release_version(preview) > release_version(stable):
               versions.append({'track': 'preview', 'ref': preview, 'version': preview})
           platforms = [('windows-2025-vs2026', 'windows', 'x64', ''), ('macos-26', 'macos', 'arm64', ''), ('macos-26', 'macos', 'x86_64', ''), ('ubuntu-24.04', 'linux', 'x86_64', 'ubuntu:26.04')]
           matrix = {'include': [dict(v, runner=r, platform=p, arch=a, container=c) for v in versions for r, p, a, c in platforms]}

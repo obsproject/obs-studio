@@ -89,6 +89,11 @@ def main():
     run("cmake", "--build", tests, "--config", "Release", "--target", "whip-ice-test", *parallel)
     run("ctest", "--test-dir", tests, "-C", "Release", "--output-on-failure")
     run("cmake", "--install", build / "build", "--config", "Release")
+    if platform.system() == "Linux":
+        # The pinned upstream package omits dependencies from its static export.
+        config = install / "lib/cmake/LibDataChannel/LibDataChannelConfig.cmake"
+        config.write_text("include(CMakeFindDependencyMacro)\nfind_dependency(Threads)\n"
+                          "find_dependency(OpenSSL)\n" + config.read_text(encoding="utf-8"), encoding="utf-8")
     run("cmake", "-S", ROOT, "-B", obs_build, "-DENABLE_WEBRTC=ON", f"-DLibDataChannel_DIR={install}/lib/cmake/LibDataChannel")
     (build / "manifest.json").write_text(json.dumps({"libdatachannel": REVISION, "libjuice": JUICE_REVISION,
         "patch_sha256": hashlib.sha256(normalized_patch.read_bytes()).hexdigest(),

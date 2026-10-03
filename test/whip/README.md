@@ -46,6 +46,54 @@ the current libjuice backend; this is not a test of an OBS network blocking UDP.
 The Windows DTLS workaround remains restricted to the exact `whip.vdo.ninja`
 hostname. macOS/Linux publisher runtime interoperability needs separate testing.
 
+## Fresh Windows interoperability results
+
+On 2026-10-03, official OBS 32.2.2 and 33.0.0-beta6 ZIPs were downloaded and
+checked against their GitHub release SHA-256 values. Separate portable directories
+kept the installed OBS and other running OBS instances untouched. The stable test
+directory replaced only `obs-webrtc.dll` and `datachannel.dll`; the development
+test used a full local build of this fork.
+
+Chrome for Testing 154.0.8037.92 and Playwright Firefox 155.0 (OpenH264 2.6.0)
+received synthetic H.264 720p30 video and Opus audio through the live WHIP service.
+Both `https://vdo.ninja` and the supplied local frontend were tested, with no
+frontend DTLS experiment enabled.
+
+| Windows publisher | Default | `&relay` | `&relay&tcp` |
+| --- | --- | --- | --- |
+| Stock 32.2.2, Chrome / production | Fail | Fail | Fail |
+| Stock 32.2.2, Firefox / production | Pass | Fail | Fail |
+| Stock 33.0.0-beta6, Chrome / local frontend | Fail | Fail | Fail |
+| Patched 32.2.2, both browsers / both frontends | 4/4 pass | 4/4 pass | 4/4 pass |
+| Patched development fork, both browsers / both frontends | 4/4 pass | 4/4 pass | 4/4 pass |
+
+All 24 patched matrix cases required advancing decoded video, increasing audio
+bytes, and a playing video element. Relay cases also required the selected local
+candidate to be `relay`; TCP cases required the selected TURN transport to be
+TCP/TLS. The observed relay routes used UDP on port 3478 and TLS on port 443.
+An additional 60-second Chrome/TLS test advanced from 17 to 1816 decoded frames
+with increasing audio bytes. Typical connection time was 3–4 seconds and stream
+stop took about 0.5 seconds. An ordinary browser publisher also passed both relay
+routes as a positive control.
+
+Five proxy fault probes passed: delayed POST drained late candidates with exactly
+one final end-of-candidates PATCH; OPTIONS without ICE-server links still connected through relay;
+absent ETag connected without PATCH; a five-second PATCH was cancelled during
+stop in 502 ms; malformed answer SDP stopped the output. Every probe DELETEd
+its allocated session. Header parsing tests, existing STUN vectors, eight
+role/integrity cases, and six role-conflict decisions passed locally.
+
+Evidence is retained in ignored local artifacts. In the sibling VDO.Ninja checkout,
+`tests/playwright/test-results/WhipMatrix_1791045778296/report.json` contains the
+stable matrix, `WhipMatrix_1791046057560/report.json` the development matrix, and
+`WhipMatrix_1791046309656/report.json` the 60-second observation. OBS artifacts
+include `build_whip_review/fault-summary.json` and `probe-*.json`. The VDO.Ninja
+`tests/playwright/obs-whip-review.md` documents the harness invocation.
+
+These checks prove the selected viewer TURN routes in this network, not every NAT
+topology or a UDP-blocked OBS publisher. Mobile, macOS/Linux publishers, and long-duration streaming were not
+retested in this fresh matrix. No VDO.Ninja application source was changed.
+
 ## Original review record
 
 Local `master` includes origin/master `a3dbbc6a7` and OBS upstream/master
