@@ -222,6 +222,8 @@ EXPORT size_t audio_output_get_planes(const audio_t *audio);
 EXPORT size_t audio_output_get_channels(const audio_t *audio);
 EXPORT uint32_t audio_output_get_sample_rate(const audio_t *audio);
 EXPORT const struct audio_output_info *audio_output_get_info(const audio_t *audio);
+EXPORT bool audio_output_is_first(const audio_t *audio);
+EXPORT bool audio_output_is_last(const audio_t *audio);
 
 #ifdef __cplusplus
 }
