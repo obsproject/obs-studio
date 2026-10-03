@@ -13,7 +13,8 @@ UPSTREAM_BASE = "cffa83ba5"
 WHIP_FILES = ["plugins/obs-webrtc/obs-webrtc.cpp", "plugins/obs-webrtc/whip-output.cpp",
               "plugins/obs-webrtc/whip-output.h", "plugins/obs-webrtc/whip-utils.h",
               "plugins/obs-webrtc/whip-service.cpp", "plugins/mac-videotoolbox/encoder.c",
-              "plugins/obs-x264/obs-x264.c"]
+              "plugins/obs-x264/obs-x264.c", "plugins/obs-nvenc/nvenc-opts-parser.c",
+              "plugins/obs-ffmpeg/texture-amf.cpp"]
 
 
 def main():

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.28)
+project(whip_packetization_regression LANGUAGES CXX)
+find_package(LibDataChannel CONFIG REQUIRED)
+# Read the production limit so changing it cannot leave this regression stale.
+file(STRINGS "${CMAKE_CURRENT_LIST_DIR}/../../../plugins/obs-webrtc/whip-output.cpp" fragment_limit
+     REGEX "MAX_VIDEO_FRAGMENT_SIZE = [0-9]+;")
+if(NOT fragment_limit MATCHES "MAX_VIDEO_FRAGMENT_SIZE = ([0-9]+);")
+  message(FATAL_ERROR "Cannot find WHIP's video fragment limit")
+endif()
+set(whip_fragment_limit "${CMAKE_MATCH_1}")
+add_executable(whip-packetization-test packetization.cpp)
+target_compile_definitions(whip-packetization-test PRIVATE WHIP_FRAGMENT_LIMIT=${whip_fragment_limit})
+target_compile_features(whip-packetization-test PRIVATE cxx_std_17)
+target_link_libraries(whip-packetization-test PRIVATE LibDataChannel::LibDataChannel)
+enable_testing()
+add_test(NAME whip-packetization COMMAND whip-packetization-test)

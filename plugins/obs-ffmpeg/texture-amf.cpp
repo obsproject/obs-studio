@@ -1634,6 +1634,13 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		obs_free_options(opts);
 	}
 
+	/* Custom AMF options must not override WHIP's no-B-frame requirement. */
+	if (obs_data_get_bool(settings, "whip_no_bframes") && enc->bframes_supported) {
+		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, 0);
+		set_avc_property(enc, B_PIC_PATTERN, 0);
+		set_avc_property(enc, ADAPTIVE_MINIGOP, false);
+	}
+
 	if (!ffmpeg_opts || !*ffmpeg_opts) {
 		ffmpeg_opts = "(none)";
 	}
@@ -2451,6 +2458,13 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	}
 
 	check_preset_compatibility(enc, preset);
+
+	/* Custom AMF options must not override WHIP's no-B-frame requirement. */
+	if (obs_data_get_bool(settings, "whip_no_bframes") && enc->bframes_supported) {
+		set_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, 0);
+		set_av1_property(enc, B_PIC_PATTERN, 0);
+		set_av1_property(enc, ADAPTIVE_MINIGOP, false);
+	}
 
 	if (!ffmpeg_opts || !*ffmpeg_opts) {
 		ffmpeg_opts = "(none)";

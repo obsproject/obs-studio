@@ -9,6 +9,8 @@ on:
       - 'plugins/obs-webrtc/**'
       - 'plugins/mac-videotoolbox/**'
       - 'plugins/obs-x264/**'
+      - 'plugins/obs-nvenc/**'
+      - 'plugins/obs-ffmpeg/texture-amf.cpp'
       - 'build-aux/*whip*'
       - 'build-aux/whip-dependency/**'
       - 'test/whip/**'

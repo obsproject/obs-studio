@@ -94,6 +94,17 @@ def main():
         config = install / "lib/cmake/LibDataChannel/LibDataChannelConfig.cmake"
         config.write_text("include(CMakeFindDependencyMacro)\nfind_dependency(Threads)\n"
                           "find_dependency(OpenSSL)\n" + config.read_text(encoding="utf-8"), encoding="utf-8")
+    packet_tests = build / "packet-tests"
+    run("cmake", "-S", ROOT / "test/whip/packetization", "-B", packet_tests,
+        *generator, *options, f"-DLibDataChannel_DIR={install}/lib/cmake/LibDataChannel")
+    run("cmake", "--build", packet_tests, "--config", "Release", *parallel)
+    test_env = os.environ.copy()
+    if platform.system() == "Windows":
+        # CTest needs the newly built DLL and the OBS dependency DLLs.
+        dll_paths = [str(install / "bin")]
+        dll_paths += [str(Path(prefix) / "bin") for prefix in cache.get("CMAKE_PREFIX_PATH", "").split(";") if prefix]
+        test_env["PATH"] = os.pathsep.join(dll_paths + [test_env.get("PATH", "")])
+    run("ctest", "--test-dir", packet_tests, "-C", "Release", "--output-on-failure", env=test_env)
     run("cmake", "-S", ROOT, "-B", obs_build, "-DENABLE_WEBRTC=ON", f"-DLibDataChannel_DIR={install}/lib/cmake/LibDataChannel")
     (build / "manifest.json").write_text(json.dumps({"libdatachannel": REVISION, "libjuice": JUICE_REVISION,
         "patch_sha256": hashlib.sha256(normalized_patch.read_bytes()).hexdigest(),

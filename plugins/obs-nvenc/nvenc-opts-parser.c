@@ -208,6 +208,10 @@ bool apply_user_args(struct nvenc_data *enc)
 		success = false;
 	}
 
+	/* WHIP must not allow custom frameIntervalP to re-enable B-frames. */
+	if (obs_data_get_bool(enc->props.data, "whip_no_bframes") && enc->config.frameIntervalP > 1)
+		enc->config.frameIntervalP = 1;
+
 	return success;
 }
 
