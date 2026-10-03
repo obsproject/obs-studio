@@ -334,8 +334,9 @@ bool WHIPOutput::FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServe
 
 	for (auto &http_header : http_headers) {
 		auto value = value_for_header("link", http_header);
-		if (value.empty())
+		if (value.empty()) {
 			continue;
+		}
 
 		value = trim_string(value);
 		for (auto end = value.find(","); end != std::string::npos; end = value.find(",")) {
@@ -979,8 +980,9 @@ void WHIPOutput::UpdateTrickleSdpMetadata(const std::string &offer_sdp)
 
 	while (std::getline(offer_stream, line)) {
 		line = trim_string(line);
-		if (line.empty())
+		if (line.empty()) {
 			continue;
+		}
 
 		if (line.rfind("a=group:BUNDLE ", 0) == 0) {
 			std::istringstream mids_stream(line.substr(std::string("a=group:BUNDLE ").size()));
@@ -1175,8 +1177,9 @@ void WHIPOutput::ApplyIncomingRemoteCandidates(const std::string &sdp_frag)
 
 	while (std::getline(stream, line)) {
 		line = trim_string(line);
-		if (line.empty())
+		if (line.empty()) {
 			continue;
+		}
 
 		if (line.rfind("a=mid:", 0) == 0) {
 			current_mid = line.substr(6);
@@ -1187,8 +1190,8 @@ void WHIPOutput::ApplyIncomingRemoteCandidates(const std::string &sdp_frag)
 				rtc::Candidate remote_cand(cand_str, current_mid);
 				if (peer_connection) {
 					peer_connection->addRemoteCandidate(remote_cand);
-					do_log(LOG_DEBUG, "Added remote candidate (mid=%s): %s",
-					       current_mid.c_str(), cand_str.c_str());
+					do_log(LOG_DEBUG, "Added remote candidate (mid=%s): %s", current_mid.c_str(),
+					       cand_str.c_str());
 				}
 			} catch (const std::exception &e) {
 				do_log(LOG_WARNING, "Failed to add remote candidate: %s", e.what());

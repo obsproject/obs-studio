@@ -24,7 +24,17 @@ def gh(*args):
     return subprocess.check_output(["gh", *map(str, args)])
 
 
-def prepare(original, signed, evidence, notes):
+def rebuild_provenance(repo, run_id):
+    run = json.loads(gh("api", f"repos/{repo}/actions/runs/{run_id}"))
+    if run["conclusion"] != "success" or run["head_branch"] != "master" or run["path"] != ".github/workflows/whip-builds.yaml":
+        raise ValueError("Rebuild must be a successful WHIP workflow on master")
+    pages = json.loads(gh("api", "--paginate", "--slurp", f"repos/{repo}/actions/runs/{run_id}/artifacts"))
+    artifacts = [a for page in pages for a in page["artifacts"] if not a["expired"] and a["name"].endswith("-notarized")]
+    return {"run": run["html_url"], "whip_commit": run["head_sha"],
+            "artifacts": [{k: a[k] for k in ("id", "name", "digest", "url")} for a in artifacts]}
+
+
+def prepare(original, signed, evidence, notes, rebuild=None):
     provenance = json.loads((original / "BUILD-PROVENANCE.json").read_text())
     updated = copy.deepcopy(provenance)
     replacements = {}
@@ -38,14 +48,26 @@ def prepare(original, signed, evidence, notes):
         status = record["notarization"]
         if status.get("status") != "Accepted" or not status.get("stapled"):
             raise ValueError(f"Notarization and stapling are required: {name}")
-        if record["manifest"] != package["manifest"]:
+        manifest = record["manifest"]
+        expected_manifest = dict(package["manifest"])
+        artifact = None
+        if rebuild:
+            # A Mac-only WHIP correction must retain the OBS base and the exact
+            # patched dependency. A different base requires a separate release.
+            expected_manifest["whip_commit"] = rebuild["whip_commit"]
+            artifact_name = package["artifact"].removesuffix("-notarized") + "-notarized"
+            matches = [a for a in rebuild["artifacts"] if a["name"] == artifact_name]
+            if len(matches) != 1:
+                raise ValueError(f"Missing unique notarized CI artifact: {artifact_name}")
+            artifact = matches[0]
+        if manifest != expected_manifest:
             raise ValueError(f"Original build provenance changed: {name}")
         if receipt["file"] != name or receipt["sha256"] != signing.sha256(archive) or receipt["bytes"] != archive.stat().st_size:
             raise ValueError(f"Signed package does not match its receipt: {name}")
         with tempfile.TemporaryDirectory(prefix="obs-whip-publish-") as temp:
             signing.run("/usr/bin/tar", "-xzf", archive, "-C", temp)
             unpacked = Path(temp)
-            if json.loads((unpacked / "whip-build.json").read_text()) != package["manifest"]:
+            if json.loads((unpacked / "whip-build.json").read_text()) != manifest:
                 raise ValueError(f"Embedded build provenance changed: {name}")
             if json.loads((unpacked / "macos-signing.json").read_text()) != record:
                 raise ValueError(f"Embedded signing record differs: {name}")
@@ -54,7 +76,16 @@ def prepare(original, signed, evidence, notes):
             signing.run("xcrun", "stapler", "validate", app)
             signing.run("spctl", "--assess", "--type", "execute", "--verbose=2", app)
         # Keep every original artifact field as a separate, complete snapshot.
-        package["original_build_package"] = copy.deepcopy(package)
+        previous = copy.deepcopy(package)
+        if "original_build_package" not in package:
+            package["original_build_package"] = previous
+        else:
+            previous.pop("superseded_packages", None)
+            package.setdefault("superseded_packages", []).append(previous)
+        if rebuild:
+            package["manifest"] = manifest
+            package["artifact"] = artifact["name"]
+            package["rebuild"] = {"run": rebuild["run"], "whip_commit": rebuild["whip_commit"], "artifact": artifact}
         package["sha256"] = receipt["sha256"]
         package["bytes"] = receipt["bytes"]
         package["signing"] = record
@@ -89,8 +120,13 @@ def main():
     parser.add_argument("--tag", required=True)
     parser.add_argument("--repo", default="steveseguin/obs-studio")
     parser.add_argument("--publish", action="store_true")
+    parser.add_argument("--rebuild-run", type=int, help="Successful master CI run for a Mac-only WHIP rebuild")
+    parser.add_argument("--release-notes", type=Path, help="Complete reviewed replacement notes (required for a rebuild)")
     args = parser.parse_args()
-    files = prepare(args.original, args.signed, args.evidence, args.validation_notes.read_text())
+    if args.rebuild_run and not args.release_notes:
+        parser.error("--rebuild-run requires complete --release-notes")
+    rebuild = rebuild_provenance(args.repo, args.rebuild_run) if args.rebuild_run else None
+    files = prepare(args.original, args.signed, args.evidence, args.validation_notes.read_text(), rebuild)
     release = json.loads(gh("release", "view", args.tag, "-R", args.repo, "--json", "body,isPrerelease,assets"))
     with tempfile.TemporaryDirectory(prefix="obs-whip-current-") as temp:
         gh("release", "download", args.tag, "-R", args.repo, "-p", "BUILD-PROVENANCE.json", "-p", "SHA256SUMS.txt", "-D", temp)
@@ -99,7 +135,7 @@ def main():
                 raise ValueError("Public release metadata changed since download; refresh and review it first")
     body = release["body"]
     marker = "unsigned and not notarized"
-    if marker not in body:
+    if not args.release_notes and marker not in body:
         raise ValueError("Release notes no longer match the expected unsigned-release handoff")
     body = body.replace(marker, "with Developer ID signed and Apple-notarized Mac apps; Windows packages remain unsigned")
     body = body.replace(
@@ -109,6 +145,8 @@ def main():
     body += ("The original CI binaries and patched dependency are retained. `BUILD-PROVENANCE.json` keeps each "
              "original Mac artifact under `original_build_package` and records signing/notarization separately "
              "under `signing`. Windows and Linux archives and provenance entries are unchanged.\n")
+    if args.release_notes:
+        body = args.release_notes.read_text()
     notes = args.signed / "release-notes.md"
     notes.write_text(body)
     print(f"Prepared {args.tag}: {', '.join(files)}")
