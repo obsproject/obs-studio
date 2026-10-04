@@ -1,4 +1,5 @@
 #include "whip-service.h"
+#include "whip-media-utils.h"
 
 #include <cstring>
 
@@ -35,6 +36,9 @@ void WHIPService::ApplyEncoderSettings(obs_data_t *video_settings, obs_data_t *)
 		// VideoToolbox uses a boolean instead of the shared integer override.
 		obs_data_set_bool(video_settings, "bframes", false);
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+		// libobs cannot request an immediate keyframe when a receiver needs recovery.
+		obs_data_set_int(video_settings, "keyint_sec",
+				 whip_keyframe_interval(obs_data_get_int(video_settings, "keyint_sec")));
 		// NVENC's UHQ mode forces at least four B-frames even when bf is zero.
 		if (std::strcmp(obs_data_get_string(video_settings, "tune"), "uhq") == 0) {
 			obs_data_set_string(video_settings, "tune", "hq");

@@ -515,6 +515,41 @@ Observed: zero header failures, existing STUN vectors and all eight ICE
 role/integrity cases passed. The dependency helper's final build log is
 `build-whip-reproducible-final.log`.
 
+## Media timing and encoder pacing
+
+`packetization/media.cpp` tests the production helpers in `whip-media-utils.h`.
+The dependency build runs this test alongside the packet-budget test on every
+Windows, macOS, and Linux CI job. It covers an hour of encoder timestamps at
+24/30/60, 23.976/29.97/59.94/119.88 fps, negative preroll, Opus clock steps,
+skipped time, random offsets, and repeated RTP timestamp wraps. The absolute-clock
+conversion avoids the roughly 400 ms/hour error reproduced by the previous
+per-frame rounding at 59.94 fps. This is a numerical regression, not an hour-long
+browser synchronization measurement.
+
+WHIP applies a two-second keyframe interval through the normal encoder settings,
+preserving a shorter choice. Encoder-specific raw GOP options remain explicit
+overrides; this change does not rewrite those options. Output startup applies
+these settings even when the service-recommendations checkbox is disabled.
+
+The existing packet pacer retains its 10x allowance for bitrate-controlled modes,
+uses the peak for VBR, and includes all simulcast layers. Quality modes use a
+100 Mbps allowance instead of an inactive saved bitrate, unless an applicable
+peak limit is enabled. A 4 Mbps minimum allowance accommodates low-rate encoder
+overshoot. These are transport allowances, not encoder bitrate changes or
+congestion control. The existing 5 ms scheduling and NACK implementation remain;
+Ninja's bounded repair queues and finer pacing need separate loss/reordering tests.
+In particular, do not treat a false `Track::send()` result as a video failure:
+libdatachannel's asynchronous pacing handler consumes the message list and the
+outer send then returns false even when packets were successfully queued.
+
+The adjacent VDO.Ninja `tests/playwright/obs-whip-matrix.cjs` accepts
+`WHIP_ENCODER`, `WHIP_ENCODER_SETTINGS` (JSON), `WHIP_FPS_NUM`, `WHIP_FPS_DEN`, and
+`WHIP_APPLY_SERVICE_SETTINGS=0` for these regressions. It records loaded module
+paths/hashes and receiver freeze/concealment counters, and verifies TURN/UDP as
+well as TURN/TCP or TLS. Existing `WHIP_OBS_PORTABLE`, `WHIP_CHROME_PATH`,
+`WHIP_OPENH264_DIR`, `WHIP_ENGINES`, `WHIP_BASES`, `WHIP_MODES`, and
+`WHIP_OBSERVE_MS` select the isolated runtime and receiver matrix.
+
 ## Limits
 
 KRD's Windows 10 LTSC 1809, Broadwell QuickSync/ICQ, high bitrates, extended

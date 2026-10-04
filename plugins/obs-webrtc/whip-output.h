@@ -20,8 +20,6 @@
 
 struct videoLayerState {
 	uint16_t sequenceNumber;
-	uint32_t rtpTimestamp;
-	int64_t lastVideoTimestamp;
 	uint32_t ssrc;
 	std::string rid;
 };
@@ -55,11 +53,11 @@ private:
 	void StopThread(bool signal);
 	void ParseLinkHeader(std::string linkHeader, std::vector<rtc::IceServer> &iceServers);
 	bool FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServers);
-	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
+	void Send(void *data, uintptr_t size, int64_t timestamp_usec, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
 	void UpdateTrickleSdpMetadata(const std::string &offer_sdp);
-	bool BuildTrickleSdpFragment(const std::string &mid, const std::string &candidate_line,
-				     bool end_of_candidates, std::string &sdp_frag);
+	bool BuildTrickleSdpFragment(const std::string &mid, const std::string &candidate_line, bool end_of_candidates,
+				     std::string &sdp_frag);
 	void SendTrickleCandidate(const rtc::Candidate &candidate);
 	void SendEndOfCandidates();
 	void SendTrickleIcePatch(const std::string &sdp_frag);
@@ -112,7 +110,6 @@ private:
 	std::atomic<size_t> total_bytes_sent;
 	std::atomic<int> connect_time_ms;
 	int64_t start_time_ns;
-	int64_t last_audio_timestamp;
 };
 
 void register_whip_output();

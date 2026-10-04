@@ -10,9 +10,9 @@ ROOT = Path(__file__).resolve().parent.parent
 # Last OBS upstream merge in this fork. Keep protocol changes separate from
 # unrelated OBS development when testing stable and prerelease versions.
 UPSTREAM_BASE = "cffa83ba5"
-WHIP_FILES = ["plugins/obs-webrtc/obs-webrtc.cpp", "plugins/obs-webrtc/whip-output.cpp",
+WHIP_FILES = ["plugins/obs-webrtc/CMakeLists.txt", "plugins/obs-webrtc/obs-webrtc.cpp", "plugins/obs-webrtc/whip-output.cpp",
               "plugins/obs-webrtc/whip-output.h", "plugins/obs-webrtc/whip-utils.h",
-              "plugins/obs-webrtc/whip-service.cpp", "plugins/mac-videotoolbox/encoder.c",
+              "plugins/obs-webrtc/whip-service.cpp", "plugins/obs-webrtc/whip-media-utils.h", "plugins/mac-videotoolbox/encoder.c",
               "plugins/obs-x264/obs-x264.c", "plugins/obs-nvenc/nvenc-opts-parser.c",
               "plugins/obs-ffmpeg/texture-amf.cpp"]
 
