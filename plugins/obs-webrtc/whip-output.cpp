@@ -1,5 +1,6 @@
 #include "whip-output.h"
 #include "whip-utils.h"
+#include "whip-service.h"
 
 #include <array>
 #include <regex>
@@ -84,6 +85,23 @@ bool WHIPOutput::Start()
 		auto encoder = obs_output_get_video_encoder2(output, idx);
 		if (encoder == nullptr) {
 			break;
+		}
+
+		OBSDataAutoRelease settings = obs_encoder_get_settings(encoder);
+		if (obs_encoder_active(encoder)) {
+			// Reconfiguring a shared, running recording encoder cannot remove its B-frames.
+			if (!obs_data_get_bool(settings, "whip_no_bframes") || obs_data_get_int(settings, "bf") != 0 ||
+			    obs_data_get_bool(settings, "bframes") ||
+			    strcmp(obs_data_get_string(settings, "tune"), "uhq") == 0) {
+				obs_output_set_last_error(
+					output,
+					"WHIP requires an encoder without B-frames. Stop the shared recording first, then start WHIP.");
+				return false;
+			}
+		} else {
+			// Protocol requirements also apply when service recommendations are disabled.
+			WHIPService::ApplyEncoderSettings(settings, nullptr);
+			obs_encoder_update(encoder, settings);
 		}
 
 		auto v = std::make_shared<videoLayerState>();
