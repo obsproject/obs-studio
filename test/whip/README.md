@@ -549,6 +549,61 @@ paths/hashes and receiver freeze/concealment counters, and verifies TURN/UDP as
 well as TURN/TCP or TLS. Existing `WHIP_OBS_PORTABLE`, `WHIP_CHROME_PATH`,
 `WHIP_OPENH264_DIR`, `WHIP_ENGINES`, `WHIP_BASES`, `WHIP_MODES`, and
 `WHIP_OBSERVE_MS` select the isolated runtime and receiver matrix.
+`WHIP_MIN_DECODED_FPS` adds a performance gate; advancing frames alone can pass
+while an incorrectly configured pacer reduces a 60 fps stream to about 5 fps.
+
+### Windows media validation — revision `446e6ee4e`, 2026-10-03
+
+The local Windows fork build passed **15 production playback cases**, each with
+a 20-second observation and optional service recommendations disabled:
+
+| Encoder settings | Receivers | Routes | Result |
+| --- | --- | --- | --- |
+| x264 CBR, 720p59.94, auto keyframe interval, custom `bframes=3` | Chrome, Firefox | Default, TURN/UDP, TURN/TLS | 6/6 |
+| NVIDIA CQP 23, inactive bitrate 1 kbps, custom `frameIntervalP=4` | Chrome | All three | 3/3 |
+| Intel Quick Sync ICQ 23, inactive bitrate 1 kbps | Chrome | All three | 3/3 |
+| NVIDIA VBR, 2.5 Mbps target / 12 Mbps peak | Chrome | All three | 3/3 |
+
+Each case decoded about 59–60 fps, received advancing Opus audio, and reported
+zero video freezes and lost video packets. Loaded module paths/hashes were
+checked against the newly compiled DLL. Encoder logs confirmed 119-frame x264
+and 120-frame NVENC intervals, and two seconds for QSV. These are short checks,
+not endurance or loss-injection tests, and no bitstream recordings were made.
+
+A controlled CQP comparison with B-frames already disabled and the same
+one-kbps inactive setting reproduced **5.40 decoded fps** in the older
+`2629bcaa8` build versus **59.93 fps** in the new build. A 48 fps gate rejected
+the old build and accepted the new one. An initial probe had passed the older,
+weaker frame-progress check at 5.25 fps; that observation is retained.
+An additional NVENC 100 kbps CBR TURN/UDP case passed the 48 fps gate and verified
+the 4 Mbps pacing allowance while preserving a one-second keyframe choice. It
+decoded 56.87 fps but reported one 0.99-second freeze and no packet loss; this
+extreme low-rate case is not evidence of consistently smooth playback.
+Fresh 30-second controls with repeated headers explicitly enabled in both builds
+then decoded 59.95 fps (old) and 59.94 fps (new), with zero reported freezes or
+packet loss. An earlier old-build control without explicit repeated headers
+connected and received RTP but decoded no video. All observations are retained;
+they do not establish the cause of the initial freeze.
+
+Windows MSVC packetization, media-helper and ICE tests passed. The media helpers
+also passed Linux Clang with address and undefined-behavior sanitizers. The full
+patch applied cleanly to stable 32.2.2 and preview 33.0.0-beta6.
+[CI run 37172045445](https://github.com/steveseguin/obs-studio/actions/runs/37172045445)
+passed all 12 builds and their regressions: fork, stable and preview on Windows,
+Linux, Mac ARM and Mac Intel. Formatting, service and compatibility checks also
+passed. No live Mac or Linux publisher was tested in this Windows follow-up.
+[Machine-readable results](../../docs/whip/windows-media-validation-2026-10-03.json)
+retain the comparison and test limits; detailed reports and logs remain under
+ignored `build_whip_review/media-*` and the adjacent VDO.Ninja test-results tree.
+Only the VDO.Ninja test harness was changed for these checks, not website code.
+
+The actual **32.2.2 Windows package from CI run 37172045445** was then downloaded,
+its source manifest and loaded DLL hash verified, and tested with NVENC CQP at
+59.94 fps, inactive bitrate 1 kbps, auto keyframe interval and conflicting
+`frameIntervalP=4`. All three Chrome routes passed the 48 fps gate at 59.82–59.93
+decoded fps, with advancing audio and no reported video freezes or packet loss.
+The archive hash and selected-route evidence are included in the JSON above.
+These packages are CI artifacts; this validation did not replace release assets.
 
 ## Limits
 
