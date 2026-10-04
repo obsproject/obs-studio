@@ -52,10 +52,10 @@ int main()
 		std::cout << codec << ": " << count << " packets, maximum RTP " << maximum
 			  << ", IPv6+UDP+SRTP(16)+TURN channel(4) " << maximum + 68 << " bytes\n";
 	}
-	// A single 20 ms stereo Opus frame can contain up to 1275 bytes.
+	// RFC 6716: a single frame can contain 1275 bytes, plus its one-byte TOC.
 	auto config = std::make_shared<RtpPacketizationConfig>(124, "whip", 111, 48000);
 	OpusRtpPacketizer opus(config);
-	message_vector packets = {make_message(binary(1275, byte(0xaa)))};
+	message_vector packets = {make_message(binary(1276, byte(0xaa)))};
 	opus.outgoing(packets, [](message_ptr) {});
 	if (packets.size() != 1 || packets.front()->size() + 68 > 1400) {
 		throw std::runtime_error("Exceeded stereo Opus packet budget");

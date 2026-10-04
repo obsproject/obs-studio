@@ -12,6 +12,8 @@ target_compile_definitions(whip-packetization-test PRIVATE WHIP_FRAGMENT_LIMIT=$
 target_compile_features(whip-packetization-test PRIVATE cxx_std_17)
 target_link_libraries(whip-packetization-test PRIVATE LibDataChannel::LibDataChannel)
 if(APPLE)
+  # Resolve the patched library before the stock copy in the OBS dependency prefix.
+  set_property(TARGET whip-packetization-test PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:LibDataChannel::LibDataChannel>")
   # libdatachannel's Mbed TLS dylibs remain in the OBS dependency prefix until packaging.
   foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
     set_property(TARGET whip-packetization-test APPEND PROPERTY BUILD_RPATH "${prefix}/lib")
