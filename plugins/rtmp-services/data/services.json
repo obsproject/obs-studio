@@ -2434,6 +2434,39 @@
                 "x264opts": "scenecut=0"
             }
         },
+
+        {
+    "name": "TeleLive | تله لایو",
+    "common": true,
+    "more_info_link": "https://telelivee.ir/",
+    "stream_key_link": "https://telelivee.ir/dashboard",
+    "servers": [
+        {
+            "name": "TeleLive - RTMPS",
+            "url": "rtmps://live.telelivee.ir:1936/live"
+        },
+        {
+            "name": "TeleLive - RTMP",
+            "url": "rtmp://live.telelivee.ir/live"
+        }
+    ],
+    "protocol": "RTMP",
+    "supported video codecs": [
+        "h264"
+    ],
+    "recommended": {
+        "keyint": 2,
+        "supported resolutions": [
+            "1920x1080",
+            "1280x720",
+            "852x480",
+            "640x360"
+        ],
+        "max video bitrate": 6000,
+        "max audio bitrate": 320,
+        "x264opts": "scenecut=0"
+    }
+},
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
