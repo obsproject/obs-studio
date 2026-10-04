@@ -1,4 +1,21 @@
-# WHIP fork review — 2026-10-03
+# WHIP fork review and validation
+
+## Current release refresh — 2026-10-04
+
+The stable and preview releases now contain all four platform packages from
+[signed CI run 37173920442](https://github.com/steveseguin/obs-studio/actions/runs/37173920442),
+source `2430db4dc13d4c4a095fe3f2118fb0aefdd270b9`. This includes the media-clock,
+encoder-startup and quality-mode pacing fixes on Windows, Linux and both Mac
+architectures. All 12 build jobs passed. The four Mac release archives are
+Developer ID signed, Apple-notarized and stapled; CI verified Gatekeeper acceptance
+again after extracting the distribution archives. Windows packages remain unsigned.
+
+Release checksums and provenance were refreshed together, preserving earlier
+package/signing records. Release tags still identify the original tooling revision;
+the embedded `whip-build.json` identifies each package's exact source.
+The previous Mac-only release state is documented below as history.
+See [Linux runtime setup](../../docs/whip/linux-runtime.md) before running the
+Ubuntu 26.04 archives, and the endurance/network results near the end of this file.
 
 ## Reproducible compatibility builds
 
@@ -16,8 +33,8 @@ fails the job instead of silently omitting fixes.
 passed all 12 builds and their ICE regressions on 2026-10-03: fork, stable 32.2.2,
 and preview 33.0.0-beta6 across all four platform/architecture combinations.
 The subsequent [master build 37145895603](https://github.com/steveseguin/obs-studio/actions/runs/37145895603)
-also passed all 12 jobs at `bd9377113`. Its verified stable and preview packages
-are published as permanent release assets:
+also passed all 12 jobs at `bd9377113`. Its packages were the initial assets for
+these permanent releases, subsequently refreshed as described above:
 
 - [OBS 32.2.2 with WHIP and TURN fixes (Latest)](https://github.com/steveseguin/obs-studio/releases/tag/v32.2.2-whip-relay).
 - [OBS 33.0.0-beta6 with WHIP and TURN fixes (Prerelease)](https://github.com/steveseguin/obs-studio/releases/tag/v33.0.0-beta6-whip-relay).
@@ -40,9 +57,9 @@ macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
 require its runtime libraries. Building successfully does not certify live TURN
 operation.
 
-**Mac signing and WHIP encoder correction completed (2026-10-03):** both releases
-contain Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64.
-The final Mac binaries use WHIP revision `05ebf73765b44a5abb7a8365cace7f154154ef48` from
+**Earlier Mac signing and WHIP encoder correction (2026-10-03):** both releases
+received Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64.
+That Mac-only refresh used WHIP revision `05ebf73765b44a5abb7a8365cace7f154154ef48` from
 [signed CI run 37167719965](https://github.com/steveseguin/obs-studio/actions/runs/37167719965); all 12 cross-platform builds passed.
 Stable was prepared from upstream OBS 32.2.2 (`ba2f32bdf791005443988a4955e963663e16b1ed`),
 and preview from 33.0.0-beta6 (`cffa83ba552f1ef6a0a05851c3aa07b3811d7e58`).
@@ -72,8 +89,9 @@ signed release run.
 `BUILD-PROVENANCE.json` retains the original CI package in
 `original_build_package`, prior signing records in `superseded_packages`, and the
 new Mac CI artifact/manifest in `rebuild` and `manifest`. Current signing and Apple
-results are separate under `signing`. Windows/Linux archives, checksums, and
-provenance entries remain unchanged at WHIP revision `bd9377113d4445be6ca40e71e674511179daba2d`.
+results are separate under `signing`. That Mac-only update left Windows/Linux
+archives, checksums, and provenance entries at WHIP revision
+`bd9377113d4445be6ca40e71e674511179daba2d`; the current all-platform refresh replaces them.
 Stable remains Latest; preview remains Prerelease. Release tags still identify the
 original tooling revision; use each archive's manifest for its exact sources.
 
@@ -605,11 +623,84 @@ decoded fps, with advancing audio and no reported video freezes or packet loss.
 The archive hash and selected-route evidence are included in the JSON above.
 These packages are CI artifacts; this validation did not replace release assets.
 
+### Endurance, Linux playback and release validation — 2026-10-04
+
+The actual stable and preview Windows archives from run `37173920442` passed
+**12 Chrome/Firefox playback cases**: both browsers, both OBS versions, and
+default/direct, TURN/UDP and TURN/TLS. Tests used NVENC CQP 23 at 720p59.94,
+inactive bitrate 1 kbps, auto keyframe interval, and custom `frameIntervalP=4`,
+with service recommendations disabled. Loaded WHIP module hashes matched the
+verified archives. No OBS source changes were needed in this follow-up.
+
+A **30-minute Windows stable TURN/UDP soak** of the same media-code revision
+(`446e6ee4e`, with only documentation added before `2430db4dc`) decoded 107,889
+additional frames at 59.938 fps. Every ten-second window exceeded 59.59 fps and
+received more audio; there were no reported video freezes or lost video packets.
+OBS memory ranged from 220.8 to 227.6 MB and finished at 226.4 MB; stop took 514 ms.
+The new preview release archive's **15-minute TURN/TLS soak** averaged 59.80 fps
+and passed the frame-progress gate, but reported **one 1.668-second video freeze**
+near 14 minutes 40 seconds. The affected ten-second window decoded 47.53 fps;
+subsequent windows returned to about 60 fps. OBS reported no skipped rendering or
+encoding frames, audio continued advancing, and memory stayed bounded. Receiver
+audio-concealment and PLI counters increased during that interval. These counters
+do not establish its cause, and this run is not classified as freeze-free.
+Two fresh 60-second TLS repeats then passed at 59.92 and 59.88 fps, with no
+reported video freezes or packet loss. The original freeze remains in the results;
+these shorter repeats do not prove it is fixed.
+
+Linux validation used the original extracted binaries in Ubuntu 26.04.1 under
+WSL2, Xvfb and software OpenGL. Stable x264 CBR passed all three Chrome routes;
+both current release archives also passed all three routes using **x264 CRF 23
+with inactive bitrate 1 kbps**, at 720p59.94. The Linux test setup initially lacked
+SRT and Mbed TLS runtime libraries; installing them resolved the unloaded plugins.
+The [runtime instructions](../../docs/whip/linux-runtime.md) record these dependencies.
+
+Both current Linux release archives additionally passed **four impairment/recovery
+cases** across TURN/UDP and TURN/TLS. OBS and Chrome ran in a private network
+namespace with slirp4netns NAT and a 1,500-byte MTU. Kernel `tc netem` affected only
+that namespace's outgoing packets; WHIP signaling and OBS binaries were unchanged.
+Each run included ten clean seconds, 35 seconds with 2% random loss, 35 ± 10 ms
+delay and 4% reordering, a two-second 100% loss period, and recovery. Kernel drop
+counters, receiver NACK/PLI counters, frame progress and audio were recorded.
+
+Playback returned to about 60 fps after the outage. **These tests produced freezes**,
+especially on the TLS route; they establish recovery, not uninterrupted playback.
+The stable runs used wall-clock sample intervals. Subsequent tests also recorded
+receiver stats timestamps to distinguish browser-automation delay from decoder
+throughput; both rates are retained. No NACK/pacer redesign was introduced from
+these results, and higher-bitrate or longer-loss scenarios remain separate work.
+
+A matched Linux pacing control used CRF 23, a saved bitrate of 1 kbps, explicit
+repeated headers and no B-frames. The previous public build (`bd9377113`) connected
+but decoded only **one video frame in about 35 seconds**, while audio continued.
+The current stable archive decoded **59.80 fps** with the same requested settings.
+This reproduces the inactive-bitrate pacing defect on Linux as well as Windows.
+
+The adjacent VDO.Ninja harness now supports Linux archives, `WHIP_MEDIA_FILE`
+for a generated Media Source fixture, and periodic receiver/OBS resource snapshots.
+`WHIP_SAMPLE_MS` controls the sampling interval; `WHIP_MIN_WINDOW_FPS` adds a
+per-window performance gate. It retains the overall `WHIP_MIN_DECODED_FPS` gate,
+records receiver and wall-clock rates, and checks audio advancement in each full
+sample window. The harness stops only its owned test OBS process. Changes are
+in VDO.Ninja test commit `e9384c0`; no VDO.Ninja website or server code changed.
+
+[Machine-readable evidence](../../docs/whip/relay-endurance-validation-2026-10-04.json)
+includes source/module verification, package hashes, Apple acceptance records,
+network counters, setup failures and public-download verification. Detailed local
+reports remain in `build_whip_review/release-validation-37173920442`,
+`build_whip_review/linux-runtime-check`, and the adjacent VDO.Ninja test-results
+directory. Mac signing/notarization was verified in CI, but these newest media
+fixes have not received a fresh native Mac playback run. Earlier Mac playback
+results above apply to revision `05ebf7376`.
+
 ## Limits
 
-KRD's Windows 10 LTSC 1809, Broadwell QuickSync/ICQ, high bitrates, extended
-endurance, Safari, and Linux publishers were not tested. Mac coverage is recorded
-above. The local upstream-master build identifies as OBS 33 development, not KRD's OBS 32.2.2.
+KRD's Windows 10 LTSC 1809, Broadwell QuickSync/ICQ, very high bitrates, Safari,
+and Linux hardware encoders were not tested. Linux software encoding and the
+30-minute/15-minute endurance checks are described above. Audio advancement and
+clock arithmetic do not constitute a perceptual A/V synchronization measurement.
+Mac coverage is recorded above. The local upstream-master build identifies as
+OBS 33 development, not KRD's OBS 32.2.2.
 The Windows/macOS VDO DTLS workaround is deliberately scoped; other WHIP providers
 have not been certified. No VDO.Ninja application or production server code was
 changed. Build/test outputs and local detailed logs are under ignored build
