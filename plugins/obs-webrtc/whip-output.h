@@ -11,8 +11,12 @@
 #include <mutex>
 #include <thread>
 #include <algorithm>
+#include <chrono>
+#include <condition_variable>
 
 #include <rtc/rtc.hpp>
+#include <vector>
+#include <rtc/candidate.hpp>
 
 struct videoLayerState {
 	uint16_t sequenceNumber;
@@ -20,6 +24,11 @@ struct videoLayerState {
 	int64_t lastVideoTimestamp;
 	uint32_t ssrc;
 	std::string rid;
+};
+
+struct trickleMediaSection {
+	std::string mid;
+	std::string mline;
 };
 
 class WHIPOutput {
@@ -45,14 +54,46 @@ private:
 	void SendDelete();
 	void StopThread(bool signal);
 	void ParseLinkHeader(std::string linkHeader, std::vector<rtc::IceServer> &iceServers);
+	bool FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServers);
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
+	void UpdateTrickleSdpMetadata(const std::string &offer_sdp);
+	bool BuildTrickleSdpFragment(const std::string &mid, const std::string &candidate_line,
+				     bool end_of_candidates, std::string &sdp_frag);
+	void SendTrickleCandidate(const rtc::Candidate &candidate);
+	void SendEndOfCandidates();
+	void SendTrickleIcePatch(const std::string &sdp_frag);
+	void ApplyIncomingRemoteCandidates(const std::string &sdp_frag);
+	void TrickleThread();
+	void StopTrickle();
 
 	obs_output_t *output;
 
 	std::string endpoint_url;
 	std::string bearer_token;
 	std::string resource_url;
+	std::mutex resource_etag_mutex;
+	std::string resource_etag;
+
+	std::mutex ice_gathering_mutex;
+	std::condition_variable ice_gathering_cv;
+	std::atomic<bool> ice_gathering_complete;
+	std::atomic<bool> has_first_candidate;
+	std::atomic<bool> trickle_enabled;
+	bool has_ice_servers;
+
+	// Trickle ICE support (RFC 8840)
+	std::string ice_ufrag;
+	std::string ice_pwd;
+	std::string first_mid;
+	std::mutex trickle_sdp_mutex;
+	std::vector<trickleMediaSection> trickle_media_sections;
+	std::vector<std::string> trickle_bundle_mids;
+	std::vector<rtc::Candidate> pending_candidates; // Queued until POST completes
+	std::mutex pending_candidates_mutex;
+	std::condition_variable pending_candidates_cv;
+	std::atomic<bool> trickle_stop{false};
+	std::thread trickle_thread;
 
 	std::atomic<bool> running;
 

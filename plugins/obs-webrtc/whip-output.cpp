@@ -1,14 +1,18 @@
 #include "whip-output.h"
 #include "whip-utils.h"
+#include "whip-service.h"
 
+#include <array>
+#include <regex>
+#include <sstream>
 #include <obs.hpp>
 
 /*
- * Sets the maximum size for a video fragment. Effective range is
- * 576-1470, with a lower value equating to more packets created,
- * but also better network compatability.
+ * Keep codec fragments small across all encoders. RTP extensions, SRTP, UDP/IP,
+ * and TURN add overhead, so this is deliberately below a 1400-byte path MTU.
+ * This limits RTP payload fragments, not encoded video frame size.
  */
-static uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
+static constexpr uint16_t MAX_VIDEO_FRAGMENT_SIZE = 1200;
 
 const int signaling_media_id_length = 16;
 const char signaling_media_id_valid_char[] = "0123456789"
@@ -34,6 +38,21 @@ WHIPOutput::WHIPOutput(obs_data_t *, obs_output_t *output)
 	  endpoint_url(),
 	  bearer_token(),
 	  resource_url(),
+	  resource_etag_mutex(),
+	  resource_etag(),
+	  ice_gathering_mutex(),
+	  ice_gathering_cv(),
+	  ice_gathering_complete(false),
+	  has_first_candidate(false),
+	  trickle_enabled(false),
+	  has_ice_servers(false),
+	  ice_ufrag(),
+	  ice_pwd(),
+	  trickle_sdp_mutex(),
+	  trickle_media_sections(),
+	  trickle_bundle_mids(),
+	  pending_candidates(),
+	  pending_candidates_mutex(),
 	  running(false),
 	  start_stop_mutex(),
 	  start_stop_thread(),
@@ -66,6 +85,23 @@ bool WHIPOutput::Start()
 		auto encoder = obs_output_get_video_encoder2(output, idx);
 		if (encoder == nullptr) {
 			break;
+		}
+
+		OBSDataAutoRelease settings = obs_encoder_get_settings(encoder);
+		if (obs_encoder_active(encoder)) {
+			// Reconfiguring a shared, running recording encoder cannot remove its B-frames.
+			if (!obs_data_get_bool(settings, "whip_no_bframes") || obs_data_get_int(settings, "bf") != 0 ||
+			    obs_data_get_bool(settings, "bframes") ||
+			    strcmp(obs_data_get_string(settings, "tune"), "uhq") == 0) {
+				obs_output_set_last_error(
+					output,
+					"WHIP requires an encoder without B-frames. Stop the shared recording first, then start WHIP.");
+				return false;
+			}
+		} else {
+			// Protocol requirements also apply when service recommendations are disabled.
+			WHIPService::ApplyEncoderSettings(settings, nullptr);
+			obs_encoder_update(encoder, settings);
 		}
 
 		auto v = std::make_shared<videoLayerState>();
@@ -273,6 +309,71 @@ bool WHIPOutput::Init()
 }
 
 /**
+ * @brief Fetch ICE servers via OPTIONS request to WHIP endpoint.
+ *
+ * Per WHIP spec, the endpoint may provide STUN/TURN servers via Link headers
+ * in response to an OPTIONS request. This allows ICE gathering to begin
+ * before the offer is sent, enabling P2P connections behind NAT.
+ *
+ * @param iceServers Vector to populate with discovered ICE servers
+ * @return bool True if request succeeded (even if no ICE servers found)
+ */
+bool WHIPOutput::FetchIceServersViaOptions(std::vector<rtc::IceServer> &iceServers)
+{
+	struct curl_slist *headers = nullptr;
+	headers = curl_slist_append(headers, "Accept: application/sdp");
+	headers = curl_slist_append(headers, user_agent.c_str());
+
+	if (!bearer_token.empty()) {
+		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
+		headers = curl_slist_append(headers, bearer_token_header.c_str());
+	}
+
+	std::vector<std::string> http_headers;
+
+	CURL *c = curl_easy_init();
+	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(c, CURLOPT_URL, endpoint_url.c_str());
+	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "OPTIONS");
+	curl_easy_setopt(c, CURLOPT_NOBODY, 1L);
+	curl_easy_setopt(c, CURLOPT_TIMEOUT, 5L);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
+
+	CURLcode res = curl_easy_perform(c);
+	curl_easy_cleanup(c);
+	curl_slist_free_all(headers);
+
+	if (res != CURLE_OK) {
+		do_log(LOG_DEBUG, "OPTIONS request failed: %s (will proceed without pre-configured ICE servers)",
+		       curl_easy_strerror(res));
+		return false;
+	}
+
+	for (auto &http_header : http_headers) {
+		auto value = value_for_header("link", http_header);
+		if (value.empty()) {
+			continue;
+		}
+
+		value = trim_string(value);
+		for (auto end = value.find(","); end != std::string::npos; end = value.find(",")) {
+			this->ParseLinkHeader(trim_string(value.substr(0, end)), iceServers);
+			value = trim_string(value.substr(end + 1));
+		}
+		if (!value.empty()) {
+			this->ParseLinkHeader(value, iceServers);
+		}
+	}
+
+	if (!iceServers.empty()) {
+		do_log(LOG_INFO, "Discovered %zu ICE server(s) via OPTIONS request", iceServers.size());
+	}
+
+	return true;
+}
+
+/**
  * @brief Set up the PeerConnection and media tracks.
  *
  * @return bool
@@ -281,11 +382,74 @@ bool WHIPOutput::Setup()
 {
 	rtc::Configuration cfg;
 
+	// Fetch ICE servers via OPTIONS request (per WHIP spec section 4.4)
+	std::vector<rtc::IceServer> iceServers;
+	FetchIceServersViaOptions(iceServers);
+	has_ice_servers = !iceServers.empty();
+	if (has_ice_servers) {
+		cfg.iceServers = iceServers;
+	}
+
 #if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
-	cfg.disableAutoGathering = true;
+	// Enable auto-gathering if we have ICE servers from OPTIONS
+	cfg.disableAutoGathering = iceServers.empty();
 #endif
 
+	ice_gathering_complete = false;
+	has_first_candidate = false;
+	trickle_enabled = false;
+	trickle_stop = false;
+	ice_ufrag.clear();
+	ice_pwd.clear();
+	resource_url.clear();
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag.clear();
+	}
+	first_mid.clear();
+	{
+		std::lock_guard<std::mutex> lock(trickle_sdp_mutex);
+		trickle_media_sections.clear();
+		trickle_bundle_mids.clear();
+	}
+	{
+		std::lock_guard<std::mutex> lock(pending_candidates_mutex);
+		pending_candidates.clear();
+	}
+
 	peer_connection = std::make_shared<rtc::PeerConnection>(cfg);
+
+	// Track when we receive our first ICE candidate
+	peer_connection->onLocalCandidate([this](rtc::Candidate candidate) {
+		{
+			std::lock_guard<std::mutex> lock(ice_gathering_mutex);
+			if (!has_first_candidate) {
+				has_first_candidate = true;
+				first_mid = candidate.mid(); // Saved for end-of-candidates signal
+				ice_gathering_cv.notify_one();
+			}
+		}
+		// HTTP must not block the PeerConnection callback thread. The worker
+		// starts after the answer is applied and sends candidates in order.
+		{
+			std::lock_guard<std::mutex> lock(pending_candidates_mutex);
+			if (!trickle_stop) {
+				pending_candidates.push_back(candidate);
+			}
+		}
+		pending_candidates_cv.notify_one();
+	});
+
+	// Set up async ICE gathering completion notification
+	peer_connection->onGatheringStateChange([this](rtc::PeerConnection::GatheringState state) {
+		if (state == rtc::PeerConnection::GatheringState::Complete) {
+			{
+				std::lock_guard<std::mutex> lock(pending_candidates_mutex);
+				ice_gathering_complete = true;
+			}
+			pending_candidates_cv.notify_one();
+		}
+	});
 
 	peer_connection->onStateChange([this](rtc::PeerConnection::State state) {
 		switch (state) {
@@ -341,7 +505,8 @@ bool WHIPOutput::Setup()
 // https://www.ietf.org/archive/id/draft-ietf-wish-whip-13.html#section-4.4
 void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &iceServers)
 {
-	std::string url, username, password;
+	std::string url, username, password, rel;
+	const std::regex ice_url_scheme("^<(stun|stuns|turn|turns):", std::regex_constants::icase);
 
 	auto extractUrl = [](std::string input) -> std::string {
 		auto head = input.find("<") + 1;
@@ -369,9 +534,12 @@ void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &i
 		if (pos != std::string::npos) {
 			token = val.substr(0, pos);
 		}
+		token = trim_string(token);
 
-		if ((token.find("<stun:", 0) == 0) || (token.find("<turn:", 0) == 0)) {
+		if (std::regex_search(token, ice_url_scheme)) {
 			url = extractUrl(token);
+		} else if (token.find("rel=") != std::string::npos) {
+			rel = extractValue(token);
 		} else if (token.find("username=") != std::string::npos) {
 			username = extractValue(token);
 		} else if (token.find("credential=") != std::string::npos) {
@@ -382,6 +550,18 @@ void WHIPOutput::ParseLinkHeader(std::string val, std::vector<rtc::IceServer> &i
 			break;
 		}
 		val.erase(0, pos + 1);
+		val = trim_string(val);
+	}
+
+	if (!rel.empty()) {
+		const std::regex ice_server_rel("(^|\\s)ice-server(\\s|$)", std::regex_constants::icase);
+		if (!std::regex_search(rel, ice_server_rel)) {
+			return;
+		}
+	}
+
+	if (url.empty()) {
+		return;
 	}
 
 	try {
@@ -402,11 +582,59 @@ bool WHIPOutput::Connect()
 		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
 		headers = curl_slist_append(headers, bearer_token_header.c_str());
 	}
+	// Use the complete candidate list in the WHIP answer. Advertising reverse
+	// trickle is unsafe without a channel for candidates arriving after our last PATCH.
 
 	std::string read_buffer;
 	std::vector<std::string> http_headers;
+	std::string response_etag;
+
+#if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
+	// Smart waiting: if we have ICE servers, wait for first candidate OR 150ms.
+	// This gets us at least host candidates quickly, and likely some STUN
+	// candidates too. Any candidates gathered after offer is sent will be
+	// trickled via PATCH.
+	if (has_ice_servers) {
+		std::unique_lock<std::mutex> lock(ice_gathering_mutex);
+		if (!has_first_candidate) {
+			// 150ms balances latency vs. candidate coverage; typically enough for host + STUN
+			auto timeout = std::chrono::milliseconds(150);
+			ice_gathering_cv.wait_for(lock, timeout, [this] { return has_first_candidate.load(); });
+		}
+	}
+#endif
 
 	auto offer_sdp = std::string(peer_connection->localDescription().value());
+
+#if defined(_WIN32) || defined(__APPLE__)
+	// The Windows/macOS Mbed TLS dependency rejects current Chrome's DTLS ClientHello.
+	// VDO.Ninja supports the passive role, so offer active for this endpoint only.
+	// Keep normal actpass negotiation for other WHIP services (RFC 9725, 4.4.4).
+	CURLU *endpoint = curl_url();
+	char *endpoint_host = nullptr;
+	if (endpoint && curl_url_set(endpoint, CURLUPART_URL, endpoint_url.c_str(), 0) == CURLUE_OK &&
+	    curl_url_get(endpoint, CURLUPART_HOST, &endpoint_host, 0) == CURLUE_OK &&
+	    astrcmpi(endpoint_host, "whip.vdo.ninja") == 0) {
+		const std::string actpass = "a=setup:actpass\r\n";
+		for (auto pos = offer_sdp.find(actpass); pos != std::string::npos; pos = offer_sdp.find(actpass)) {
+			offer_sdp.replace(pos, actpass.size(), "a=setup:active\r\n");
+		}
+	}
+	curl_free(endpoint_host);
+	curl_url_cleanup(endpoint);
+#endif
+
+	// Extract ICE credentials for trickle PATCH requests
+	std::regex re_ufrag("a=ice-ufrag:([^\\r\\n]+)");
+	std::regex re_pwd("a=ice-pwd:([^\\r\\n]+)");
+	std::smatch match;
+	if (std::regex_search(offer_sdp, match, re_ufrag)) {
+		ice_ufrag = match[1];
+	}
+	if (std::regex_search(offer_sdp, match, re_pwd)) {
+		ice_pwd = match[1];
+	}
+	UpdateTrickleSdpMetadata(offer_sdp);
 
 #ifdef DEBUG_SDP
 	do_log(LOG_DEBUG, "Offer SDP:\n%s", offer_sdp.c_str());
@@ -475,13 +703,16 @@ bool WHIPOutput::Connect()
 	std::string last_location_header;
 	size_t location_header_count = 0;
 	for (auto &http_header : http_headers) {
-		auto value = value_for_header("location", http_header);
-		if (value.empty()) {
-			continue;
+		auto location_value = value_for_header("location", http_header);
+		if (!location_value.empty()) {
+			location_header_count++;
+			last_location_header = location_value;
 		}
 
-		location_header_count++;
-		last_location_header = value;
+		auto etag_value = value_for_header("etag", http_header);
+		if (!etag_value.empty()) {
+			response_etag = etag_value;
+		}
 	}
 
 	if (location_header_count < static_cast<size_t>(redirect_count) + 1) {
@@ -500,12 +731,16 @@ bool WHIPOutput::Connect()
 			continue;
 		}
 
+		value = trim_string(value);
+
 		// Parse multiple links separated by ','
 		for (auto end = value.find(","); end != std::string::npos; end = value.find(",")) {
-			this->ParseLinkHeader(value.substr(0, end), iceServers);
-			value = value.substr(end + 1);
+			this->ParseLinkHeader(trim_string(value.substr(0, end)), iceServers);
+			value = trim_string(value.substr(end + 1));
 		}
-		this->ParseLinkHeader(value, iceServers);
+		if (!value.empty()) {
+			this->ParseLinkHeader(value, iceServers);
+		}
 	}
 
 	// If Location header doesn't start with `http` it is a relative URL.
@@ -538,6 +773,14 @@ bool WHIPOutput::Connect()
 	curl_free(url);
 	do_log(LOG_DEBUG, "WHIP Resource URL is: %s", resource_url.c_str());
 	curl_url_cleanup(url_builder);
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag = response_etag;
+	}
+	trickle_enabled = !response_etag.empty();
+	if (!trickle_enabled) {
+		do_log(LOG_WARNING, "WHIP response did not include ETag; disabling trickle ICE PATCH for this session");
+	}
 
 #ifdef DEBUG_SDP
 	do_log(LOG_DEBUG, "Answer SDP:\n%s", read_buffer.c_str());
@@ -557,8 +800,8 @@ bool WHIPOutput::Connect()
 		}
 	}
 
-	rtc::Description answer(response, "answer");
 	try {
+		rtc::Description answer(response, "answer");
 		peer_connection->setRemoteDescription(answer);
 	} catch (const std::invalid_argument &err) {
 		do_log(LOG_ERROR, "WHIP server responded with invalid SDP: %s", err.what());
@@ -582,7 +825,11 @@ bool WHIPOutput::Connect()
 	doCleanup(false);
 
 #if RTC_VERSION_MAJOR == 0 && RTC_VERSION_MINOR > 20 || RTC_VERSION_MAJOR > 0
-	peer_connection->gatherLocalCandidates(iceServers);
+	// libdatachannel only permits one gathering pass. If OPTIONS did not
+	// start it, use the servers from POST; otherwise drain the existing pass.
+	if (!has_ice_servers) {
+		peer_connection->gatherLocalCandidates(iceServers);
+	}
 #endif
 
 	return true;
@@ -603,9 +850,13 @@ void WHIPOutput::StartThread()
 		peer_connection = nullptr;
 		audio_track = nullptr;
 		video_track = nullptr;
+		SendDelete();
 		return;
 	}
 
+	if (trickle_enabled) {
+		trickle_thread = std::thread(&WHIPOutput::TrickleThread, this);
+	}
 	obs_output_begin_data_capture(output, 0);
 	running = true;
 }
@@ -650,7 +901,7 @@ void WHIPOutput::SendDelete()
 
 	long response_code;
 	curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
-	if (response_code != 200) {
+	if (response_code < 200 || response_code >= 300) {
 		do_log(LOG_WARNING, "DELETE request for resource URL failed. HTTP Code: %ld", response_code);
 		doCleanup();
 		return;
@@ -658,11 +909,18 @@ void WHIPOutput::SendDelete()
 
 	do_log(LOG_DEBUG, "Successfully performed DELETE request for resource URL");
 	resource_url.clear();
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		resource_etag.clear();
+	}
+	trickle_enabled = false;
 	doCleanup();
 }
 
 void WHIPOutput::StopThread(bool signal)
 {
+	StopTrickle();
+
 	if (peer_connection != nullptr) {
 		peer_connection->close();
 		peer_connection = nullptr;
@@ -728,6 +986,316 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared
 	} catch (const std::exception &e) {
 		do_log(LOG_ERROR, "error: %s ", e.what());
 	}
+}
+
+void WHIPOutput::UpdateTrickleSdpMetadata(const std::string &offer_sdp)
+{
+	std::vector<trickleMediaSection> media_sections;
+	std::vector<std::string> bundle_mids;
+	std::istringstream offer_stream(offer_sdp);
+	std::string line;
+	size_t current_section = static_cast<size_t>(-1);
+
+	while (std::getline(offer_stream, line)) {
+		line = trim_string(line);
+		if (line.empty()) {
+			continue;
+		}
+
+		if (line.rfind("a=group:BUNDLE ", 0) == 0) {
+			std::istringstream mids_stream(line.substr(std::string("a=group:BUNDLE ").size()));
+			std::string mid;
+			while (mids_stream >> mid) {
+				bundle_mids.push_back(mid);
+			}
+			continue;
+		}
+
+		if (line.rfind("m=", 0) == 0) {
+			media_sections.push_back({"", line});
+			current_section = media_sections.size() - 1;
+			continue;
+		}
+
+		if (current_section != static_cast<size_t>(-1) && line.rfind("a=mid:", 0) == 0) {
+			media_sections[current_section].mid = line.substr(std::string("a=mid:").size());
+		}
+	}
+
+	if (bundle_mids.empty()) {
+		for (const auto &section : media_sections) {
+			if (!section.mid.empty()) {
+				bundle_mids.push_back(section.mid);
+			}
+		}
+	}
+
+	std::lock_guard<std::mutex> lock(trickle_sdp_mutex);
+	trickle_media_sections = std::move(media_sections);
+	trickle_bundle_mids = std::move(bundle_mids);
+}
+
+bool WHIPOutput::BuildTrickleSdpFragment(const std::string &mid, const std::string &candidate_line,
+					 bool end_of_candidates, std::string &sdp_frag)
+{
+	std::vector<trickleMediaSection> media_sections;
+	std::vector<std::string> bundle_mids;
+	{
+		std::lock_guard<std::mutex> lock(trickle_sdp_mutex);
+		media_sections = trickle_media_sections;
+		bundle_mids = trickle_bundle_mids;
+	}
+
+	if (media_sections.empty()) {
+		do_log(LOG_WARNING, "Unable to build trickle SDP fragment: no local media sections available");
+		return false;
+	}
+
+	trickleMediaSection selected_section = media_sections.front();
+	if (!mid.empty()) {
+		auto it = std::find_if(media_sections.begin(), media_sections.end(),
+				       [&mid](const trickleMediaSection &section) { return section.mid == mid; });
+		if (it != media_sections.end()) {
+			selected_section = *it;
+		}
+	}
+
+	if (selected_section.mline.empty()) {
+		do_log(LOG_WARNING, "Unable to build trickle SDP fragment: no pseudo m= section available");
+		return false;
+	}
+
+	if (!bundle_mids.empty()) {
+		sdp_frag.append("a=group:BUNDLE ");
+		for (size_t i = 0; i < bundle_mids.size(); i++) {
+			if (i != 0) {
+				sdp_frag.append(" ");
+			}
+			sdp_frag.append(bundle_mids[i]);
+		}
+		sdp_frag.append("\r\n");
+	}
+
+	sdp_frag.append(selected_section.mline + "\r\n");
+	if (!selected_section.mid.empty()) {
+		sdp_frag.append("a=mid:" + selected_section.mid + "\r\n");
+	}
+	sdp_frag.append("a=ice-ufrag:" + ice_ufrag + "\r\n");
+	sdp_frag.append("a=ice-pwd:" + ice_pwd + "\r\n");
+	if (!candidate_line.empty()) {
+		sdp_frag.append("a=" + candidate_line + "\r\n");
+	}
+	if (end_of_candidates) {
+		sdp_frag.append("a=end-of-candidates\r\n");
+	}
+
+	return true;
+}
+
+void WHIPOutput::SendTrickleIcePatch(const std::string &sdp_frag)
+{
+	if (!trickle_enabled || trickle_stop) {
+		return;
+	}
+
+	struct curl_slist *headers = NULL;
+	headers = curl_slist_append(headers, "Content-Type: application/trickle-ice-sdpfrag");
+	if (!bearer_token.empty()) {
+		auto bearer_token_header = std::string("Authorization: Bearer ") + bearer_token;
+		headers = curl_slist_append(headers, bearer_token_header.c_str());
+	}
+
+	std::string etag;
+	{
+		std::lock_guard<std::mutex> lock(resource_etag_mutex);
+		etag = resource_etag;
+	}
+	if (!etag.empty()) {
+		auto if_match_header = std::string("If-Match: ") + etag;
+		headers = curl_slist_append(headers, if_match_header.c_str());
+	}
+	headers = curl_slist_append(headers, user_agent.c_str());
+
+	std::array<char, CURL_ERROR_SIZE> error_buffer = {};
+	std::vector<std::string> http_headers;
+	std::string patch_response_body;
+
+	CURL *c = curl_easy_init();
+	curl_easy_setopt(c, CURLOPT_HTTPHEADER, headers);
+	curl_easy_setopt(c, CURLOPT_URL, resource_url.c_str());
+	curl_easy_setopt(c, CURLOPT_CUSTOMREQUEST, "PATCH");
+	curl_easy_setopt(c, CURLOPT_COPYPOSTFIELDS, sdp_frag.c_str());
+	curl_easy_setopt(c, CURLOPT_TIMEOUT, 8L);
+	curl_easy_setopt(c, CURLOPT_FOLLOWLOCATION, 1L);
+	curl_easy_setopt(c, CURLOPT_UNRESTRICTED_AUTH, 1L);
+	curl_easy_setopt(c, CURLOPT_WRITEFUNCTION, curl_writefunction);
+	curl_easy_setopt(c, CURLOPT_WRITEDATA, (void *)&patch_response_body);
+	curl_easy_setopt(c, CURLOPT_HEADERFUNCTION, curl_header_function);
+	curl_easy_setopt(c, CURLOPT_HEADERDATA, (void *)&http_headers);
+	curl_easy_setopt(c, CURLOPT_ERRORBUFFER, error_buffer.data());
+	curl_easy_setopt(c, CURLOPT_NOPROGRESS, 0L);
+	curl_easy_setopt(c, CURLOPT_XFERINFODATA, this);
+	curl_easy_setopt(
+		c, CURLOPT_XFERINFOFUNCTION, +[](void *data, curl_off_t, curl_off_t, curl_off_t, curl_off_t) -> int {
+			return static_cast<WHIPOutput *>(data)->trickle_stop ? 1 : 0;
+		});
+
+	CURLcode res = curl_easy_perform(c);
+	if (trickle_stop) {
+		curl_easy_cleanup(c);
+		curl_slist_free_all(headers);
+		return;
+	}
+	if (res != CURLE_OK) {
+		do_log(LOG_WARNING, "Trickle ICE PATCH failed: %s",
+		       error_buffer[0] ? error_buffer.data() : curl_easy_strerror(res));
+	} else {
+		long response_code = 0;
+		curl_easy_getinfo(c, CURLINFO_RESPONSE_CODE, &response_code);
+		if (response_code < 200 || response_code >= 300) {
+			do_log(LOG_WARNING, "Trickle ICE PATCH returned HTTP %ld", response_code);
+			if (response_code == 412 || response_code == 428) {
+				trickle_enabled = false;
+				do_log(LOG_WARNING, "Disabling trickle ICE PATCH after HTTP %ld", response_code);
+			}
+		} else {
+			for (auto &http_header : http_headers) {
+				auto value = value_for_header("etag", http_header);
+				if (!value.empty()) {
+					std::lock_guard<std::mutex> lock(resource_etag_mutex);
+					resource_etag = value;
+				}
+			}
+			// Apply any remote ICE candidates the server piggybacked on this response
+			if (!patch_response_body.empty()) {
+				bool has_trickle_body = false;
+				for (auto &http_header : http_headers) {
+					auto ct = value_for_header("content-type", http_header);
+					if (ct.find("application/trickle-ice-sdpfrag") != std::string::npos) {
+						has_trickle_body = true;
+						break;
+					}
+				}
+				if (has_trickle_body) {
+					ApplyIncomingRemoteCandidates(patch_response_body);
+				}
+			}
+		}
+	}
+
+	curl_easy_cleanup(c);
+	curl_slist_free_all(headers);
+}
+
+void WHIPOutput::ApplyIncomingRemoteCandidates(const std::string &sdp_frag)
+{
+	std::string current_mid;
+	std::istringstream stream(sdp_frag);
+	std::string line;
+
+	while (std::getline(stream, line)) {
+		line = trim_string(line);
+		if (line.empty()) {
+			continue;
+		}
+
+		if (line.rfind("a=mid:", 0) == 0) {
+			current_mid = line.substr(6);
+		} else if (line.rfind("a=candidate:", 0) == 0) {
+			// rtc::Candidate expects the string without the "a=" prefix
+			std::string cand_str = line.substr(2);
+			try {
+				rtc::Candidate remote_cand(cand_str, current_mid);
+				if (peer_connection) {
+					peer_connection->addRemoteCandidate(remote_cand);
+					do_log(LOG_DEBUG, "Added remote candidate (mid=%s): %s", current_mid.c_str(),
+					       cand_str.c_str());
+				}
+			} catch (const std::exception &e) {
+				do_log(LOG_WARNING, "Failed to add remote candidate: %s", e.what());
+			}
+		}
+		// libdatachannel has no API for a remote end-of-candidates indication.
+	}
+}
+
+void WHIPOutput::TrickleThread()
+{
+	while (!trickle_stop && trickle_enabled) {
+		std::vector<rtc::Candidate> candidates;
+		bool complete = false;
+		{
+			std::unique_lock<std::mutex> lock(pending_candidates_mutex);
+			pending_candidates_cv.wait(lock, [this] {
+				return trickle_stop || !pending_candidates.empty() || ice_gathering_complete;
+			});
+			if (trickle_stop) {
+				return;
+			}
+			candidates.swap(pending_candidates);
+			complete = ice_gathering_complete;
+		}
+		for (const auto &candidate : candidates) {
+			if (trickle_stop || !trickle_enabled) {
+				return;
+			}
+			SendTrickleCandidate(candidate);
+		}
+		if (complete) {
+			SendEndOfCandidates();
+			return;
+		}
+	}
+}
+
+void WHIPOutput::StopTrickle()
+{
+	{
+		std::lock_guard<std::mutex> lock(pending_candidates_mutex);
+		trickle_stop = true;
+	}
+	pending_candidates_cv.notify_one();
+	if (trickle_thread.joinable()) {
+		trickle_thread.join();
+	}
+}
+
+void WHIPOutput::SendTrickleCandidate(const rtc::Candidate &candidate)
+{
+	// Guard: credentials not yet extracted from offer SDP
+	if (resource_url.empty() || ice_ufrag.empty() || ice_pwd.empty()) {
+		return;
+	}
+
+	std::string sdp_frag;
+	std::string mid = candidate.mid();
+	if (!BuildTrickleSdpFragment(mid, candidate.candidate(), false, sdp_frag)) {
+		return;
+	}
+
+	do_log(LOG_DEBUG, "Trickle ICE candidate (mid=%s): %s", mid.c_str(), candidate.candidate().c_str());
+	SendTrickleIcePatch(sdp_frag);
+}
+
+void WHIPOutput::SendEndOfCandidates()
+{
+	// Guard: credentials not yet extracted from offer SDP
+	if (resource_url.empty() || ice_ufrag.empty() || ice_pwd.empty()) {
+		return;
+	}
+
+	std::string sdp_frag;
+	std::string mid;
+	{
+		std::lock_guard<std::mutex> lock(ice_gathering_mutex);
+		mid = first_mid;
+	}
+	if (!BuildTrickleSdpFragment(mid, "", true, sdp_frag)) {
+		return;
+	}
+
+	do_log(LOG_DEBUG, "Sending end-of-candidates");
+	SendTrickleIcePatch(sdp_frag);
 }
 
 void register_whip_output()

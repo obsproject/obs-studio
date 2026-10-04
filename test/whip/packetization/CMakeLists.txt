@@ -1,0 +1,23 @@
+cmake_minimum_required(VERSION 3.28)
+project(whip_packetization_regression LANGUAGES CXX)
+find_package(LibDataChannel CONFIG REQUIRED)
+# Read the production limit so changing it cannot leave this regression stale.
+file(READ "${CMAKE_CURRENT_LIST_DIR}/../../../plugins/obs-webrtc/whip-output.cpp" fragment_limit)
+if(NOT fragment_limit MATCHES "MAX_VIDEO_FRAGMENT_SIZE = ([0-9]+);")
+  message(FATAL_ERROR "Cannot find WHIP's video fragment limit")
+endif()
+set(whip_fragment_limit "${CMAKE_MATCH_1}")
+add_executable(whip-packetization-test packetization.cpp)
+target_compile_definitions(whip-packetization-test PRIVATE WHIP_FRAGMENT_LIMIT=${whip_fragment_limit})
+target_compile_features(whip-packetization-test PRIVATE cxx_std_17)
+target_link_libraries(whip-packetization-test PRIVATE LibDataChannel::LibDataChannel)
+if(APPLE)
+  # Resolve the patched library before the stock copy in the OBS dependency prefix.
+  set_property(TARGET whip-packetization-test PROPERTY BUILD_RPATH "$<TARGET_FILE_DIR:LibDataChannel::LibDataChannel>")
+  # libdatachannel's Mbed TLS dylibs remain in the OBS dependency prefix until packaging.
+  foreach(prefix IN LISTS CMAKE_PREFIX_PATH)
+    set_property(TARGET whip-packetization-test APPEND PROPERTY BUILD_RPATH "${prefix}/lib")
+  endforeach()
+endif()
+enable_testing()
+add_test(NAME whip-packetization COMMAND whip-packetization-test)

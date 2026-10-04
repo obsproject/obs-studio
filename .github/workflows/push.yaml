@@ -21,6 +21,8 @@ jobs:
 
   build-project:
     name: Build 🧱
+    # This fork builds OBS with its patched ICE dependency in whip-builds.yaml.
+    if: github.repository != 'steveseguin/obs-studio'
     uses: ./.github/workflows/build-project.yaml
     secrets: inherit
     permissions:
