@@ -8,8 +8,9 @@ and Linux x86_64. It runs on code pushes, WHIP-related pull requests, and manual
 dispatch. In `steveseguin/obs-studio`, this replaces the inherited Push workflow's
 build job, which does not apply the patched ICE dependency. Formatting, service,
 and compatibility checks remain enabled.
-Stable/preview builds apply only the four WHIP source files changed since upstream
-`cffa83ba5`; an incompatible patch fails the job instead of silently omitting fixes.
+Stable/preview builds apply the explicit WHIP and encoder-policy file list in
+`prepare-whip-source.py` relative to upstream `cffa83ba5`; an incompatible patch
+fails the job instead of silently omitting fixes.
 
 [GitHub run 37140356507](https://github.com/steveseguin/obs-studio/actions/runs/37140356507)
 passed all 12 builds and their ICE regressions on 2026-10-03: fork, stable 32.2.2,
@@ -39,17 +40,17 @@ macOS packages require 13.0 or later. Linux artifacts target Ubuntu 26.04 and
 require its runtime libraries. Building successfully does not certify live TURN
 operation.
 
-**Mac signing and WHIP correction completed (2026-10-03):** both releases
+**Mac signing and WHIP encoder correction completed (2026-10-03):** both releases
 contain Developer ID-signed, Apple-notarized Mac packages for arm64 and x86_64.
-The final Mac binaries use WHIP revision `786910b5013428ba9b25740435a6bc21c270355c` from
-[signed CI run 37157278999](https://github.com/steveseguin/obs-studio/actions/runs/37157278999); all 12 cross-platform builds passed.
+The final Mac binaries use WHIP revision `05ebf73765b44a5abb7a8365cace7f154154ef48` from
+[signed CI run 37167719965](https://github.com/steveseguin/obs-studio/actions/runs/37167719965); all 12 cross-platform builds passed.
 Stable was prepared from upstream OBS 32.2.2 (`ba2f32bdf791005443988a4955e963663e16b1ed`),
 and preview from 33.0.0-beta6 (`cffa83ba552f1ef6a0a05851c3aa07b3811d7e58`).
 The pinned libdatachannel/libjuice revisions and dependency patch hash are unchanged.
 
 The original Mac binaries were first signed without changing executable payloads.
 Live tests then exposed the same Mbed TLS/Chrome DTLS failure previously fixed on
-Windows. The final rebuild extends that exact-host `whip.vdo.ninja` active-role
+Windows. An earlier rebuild extended that exact-host `whip.vdo.ninja` active-role
 workaround to macOS. Other WHIP hosts retain actpass; Linux retains its OpenSSL
 behavior. No VDO.Ninja application source was changed.
 
@@ -63,10 +64,10 @@ signed release run.
 
 | OBS version | Architecture | Accepted Apple submission |
 | --- | --- | --- |
-| 32.2.2 | arm64 | `ac063b48-4aaf-4ff2-b165-e39a2a1b2e6a` |
-| 32.2.2 | x86_64 | `cfb38e58-f71b-4cac-8e25-869d7924176f` |
-| 33.0.0-beta6 | arm64 | `0cc87c30-e14a-4493-b7fd-ccd3392552a5` |
-| 33.0.0-beta6 | x86_64 | `be1efa73-2cd3-4e2e-9c58-d5e2e14c2100` |
+| 32.2.2 | arm64 | `054f7444-06ca-4f65-8085-ca25efc8113d` |
+| 32.2.2 | x86_64 | `32596588-7dbb-4a33-a989-0b530f726179` |
+| 33.0.0-beta6 | arm64 | `53eb13b3-6021-4ad7-8f0b-13301a41ee73` |
+| 33.0.0-beta6 | x86_64 | `25068216-35ab-485c-af49-4bd287a33772` |
 
 `BUILD-PROVENANCE.json` retains the original CI package in
 `original_build_package`, prior signing records in `superseded_packages`, and the
@@ -79,10 +80,67 @@ original tooling revision; use each archive's manifest for its exact sources.
 The local Keychain profile is `OBS-WHIP`; the five signing/notarization repository
 secrets are configured. No credentials are stored in this repository. Final CI
 receipts, Apple logs, downloaded artifacts, runtime results, and public-download
-verification are retained under ignored `build_whip_runtime/`; the initial
-conversion evidence remains under ignored `build_whip_signing/`.
+verification are retained under ignored `build_whip_final/`. The intermediate
+candidate investigation is retained under `build_whip_vt/`; the earlier DTLS
+validation remains under `build_whip_runtime/`, and initial conversion evidence
+under `build_whip_signing/`.
 
-### Signed Mac runtime checks — 2026-10-03
+### Final Mac runtime checks — revision `05ebf7376`, 2026-10-03
+
+The final Mac archives were launched on macOS 26.4.1 / Apple M1: arm64 natively and
+x86_64 under Rosetta. All **54 planned media scenarios passed**, including fresh-session
+repeats, and **4/4 software-HEVC rejection checks passed**. Across initial attempts and
+repeats, 58/60 media attempts passed. Chrome 154.0.8037.93 and Firefox 155 received
+synthetic 720p30 video and Opus audio through the production WHIP endpoint. Passes
+required at least 24 decoded fps, advancing audio, a playing video element, the expected
+selected route, and a successful stream stop. Final initial samples were 10 seconds per
+route; fresh-session retries were 15 seconds.
+
+Two final relay attempts in the reused Firefox profile failed during ICE gathering, with
+no usable local candidates. The complete three-route matrix was then repeated twice in
+fresh Firefox profiles. Both fresh repetitions passed; the earlier failures remain in
+the results. This observation does not establish the underlying cause.
+
+All four apps were tested with hardware VT H.264 in Chrome and Firefox and x264 in
+Chrome, each over default/direct, TURN/UDP (`&relay`), and TURN/TLS (`&relay&tcp`).
+Native builds additionally tested software VT H.264, hardware VT HEVC, and AOM AV1
+across the same three routes. **16 recorded samples contained 4,071 I/P frames and zero
+B-frames**, including x264 configured with a deliberate `bframes=8` override. Advanced
+encoder tests disabled optional service recommendations. Apple software HEVC is
+deliberately rejected for WHIP because it emitted B-slices despite frame reordering
+being disabled; use hardware HEVC or H.264.
+
+The preceding 98-attempt investigation covered eight URL-flag modes on all four apps,
+explicit TURN UDP 3478/TLS 443 URLs, explicit WHIP HTTPS port 443, and one-minute TLS
+observations on both native builds. Its failures are retained: an explicit UDP
+allocation returned TURN 508 (both fresh retries passed), Firefox UDP failed twice
+before a fresh retry passed, and two software-H.264 runs fell below the frame-rate
+threshold while other builds were using the host (both cases passed twice on retry).
+Software HEVC also failed the 720p30 threshold and emitted B-slices; that candidate was
+not published. The final rebuild adds the rejection guard.
+
+Default and `&turn=false` connected directly on this network. `&tcp` restricts TURN
+choices but does not force a relay; `&tcp=443` has the same behavior. `&tcprelay` and
+`&port=443` were not recognized as routing/port selectors. Explicit TURN URLs provide
+the tested port selection. TURN/TLS here describes the browser-to-TURN leg; OBS still
+uses UDP.
+
+Video packetizer tests enforce the shared 1,200-byte fragment limit for H.264, HEVC and
+AV1, with a tested maximum of 1,220-byte RTP / 1,288 bytes including conservative IPv6,
+UDP, SRTP and TURN ChannelData allowances. Single-frame stereo Opus peaked at a
+1,356-byte packet with the same allowance. These are packetizer tests and header
+budgets, not measurements through a VPN.
+
+Physical Intel hardware, Windows GPU encoders, Safari/mobile receivers, real VPN paths,
+and a UDP-blocked OBS network were not tested in this round. The supplied BrowserStack
+credential path was absent, so no BrowserStack tests ran. Browser-source rendering
+remains unresolved on this host. Published Windows/Linux packages are unchanged and do
+not contain the new encoder-policy guards.
+
+The [machine-readable results](../../docs/whip/macos-validation-2026-10-03.json) include
+failed attempts and candidate/release revisions.
+
+### Earlier DTLS runtime checks — revision `786910b50`, 2026-10-03
 
 Both versions launched on macOS 26.4.1 / Apple M1: arm64 natively and x86_64 under
 Rosetta. **All 24 direct production WHIP cases passed** with automated Chrome
@@ -106,6 +164,45 @@ capture, Linux live publishers, extended endurance, and an OBS network blocking
 outbound UDP remain untested. `&relay&tcp` uses TLS on the browser-to-TURN leg;
 OBS still uses UDP.
 
+### WHIP encoder and packet policy
+
+WHIP applies its encoder requirements at output startup, including when Advanced
+Output's optional service recommendations are disabled. It forces the shared
+`bf` setting to zero and VideoToolbox's boolean `bframes` setting to false.
+Custom x264, NVENC and AMD AMF options cannot re-enable B-frames; NVENC UHQ is
+changed to HQ because UHQ requires B-frames. Other tuning choices are preserved.
+Apple's software HEVC encoder is rejected for WHIP: local bitstream tests found
+B-slices even with frame reordering disabled, including separate real-time and
+low-delay probes. Use hardware HEVC or H.264 instead. This restriction applies
+only to WHIP; other outputs retain their existing encoder behavior.
+A shared encoder already running without these requirements must be stopped
+before WHIP starts; changing settings cannot remove frames already queued by an
+active recording encoder.
+
+All video encoders use the same H.264/HEVC/AV1 packetizers with a **1,200-byte
+fragment limit**. This limits RTP payload fragments, not encoded video frame
+size. `test/whip/packetization` tests the production limit against the exact
+rebuilt libdatachannel, including MID/RID extensions, boundary sizes and large
+frames up to 1 MiB. The dependency helper runs it on every build alongside the
+ICE regressions. Tested video RTP packets peak at 1,220 bytes, or 1,288 bytes
+allowing for IPv6, UDP, a 16-byte SRTP tag and TURN ChannelData. The maximum single
+Opus frame plus TOC is tested separately: 1,288-byte RTP / 1,356-byte packet with
+the same allowance. The frame/TOC bound is from
+[RFC 6716 sections 3.2.1–3.2.2](https://www.rfc-editor.org/rfc/rfc6716.html#section-3.2.1).
+This covers single-frame stereo Opus, not arbitrary multichannel or aggregated
+Opus packets. Actual VPN encapsulation, path MTU and TCP segmentation are outside
+this packetizer test; no guarantee for every VPN is implied.
+
+To run the packetizer regression against an existing patched dependency install:
+
+```sh
+cmake -S test/whip/packetization -B build_whip_packet_tests \
+  -DLibDataChannel_DIR=/absolute/path/to/whip-dependency/install/lib/cmake/LibDataChannel \
+  -DCMAKE_PREFIX_PATH=/absolute/path/to/obs-deps
+cmake --build build_whip_packet_tests --config Release
+ctest --test-dir build_whip_packet_tests -C Release --output-on-failure
+```
+
 ### Mac release signing and publication
 
 `build-aux/sign-whip-macos.py` signs the nested Mach-O files and bundles from the
@@ -122,10 +219,12 @@ password in the command, repository, or chat):
 xcrun notarytool store-credentials OBS-WHIP --team-id H3CKR5XB3J --apple-id YOUR_APPLE_ID
 ```
 
-The current staging directories and original downloads are in ignored
-`build_whip_signing/stage/` and `build_whip_signing/original/{stable,preview}/`.
-The completed conversion used the following command for each signed staging
-directory (the stored submission ID supports resuming an interrupted run):
+The initial conversion staging directories and original downloads remain in
+ignored `build_whip_signing/stage/` and
+`build_whip_signing/original/{stable,preview}/`. The current rebuild uses
+`build_whip_final/stage/` and fresh metadata snapshots in
+`build_whip_final/original/{stable,preview}/`. The initial conversion used the
+following command for each signed staging directory (the stored submission ID supports resuming an interrupted run):
 
 ```sh
 python3 build-aux/sign-whip-macos.py release \
