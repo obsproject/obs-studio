@@ -8,6 +8,8 @@
 	<dict>
 		<key>com.obsproject.obs-studio</key>
 		<string>${OBS_PROVISIONING_PROFILE}</string>
+		<key>com.obsproject.obs-studio.mac-camera-extension</key>
+		<string>${OBS_CAMERA_PROVISIONING_PROFILE}</string>
 	</dict>
 	<key>signingStyle</key>
 	<string>manual</string>

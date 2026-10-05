@@ -18,6 +18,13 @@ else()
   set(CMAKE_XCODE_ATTRIBUTE_PROVISIONING_PROFILE_NAME "${OBS_PROVISIONING_PROFILE}")
 endif()
 
+if(NOT OBS_CAMERA_PROVISIONING_PROFILE)
+  # Developer ID provisioning profile for the camera extension bundle
+  # (com.obsproject.obs-studio.mac-camera-extension); must carry
+  # com.apple.developer.system-extension.install for that App ID.
+  set(OBS_CAMERA_PROVISIONING_PROFILE "" CACHE STRING "OBS provisioning profile name for the macOS camera extension" FORCE)
+endif()
+
 if(NOT OBS_CODESIGN_TEAM)
   # Switch to manual codesigning if no codesigning team is provided
   set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE Manual)
