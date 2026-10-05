@@ -12,6 +12,7 @@ trim_trailing_whitespace = true
 charset = utf-8
 indent_style = tab
 indent_size = 8
+guidelines = 120
 
 # As per notr1ch, for 3rd party code that's a part of obs-outputs.
 [plugins/obs-outputs/librtmp/*.{cpp,c,h}]
