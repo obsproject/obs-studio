@@ -656,7 +656,11 @@ Core OBS Signals
 
 **source_create** (ptr source)
 
-   Called when a source has been created.
+   Called when a source has been created on the main OBS canvas.
+
+**source_create_canvas** (ptr source, ptr canvas)
+
+   Called when a source has been created on another canvas than the main one.
 
 **source_destroy** (ptr source)
 
