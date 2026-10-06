@@ -1,79 +1,96 @@
-OBS Studio <https://obsproject.com>
-===================================
+Himothee Studio
+===============
 
-.. image:: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml/badge.svg?branch=master
-   :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/obsproject/obs-studio/actions/workflows/push.yaml?query=branch%3Amaster
+Himothee Studio is a streaming and production application based on
+`OBS Studio <https://github.com/obsproject/obs-studio>`_.
 
-.. image:: https://badges.crowdin.net/obs-studio/localized.svg
-   :alt: OBS Studio Translation Project Progress
-   :target: https://crowdin.com/project/obs-studio
+The project starts from **OBS Studio 32.2.2** and is focused on adding
+native multi-destination streaming while retaining the mature capture,
+scene, source, audio, recording, replay-buffer, encoder, and plugin
+capabilities provided by OBS Studio.
 
-.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
-   :alt: OBS Studio Discord Server
-   :target: https://obsproject.com/discord
+Project Status
+--------------
 
-What is OBS Studio?
+**Early development / pre-release.**
+
+The current development baseline is OBS Studio 32.2.2
+(commit ``ba2f32bdf791005443988a4955e963663e16b1ed``).
+
+Development takes place on the ``himothee-dev`` branch. The ``master``
+branch is intentionally kept close to upstream OBS so upstream changes
+can be reviewed without mixing them directly into product development.
+
+Primary Goals
+-------------
+
+* Native multistreaming to Twitch, YouTube, Kick, and custom RTMP targets.
+* Shared-encoder multistreaming for low GPU overhead.
+* Independent per-destination encoding as an advanced mode.
+* Per-destination bitrate, server, stream key, reconnect, and status handling.
+* Per-destination audio routing in a later development stage.
+* Integrated production tools such as media triggers, macros, counters,
+  timers, alerts, and browser-based overlays.
+* A streamlined interface that remains familiar to existing OBS users.
+
+Planned Development
 -------------------
 
-OBS Studio is software designed for capturing, compositing, encoding,
-recording, and streaming video content, efficiently.
+``v0.1`` - Establish a clean OBS Studio 32.2.2 baseline.
 
-It's distributed under the GNU General Public License v2 (or any later
-version) - see the accompanying COPYING file for more details.
+``v0.2`` - Himothee Studio application identity and branding.
 
-Quick Links
------------
+``v0.3`` - Multi-output streaming core.
 
-- Website: https://obsproject.com
+``v0.4`` - Multistream Manager user interface.
 
-- Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
+``v0.5`` - Shared-encoder multistreaming.
 
-- Forums: https://obsproject.com/forum/
+``v0.6`` - Independent per-destination encoders.
 
-- Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+``v0.7`` - Destination health, reconnect, error reporting, and statistics.
 
-- Developer/API Documentation: https://obsproject.com/docs
+``v0.8`` - Per-destination audio routing.
 
-- Donating/backing/sponsoring: https://obsproject.com/contribute
+Further stages will integrate alerts, media triggers, macros, counters,
+timers, browser overlays, and external control.
 
-- Bug Tracker: https://github.com/obsproject/obs-studio/issues
+Documentation
+-------------
 
-Contributing
-------------
+Project-specific documentation lives in ``docs/himothee/``:
 
-- If you would like to help fund or sponsor the project, you can do so
-  via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
-  <https://opencollective.com/obsproject>`_, or `PayPal
-  <https://www.paypal.me/obsproject>`_.  See our `contribute page
-  <https://obsproject.com/contribute>`_ for more information.
+* ``DEVELOPMENT.md`` - development workflow and branch strategy.
+* ``ROADMAP.md`` - staged implementation plan.
+* ``MULTISTREAM_ARCHITECTURE.md`` - multi-output architecture.
+* ``UPSTREAM.md`` - how this fork tracks OBS Studio.
 
-- If you wish to contribute code to the project, please make sure to
-  read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
-  
-- Code for the project follows the code style guidelines, located
-  here: https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
+Building
+--------
 
-- Developer/API documentation can be found here:
-  https://obsproject.com/docs
+Until the Himothee-specific build pipeline is introduced, the project
+uses the OBS Studio build system inherited from the 32.2.2 baseline.
 
-- If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this page:
-  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
+See ``docs/himothee/DEVELOPMENT.md`` before making changes.
 
-- Contributors to OBS Studio and related repositories are expected to
-  follow our Code of Conduct, which can be read here:
-  https://github.com/obsproject/obs-studio/blob/master/COC.rst
+Upstream OBS Studio
+-------------------
 
-- Other ways to contribute are by helping people out with support on
-  our forums or in our community chat.  Please limit support to topics
-  you fully understand -- bad advice is worse than no advice.  When it
-  comes to something that you don't fully know or understand, please
-  defer to the official help or official channels.
+Himothee Studio is a derivative of OBS Studio. The original OBS Studio
+project is available at:
 
+https://github.com/obsproject/obs-studio
 
-SAST Tools
-----------
+OBS Studio is developed by the OBS Project and its contributors.
+Himothee Studio is an independent fork and is not an official OBS
+Project distribution.
 
-`PVS-Studio <https://pvs-studio.com/pvs-studio/?utm_source=website&utm_medium=github&utm_campaign=open_source>`_ - static analyzer for C, C++, C#, and Java code.
+License
+-------
+
+This repository retains the OBS Studio GNU General Public License
+version 2 or later licensing. See the repository's ``COPYING`` file and
+applicable source-file notices for details.
+
+When distributing Himothee Studio builds, the corresponding GPL source
+and required notices must remain available.
