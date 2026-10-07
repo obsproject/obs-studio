@@ -72,13 +72,19 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 	this->addWidget(moduleText);
 
 	InfoChip *statusChip{nullptr};
-	if (entry.status == PluginManagerWindow::Status::Error) {
+	if (obs_frontend_is_safe_mode_enabled()) {
+		idian::Utils::addClass(nameLabel, "text-muted");
+
+		statusChip = new InfoChip{QTStr("PluginManager.Status.Disabled"), moduleText};
+		idian::Utils::addClass(statusChip, "bg-info");
+		idian::Utils::addClass(statusChip, "text-muted");
+	} else if (entry.category == PluginManagerWindow::Category::Error) {
 		idian::Utils::addClass(nameLabel, "text-muted");
 
 		statusChip = new InfoChip{QTStr("PluginManager.Status.Error"), moduleText};
 		idian::Utils::addClass(statusChip, "bg-warning");
 		idian::Utils::addClass(statusChip, "text-warning");
-	} else if (entry.status == PluginManagerWindow::Status::Missing) {
+	} else if (entry.category == PluginManagerWindow::Category::Missing) {
 		idian::Utils::addClass(nameLabel, "text-muted");
 
 		statusChip = new InfoChip{QTStr("PluginManager.Status.Missing"), moduleText};
@@ -136,7 +142,7 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 		});
 	}
 
-	if (entry.status == PluginManagerWindow::Status::Missing) {
+	if (entry.category == PluginManagerWindow::Category::Missing) {
 		auto removeButton = new idian::InlineButton(this);
 		removeButton->setAccessibleName(QTStr("Remove"));
 		removeButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
