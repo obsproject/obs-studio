@@ -1784,6 +1784,10 @@ char *GetAppConfigPathPtr(const char *name)
 {
 #if ALLOW_PORTABLE_MODE
 	if (portable_mode) {
+		if (!name || !*name) {
+			return bstrdup(CONFIG_PATH);
+		}
+
 		char path[512];
 
 		if (snprintf(path, sizeof(path), CONFIG_PATH "/%s", name) > 0) {
