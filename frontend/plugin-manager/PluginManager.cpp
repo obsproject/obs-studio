@@ -91,14 +91,20 @@ void PluginManager::loadAllPlugins(bool usePortableMode)
 		loadState_ = State::Failure;
 		//TODO: Replace with structured exception type - https://github.com/obsproject/obs-studio/issues/13394
 		throw "Failed to load core OBS modules. OBS cannot run without these modules. Please try reinstalling OBS.";
-	}
+	} else {
+		if (loadMode_ == Mode::Full) {
+			blog(LOG_INFO, "---------------------------------");
+			State pluginState = loadPlugins(usePortableMode);
+			State legacyPluginState = loadLegacyPlugins(usePortableMode);
 
-	if (loadMode_ == Mode::Full) {
-		blog(LOG_INFO, "---------------------------------");
-		State pluginState = loadPlugins(usePortableMode);
-		State legacyPluginState = loadLegacyPlugins(usePortableMode);
-
-		loadState_ = (pluginState && legacyPluginState) ? State::Success : State::PartialFailure;
+			if (pluginState && legacyPluginState) {
+				loadState_ = State::Success;
+			} else {
+				loadState_ = State::PartialFailure;
+			}
+		} else {
+			loadState_ = State::Success;
+		}
 	}
 
 	blog(LOG_INFO, "---------------------------------");
