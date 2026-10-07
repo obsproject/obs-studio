@@ -177,18 +177,24 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 							      : metadata.module_name.c_str();
 		QString version = !metadata.version.empty() ? metadata.version.c_str() : "";
 
-		Entry newEntry{&metadata, name, category, isLegacyModule};
+		Entry newEntry{metadata, name, category, isLegacyModule};
 		installedPluginEntries.push_back(newEntry);
 	}
 
 	for (const std::string &moduleName : failedModules) {
 		// This failed module is not in the plugin manager cache which means it has never been loaded successfully.
 		// Create a dummy visual entry for it.
+		OBS::ModuleInfo dummyModule;
 		QString name = QString::fromStdString(moduleName.data());
 		Category category{Category::Error};
 		bool isLegacy{false};
+		bool hasLoadedBefore{false};
 
-		Entry newEntry{nullptr, name, category, isLegacy};
+		dummyModule.module_name = moduleName;
+		dummyModule.enabled = false;
+		dummyModule.enabledAtLaunch = false;
+
+		Entry newEntry{dummyModule, name, category, isLegacy, hasLoadedBefore};
 		installedPluginEntries.push_back(newEntry);
 	}
 
@@ -217,25 +223,34 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 
 		if (entry.category == Category::Installed) {
 			installedPluginList->addRow(newRow);
-
-			connect(newRow, &InstalledPluginRow::toggleChanged, this,
-				[this]() { ui->manageRestartLabel->setVisible(isEnabledPluginsChanged()); });
-
 		} else if (entry.category == Category::Error) {
 			errorPluginList->addRow(newRow);
 		} else if (entry.category == Category::Missing) {
 			missingPluginList->addRow(newRow);
 
-			connect(newRow, &InstalledPluginRow::trashClicked, this, [this, newRow, entry]() {
-				auto it = std::find_if(modules_.begin(), modules_.end(), [&entry](const auto &module) {
-					return &module == entry.module;
-				});
+			connect(newRow, &InstalledPluginRow::trashClicked, this, [this, entry]() {
+				auto it = std::find_if(modules_.begin(), modules_.end(),
+						       [&entry](const ModuleInfo &module) {
+							       return module.module_name == entry.module.module_name;
+						       });
 
 				if (it != modules_.end()) {
 					modules_.erase(it);
 				}
 			});
 		}
+
+		connect(newRow, &InstalledPluginRow::toggleChanged, this, [this, entry](bool enabled) {
+			auto it = std::find_if(modules_.begin(), modules_.end(), [&entry](const ModuleInfo &module) {
+				return module.module_name == entry.module.module_name;
+			});
+
+			if (it != modules_.end()) {
+				it->enabled = enabled;
+			}
+
+			ui->manageRestartLabel->setVisible(isEnabledPluginsChanged());
+		});
 	}
 
 	setTabOrder(previousRow, ui->buttonBox);
@@ -293,7 +308,7 @@ bool PluginManagerWindow::isEnabledPluginsChanged()
 	bool result = false;
 	for (auto &entry : installedPluginEntries) {
 		// Only prompt for restart when a loadable plugin entry changed.
-		if (entry.category == Category::Installed && entry.module->enabledAtLaunch != entry.module->enabled) {
+		if (entry.category == Category::Installed && entry.module.enabledAtLaunch != entry.module.enabled) {
 			result = true;
 			break;
 		}

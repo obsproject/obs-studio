@@ -30,7 +30,7 @@ public:
 	InstalledPluginRow(QWidget *parent, const PluginManagerWindow::Entry &entry);
 
 signals:
-	void toggleChanged();
+	void toggleChanged(bool enabled);
 	void trashClicked();
 
 private:
