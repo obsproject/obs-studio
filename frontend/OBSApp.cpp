@@ -60,9 +60,8 @@
 
 using namespace std;
 
-string currentLogFile;
-string lastLogFile;
-string lastCrashLogFile;
+std::filesystem::path currentLogFile;
+std::filesystem::path lastLogFile;
 
 extern bool portable_mode;
 extern bool safe_mode;
@@ -358,16 +357,18 @@ bool OBSApp::InitGlobalConfigDefaults()
 
 bool OBSApp::InitGlobalLocationDefaults()
 {
-	BPtr<char> path = GetAppConfigPathPtr(nullptr);
-	if (!path || !*path.Get()) {
+	std::filesystem::path path = GetAppConfigPath();
+	if (path.empty()) {
 		OBSErrorBox(NULL, "Unable to get global configuration path.");
 		return false;
 	}
 
-	config_set_default_string(appConfig, "Locations", "Configuration", path.Get());
-	config_set_default_string(appConfig, "Locations", "SceneCollections", path.Get());
-	config_set_default_string(appConfig, "Locations", "Profiles", path.Get());
-	config_set_default_string(appConfig, "Locations", "PluginManagerSettings", path.Get());
+	std::string pathStr = path.u8string();
+
+	config_set_default_string(appConfig, "Locations", "Configuration", pathStr.c_str());
+	config_set_default_string(appConfig, "Locations", "SceneCollections", pathStr.c_str());
+	config_set_default_string(appConfig, "Locations", "Profiles", pathStr.c_str());
+	config_set_default_string(appConfig, "Locations", "PluginManagerSettings", pathStr.c_str());
 
 	return true;
 }
@@ -420,49 +421,42 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_int(userConfig, "Appearance", "Density", 1);
 }
 
-static bool do_mkdir(const char *path)
-{
-	if (os_mkdirs(path) == MKDIR_ERROR) {
-		OBSErrorBox(NULL, "Failed to create directory %s", path);
-		return false;
-	}
-
-	return true;
-}
-
 static bool MakeUserDirs()
 {
-	BPtr<char> path;
+	auto do_mkdir = [](const std::filesystem::path& path) -> bool {
+		std::error_code errorCode;
+		if (!std::filesystem::create_directories(path, errorCode) && errorCode) {
+			OBSErrorBox(NULL, "Failed to create directory %s", path.u8string().c_str());
+			return false;
+		}
+		return true;
+	};
 
-	path = GetAppConfigPathPtr("obs-studio/basic");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	std::filesystem::path basePath = GetAppConfigPath("obs-studio");
+
+	if (!do_mkdir(basePath / std::filesystem::u8path("basic"))) {
 		return false;
 	}
 
-	path = GetAppConfigPathPtr("obs-studio/logs");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	if (!do_mkdir(basePath / std::filesystem::u8path("logs"))) {
 		return false;
 	}
 
-	path = GetAppConfigPathPtr("obs-studio/profiler_data");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	if (!do_mkdir(basePath / std::filesystem::u8path("profiler_data"))) {
 		return false;
 	}
 
 #ifdef _WIN32
-	path = GetAppConfigPathPtr("obs-studio/crashes");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	if (!do_mkdir(basePath / std::filesystem::u8path("crashes"))) {
 		return false;
 	}
 #endif
 
-	path = GetAppConfigPathPtr("obs-studio/updates");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	if (!do_mkdir(basePath / std::filesystem::u8path("updates"))) {
 		return false;
 	}
 
-	path = GetAppConfigPathPtr("obs-studio/plugin_config");
-	if (!path || !*path.Get() || !do_mkdir(path)) {
+	if (!do_mkdir(basePath / std::filesystem::u8path("plugin_config"))) {
 		return false;
 	}
 
@@ -550,12 +544,12 @@ bool OBSApp::UpdatePre22MultiviewLayout(const char *layout)
 
 bool OBSApp::InitGlobalConfig()
 {
-	BPtr<char> path = GetAppConfigPathPtr("obs-studio/global.ini");
-	if (!path || !*path.Get()) {
+	std::filesystem::path path = GetAppConfigPath("obs-studio/global.ini");
+	if (path.empty()) {
 		return false;
 	}
 
-	int errorcode = appConfig.Open(path, CONFIG_OPEN_ALWAYS);
+	int errorcode = appConfig.Open(path.u8string().c_str(), CONFIG_OPEN_ALWAYS);
 	if (errorcode != CONFIG_SUCCESS) {
 		OBSErrorBox(NULL, "Failed to open global.ini: %d", errorcode);
 		return false;
@@ -705,28 +699,15 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 	}
 }
 
-static constexpr string_view OBSGlobalIniPath = "/obs-studio/global.ini";
-static constexpr string_view OBSUserIniPath = "/obs-studio/user.ini";
-
 bool OBSApp::MigrateGlobalSettings()
 {
-	BPtr<char> path = GetAppConfigPathPtr(nullptr);
-	if (!path || !*path.Get()) {
+	std::filesystem::path legacyGlobalConfigFile = GetAppConfigPath("obs-studio/global.ini");
+	std::filesystem::path userConfigFile = GetAppConfigPath("obs-studio/user.ini");
+	if (legacyGlobalConfigFile.empty()) {
 		OBSErrorBox(nullptr, "Unable to get global configuration path.");
 		return false;
 	}
-
-	std::string legacyConfigFileString;
-	legacyConfigFileString.reserve(strlen(path.Get()) + OBSGlobalIniPath.size());
-	legacyConfigFileString.append(path.Get()).append(OBSGlobalIniPath);
-
-	const std::filesystem::path legacyGlobalConfigFile = std::filesystem::u8path(legacyConfigFileString);
-
-	std::string configFileString;
-	configFileString.reserve(strlen(path.Get()) + OBSUserIniPath.size());
-	configFileString.append(path.Get()).append(OBSUserIniPath);
-
-	const std::filesystem::path userConfigFile = std::filesystem::u8path(configFileString);
+	
 
 	if (std::filesystem::exists(userConfigFile)) {
 		OBSErrorBox(nullptr,
@@ -866,9 +847,7 @@ bool LoadBranchesFile(vector<UpdateBranch> &out)
 	string error;
 	string branchesText;
 
-	BPtr<char> branchesFilePath = GetAppConfigPathPtr("obs-studio/updates/branches.json");
-
-	QFile branchesFile(branchesFilePath.Get());
+	QFile branchesFile(GetAppConfigPath("obs-studio/updates/branches.json"));
 	if (!branchesFile.open(QIODevice::ReadOnly)) {
 		error = "Opening file failed.";
 		goto fail;
@@ -1002,13 +981,7 @@ OBSApp::~OBSApp()
 
 static void move_basic_to_profiles(void)
 {
-	BPtr<char> path = GetAppConfigPathPtr("obs-studio/basic");
-
-	if (!path || !*path.Get()) {
-		return;
-	}
-
-	const std::filesystem::path basicPath = std::filesystem::u8path(path.Get());
+	const std::filesystem::path basicPath = GetAppConfigPath("obs-studio/basic");
 
 	if (!std::filesystem::exists(basicPath)) {
 		return;
@@ -1066,13 +1039,7 @@ static void move_basic_to_profiles(void)
 
 static void move_basic_to_scene_collections(void)
 {
-	BPtr<char> path = GetAppConfigPathPtr("obs-studio/basic");
-
-	if (!path || !*path.Get()) {
-		return;
-	}
-
-	const std::filesystem::path basicPath = std::filesystem::u8path(path.Get());
+	const std::filesystem::path basicPath = GetAppConfigPath("obs-studio/basic");
 
 	if (!std::filesystem::exists(basicPath)) {
 		return;
@@ -1201,13 +1168,13 @@ const char *OBSApp::GetRenderModule() const
 
 static bool StartupOBS(const char *locale, profiler_name_store_t *store)
 {
-	BPtr<char> path = GetAppConfigPathPtr("obs-studio/plugin_config");
+	std::filesystem::path path = GetAppConfigPath("obs-studio/plugin_config");
 
-	if (!path || !*path.Get()) {
+	if (path.empty()) {
 		return false;
 	}
 
-	return obs_startup(locale, path, store);
+	return obs_startup(locale, path.u8string().c_str(), store);
 }
 
 inline void OBSApp::ResetHotkeyState(bool inFocus)
@@ -1417,14 +1384,14 @@ const char *OBSApp::OutputAudioSource() const
 	return OUTPUT_AUDIO_SOURCE;
 }
 
-const char *OBSApp::GetLastLog() const
+std::filesystem::path OBSApp::GetLastLog() const
 {
-	return lastLogFile.c_str();
+	return lastLogFile;
 }
 
-const char *OBSApp::GetCurrentLog() const
+std::filesystem::path OBSApp::GetCurrentLog() const
 {
-	return currentLogFile.c_str();
+	return currentLogFile;
 }
 
 void OBSApp::openCrashLogDirectory() const
@@ -1445,14 +1412,14 @@ void OBSApp::uploadLastAppLog() const
 {
 	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
 
-	basicWindow->UploadLog("obs-studio/logs", GetLastLog(), OBS::LogFileType::LastAppLog);
+	basicWindow->UploadLog(GetLastLog(), OBS::LogFileType::LastAppLog);
 }
 
 void OBSApp::uploadCurrentAppLog() const
 {
 	OBSBasic *basicWindow = static_cast<OBSBasic *>(GetMainWindow());
 
-	basicWindow->UploadLog("obs-studio/logs", GetCurrentLog(), OBS::LogFileType::CurrentAppLog);
+	basicWindow->UploadLog(GetCurrentLog(), OBS::LogFileType::CurrentAppLog);
 }
 
 void OBSApp::uploadLastCrashLog()
@@ -1537,64 +1504,47 @@ skip:
 	return QApplication::notify(receiver, e);
 }
 
-string GenerateTimeDateFilename(const char *extension, bool noSpace)
+std::filesystem::path GenerateTimeDateFilename(const char *extension, const char *prefix, bool noSpace)
 {
 	QString format = noSpace ? "yyyy-MM-dd_hh-mm-ss" : "yyyy-MM-dd hh-mm-ss";
 	QString filename = QDateTime::currentDateTime().toString(format) + "." + extension;
 
-	return filename.toStdString();
+	if (prefix) {
+		filename = QString::fromUtf8(prefix) + filename;
+	}
+
+	return std::filesystem::u8path(QT_TO_UTF8(filename));
 }
 
-string GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format)
+std::filesystem::path GenerateSpecifiedFilename(const char *extension, bool noSpace, const char *format)
 {
 	BPtr<char> filename = os_generate_formatted_filename(extension, !noSpace, format);
-	return string(filename);
+	return std::filesystem::u8path(filename.Get());
 }
 
-static void FindBestFilename(string &strPath, bool noSpace)
+static void FindBestFilename(std::filesystem::path &path, bool noSpace)
 {
 	int num = 2;
 
-	if (!os_file_exists(strPath.c_str())) {
+	if (!std::filesystem::exists(path)) {
 		return;
 	}
 
-	const char *ext = strrchr(strPath.c_str(), '.');
-	if (!ext) {
-		return;
-	}
-
-	int extStart = int(ext - strPath.c_str());
+	std::filesystem::path stem = path.stem();
+	std::filesystem::path extension = path.extension();
 	for (;;) {
-		string testPath = strPath;
-		string numStr;
-
-		numStr = noSpace ? "_" : " (";
+		string numStr = noSpace ? "_" : " (";
 		numStr += to_string(num++);
 		if (!noSpace) {
 			numStr += ")";
 		}
 
-		testPath.insert(extStart, numStr);
+		path.replace_filename(stem.append(numStr).replace_extension(extension));
 
-		if (!os_file_exists(testPath.c_str())) {
-			strPath = testPath;
+		if (!std::filesystem::exists(path)) {
 			break;
 		}
 	}
-}
-
-static void ensure_directory_exists(string &path)
-{
-	replace(path.begin(), path.end(), '\\', '/');
-
-	size_t last = path.rfind('/');
-	if (last == string::npos) {
-		return;
-	}
-
-	string directory = path.substr(0, last);
-	os_mkdirs(directory.c_str());
 }
 
 static void remove_reserved_file_characters(string &s)
@@ -1683,22 +1633,15 @@ string GetOutputFilename(const char *path, const char *container, bool noSpace, 
 
 	os_closedir(dir);
 
-	string strPath;
-	strPath += path;
-
-	char lastChar = strPath.back();
-	if (lastChar != '/' && lastChar != '\\') {
-		strPath += "/";
-	}
+	std::filesystem::path file = std::filesystem::u8path(path);
 
 	string ext = GetFormatExt(container);
-	strPath += GenerateSpecifiedFilename(ext.c_str(), noSpace, format);
-	ensure_directory_exists(strPath);
+	file /= GenerateSpecifiedFilename(ext.c_str(), noSpace, format);
 	if (!overwrite) {
-		FindBestFilename(strPath, noSpace);
+		FindBestFilename(file, noSpace);
 	}
 
-	return strPath;
+	return file.u8string();
 }
 
 vector<pair<string, string>> GetLocaleNames()
@@ -1740,58 +1683,20 @@ vector<pair<string, string>> GetLocaleNames()
 #define ALLOW_PORTABLE_MODE 0
 #endif
 
-int GetAppConfigPath(char *path, size_t size, const char *name)
+std::filesystem::path GetAppConfigPath(const char * suffix)
 {
 #if ALLOW_PORTABLE_MODE
 	if (portable_mode) {
-		if (name && *name) {
-			return snprintf(path, size, CONFIG_PATH "/%s", name);
-		} else {
-			return snprintf(path, size, CONFIG_PATH);
+
+		std::string path = CONFIG_PATH;
+		if (suffix != nullptr && *suffix) {
+			path = path.append("/").append(suffix);
 		}
-	} else {
-		return os_get_config_path(path, size, name);
+		return std::filesystem::u8path(path);
 	}
-#else
-	return os_get_config_path(path, size, name);
 #endif
-}
-
-char *GetAppConfigPathPtr(const char *name)
-{
-#if ALLOW_PORTABLE_MODE
-	if (portable_mode) {
-		if (!name || !*name) {
-			return bstrdup(CONFIG_PATH);
-		}
-
-		int len = snprintf(NULL, 0, CONFIG_PATH "/%s", name);
-		if (len <= 0) {
-			return NULL;
-		}
-		char *path = (char *)bmalloc((size_t)len + 1);
-
-		if (snprintf(path, len + 1, CONFIG_PATH "/%s", name) > 0) {
-			return path;
-		} else {
-			return NULL;
-		}
-	} else {
-		return os_get_config_path_ptr(name);
-	}
-#else
-	return os_get_config_path_ptr(name);
-#endif
-}
-
-int GetProgramDataPath(char *path, size_t size, const char *name)
-{
-	return os_get_program_data_path(path, size, name);
-}
-
-char *GetProgramDataPathPtr(const char *name)
-{
-	return os_get_program_data_path_ptr(name);
+	BPtr<char> tmpPath = os_get_config_path_ptr(suffix);
+	return std::filesystem::u8path(tmpPath.Get());
 }
 
 bool GetFileSafeName(const char *name, std::string &file)

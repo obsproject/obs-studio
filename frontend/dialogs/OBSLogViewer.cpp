@@ -45,16 +45,7 @@ void OBSLogViewer::on_showStartup_clicked(bool checked)
 
 void OBSLogViewer::InitLog()
 {
-	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
-	std::string path;
-
-	if (logDir.Get()) {
-		path += logDir.Get();
-		path += "/";
-		path += App()->GetCurrentLog();
-	}
-
-	QFile file(QT_UTF8(path.c_str()));
+	QFile file(App()->GetCurrentLog());
 
 	if (file.open(QIODevice::ReadOnly)) {
 		QTextStream in(&file);
@@ -114,17 +105,11 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 
 void OBSLogViewer::on_openButton_clicked()
 {
-	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
-	if (!logDir || !*logDir.Get()) {
+	std::filesystem::path log = App()->GetCurrentLog();
+	if (log.empty()) {
 		return;
 	}
 
-	const char *log = App()->GetCurrentLog();
-
-	std::string path = logDir.Get();
-	path += "/";
-	path += log;
-
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(log.u8string().c_str()));
 	QDesktopServices::openUrl(url);
 }
