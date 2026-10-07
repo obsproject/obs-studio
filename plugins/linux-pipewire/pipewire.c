@@ -658,6 +658,67 @@ static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream, struct obs_sou
 	return true;
 }
 
+static bool setup_nv12_planes(struct spa_buffer *buffer, struct obs_source_frame *frame)
+{
+	struct spa_data *y = &buffer->datas[0];
+	struct spa_data *uv = NULL;
+	uint32_t chroma_width = (frame->width + 1) & ~1u;
+	uint32_t chroma_height = (frame->height + 1) / 2;
+	uint32_t stride = 0;
+	uint32_t uv_stride = 0;
+	uint64_t y_size = 0;
+	uint64_t uv_size = 0;
+
+	if (!y->chunk || !y->data)
+		return false;
+
+	stride = y->chunk->stride > 0 ? (uint32_t)y->chunk->stride : frame->width;
+	if (stride < chroma_width) {
+		blog(LOG_WARNING, "[pipewire] NV12 Y stride too small: %u for width %u", stride, frame->width);
+		return false;
+	}
+
+	y_size = (uint64_t)stride * frame->height;
+	frame->data[0] = SPA_PTROFF(y->data, y->chunk->offset, uint8_t);
+	frame->linesize[0] = stride;
+
+	if (buffer->n_datas == 1) {
+		uv_size = (uint64_t)stride * chroma_height;
+
+		if (y->chunk->size < y_size + uv_size) {
+			blog(LOG_WARNING, "[pipewire] NV12 buffer too small: %u bytes for %ux%u (stride %u)",
+			     y->chunk->size, frame->width, frame->height, stride);
+			return false;
+		}
+
+		frame->linesize[1] = stride;
+		frame->data[1] = frame->data[0] + y_size;
+		return true;
+	}
+
+	uv = &buffer->datas[1];
+	if (!uv->chunk || !uv->data)
+		return false;
+
+	uv_stride = uv->chunk->stride > 0 ? (uint32_t)uv->chunk->stride : stride;
+	if (uv_stride < chroma_width) {
+		blog(LOG_WARNING, "[pipewire] NV12 UV stride too small: %u for width %u", uv_stride, frame->width);
+		return false;
+	}
+
+	uv_size = (uint64_t)uv_stride * chroma_height;
+	if (y->chunk->size < y_size || uv->chunk->size < uv_size) {
+		blog(LOG_WARNING, "[pipewire] NV12 planes too small: %u/%u bytes for %ux%u", y->chunk->size,
+		     uv->chunk->size, frame->width, frame->height);
+		return false;
+	}
+
+	frame->linesize[1] = uv_stride;
+	frame->data[1] = SPA_PTROFF(uv->data, uv->chunk->offset, uint8_t);
+
+	return true;
+}
+
 static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 {
 	struct spa_buffer *buffer;
@@ -693,6 +754,9 @@ static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 			goto done;
 		}
 	}
+
+	if (out.format == VIDEO_FORMAT_NV12 && !setup_nv12_planes(buffer, &out))
+		goto done;
 
 #ifdef DEBUG_PIPEWIRE
 	blog(LOG_DEBUG, "[pipewire] Frame info: Format: %s, Planes: %u", get_video_format_name(out.format),
