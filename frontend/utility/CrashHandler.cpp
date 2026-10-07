@@ -228,15 +228,13 @@ void CrashHandler::checkCrashState()
 
 void CrashHandler::setupSentinel()
 {
-	BPtr crashSentinelPathString = GetAppConfigPathPtr(crashSentinelPath.data());
+	std::filesystem::path crashSentinelFilePath = GetAppConfigPath(crashSentinelPath.data());
 	std::string appLaunchUUIDString = appLaunchUUID_.toString(QUuid::WithoutBraces).toStdString();
 
-	std::string crashSentinelFilePath = crashSentinelPathString.Get();
-	crashSentinelFilePath.reserve(crashSentinelFilePath.size() + crashSentinelPrefix.size() +
-				      appLaunchUUIDString.size() + 1);
-	crashSentinelFilePath.append("/").append(crashSentinelPrefix).append(appLaunchUUIDString);
+	std::string crashSentinelFileName(crashSentinelPrefix);
+	crashSentinelFileName += appLaunchUUIDString;
 
-	crashSentinelFile_ = std::filesystem::u8path(crashSentinelFilePath);
+	crashSentinelFile_ = crashSentinelFilePath / std::filesystem::u8path(crashSentinelFileName);
 
 	isActiveCrashHandler_ = true;
 }

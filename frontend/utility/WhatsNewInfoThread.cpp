@@ -38,16 +38,16 @@
 
 /* ------------------------------------------------------------------------ */
 
-static bool QuickWriteFile(const char *file, const std::string &data)
+static bool QuickWriteFile(std::filesystem::path file, const std::string &data)
 try {
-	std::ofstream fileStream(std::filesystem::u8path(file), std::ios::binary);
+	std::ofstream fileStream(file, std::ios::binary);
 	if (fileStream.fail()) {
-		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
+		throw strprintf("Failed to open file '%s': %s", file.u8string().c_str(), strerror(errno));
 	}
 
 	fileStream.write(data.data(), data.size());
 	if (fileStream.fail()) {
-		throw strprintf("Failed to write file '%s': %s", file, strerror(errno));
+		throw strprintf("Failed to write file '%s': %s", file.u8string().c_str(), strerror(errno));
 	}
 
 	return true;
@@ -57,11 +57,11 @@ try {
 	return false;
 }
 
-static bool QuickReadFile(const char *file, std::string &data)
+static bool QuickReadFile(std::filesystem::path file, std::string &data)
 try {
-	std::ifstream fileStream(std::filesystem::u8path(file), std::ios::binary);
+	std::ifstream fileStream(file, std::ios::binary);
 	if (!fileStream.is_open() || fileStream.fail()) {
-		throw strprintf("Failed to open file '%s': %s", file, strerror(errno));
+		throw strprintf("Failed to open file '%s': %s", file.u8string().c_str(), strerror(errno));
 	}
 
 	fileStream.seekg(0, fileStream.end);
@@ -82,14 +82,14 @@ try {
 	return false;
 }
 
-static bool CalculateFileHash(const char *path, uint8_t *hash)
+static bool CalculateFileHash(std::filesystem::path path, uint8_t *hash)
 try {
 	blake2b_state blake2;
 	if (blake2b_init(&blake2, BLAKE2_HASH_LENGTH) != 0) {
 		return false;
 	}
 
-	std::ifstream file(std::filesystem::u8path(path), std::ios::binary);
+	std::ifstream file(path, std::ios::binary);
 	if (!file.is_open() || file.fail()) {
 		return false;
 	}
@@ -213,7 +213,7 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url, std
 	uint8_t fileHash[BLAKE2_HASH_LENGTH];
 	bool success;
 
-	BPtr<char> filePath = GetAppConfigPathPtr(file);
+	std::filesystem::path filePath = GetAppConfigPath(file);
 
 	if (!extraHeaders.empty()) {
 		headers.insert(headers.end(), extraHeaders.begin(), extraHeaders.end());
@@ -267,11 +267,11 @@ bool FetchAndVerifyFile(const char *name, const char *file, const char *url, std
 
 	if (responseCode == 200) {
 		if (!QuickWriteFile(filePath, data)) {
-			throw strprintf("Could not write file '%s'", filePath.Get());
+			throw strprintf("Could not write file '%s'", filePath.u8string().c_str());
 		}
 	} else if (out) { /* Only read file if caller wants data */
 		if (!QuickReadFile(filePath, data)) {
-			throw strprintf("Could not read file '%s'", filePath.Get());
+			throw strprintf("Could not read file '%s'", filePath.u8string().c_str());
 		}
 	}
 

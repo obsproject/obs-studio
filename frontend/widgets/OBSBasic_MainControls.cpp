@@ -258,28 +258,20 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->SetIconsVisible(iconsVisible);
 }
 
-static BPtr<char> ReadLogFile(const char *subdir, const char *log)
+static BPtr<char> ReadLogFile(std::filesystem::path log)
 {
-	BPtr<char> logDir = GetAppConfigPathPtr(subdir);
-	if (!logDir || !*logDir.Get()) {
-		return nullptr;
-	}
 
-	string path(logDir.Get());
-	path += "/";
-	path += log;
-
-	BPtr<char> file = os_quick_read_utf8_file(path.c_str());
+	BPtr<char> file = os_quick_read_utf8_file(log.u8string().c_str());
 	if (!file) {
-		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
+		blog(LOG_WARNING, "Failed to read log file %s", log.u8string().c_str());
 	}
 
 	return file;
 }
 
-void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadType uploadType)
+void OBSBasic::UploadLog(std::filesystem::path file, const LogUploadType uploadType)
 {
-	BPtr<char> fileString{ReadLogFile(subdir, file)};
+	BPtr<char> fileString{ReadLogFile(file)};
 
 	if (!fileString || !*fileString) {
 		OBSApp *app = App();
@@ -312,12 +304,9 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadTy
 
 void OBSBasic::on_actionShowLogs_triggered()
 {
-	BPtr<char> logDir = GetAppConfigPathPtr("obs-studio/logs");
-	if (!logDir || !*logDir.Get()) {
-		return;
-	}
+	std::filesystem::path logDir = GetAppConfigPath("obs-studio/logs");
 
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
+	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir.u8string().c_str()));
 	QDesktopServices::openUrl(url);
 }
 

@@ -144,20 +144,20 @@ static void AddExtraModulePaths()
 		return;
 	}
 
-	BPtr<char> base_module_dir;
+	std::filesystem::path base_module_dir;
 #if defined(_WIN32)
-	base_module_dir = GetProgramDataPathPtr("obs-studio/plugins/%module%");
+	base_module_dir = GetProgramDataPath("obs-studio/plugins/%module%");
 #elif defined(__APPLE__)
-	base_module_dir = GetAppConfigPathPtr("obs-studio/plugins/%module%.plugin");
+	base_module_dir = GetAppConfigPath("obs-studio/plugins/%module%.plugin");
 #else
-	base_module_dir = GetAppConfigPathPtr("obs-studio/plugins/%module%");
+	base_module_dir = GetAppConfigPath("obs-studio/plugins/%module%");
 #endif
 
-	if (!base_module_dir || !*base_module_dir.Get()) {
+	if (base_module_dir.empty()) {
 		return;
 	}
 
-	string path(base_module_dir.Get());
+	string path(base_module_dir.u8string());
 #if defined(__APPLE__)
 	/* User Application Support Search Path */
 	obs_add_module_path((path + "/Contents/MacOS").c_str(), (path + "/Contents/Resources").c_str());

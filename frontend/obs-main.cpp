@@ -53,8 +53,8 @@ using namespace std;
 
 static log_handler_t def_log_handler;
 
-extern string currentLogFile;
-extern string lastLogFile;
+extern std::filesystem::path currentLogFile;
+extern std::filesystem::path lastLogFile;
 
 bool portable_mode = false;
 bool steam = false;
@@ -323,16 +323,16 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 	return std::stoull(timestring.str());
 }
 
-static void delete_oldest_file(bool has_prefix, const char *location)
+static void delete_oldest_file(bool has_prefix, const std::filesystem::path &location)
 {
-	BPtr<char> logDir(GetAppConfigPathPtr(location));
+	std::filesystem::path logDir = GetAppConfigPath(location);
 	string oldestLog;
 	uint64_t oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
 	unsigned int maxLogs = (unsigned int)config_get_uint(App()->GetAppConfig(), "General", "MaxLogs");
 
-	os_dir_t *dir = os_opendir(logDir);
+	os_dir_t *dir = os_opendir(logDir.u8string().c_str());
 	if (dir) {
 		unsigned int count = 0;
 
@@ -356,19 +356,17 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 		os_closedir(dir);
 
 		if (count > maxLogs) {
-			stringstream delPath;
-
-			delPath << logDir << "/" << oldestLog;
-			os_unlink(delPath.str().c_str());
+			std::filesystem::remove(logDir / std::filesystem::u8path(oldestLog));
 		}
 	}
 }
 
-static void get_last_log(bool has_prefix, const char *subdir_to_use, std::string &last)
+static std::filesystem::path get_last_log(bool has_prefix, std::filesystem::path subdir_to_use)
 {
-	BPtr<char> logDir(GetAppConfigPathPtr(subdir_to_use));
+	std::filesystem::path logDir = GetAppConfigPath(subdir_to_use);
+	std::filesystem::path last;
 	struct os_dirent *entry;
-	os_dir_t *dir = os_opendir(logDir);
+	os_dir_t *dir = os_opendir(logDir.u8string().c_str());
 	uint64_t highest_ts = 0;
 
 	if (dir) {
@@ -380,33 +378,26 @@ static void get_last_log(bool has_prefix, const char *subdir_to_use, std::string
 			uint64_t ts = convert_log_name(has_prefix, entry->d_name);
 
 			if (ts > highest_ts) {
-				last = entry->d_name;
+				last = logDir / std::filesystem::u8path(entry->d_name);
 				highest_ts = ts;
 			}
 		}
 
 		os_closedir(dir);
 	}
+	return last;
 }
 
 static void create_log_file(fstream &logFile)
 {
 	stringstream dst;
 
-	get_last_log(false, "obs-studio/logs", lastLogFile);
+	std::filesystem::path logDir = "obs-studio/logs";
 
-	currentLogFile = GenerateTimeDateFilename("txt");
-	dst << "obs-studio/logs/" << currentLogFile.c_str();
+	lastLogFile = get_last_log(false, logDir);
+	currentLogFile = GetAppConfigPath() / logDir / GenerateTimeDateFilename("txt");
 
-	BPtr<char> path(GetAppConfigPathPtr(dst.str().c_str()));
-
-#ifdef _WIN32
-	BPtr<wchar_t> wpath;
-	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	logFile.open(wpath, ios_base::in | ios_base::out | ios_base::trunc);
-#else
-	logFile.open(path, ios_base::in | ios_base::out | ios_base::trunc);
-#endif
+	logFile.open(currentLogFile, ios_base::in | ios_base::out | ios_base::trunc);
 
 	if (logFile.is_open()) {
 		delete_oldest_file(false, "obs-studio/logs");
@@ -444,21 +435,11 @@ static void SaveProfilerData(const ProfilerSnapshot &snap)
 		return;
 	}
 
-	auto pos = currentLogFile.rfind('.');
-	if (pos == currentLogFile.npos) {
-		return;
-	}
+	std::filesystem::path filename = currentLogFile.filename().replace_extension(".csv.gz");
+	std::filesystem::path path = GetAppConfigPath("obs-studio/profiler_data") / filename;
 
-#define LITERAL_SIZE(x) x, (sizeof(x) - 1)
-	ostringstream dst;
-	dst.write(LITERAL_SIZE("obs-studio/profiler_data/"));
-	dst.write(currentLogFile.c_str(), pos);
-	dst.write(LITERAL_SIZE(".csv.gz"));
-#undef LITERAL_SIZE
-
-	BPtr<char> path = GetAppConfigPathPtr(dst.str().c_str());
-	if (!profiler_snapshot_dump_csv_gz(snap.get(), path)) {
-		blog(LOG_WARNING, "Could not save profiler data to '%s'", static_cast<const char *>(path));
+	if (!profiler_snapshot_dump_csv_gz(snap.get(), path.u8string().c_str())) {
+		blog(LOG_WARNING, "Could not save profiler data to '%s'", path.u8string().c_str());
 	}
 }
 
@@ -724,34 +705,20 @@ static void main_crash_handler(const char *format, va_list args, void * /* param
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	string crashFilePath = "obs-studio/crashes";
+	std::filesystem::path crashFilePath = std::filesystem::u8path("obs-studio/crashes");
 
-	delete_oldest_file(true, crashFilePath.c_str());
+	delete_oldest_file(true, crashFilePath);
 
-	string name = crashFilePath + "/";
-	name += "Crash " + GenerateTimeDateFilename("txt");
-
-	BPtr<char> path(GetAppConfigPathPtr(name.c_str()));
+	std::filesystem::path filename = GenerateTimeDateFilename("txt", "Crash ");
+	std::filesystem::path path = GetAppConfigPath(crashFilePath) / filename;
 
 	fstream file;
-
-#ifdef _WIN32
-	BPtr<wchar_t> wpath;
-	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc | ios_base::binary);
-#else
 	file.open(path, ios_base::in | ios_base::out | ios_base::trunc | ios_base::binary);
-#endif
+
 	file << text;
 	file.close();
 
-	string pathString(path.Get());
-
-#ifdef _WIN32
-	std::replace(pathString.begin(), pathString.end(), '/', '\\');
-#endif
-
-	string absolutePath = canonical(filesystem::path(pathString)).u8string();
+	string absolutePath = canonical(path.make_preferred()).u8string();
 
 	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
 

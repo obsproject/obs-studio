@@ -667,7 +667,7 @@ public:
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 	void CreatePropertiesWindow(obs_source_t *source);
 
-	void UploadLog(const char *subdir, const char *file, OBS::LogFileType uploadType);
+	void UploadLog(std::filesystem::path file, OBS::LogFileType uploadType);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_MainMenu

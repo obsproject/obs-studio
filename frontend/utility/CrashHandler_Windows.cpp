@@ -74,12 +74,6 @@ std::filesystem::path CrashHandler::findLastCrashLog() const
 
 std::filesystem::path CrashHandler::getCrashLogDirectory() const
 {
-	BPtr crashLogDirectory = GetAppConfigPathPtr("obs-studio/crashes");
-
-	std::string crashLogDirectoryString = crashLogDirectory.Get();
-
-	std::filesystem::path crashLogDirectoryPath = std::filesystem::u8path(crashLogDirectoryString);
-
-	return crashLogDirectoryPath;
+	return GetAppConfigPath("obs-studio/crashes");
 }
 } // namespace OBS

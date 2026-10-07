@@ -307,11 +307,8 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 	if (!portable_mode) {
 		name = "OBSStudioCore";
 	} else {
-		BPtr<char> path = GetAppConfigPathPtr("");
-		BPtr<char> absPath = os_get_abs_path_ptr(path.Get());
-
 		name = "OBSStudioPortable";
-		name += absPath.Get();
+		name += filesystem::absolute(GetAppConfigPath()).u8string();
 	}
 
 	BPtr<wchar_t> wname;

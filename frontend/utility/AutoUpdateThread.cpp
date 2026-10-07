@@ -286,19 +286,14 @@ try {
 	/* ----------------------------------- *
 	 * execute updater                     */
 
-	BPtr<char> updateFilePath = GetAppConfigPathPtr("obs-studio\\updates\\updater.exe");
-	BPtr<wchar_t> wUpdateFilePath;
-
-	size_t size = os_utf8_to_wcs_ptr(updateFilePath, 0, &wUpdateFilePath);
-	if (!size) {
-		throw string("Could not convert updateFilePath to wide");
-	}
+	std::filesystem::path updateFilePath = GetAppConfigPath("obs-studio\\updates\\updater.exe");
+	wstring wUpdateFilePath = updateFilePath.wstring();
 
 	/* note, can't use CreateProcess to launch as admin. */
 	SHELLEXECUTEINFO execInfo = {};
 
 	execInfo.cbSize = sizeof(execInfo);
-	execInfo.lpFile = wUpdateFilePath;
+	execInfo.lpFile = wUpdateFilePath.c_str();
 
 	string parameters;
 	if (branch != WIN_DEFAULT_BRANCH) {
@@ -324,7 +319,7 @@ try {
 	}
 
 	BPtr<wchar_t> lpParameters;
-	size = os_utf8_to_wcs_ptr(parameters.c_str(), 0, &lpParameters);
+	size_t size = os_utf8_to_wcs_ptr(parameters.c_str(), 0, &lpParameters);
 	if (!size && !parameters.empty()) {
 		throw string("Could not convert parameters to wide");
 	}
@@ -336,7 +331,7 @@ try {
 	if (!ShellExecuteEx(&execInfo)) {
 		QString msg = QTStr("Updater.FailedToLaunch");
 		info(msg, msg);
-		throw strprintf("Can't launch updater '%s': %d", updateFilePath.Get(), GetLastError());
+		throw strprintf("Can't launch updater '%s': %d", updateFilePath.u8string().c_str(), GetLastError());
 	}
 
 	/* force OBS to perform another update check immediately after updating
