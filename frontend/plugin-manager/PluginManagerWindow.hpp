@@ -34,10 +34,11 @@ public:
 	enum class Category { Invalid = 0, Installed, Error, Missing };
 
 	struct Entry {
-		OBS::ModuleInfo *module{nullptr};
+		OBS::ModuleInfo module;
 		QString name{};
 		Category category{Category::Invalid};
 		bool isLegacy{false};
+		bool hasLoadedBefore{true};
 	};
 
 	enum class Page { Installed };
