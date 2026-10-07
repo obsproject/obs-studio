@@ -530,8 +530,8 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 	std::vector<ServiceItemData> items;
 
-	items.push_back(ServiceItemData{ServiceItemData::Type::Custom, QString(),
-					QTStr("Basic.AutoConfig.StreamPage.Service.Custom")});
+	items.emplace_back(ServiceItemData::Type::Custom, QString(),
+			   QTStr("Basic.AutoConfig.StreamPage.Service.Custom"));
 
 	std::vector<ServiceItemData> common_services;
 
@@ -539,7 +539,7 @@ void OBSBasicSettings::LoadServices(bool showAll)
 	size_t services_count = obs_property_list_item_count(services);
 	for (size_t i = 0; i < services_count; i++) {
 		QString name = QT_UTF8(obs_property_list_item_string(services, i));
-		common_services.push_back(ServiceItemData{ServiceItemData::Type::RtmpCommon, name, name});
+		common_services.emplace_back(ServiceItemData::Type::RtmpCommon, name, name);
 	}
 
 	// The curated list has a deliberate order, only the full list is sorted alphabetically.
@@ -577,13 +577,13 @@ void OBSBasicSettings::LoadServices(bool showAll)
 			display_name = service_id;
 		}
 
-		items.push_back(ServiceItemData{ServiceItemData::Type::CustomServiceType, QT_UTF8(service_id),
-						QT_UTF8(display_name)});
+		items.emplace_back(ServiceItemData::Type::CustomServiceType, QT_UTF8(service_id),
+				   QT_UTF8(display_name));
 	}
 
 	if (!showAll) {
-		items.push_back(ServiceItemData{ServiceItemData::Type::ShowAll, QString(),
-						QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll")});
+		items.emplace_back(ServiceItemData::Type::ShowAll, QString(),
+				   QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"));
 	}
 
 	ui->service->blockSignals(true);
