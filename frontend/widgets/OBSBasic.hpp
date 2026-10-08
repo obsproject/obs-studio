@@ -1113,6 +1113,7 @@ private:
 
 	void RefreshSceneCollections(bool refreshCache = false);
 	void ActivateSceneCollection(SceneCollection &collection);
+	void refreshApplicationState();
 
 public slots:
 	void DeferSaveBegin();
