@@ -1027,6 +1027,7 @@ static void add_hook_functions(lua_State *script)
 	add_func("obs_hotkey_unregister", hotkey_unregister);
 	add_func("obs_hotkey_register_frontend", hotkey_register_frontend);
 	add_func("obs_properties_add_button", properties_add_button);
+	add_func("obs_properties_add_button2", properties_add_button);
 	add_func("obs_property_set_modified_callback", property_set_modified_callback);
 	add_func("remove_current_callback", remove_current_callback);
 
