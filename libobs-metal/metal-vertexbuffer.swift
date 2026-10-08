@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+// swift-format-ignore-file: AlwaysUseLowerCamelCase
+
 /// Creates a new ``MetalVertexBuffer`` instance with the given vertex buffer data and usage flags
 /// - Parameters:
 ///   - device: Opaque pointer to ``MetalDevice`` instance shared with `libobs`
