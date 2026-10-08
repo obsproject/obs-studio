@@ -21,6 +21,7 @@
 #include <dialogs/LogUploadDialog.hpp>
 #include <plugin-manager/PluginManager.hpp>
 #include <utility/CrashHandler.hpp>
+#include <utility/HealthCheckService.hpp>
 #include <utility/OBSEventFilter.hpp>
 #include <utility/OBSProxyStyle.hpp>
 #if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
@@ -68,7 +69,6 @@ extern bool safe_mode;
 extern bool multi;
 extern bool disable_3p_plugins;
 extern bool opt_disable_updater;
-extern bool opt_disable_missing_files_check;
 extern string opt_starting_collection;
 extern string opt_starting_profile;
 
@@ -1408,11 +1408,6 @@ bool OBSApp::IsUpdaterDisabled()
 	return opt_disable_updater;
 }
 
-bool OBSApp::IsMissingFilesCheckDisabled()
-{
-	return opt_disable_missing_files_check;
-}
-
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
@@ -2098,6 +2093,30 @@ void OBSApp::handlePluginLoadState()
 		if (action == PluginFailureAction::OpenPluginManager) {
 			pluginManagerOpenDialog();
 		}
+	}
+}
+
+OBS::HealthCheckService *OBSApp::healthService()
+{
+	if (healthService_.isNull()) {
+		healthService_ = new OBS::HealthCheckService(this);
+	}
+
+	return healthService_;
+}
+
+void OBSApp::openHealthCheckDialog()
+{
+	if (!mainWindow) {
+		return;
+	}
+
+	if (!healthCheckDialog) {
+		healthCheckDialog = new HealthCheckDialog(mainWindow);
+		healthCheckDialog->setAttribute(Qt::WA_DeleteOnClose);
+		healthCheckDialog->show();
+	} else {
+		healthCheckDialog->raise();
 	}
 }
 
