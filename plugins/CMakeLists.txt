@@ -42,6 +42,7 @@ add_core_module(
     WITH_MESSAGE
 )
 add_core_module(aja-output-ui PLATFORMS WINDOWS MACOS LINUX WITH_MESSAGE)
+add_core_module(asio-output-ui PLATFORMS WINDOWS WITH_MESSAGE)
 add_core_module(coreaudio-encoder PLATFORMS WINDOWS MACOS)
 add_core_module(
     decklink
@@ -106,6 +107,7 @@ add_core_module(rtmp-services)
 add_core_module(sndio PLATFORMS LINUX FREEBSD OPENBSD)
 add_core_module(text-freetype2)
 add_core_module(vlc-video WITH_MESSAGE)
+add_core_module(win-asio PLATFORMS WINDOWS)
 add_core_module(win-capture PLATFORMS WINDOWS)
 add_core_module(win-dshow PLATFORMS WINDOWS)
 add_core_module(win-wasapi PLATFORMS WINDOWS)
