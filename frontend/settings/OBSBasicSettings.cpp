@@ -27,6 +27,7 @@
 #ifdef YOUTUBE_ENABLED
 #include <docks/YouTubeAppDock.hpp>
 #endif
+#include <util/windows/device-enum.h>
 #include <utility/audio-encoders.hpp>
 #include <utility/BaseLexer.hpp>
 #include <utility/FFmpegCodec.hpp>
@@ -3343,6 +3344,20 @@ void OBSBasicSettings::SaveAdvancedSettings()
 		QString newDevice = ui->monitoringDevice->currentData().toString();
 
 		if (lastMonitoringDevice != newDevice) {
+#ifdef _WIN32
+			char *currentDeviceId = nullptr;
+			char *currentStableDeviceId = nullptr;
+			get_audio_device_ids(QT_TO_UTF8(newDevice), nullptr, &currentDeviceId, &currentStableDeviceId);
+
+			if (currentStableDeviceId) {
+				config_set_string(main->Config(), "Audio", "MonitoringDeviceStableId",
+						  currentStableDeviceId);
+			} else {
+				config_set_string(main->Config(), "Audio", "MonitoringDeviceStableId", "");
+			}
+			bfree(currentStableDeviceId);
+			bfree(currentDeviceId);
+#endif
 			obs_set_audio_monitoring_device(QT_TO_UTF8(ui->monitoringDevice->currentText()),
 							QT_TO_UTF8(newDevice));
 
