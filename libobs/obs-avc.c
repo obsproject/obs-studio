@@ -52,6 +52,35 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 	return obs_nal_find_startcode(p, end);
 }
 
+const uint8_t *obs_avc_find_first_vcl_nal(const uint8_t *p, size_t size)
+{
+	const uint8_t *const end = p + size;
+	const uint8_t *nal_start = obs_nal_find_startcode(p, end);
+	const uint8_t *vcl_start = NULL;
+
+	while (true) {
+		const uint8_t *original_start = nal_start;
+		/* Skip start code */
+		while (nal_start < end && !*(nal_start++))
+			;
+
+		if (nal_start == end)
+			break;
+
+		/* Type 1-5 are VCL NALs */
+		const int type = nal_start[0] & 0x1F;
+		if (type == OBS_NAL_SLICE || type == OBS_NAL_SLICE_DPA || type == OBS_NAL_SLICE_DPB ||
+		    type == OBS_NAL_SLICE_DPC || type == OBS_NAL_SLICE_IDR) {
+			vcl_start = original_start;
+			break;
+		}
+
+		nal_start = obs_nal_find_startcode(nal_start, end);
+	}
+
+	return vcl_start;
+}
+
 static int compute_avc_keyframe_priority(const uint8_t *nal_start, bool *is_keyframe, int priority)
 {
 	const int type = nal_start[0] & 0x1F;
