@@ -61,7 +61,8 @@ runs:
         MACOS_KEYCHAIN_PASSWORD: ${{ inputs.keychainPassword }}
       run: |
         : macOS Code Signing ✍️
-        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+        # Never trace commands that handle signing secrets, even in debug runs.
+        umask 077
 
         if [[ ${MACOS_SIGNING_IDENTITY} && ${MACOS_SIGNING_CERT} ]] {
           print 'haveCodesignIdent=true' >> $GITHUB_OUTPUT
@@ -71,21 +72,23 @@ runs:
 
           print -n "${MACOS_SIGNING_CERT}" | base64 --decode --output=${certificate_path}
 
-          : "${MACOS_KEYCHAIN_PASSWORD:="$(print ${RANDOM} | shasum | head -c 32)"}"
+          : "${MACOS_KEYCHAIN_PASSWORD:="$(python3 -c 'import secrets; print(secrets.token_urlsafe(32))')"}"
+          print "::add-mask::${MACOS_KEYCHAIN_PASSWORD}"
 
           print '::group::Keychain setup'
           security create-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
           security set-keychain-settings -lut 21600 ${keychain_path}
           security unlock-keychain -p "${MACOS_KEYCHAIN_PASSWORD}" ${keychain_path}
 
-          security import "${certificate_path}" -P "${MACOS_SIGNING_CERT_PASSWORD}" -A \
+          security import "${certificate_path}" -P "${MACOS_SIGNING_CERT_PASSWORD}" \
             -t cert -f pkcs12 -k ${keychain_path} \
             -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
 
           security set-key-partition-list -S 'apple-tool:,apple:' -k "${MACOS_KEYCHAIN_PASSWORD}" \
             ${keychain_path} &> /dev/null
 
-          security list-keychain -d user -s ${keychain_path} 'login-keychain'
+          python3 -c 'import shlex, subprocess, sys; existing = shlex.split(subprocess.check_output(["security", "list-keychains", "-d", "user"], text=True)); subprocess.run(["security", "list-keychains", "-d", "user", "-s", sys.argv[1], *existing], check=True)' ${keychain_path}
+          rm -f ${certificate_path}
           print '::endgroup::'
 
           local -r team_id="${${MACOS_SIGNING_IDENTITY##* }//(\(|\))/}"
@@ -107,7 +110,7 @@ runs:
           MACOS_SIGNING_PROVISIONING_PROFILE: ${{ inputs.provisioningProfile }}
       run: |
         : Provisioning Profile 👤
-        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+        # Provisioning data must not be expanded into debug logs.
 
         if [[ "${MACOS_SIGNING_PROVISIONING_PROFILE}" ]] {
           print 'haveProvisioningProfile=true' >> $GITHUB_OUTPUT
@@ -142,7 +145,7 @@ runs:
           MACOS_NOTARIZATION_PASSWORD: ${{ inputs.notarizationPassword }}
       run: |
         : Notarization 🧑‍💼
-        if (( ${+RUNNER_DEBUG} )) setopt XTRACE
+        # Notarization credentials must not be expanded into debug logs.
 
         if [[ ${MACOS_NOTARIZATION_USERNAME} && ${MACOS_NOTARIZATION_PASSWORD} ]] {
           print 'haveNotarizationUser=true' >> $GITHUB_OUTPUT

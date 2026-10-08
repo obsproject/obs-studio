@@ -426,9 +426,6 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings, const 
 	obsx264->params.p_log_private = obsx264;
 	obsx264->params.i_log_level = X264_LOG_WARNING;
 
-	if (obs_data_has_user_value(settings, "bf"))
-		obsx264->params.i_bframe = bf;
-
 	static const char *const smpte170m = "smpte170m";
 	static const char *const bt709 = "bt709";
 	const char *colorprim = bt709;
@@ -492,6 +489,10 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings, const 
 		warn("ignoring invalid x264 option: %s", options->ignored_words[i]);
 	for (size_t i = 0; i < options->count; ++i)
 		set_param(obsx264, options->options[i]);
+
+	/* Service requirements (e.g. WHIP) take precedence over custom options. */
+	if (obs_data_has_user_value(settings, "bf"))
+		obsx264->params.i_bframe = bf;
 
 	if (!update) {
 		info("settings:\n"

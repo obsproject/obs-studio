@@ -1,0 +1,959 @@
+{
+  "source_commit": "446e6ee4eed547266f62dbbdbbd528b397c43331",
+  "harness_commit": "2d77bd8",
+  "date": "2026-10-03",
+  "runtime": "Locally built Windows OBS fork based on 33.0.0-beta6; not a published release archive",
+  "media": "Synthetic 1280x720 canvas and 440 Hz tone, H.264/Opus",
+  "observation_seconds": 20,
+  "service_recommendations": false,
+  "routes": [
+    "default",
+    "relay (browser TURN/UDP)",
+    "relay-tcp (browser TURN/TLS; OBS uses UDP)"
+  ],
+  "tests": [
+    "Windows MSVC media settings/timestamps and real-libdatachannel packetization passed",
+    "Windows libjuice ICE role/integrity tests passed",
+    "Linux Clang media helpers passed with AddressSanitizer and UndefinedBehaviorSanitizer",
+    "Compatibility patch applied cleanly to upstream 32.2.2 and 33.0.0-beta6"
+  ],
+  "cases": [
+    {
+      "scenario": "x264-fractional",
+      "viewer": "chrome",
+      "route": "default",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1199,
+      "decoded_fps": 59.95,
+      "audio_bytes_during_observation": 379409,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "prflx",
+          "relay_protocol": null,
+          "remote_type": "host"
+        }
+      ],
+      "connect_ms": 1023,
+      "stop_ms": 502,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "x264-fractional",
+      "viewer": "chrome",
+      "route": "relay",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1198,
+      "decoded_fps": 59.9,
+      "audio_bytes_during_observation": 378725,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "udp",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3064,
+      "stop_ms": 516,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "x264-fractional",
+      "viewer": "chrome",
+      "route": "relay-tcp",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1198,
+      "decoded_fps": 59.9,
+      "audio_bytes_during_observation": 379852,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "tls",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3051,
+      "stop_ms": 504,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "x264-fractional",
+      "viewer": "firefox",
+      "route": "default",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1190,
+      "decoded_fps": 59.5,
+      "audio_bytes_during_observation": 379019,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "host",
+          "relay_protocol": null,
+          "remote_type": "prflx"
+        }
+      ],
+      "connect_ms": 3076,
+      "stop_ms": 514,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "x264-fractional",
+      "viewer": "firefox",
+      "route": "relay",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1189,
+      "decoded_fps": 59.45,
+      "audio_bytes_during_observation": 378275,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "udp",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3059,
+      "stop_ms": 515,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "x264-fractional",
+      "viewer": "firefox",
+      "route": "relay-tcp",
+      "encoder": "obs_x264",
+      "encoder_settings": {
+        "rate_control": "CBR",
+        "bitrate": 2500,
+        "keyint_sec": 0,
+        "preset": "veryfast",
+        "profile": "baseline",
+        "tune": "zerolatency",
+        "x264opts": "threads=4 bframes=3"
+      },
+      "fps": [
+        60000,
+        1001
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1190,
+      "decoded_fps": 59.5,
+      "audio_bytes_during_observation": 378068,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "tls",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3067,
+      "stop_ms": 515,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-quality",
+      "viewer": "chrome",
+      "route": "default",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "CQP",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "cqp": 23,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3,
+        "opts": "frameIntervalP=4"
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1200,
+      "decoded_fps": 60.0,
+      "audio_bytes_during_observation": 378522,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "prflx",
+          "relay_protocol": null,
+          "remote_type": "host"
+        }
+      ],
+      "connect_ms": 1034,
+      "stop_ms": 509,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-quality",
+      "viewer": "chrome",
+      "route": "relay",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "CQP",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "cqp": 23,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3,
+        "opts": "frameIntervalP=4"
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1198,
+      "decoded_fps": 59.9,
+      "audio_bytes_during_observation": 379123,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "udp",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3561,
+      "stop_ms": 509,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-quality",
+      "viewer": "chrome",
+      "route": "relay-tcp",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "CQP",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "cqp": 23,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3,
+        "opts": "frameIntervalP=4"
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1197,
+      "decoded_fps": 59.85,
+      "audio_bytes_during_observation": 378898,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "tls",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3571,
+      "stop_ms": 501,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "qsv-quality",
+      "viewer": "chrome",
+      "route": "default",
+      "encoder": "obs_qsv11_v2",
+      "encoder_settings": {
+        "rate_control": "ICQ",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "icq_quality": 23,
+        "keyint_sec": 0,
+        "target_usage": "TU4",
+        "profile": "high",
+        "bframes": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1199,
+      "decoded_fps": 59.95,
+      "audio_bytes_during_observation": 378784,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "prflx",
+          "relay_protocol": null,
+          "remote_type": "host"
+        }
+      ],
+      "connect_ms": 1529,
+      "stop_ms": 505,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "qsv-quality",
+      "viewer": "chrome",
+      "route": "relay",
+      "encoder": "obs_qsv11_v2",
+      "encoder_settings": {
+        "rate_control": "ICQ",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "icq_quality": 23,
+        "keyint_sec": 0,
+        "target_usage": "TU4",
+        "profile": "high",
+        "bframes": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1197,
+      "decoded_fps": 59.85,
+      "audio_bytes_during_observation": 378773,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "udp",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3565,
+      "stop_ms": 507,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "qsv-quality",
+      "viewer": "chrome",
+      "route": "relay-tcp",
+      "encoder": "obs_qsv11_v2",
+      "encoder_settings": {
+        "rate_control": "ICQ",
+        "bitrate": 1,
+        "max_bitrate": 2000,
+        "icq_quality": 23,
+        "keyint_sec": 0,
+        "target_usage": "TU4",
+        "profile": "high",
+        "bframes": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1200,
+      "decoded_fps": 60.0,
+      "audio_bytes_during_observation": 379487,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "tls",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3569,
+      "stop_ms": 508,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-vbr",
+      "viewer": "chrome",
+      "route": "default",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "VBR",
+        "bitrate": 2500,
+        "max_bitrate": 12000,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1200,
+      "decoded_fps": 60.0,
+      "audio_bytes_during_observation": 378509,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "prflx",
+          "relay_protocol": null,
+          "remote_type": "host"
+        }
+      ],
+      "connect_ms": 1026,
+      "stop_ms": 516,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-vbr",
+      "viewer": "chrome",
+      "route": "relay",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "VBR",
+        "bitrate": 2500,
+        "max_bitrate": 12000,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1199,
+      "decoded_fps": 59.95,
+      "audio_bytes_during_observation": 378889,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "udp",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3549,
+      "stop_ms": 505,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    },
+    {
+      "scenario": "nvenc-vbr",
+      "viewer": "chrome",
+      "route": "relay-tcp",
+      "encoder": "obs_nvenc_h264_tex",
+      "encoder_settings": {
+        "rate_control": "VBR",
+        "bitrate": 2500,
+        "max_bitrate": 12000,
+        "keyint_sec": 0,
+        "preset": "p5",
+        "tune": "hq",
+        "multipass": "disabled",
+        "profile": "high",
+        "bf": 3
+      },
+      "fps": [
+        60,
+        1
+      ],
+      "passed": true,
+      "decoded_frames_during_observation": 1199,
+      "decoded_fps": 59.95,
+      "audio_bytes_during_observation": 379049,
+      "video_freezes": [
+        0
+      ],
+      "video_packets_lost": [
+        0
+      ],
+      "selected_routes": [
+        {
+          "local_type": "relay",
+          "relay_protocol": "tls",
+          "remote_type": "srflx"
+        }
+      ],
+      "connect_ms": 3580,
+      "stop_ms": 505,
+      "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5",
+      "module_hash_verified": true,
+      "pacing_log_verified": true
+    }
+  ],
+  "limitations": [
+    "Short observations, not endurance or impaired-network testing",
+    "No live Linux, macOS, AMD, Safari or mobile playback tests in this round",
+    "Normal keyframe settings were checked in encoder logs; no bitstream recordings in this round",
+    "No publisher network with blocked UDP; TLS refers to the receiver-to-TURN leg",
+    "Timestamp drift regression is numerical, not a measured hour-long browser A/V sync test",
+    "NACK repair scheduling and the existing asynchronous pacer queue are unchanged"
+  ],
+  "pacing_comparison": {
+    "harness_commit": "47db901",
+    "minimum_decoded_fps": 48,
+    "cases": [
+      {
+        "build": "before",
+        "source_commit": "2629bcaa8823a5fcdc78bb20fe57210bccf8ed50",
+        "encoder": "obs_nvenc_h264_tex",
+        "encoder_settings": {
+          "rate_control": "CQP",
+          "bitrate": 1,
+          "max_bitrate": 2000,
+          "cqp": 23,
+          "keyint_sec": 2,
+          "preset": "p5",
+          "tune": "hq",
+          "multipass": "disabled",
+          "profile": "high",
+          "bf": 0,
+          "opts": ""
+        },
+        "route": "default",
+        "decoded_fps": 5.3986503374156465,
+        "passed_frame_rate_gate": false,
+        "expected_pass": false,
+        "error": "Decoded 5.40 fps; required 48",
+        "loaded_webrtc_sha256": "8ef76877f48e3fe3bb1b1da6ad95c25bbedc6baec8b3e6e2d127ee8167e16bae"
+      },
+      {
+        "build": "after",
+        "source_commit": "446e6ee4eed547266f62dbbdbbd528b397c43331",
+        "encoder": "obs_nvenc_h264_tex",
+        "encoder_settings": {
+          "rate_control": "CQP",
+          "bitrate": 1,
+          "max_bitrate": 2000,
+          "cqp": 23,
+          "keyint_sec": 2,
+          "preset": "p5",
+          "tune": "hq",
+          "multipass": "disabled",
+          "profile": "high",
+          "bf": 0,
+          "opts": ""
+        },
+        "route": "default",
+        "decoded_fps": 59.92902484130554,
+        "passed_frame_rate_gate": true,
+        "expected_pass": true,
+        "error": null,
+        "loaded_webrtc_sha256": "c66e1349535abca337dbc42746eb8fcff153fb24bbc794d133be2cf608b42cd5"
+      }
+    ],
+    "initial_probe_note": "An initial older-build run passed the legacy frame-progress gate at 5.25 fps. The explicit 48 fps gate was added and the comparison repeated; all original reports are retained.",
+    "dependency_revisions": {
+      "libdatachannel": "4e4f4892dccb2a57fe3a490d0c9d958de4244e74",
+      "libjuice": "5948a4162d37bc213d6051b67ee2876ccc5a99a6",
+      "patch_sha256": "c21ecf0fb53f2ffd92ca0a293aede922575d9fad38317916a4bfccfc4f8cb785"
+    }
+  },
+  "low_bitrate_check": {
+    "harness_commit": "47db901",
+    "encoder": "obs_nvenc_h264_tex",
+    "encoder_settings": {
+      "rate_control": "CBR",
+      "bitrate": 100,
+      "keyint_sec": 1,
+      "preset": "p5",
+      "tune": "hq",
+      "multipass": "disabled",
+      "profile": "high",
+      "bf": 0
+    },
+    "fps": [
+      60,
+      1
+    ],
+    "route": "relay",
+    "pacing_kbps_verified_in_log": 4000,
+    "keyint_frames_verified_in_log": 60,
+    "decoded_fps": 56.86872220278847,
+    "passed": true,
+    "video_freezes": [
+      1
+    ],
+    "video_packets_lost": [
+      0
+    ]
+  },
+  "low_bitrate_paired_retest": {
+    "observation_seconds": 30,
+    "repeat_headers_explicitly_enabled": true,
+    "cases": [
+      {
+        "build": "before",
+        "exit": 0,
+        "fps": 59.95067981871501,
+        "video": [
+          {
+            "kind": "video",
+            "bytes": 358448,
+            "packets": 5969,
+            "lost": 0,
+            "frames": 1824,
+            "fps": 60,
+            "freezes": 0,
+            "freezeDuration": 0,
+            "codec": "video/H264"
+          }
+        ],
+        "passed": true
+      },
+      {
+        "build": "after",
+        "exit": 0,
+        "fps": 59.94468694811902,
+        "video": [
+          {
+            "kind": "video",
+            "bytes": 358218,
+            "packets": 5950,
+            "lost": 0,
+            "frames": 1821,
+            "fps": 61,
+            "freezes": 0,
+            "freezeDuration": 0,
+            "codec": "video/H264"
+          }
+        ],
+        "passed": true
+      }
+    ],
+    "earlier_control": {
+      "build": "older 2629bcaa8 without explicit repeat_headers",
+      "passed": false,
+      "error": "decoded A/V timed out: false",
+      "decoded_frames": 0,
+      "audio_bytes": 624730,
+      "note": "Connected and received RTP but decoded no video. The matched retest explicitly enabled repeated headers in both builds. This does not establish the initial freeze cause."
+    }
+  },
+  "ci_stable_runtime": {
+    "manifest": {
+      "libdatachannel": "4e4f4892dccb2a57fe3a490d0c9d958de4244e74",
+      "libjuice": "5948a4162d37bc213d6051b67ee2876ccc5a99a6",
+      "patch_sha256": "c21ecf0fb53f2ffd92ca0a293aede922575d9fad38317916a4bfccfc4f8cb785",
+      "platform": "Windows",
+      "obs_commit": "ba2f32bdf791005443988a4955e963663e16b1ed",
+      "whip_commit": "446e6ee4eed547266f62dbbdbbd528b397c43331"
+    },
+    "archive": "obs-whip-32.2.2-windows-x64.zip",
+    "archive_sha256": "01a28675350af63796836cd43064659a553239e37e600418aff1d91eb94037fb",
+    "module_sha256_verified": true,
+    "passed": true,
+    "run": "https://github.com/steveseguin/obs-studio/actions/runs/37172045445",
+    "harness_commit": "47db901",
+    "obs_version": "32.2.2",
+    "encoder": "obs_nvenc_h264_tex",
+    "encoder_settings": {
+      "rate_control": "CQP",
+      "bitrate": 1,
+      "max_bitrate": 2000,
+      "cqp": 23,
+      "keyint_sec": 0,
+      "preset": "p5",
+      "tune": "hq",
+      "multipass": "disabled",
+      "profile": "high",
+      "bf": 3,
+      "opts": "frameIntervalP=4"
+    },
+    "fps": [
+      60000,
+      1001
+    ],
+    "observation_seconds": 20,
+    "cases": [
+      {
+        "route": "default",
+        "passed": true,
+        "decoded_fps": 59.92602958816473,
+        "video_freezes": [
+          0
+        ],
+        "video_packets_lost": [
+          0
+        ],
+        "selected_routes": [
+          {
+            "local_type": "prflx",
+            "relay_protocol": null,
+            "remote_type": "host"
+          }
+        ],
+        "audio_bytes_during_observation": 378600
+      },
+      {
+        "route": "relay",
+        "passed": true,
+        "decoded_fps": 59.87904233518269,
+        "video_freezes": [
+          0
+        ],
+        "video_packets_lost": [
+          0
+        ],
+        "selected_routes": [
+          {
+            "local_type": "relay",
+            "relay_protocol": "udp",
+            "remote_type": "srflx"
+          }
+        ],
+        "audio_bytes_during_observation": 378728
+      },
+      {
+        "route": "relay-tcp",
+        "passed": true,
+        "decoded_fps": 59.82307961417362,
+        "video_freezes": [
+          0
+        ],
+        "video_packets_lost": [
+          0
+        ],
+        "selected_routes": [
+          {
+            "local_type": "relay",
+            "relay_protocol": "tls",
+            "remote_type": "srflx"
+          }
+        ],
+        "audio_bytes_during_observation": 379738
+      }
+    ]
+  },
+  "ci": {
+    "url": "https://github.com/steveseguin/obs-studio/actions/runs/37172045445",
+    "source_commit": "446e6ee4eed547266f62dbbdbbd528b397c43331",
+    "conclusion": "success",
+    "builds": [
+      {
+        "name": "stable / macos / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "preview / windows / x64",
+        "conclusion": "success"
+      },
+      {
+        "name": "stable / windows / x64",
+        "conclusion": "success"
+      },
+      {
+        "name": "fork / linux / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "fork / windows / x64",
+        "conclusion": "success"
+      },
+      {
+        "name": "preview / macos / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "fork / macos / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "fork / macos / arm64",
+        "conclusion": "success"
+      },
+      {
+        "name": "preview / linux / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "preview / macos / arm64",
+        "conclusion": "success"
+      },
+      {
+        "name": "stable / linux / x86_64",
+        "conclusion": "success"
+      },
+      {
+        "name": "stable / macos / arm64",
+        "conclusion": "success"
+      }
+    ],
+    "release_assets_updated": false,
+    "note": "CI artifacts include the media fixes; this run did not replace public release archives or request Mac notarization."
+  }
+}
