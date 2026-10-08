@@ -1119,5 +1119,5 @@ void OBSBasic::CheckForMissingEncoders()
 	// Format and show error message
 	const QString encoderMissingMessage =
 		QTStr("EncoderMissing.Text").arg(encoderList.join("\n")).arg(kbURL.arg(crumb));
-	OBSMessageBox::warning(this, QTStr("EncoderMissing.Title"), encoderMissingMessage, true);
+	OBSMessageBox::warning(nullptr, QTStr("EncoderMissing.Title"), encoderMissingMessage, true);
 }
