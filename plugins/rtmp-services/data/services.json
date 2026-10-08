@@ -565,6 +565,9 @@
             ],
             "common": true,
             "stream_key_link": "https://restream.io/settings/streaming-setup?from=OBS",
+            "multitrack_video_configuration_url": "https://ingest.restream.io/v1/multitrack-video/config",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://support.restream.io/en/articles/17312202-enhanced-broadcasting-in-obs",
             "servers": [
                 {
                     "name": "Autodetect",
@@ -579,24 +582,8 @@
                     "url": "rtmp://amsterdam.restream.io/live"
                 },
                 {
-                    "name": "EU-West (Paris, FR)",
-                    "url": "rtmp://paris.restream.io/live"
-                },
-                {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://frankfurt.restream.io/live"
-                },
-                {
-                    "name": "EU-South (Madrid, Spain)",
-                    "url": "rtmp://madrid.restream.io/live"
-                },
-                {
-                    "name": "Turkey (Istanbul)",
-                    "url": "rtmp://istanbul.restream.io/live"
-                },
-                {
-                    "name": "US-West (Seattle, WA)",
-                    "url": "rtmp://seattle.restream.io/live"
                 },
                 {
                     "name": "US-West (San Jose, CA)",
@@ -607,8 +594,8 @@
                     "url": "rtmp://dallas.restream.io/live"
                 },
                 {
-                    "name": "US-East (Chicago, IL)",
-                    "url": "rtmp://chicago.restream.io/live"
+                    "name": "US-East (Atlanta, GA)",
+                    "url": "rtmp://atlanta.restream.io/live"
                 },
                 {
                     "name": "US-East (New York, NY)",
@@ -619,12 +606,20 @@
                     "url": "rtmp://washington.restream.io/live"
                 },
                 {
-                    "name": "NA-East (Toronto, Canada)",
-                    "url": "rtmp://toronto.restream.io/live"
-                },
-                {
                     "name": "SA (Saint Paul, Brazil)",
                     "url": "rtmp://saopaulo.restream.io/live"
+                },
+                {
+                    "name": "Middle East (Doha, Qatar)",
+                    "url": "rtmp://doha.restream.io/live"
+                },
+                {
+                    "name": "Middle East (Tel Aviv, Israel)",
+                    "url": "rtmp://telaviv.restream.io/live"
+                },
+                {
+                    "name": "Africa (Johannesburg, South Africa)",
+                    "url": "rtmp://johannesburg.restream.io/live"
                 },
                 {
                     "name": "India (Bangalore)",
