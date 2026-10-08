@@ -14,6 +14,8 @@ target_sources(inject-helper PRIVATE inject-helper.c)
 
 target_link_libraries(inject-helper PRIVATE OBS::inject-library OBS::obfuscate)
 
+target_link_options(inject-helper PRIVATE $<$<PLATFORM_ID:Windows>:/DEPENDENTLOADFLAG:0x800>)
+
 if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
     add_custom_command(
