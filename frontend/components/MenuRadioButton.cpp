@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2025 by Taylor Giampaolo <warchamp7@obsproject.com>
+    Copyright (C) 2026 by Taylor Giampaolo <warchamp7@obsproject.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,14 +15,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "MenuCheckBox.hpp"
+#include "MenuRadioButton.hpp"
 
 #include <QMenu>
 #include <QMouseEvent>
 #include <QStyleOptionButton>
 #include <QStylePainter>
 
-MenuCheckBox::MenuCheckBox(const QString &text, QWidget *parent) : QCheckBox(text, parent)
+MenuRadioButton::MenuRadioButton(const QString &text, QWidget *parent) : QRadioButton(text, parent)
 {
 	setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	setContentsMargins(0, 0, 0, 0);
@@ -39,27 +39,27 @@ MenuCheckBox::MenuCheckBox(const QString &text, QWidget *parent) : QCheckBox(tex
 	}
 }
 
-void MenuCheckBox::focusInEvent(QFocusEvent *)
+void MenuRadioButton::focusInEvent(QFocusEvent *)
 {
 	setHovered(true);
 }
 
-void MenuCheckBox::focusOutEvent(QFocusEvent *)
+void MenuRadioButton::focusOutEvent(QFocusEvent *)
 {
 	setHovered(false);
 }
 
-void MenuCheckBox::mousePressEvent(QMouseEvent *event)
+void MenuRadioButton::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton) {
 		mousePressInside = true;
 		event->accept();
 	} else {
-		QCheckBox::mousePressEvent(event);
+		QRadioButton::mousePressEvent(event);
 	}
 }
 
-void MenuCheckBox::mouseMoveEvent(QMouseEvent *event)
+void MenuRadioButton::mouseMoveEvent(QMouseEvent *event)
 {
 	if (!rect().contains(event->pos())) {
 		mousePressInside = false;
@@ -67,7 +67,7 @@ void MenuCheckBox::mouseMoveEvent(QMouseEvent *event)
 	event->accept();
 }
 
-void MenuCheckBox::mouseReleaseEvent(QMouseEvent *event)
+void MenuRadioButton::mouseReleaseEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton) {
 		if (mousePressInside && rect().contains(event->pos())) {
@@ -75,25 +75,25 @@ void MenuCheckBox::mouseReleaseEvent(QMouseEvent *event)
 		}
 		event->accept();
 	} else {
-		QCheckBox::mouseReleaseEvent(event);
+		QRadioButton::mouseReleaseEvent(event);
 	}
 
 	mousePressInside = false;
 }
 
-void MenuCheckBox::enterEvent(QEnterEvent *)
+void MenuRadioButton::enterEvent(QEnterEvent *)
 {
 	setHovered(true);
 	update();
 }
 
-void MenuCheckBox::leaveEvent(QEvent *)
+void MenuRadioButton::leaveEvent(QEvent *)
 {
 	setHovered(false);
 	update();
 }
 
-void MenuCheckBox::paintEvent(QPaintEvent *)
+void MenuRadioButton::paintEvent(QPaintEvent *)
 {
 	QStylePainter p(this);
 	QStyleOptionButton opt;
@@ -104,10 +104,10 @@ void MenuCheckBox::paintEvent(QPaintEvent *)
 		opt.state |= QStyle::State_Selected;
 	}
 
-	p.drawControl(QStyle::CE_CheckBox, opt);
+	p.drawControl(QStyle::CE_RadioButton, opt);
 }
 
-void MenuCheckBox::setHovered(bool hovered)
+void MenuRadioButton::setHovered(bool hovered)
 {
 	isHovered = hovered;
 }
