@@ -236,6 +236,7 @@ static inline gs_effect_t *get_scale_effect_internal(struct obs_core_video_mix *
 	case OBS_SCALE_AREA:
 		return video->area_effect;
 	case OBS_SCALE_BICUBIC:
+	case OBS_SCALE_BLERP:
 	default:;
 	}
 
@@ -303,6 +304,10 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video_mix *mix
 	}
 
 	gs_effect_set_texture_srgb(image, texture);
+
+	gs_eparam_t *use_blerp = gs_effect_get_param_by_name(effect, "use_blerp");
+	if (use_blerp)
+		gs_effect_set_bool(use_blerp, mix->ovi.scale_type == OBS_SCALE_BLERP);
 
 	gs_enable_framebuffer_srgb(true);
 	gs_enable_blending(false);

@@ -128,6 +128,7 @@ enum obs_scale_type {
 	OBS_SCALE_BILINEAR,
 	OBS_SCALE_LANCZOS,
 	OBS_SCALE_AREA,
+	OBS_SCALE_BLERP,
 };
 
 enum obs_blending_method {
