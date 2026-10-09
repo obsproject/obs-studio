@@ -18,6 +18,7 @@
 #define S_RANDOMIZE                    "randomize"
 #define S_LOOP                         "loop"
 #define S_HIDE                         "hide"
+#define S_LINEAR_ALPHA                 "linear_alpha"
 #define S_FILES                        "files"
 #define S_BEHAVIOR                     "playback_behavior"
 #define S_BEHAVIOR_STOP_RESTART        "stop_restart"
@@ -88,6 +89,7 @@ struct slideshow {
 	bool restart;
 	bool manual;
 	bool hide;
+	bool linear_alpha;
 	bool use_cut;
 	bool paused;
 	bool stop;
@@ -157,13 +159,14 @@ static obs_source_t *get_source(image_file_array_t *files, const char *path)
 	return source;
 }
 
-static obs_source_t *create_source_from_file(const char *file)
+static obs_source_t *create_source_from_file(const char *file, bool linear_alpha)
 {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
 
 	obs_data_set_string(settings, "file", file);
 	obs_data_set_bool(settings, "unload", false);
+	obs_data_set_bool(settings, "linear_alpha", linear_alpha);
 	source = obs_source_create_private("image_source", NULL, settings);
 
 	obs_data_release(settings);
@@ -200,19 +203,23 @@ static const char *ss_getname(void *unused)
 	return obs_module_text("SlideShow");
 }
 
-static void add_file(struct slideshow *ss, image_file_array_t *new_files, const char *path, uint32_t *cx, uint32_t *cy)
+static void add_file(struct slideshow *ss, image_file_array_t *new_files, const char *path, uint32_t *cx, uint32_t *cy,
+		     bool reuse_old)
 {
 	struct image_file_data data;
-	obs_source_t *new_source;
+	obs_source_t *new_source = NULL;
 
-	pthread_mutex_lock(&ss->mutex);
-	new_source = get_source(&ss->files, path);
-	pthread_mutex_unlock(&ss->mutex);
+	/* Don't reuse old sources when linear_alpha changed. */
+	if (reuse_old) {
+		pthread_mutex_lock(&ss->mutex);
+		new_source = get_source(&ss->files, path);
+		pthread_mutex_unlock(&ss->mutex);
+	}
 
 	if (!new_source)
 		new_source = get_source(new_files, path);
 	if (!new_source)
-		new_source = create_source_from_file(path);
+		new_source = create_source_from_file(path, ss->linear_alpha);
 
 	if (new_source) {
 		uint32_t new_cx = obs_source_get_width(new_source);
@@ -324,6 +331,9 @@ static void ss_update(void *data, obs_data_t *settings)
 	ss->randomize = obs_data_get_bool(settings, S_RANDOMIZE);
 	ss->loop = obs_data_get_bool(settings, S_LOOP);
 	ss->hide = obs_data_get_bool(settings, S_HIDE);
+	bool new_linear_alpha = obs_data_get_bool(settings, S_LINEAR_ALPHA);
+	bool reuse_old = (ss->linear_alpha == new_linear_alpha);
+	ss->linear_alpha = new_linear_alpha;
 
 	if (!ss->tr_name || strcmp(tr_name, ss->tr_name) != 0)
 		new_tr = obs_source_create_private(tr_name, NULL, NULL);
@@ -369,7 +379,7 @@ static void ss_update(void *data, obs_data_t *settings)
 				dstr_copy(&dir_path, path);
 				dstr_cat_ch(&dir_path, '/');
 				dstr_cat(&dir_path, ent->d_name);
-				add_file(ss, &new_files, dir_path.array, &cx, &cy);
+				add_file(ss, &new_files, dir_path.array, &cx, &cy, reuse_old);
 
 				if (ss->mem_usage >= MAX_MEM_USAGE)
 					break;
@@ -378,7 +388,7 @@ static void ss_update(void *data, obs_data_t *settings)
 			dstr_free(&dir_path);
 			os_closedir(dir);
 		} else {
-			add_file(ss, &new_files, path, &cx, &cy);
+			add_file(ss, &new_files, path, &cx, &cy, reuse_old);
 		}
 
 		obs_data_release(item);
@@ -848,6 +858,7 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_BEHAVIOR, S_BEHAVIOR_ALWAYS_PLAY);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
 	obs_data_set_default_bool(settings, S_LOOP, true);
+	obs_data_set_default_bool(settings, S_LINEAR_ALPHA, false);
 }
 
 static const char *file_filter = "Image files (*.bmp *.tga *.png *.jpeg *.jpg"
@@ -902,6 +913,7 @@ static obs_properties_t *ss_properties(void *data)
 	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
 	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
 	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);
+	obs_properties_add_bool(ppts, S_LINEAR_ALPHA, obs_module_text("LinearAlpha"));
 
 	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE, OBS_COMBO_TYPE_EDITABLE,
 				    OBS_COMBO_FORMAT_STRING);
