@@ -20,7 +20,7 @@
 static bool upload_texture_2d(struct gs_texture_2d *tex, const uint8_t **data)
 {
 	uint32_t row_size = tex->width * gs_get_format_bpp(tex->base.format);
-	uint32_t tex_size = tex->height * row_size / 8;
+	uint32_t tex_size = (uint32_t)((uint64_t)tex->height * row_size / 8);
 	uint32_t num_levels = tex->base.levels;
 	bool compressed = gs_is_compressed_format(tex->base.format);
 	bool success;
