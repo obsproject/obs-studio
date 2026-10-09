@@ -331,6 +331,9 @@ static void render_convert_plane(gs_effect_t *effect, gs_texture_t *target, cons
 	gs_set_render_target(target, NULL);
 	set_render_size(width, height);
 
+	gs_load_vertexbuffer(NULL);
+	gs_load_indexbuffer(NULL);
+
 	size_t passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
 		gs_technique_begin_pass(tech, i);
