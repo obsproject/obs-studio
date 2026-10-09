@@ -22,6 +22,8 @@
 #include <obs.hpp>
 
 #include <QDialog>
+#include <QInputMethodEvent>
+#include <QInputMethodQueryEvent>
 
 class OBSBasic;
 class OBSEventFilter;
@@ -49,6 +51,15 @@ private:
 	bool HandleMouseWheelEvent(QWheelEvent *event);
 	bool HandleFocusEvent(QFocusEvent *event);
 	bool HandleKeyEvent(QKeyEvent *event);
+	bool HandleInputMethodEvent(QInputMethodEvent *event);
+	bool HandleInputMethodQuery(QInputMethodQueryEvent *event);
+	QRectF GetImeCursorRect();
+	void CancelComposition();
+	bool imeEnabled = false;
+	bool composing = false;
+	bool resettingIme = false;
+	uint64_t imeGeneration = 0;
+	QPointF imeFallback;
 
 	OBSEventFilter *BuildEventFilter();
 

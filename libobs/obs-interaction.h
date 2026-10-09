@@ -54,3 +54,35 @@ struct obs_key_event {
 	uint32_t native_scancode;
 	uint32_t native_vkey;
 };
+
+/* IME ranges use UTF-16 code units, independently of the UTF-8 text encoding. */
+enum obs_ime_event_type {
+	OBS_IME_COMPOSITION = 1,
+	OBS_IME_COMMIT,
+	OBS_IME_CANCEL,
+};
+
+struct obs_ime_underline {
+	uint32_t start;
+	uint32_t end;
+	uint32_t color;            /* ARGB */
+	uint32_t background_color; /* ARGB */
+	bool thick;
+};
+
+struct obs_ime_event {
+	enum obs_ime_event_type type;
+	uint64_t generation; /* Snapshot from obs_source_get_ime_generation. */
+	const char *text;    /* UTF-8, borrowed for the duration of the callback. */
+	const struct obs_ime_underline *underlines;
+	size_t underline_count;
+	uint32_t selection_start;
+	uint32_t selection_end;
+};
+
+struct obs_ime_rect {
+	int32_t x;
+	int32_t y;
+	int32_t width;
+	int32_t height;
+};

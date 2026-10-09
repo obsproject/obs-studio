@@ -1545,6 +1545,14 @@ EXPORT bool obs_source_add_active_child(obs_source_t *parent, obs_source_t *chil
  */
 EXPORT void obs_source_remove_active_child(obs_source_t *parent, obs_source_t *child);
 
+/** Whether the source supports composition-aware input method events. */
+EXPORT bool obs_source_supports_ime(obs_source_t *source);
+/** Sends an IME event. Pointers need only remain valid until this call returns. */
+EXPORT void obs_source_send_ime_event(obs_source_t *source, const struct obs_ime_event *event);
+EXPORT uint64_t obs_source_get_ime_generation(obs_source_t *source);
+/** Gets the current composition caret in source coordinates, if available. */
+EXPORT bool obs_source_get_ime_rect(obs_source_t *source, struct obs_ime_rect *rect);
+
 /** Sends a mouse down/up event to a source */
 EXPORT void obs_source_send_mouse_click(obs_source_t *source, const struct obs_mouse_event *event, int32_t type,
 					bool mouse_up, uint32_t click_count);

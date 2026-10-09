@@ -1134,6 +1134,39 @@ void obs_source_update_properties(obs_source_t *source)
 	obs_source_dosignal(source, NULL, "update_properties");
 }
 
+bool obs_source_supports_ime(obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_supports_ime") && source->context.data &&
+	       (source->info.output_flags & OBS_SOURCE_INTERACTION) && source->info.ime_event;
+}
+
+void obs_source_send_ime_event(obs_source_t *source, const struct obs_ime_event *event)
+{
+	if (!event || !obs_source_supports_ime(source))
+		return;
+	if (event->type < OBS_IME_COMPOSITION || event->type > OBS_IME_CANCEL)
+		return;
+	if (event->type != OBS_IME_CANCEL && !event->text)
+		return;
+	if (event->underline_count && !event->underlines)
+		return;
+	source->info.ime_event(source->context.data, event);
+}
+
+uint64_t obs_source_get_ime_generation(obs_source_t *source)
+{
+	if (!obs_source_supports_ime(source) || !source->info.ime_generation)
+		return 0;
+	return source->info.ime_generation(source->context.data);
+}
+
+bool obs_source_get_ime_rect(obs_source_t *source, struct obs_ime_rect *rect)
+{
+	if (!rect || !obs_source_supports_ime(source) || !source->info.ime_rect)
+		return false;
+	return source->info.ime_rect(source->context.data, rect);
+}
+
 void obs_source_send_mouse_click(obs_source_t *source, const struct obs_mouse_event *event, int32_t type, bool mouse_up,
 				 uint32_t click_count)
 {

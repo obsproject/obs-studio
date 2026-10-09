@@ -555,6 +555,13 @@ struct obs_source_info {
 	/** Gets custom icons for dark and light themes */
 	const char *(*get_dark_icon)(void *type_data);
 	const char *(*get_light_icon)(void *type_data);
+
+	/* Appended to preserve offsets of all previously registered callbacks.
+	 * ime_event must copy borrowed event data before asynchronous dispatch.
+	 * ime_rect returns a thread-safe snapshot in source coordinates. */
+	void (*ime_event)(void *data, const struct obs_ime_event *event);
+	bool (*ime_rect)(void *data, struct obs_ime_rect *rect);
+	uint64_t (*ime_generation)(void *data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info, size_t size);
