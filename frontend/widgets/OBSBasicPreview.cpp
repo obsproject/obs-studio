@@ -32,22 +32,7 @@ OBSBasicPreview::OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags) : OBSQT
 
 OBSBasicPreview::~OBSBasicPreview()
 {
-	obs_enter_graphics();
-
-	if (overflow) {
-		gs_texture_destroy(overflow);
-	}
-	if (rectFill) {
-		gs_vertexbuffer_destroy(rectFill);
-	}
-	if (circleFill) {
-		gs_vertexbuffer_destroy(circleFill);
-	}
-	if (stripedLineEffect) {
-		gs_effect_destroy(stripedLineEffect);
-	}
-
-	obs_leave_graphics();
+	OBSBasicPreview::destroyPreview();
 }
 
 void OBSBasicPreview::Init()
@@ -2645,6 +2630,34 @@ static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end, vec3 &v
 	DrawSpacingLine(start, end, viewport, pixelRatio);
 	SetLabelText(sourceIndex, (int)px);
 	DrawLabel(source, labelPos, viewport);
+}
+
+void OBSBasicPreview::destroyPreview()
+{
+	if (isDestroyed) {
+		return;
+	}
+
+	isDestroyed = true;
+
+	OBSQTDisplay::DestroyDisplay();
+
+	obs_enter_graphics();
+
+	if (overflow) {
+		gs_texture_destroy(overflow);
+	}
+	if (rectFill) {
+		gs_vertexbuffer_destroy(rectFill);
+	}
+	if (circleFill) {
+		gs_vertexbuffer_destroy(circleFill);
+	}
+	if (stripedLineEffect) {
+		gs_effect_destroy(stripedLineEffect);
+	}
+
+	obs_leave_graphics();
 }
 
 void OBSBasicPreview::DrawSpacingHelpers()
