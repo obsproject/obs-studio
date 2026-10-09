@@ -922,13 +922,19 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 		g_numEncodersOpen--;
 	}
 
+	// Close the session before the shared D3D11 device is released: the
+	// session's internal scheduler still references the device handle set
+	// with MFXVideoCORE_SetHandle().
+	MFXVideoENCODE_Close(m_session);
+	MFXClose(m_session);
+	m_session = NULL;
+	ReleaseSessionData(m_sessionData);
+	m_sessionData = NULL;
+
 	if ((m_bUseTexAlloc) && (g_numEncodersOpen <= 0)) {
 		Release();
 		g_GFX_Handle = NULL;
 	}
-	MFXVideoENCODE_Close(m_session);
-	ReleaseSessionData(m_sessionData);
-	m_sessionData = NULL;
 	return sts;
 }
 
