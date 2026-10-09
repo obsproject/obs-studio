@@ -1925,8 +1925,7 @@ void OBSApp::processSigInt()
 #ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		main->saveAll();
-		main->close();
+		main->closeWindow();
 	}
 #else
 	quit();
@@ -1949,7 +1948,7 @@ void OBSApp::processSigTerm()
 #ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		main->saveAll();
+		main->closeWindow();
 	}
 #endif
 	quit();
@@ -1971,7 +1970,7 @@ void OBSApp::processSigAbrt()
 #ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		main->saveAll();
+		main->closeWindow();
 	}
 #endif
 	quit();
@@ -1993,7 +1992,7 @@ void OBSApp::processSigQuit()
 #ifndef __APPLE__
 	OBSBasic *main = OBSBasic::Get();
 	if (main) {
-		main->saveAll();
+		main->closeWindow();
 	}
 #endif
 	quit();
