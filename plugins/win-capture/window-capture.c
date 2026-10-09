@@ -82,7 +82,8 @@ struct window_capture {
 	char *title;
 	char *class;
 	char *executable;
-	enum window_capture_method method;
+	enum window_capture_method method_in_use;
+	enum window_capture_method configured_method;
 	enum window_priority priority;
 	bool cursor;
 	bool compatibility;
@@ -138,13 +139,21 @@ static const char *wgc_whole_match_classes[] = {
 };
 
 static enum window_capture_method choose_method(enum window_capture_method method, bool wgc_supported,
-						const char *current_class)
+						const char *current_class, HWND window)
 {
 	if (!wgc_supported)
 		return METHOD_BITBLT;
 
 	if (method != METHOD_AUTO)
 		return method;
+
+	/* Windows with WS_EX_NOREDIRECTIONBITMAP have no redirection surface.
+	 * This is recommended for windows that do transparency through the DWM.
+	 * https://learn.microsoft.com/en-us/archive/msdn-magazine/2014/june/windows-with-c-high-performance-window-layering-using-the-windows-composition-engine
+	 * In that case, the BitBlt method will not work correctly.
+	 */
+	if (window && (GetWindowLongPtrW(window, GWL_EXSTYLE) & WS_EX_NOREDIRECTIONBITMAP))
+		return METHOD_WGC;
 
 	if (!current_class)
 		return METHOD_BITBLT;
@@ -198,7 +207,8 @@ static void log_settings(struct window_capture *wc, obs_data_t *s)
 		     "\tmethod chosen: %s\n"
 		     "\tforce SDR: %s",
 		     obs_source_get_name(wc->source), wc->executable, get_method_name(method),
-		     get_method_name(wc->method), (wc->force_sdr && (wc->method == METHOD_WGC)) ? "true" : "false");
+		     get_method_name(wc->method_in_use),
+		     (wc->force_sdr && (wc->method_in_use == METHOD_WGC)) ? "true" : "false");
 		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
 	}
 }
@@ -219,7 +229,13 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 	ms_build_window_strings(window, &wc->class, &wc->title, &wc->executable);
 
-	wc->method = choose_method(method, wgc_supported, wc->class);
+	wc->configured_method = method;
+	HWND candidate = NULL;
+	if (method == METHOD_AUTO && wgc_supported)
+		candidate =
+			ms_find_window_top_level(INCLUDE_MINIMIZED, wc->priority, wc->class, wc->title, wc->executable);
+	wc->method_in_use = choose_method(method, wgc_supported, wc->class, candidate);
+
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->capture_audio = obs_data_get_bool(s, "capture_audio");
@@ -415,7 +431,8 @@ static uint32_t wc_width(void *data)
 	if (!window_normal(wc))
 		return 0;
 
-	return (wc->method == METHOD_WGC) ? wc->exports.winrt_capture_width(wc->capture_winrt) : wc->capture.width;
+	return (wc->method_in_use == METHOD_WGC) ? wc->exports.winrt_capture_width(wc->capture_winrt)
+						 : wc->capture.width;
 }
 
 static uint32_t wc_height(void *data)
@@ -425,7 +442,8 @@ static uint32_t wc_height(void *data)
 	if (!window_normal(wc))
 		return 0;
 
-	return (wc->method == METHOD_WGC) ? wc->exports.winrt_capture_height(wc->capture_winrt) : wc->capture.height;
+	return (wc->method_in_use == METHOD_WGC) ? wc->exports.winrt_capture_height(wc->capture_winrt)
+						 : wc->capture.height;
 }
 
 static void wc_defaults(obs_data_t *defaults)
@@ -441,7 +459,7 @@ static void update_settings_visibility(obs_properties_t *props, struct window_ca
 {
 	pthread_mutex_lock(&wc->update_mutex);
 
-	const enum window_capture_method method = wc->method;
+	const enum window_capture_method method = wc->method_in_use;
 	const bool bitblt_options = method == METHOD_BITBLT;
 	const bool wgc_options = method == METHOD_WGC;
 
@@ -467,7 +485,7 @@ static void wc_check_compatibility(struct window_capture *wc, obs_properties_t *
 	obs_property_t *p_warn = obs_properties_get(props, "compat_info");
 
 	struct compat_result *compat =
-		check_compatibility(wc->title, wc->class, wc->executable, (enum source_type)wc->method);
+		check_compatibility(wc->title, wc->class, wc->executable, (enum source_type)wc->method_in_use);
 	if (!compat) {
 		obs_property_set_visible(p_warn, false);
 		return;
@@ -629,15 +647,19 @@ static void wc_tick(void *data, float seconds)
 
 		wc->check_window_timer = 0.0f;
 
-		wc->window = (wc->method == METHOD_WGC) ? ms_find_window_top_level(INCLUDE_MINIMIZED, wc->priority,
-										   wc->class, wc->title, wc->executable)
-							: ms_find_window(INCLUDE_MINIMIZED, wc->priority, wc->class,
-									 wc->title, wc->executable);
+		wc->window =
+			(wc->method_in_use == METHOD_WGC)
+				? ms_find_window_top_level(INCLUDE_MINIMIZED, wc->priority, wc->class, wc->title,
+							   wc->executable)
+				: ms_find_window(INCLUDE_MINIMIZED, wc->priority, wc->class, wc->title, wc->executable);
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
 			return;
 		}
+
+		/* Because the target window has changed, we need to reevaluate the capture method. */
+		wc->method_in_use = choose_method(wc->configured_method, wgc_supported, wc->class, wc->window);
 
 		wc->previously_failed = false;
 		reset_capture = true;
@@ -678,7 +700,7 @@ static void wc_tick(void *data, float seconds)
 
 	obs_enter_graphics();
 
-	if (wc->method == METHOD_BITBLT) {
+	if (wc->method_in_use == METHOD_BITBLT) {
 		DPI_AWARENESS_CONTEXT previous = NULL;
 		if (wc->get_window_dpi_awareness_context != NULL) {
 			const DPI_AWARENESS_CONTEXT context = wc->get_window_dpi_awareness_context(wc->window);
@@ -735,7 +757,7 @@ static void wc_tick(void *data, float seconds)
 
 		if (previous)
 			wc->set_thread_dpi_awareness_context(previous);
-	} else if (wc->method == METHOD_WGC) {
+	} else if (wc->method_in_use == METHOD_WGC) {
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			if (!wc->previously_failed) {
 				wc->capture_winrt = wc->exports.winrt_capture_init_window(
@@ -781,7 +803,7 @@ static void wc_render(void *data, gs_effect_t *effect)
 	if (!window_normal(wc))
 		return;
 
-	if (wc->method == METHOD_WGC) {
+	if (wc->method_in_use == METHOD_WGC) {
 		if (wc->capture_winrt) {
 			if (wc->exports.winrt_capture_active(wc->capture_winrt)) {
 				wc->exports.winrt_capture_render(wc->capture_winrt);
@@ -803,7 +825,7 @@ enum gs_color_space wc_get_color_space(void *data, size_t count, const enum gs_c
 
 	enum gs_color_space capture_space = GS_CS_SRGB;
 
-	if ((wc->method == METHOD_WGC) && wc->capture_winrt) {
+	if ((wc->method_in_use == METHOD_WGC) && wc->capture_winrt) {
 		capture_space = wc->exports.winrt_capture_get_color_space(wc->capture_winrt);
 	}
 
