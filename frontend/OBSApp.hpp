@@ -276,8 +276,6 @@ inline QString QTStr(const char *lookupVal)
 	return QString::fromUtf8(Str(lookupVal));
 }
 
-std::filesystem::path GetProgramDataPath(const std::filesystem::path &suffix);
-
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
 
