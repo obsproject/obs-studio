@@ -146,7 +146,11 @@ function(set_target_properties_obs target)
         target_add_resource(${target} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/qt.conf")
       endif()
 
-      target_add_resource(${target} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/Assets.xcassets")
+      target_add_resource(${target} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/AppIcon.icon")
+      set_source_files_properties(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/AppIcon.icon"
+        PROPERTIES XCODE_EXPLICIT_FILE_TYPE folder.iconcomposer.icon
+      )
       target_add_resource(${target} "${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS")
 
       if(TARGET obs-dal-plugin)
