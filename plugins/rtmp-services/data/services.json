@@ -3461,6 +3461,162 @@
             "recommended": {
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "OneStream Live",
+            "stream_key_link": "https://app.onestream.live",
+            "servers": [
+                {
+                    "name": "Autodetect - Primary",
+                    "url": "rtmps://live.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Autodetect - Backup",
+                    "url": "rtmps://live-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-East (New York) - Primary",
+                    "url": "rtmps://newyork-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-East (Miami) - Primary",
+                    "url": "rtmps://miami-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-East (Miami) - Backup",
+                    "url": "rtmps://miami-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-Central (Chicago) - Primary",
+                    "url": "rtmps://chicago-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-Central (Chicago) - Backup",
+                    "url": "rtmps://chicago-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-Central (Dallas) - Primary",
+                    "url": "rtmps://dallas-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-West (Los Angeles) - Primary",
+                    "url": "rtmps://los-angeles-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-West (Seattle) - Primary",
+                    "url": "rtmps://seattle-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "US-West (Seattle) - Backup",
+                    "url": "rtmps://seattle-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Canada (Toronto) - Primary",
+                    "url": "rtmps://toronto-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Canada (Toronto) - Backup",
+                    "url": "rtmps://toronto-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Brazil (São Paulo) - Primary",
+                    "url": "rtmps://sao-paulo-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Brazil (São Paulo) - Backup",
+                    "url": "rtmps://sao-paulo-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (London) - Primary",
+                    "url": "rtmps://london-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (London) - Backup",
+                    "url": "rtmps://london-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (Paris) - Primary",
+                    "url": "rtmps://paris-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (Amsterdam) - Primary",
+                    "url": "rtmps://amsterdam-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (Amsterdam) - Backup",
+                    "url": "rtmps://amsterdam-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-West (Madrid) - Primary",
+                    "url": "rtmps://madrid-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-Central (Frankfurt) - Primary",
+                    "url": "rtmps://frankfurt-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-Central (Frankfurt) - Backup",
+                    "url": "rtmps://frankfurt-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-Central (Falkenstein) - Primary",
+                    "url": "rtmps://falkenstein-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-Central (Warsaw) - Backup",
+                    "url": "rtmps://warsaw-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "EU-North (Helsinki) - Primary",
+                    "url": "rtmps://helsinki-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "South Africa (Johannesburg) - Primary",
+                    "url": "rtmps://johannesburg-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "South Africa (Johannesburg) - Backup",
+                    "url": "rtmps://johannesburg-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "India (Mumbai) - Primary",
+                    "url": "rtmps://mumbai-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "India (Mumbai) - Backup",
+                    "url": "rtmps://mumbai-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Asia (Singapore) - Primary",
+                    "url": "rtmps://singapore-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Asia (Singapore) - Backup",
+                    "url": "rtmps://singapore-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Asia (Johor) - Primary",
+                    "url": "rtmps://johor-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Asia (Johor) - Backup",
+                    "url": "rtmps://johor-backup.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Australia (Sydney) - Primary",
+                    "url": "rtmps://sydney-primary.onestream.studio:19350/live"
+                },
+                {
+                    "name": "Australia (Sydney) - Backup",
+                    "url": "rtmps://sydney-backup.onestream.studio:19350/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ]
         }
     ]
 }
