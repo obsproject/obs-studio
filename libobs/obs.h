@@ -2494,6 +2494,9 @@ EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *messa
 
 EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
 
+/** Returns false if unsupported, true if a request has been made or is in progress. */
+EXPORT bool obs_encoder_request_idr(obs_encoder_t *encoder);
+
 /**
  * Creates an "encoder group", allowing synchronized startup of encoders within
  * the group. Encoder groups are single owner, and hold strong references to

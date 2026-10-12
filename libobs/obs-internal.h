@@ -1461,6 +1461,8 @@ struct obs_encoder {
 
 	/* reconfigure encoder at next possible opportunity */
 	bool reconfigure_requested;
+	/* Make the next frame an IDR */
+	volatile bool idr_requested;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

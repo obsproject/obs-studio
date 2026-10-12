@@ -81,6 +81,7 @@ static void *gpu_encode_thread(void *data)
 			bool received = false;
 			bool success = false;
 			uint32_t skip = 0;
+			obs_frame_flags flags = OBS_FRAME_NONE;
 
 			obs_encoder_t *encoder = encoders.array[i];
 			obs_weak_encoder_t **paired = encoder->paired_encoders.array;
@@ -138,6 +139,9 @@ static void *gpu_encode_thread(void *data)
 				encoder->info.update(encoder->context.data, encoder->context.settings);
 			}
 
+			if (os_atomic_exchange_bool(&encoder->idr_requested, false))
+				flags |= OBS_FRAME_FORCE_IDR;
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
@@ -159,6 +163,7 @@ static void *gpu_encode_thread(void *data)
 				tex.tex[0] = tf.tex;
 				tex.tex[1] = tf.tex_uv;
 				tex.tex[2] = NULL;
+				tex.flags = flags;
 				success = encoder->info.encode_texture2(encoder->context.data, &tex, encoder->cur_pts,
 									lock_key, &next_key, &pkt, &received);
 			} else {

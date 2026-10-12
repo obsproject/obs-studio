@@ -1633,6 +1633,9 @@ static void receive_video(void *param, struct video_data *frame)
 	enc_frame.frames = 1;
 	enc_frame.pts = encoder->cur_pts;
 
+	if (os_atomic_exchange_bool(&encoder->idr_requested, false))
+		enc_frame.flags |= OBS_FRAME_FORCE_IDR;
+
 	if (do_encode(encoder, &enc_frame, &frame->timestamp))
 		encoder->cur_pts += encoder->timebase_num * encoder->frame_rate_divisor;
 
@@ -2283,4 +2286,21 @@ uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder)
 	}
 
 	return 0;
+}
+
+bool obs_encoder_request_idr(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_request_idr"))
+		return false;
+	if (encoder->info.type != OBS_ENCODER_VIDEO)
+		return false;
+	if ((encoder->info.caps & OBS_ENCODER_CAP_FORCE_IDR) == 0)
+		return false;
+
+	if (!encoder->encoder_group) {
+		os_atomic_set_bool(&encoder->idr_requested, true);
+		return true;
+	}
+
+	return false;
 }
