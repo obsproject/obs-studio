@@ -17,8 +17,6 @@
 
 #include "obs-internal.h"
 
-void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder);
-
 #define NBSP "\xC2\xA0"
 static const char *gpu_encode_frame_name = "gpu_encode_frame";
 static void *gpu_encode_thread(void *data)
@@ -138,6 +136,8 @@ static void *gpu_encode_thread(void *data)
 				encoder->reconfigure_requested = false;
 				encoder->info.update(encoder->context.data, encoder->context.settings);
 			}
+
+			handle_encoder_group_idr_request(encoder);
 
 			if (os_atomic_exchange_bool(&encoder->idr_requested, false))
 				flags |= OBS_FRAME_FORCE_IDR;

@@ -2507,6 +2507,9 @@ EXPORT bool obs_encoder_set_group(obs_encoder_t *encoder, obs_encoder_group_t *g
 EXPORT obs_encoder_group_t *obs_encoder_group_create();
 EXPORT void obs_encoder_group_destroy(obs_encoder_group_t *group);
 
+/** Returns false if unsupported, true if a request has been queued or is in progress. */
+EXPORT bool obs_encoder_group_request_idr(obs_encoder_group_t *group);
+
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
 
