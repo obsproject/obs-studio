@@ -25,13 +25,15 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 {
 	QString name;
 
-	if (!qt->fadeToBlack)
+	if (!qt->fadeToBlack) {
 		name = QT_UTF8(obs_source_get_name(qt->source));
-	else
+	} else {
 		name = QTStr("FadeToBlack");
+	}
 
-	if (!obs_transition_fixed(qt->source))
+	if (!obs_transition_fixed(qt->source)) {
 		name += QString(" (%1ms)").arg(QString::number(qt->duration));
+	}
 	return name;
 }
 

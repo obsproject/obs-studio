@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_LogUploadDialog">
    <property name="sizeConstraint">
-    <enum>QLayout::SetFixedSize</enum>
+    <enum>QLayout::SizeConstraint::SetFixedSize</enum>
    </property>
    <item>
     <widget class="QStackedWidget" name="stackedWidget">
@@ -50,7 +50,7 @@
             <string>LogUploadDialog.Labels.PrivacyNotice</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
            </property>
            <property name="wordWrap">
             <bool>false</bool>
@@ -59,7 +59,7 @@
             <bool>true</bool>
            </property>
            <property name="textInteractionFlags">
-            <set>Qt::TextBrowserInteraction</set>
+            <set>Qt::TextInteractionFlag::TextBrowserInteraction</set>
            </property>
           </widget>
          </item>
@@ -96,7 +96,7 @@
          <item>
           <spacer name="horizontalSpacer">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>
@@ -155,7 +155,7 @@
             <string>LogUploadDialog.Labels.Description.AppLog</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+            <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
            </property>
            <property name="wordWrap">
             <bool>false</bool>
@@ -195,7 +195,7 @@
        <item>
         <widget class="QDialogButtonBox" name="buttonBox">
          <property name="standardButtons">
-          <set>QDialogButtonBox::Close</set>
+          <set>QDialogButtonBox::StandardButton::Close</set>
          </property>
         </widget>
        </item>
@@ -227,7 +227,7 @@
           <string>LogUploadDialog.Labels.UploadFailMessage</string>
          </property>
          <property name="alignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
+          <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignTop</set>
          </property>
         </widget>
        </item>
@@ -236,7 +236,7 @@
          <item>
           <spacer name="horizontalSpacer_2">
            <property name="orientation">
-            <enum>Qt::Horizontal</enum>
+            <enum>Qt::Orientation::Horizontal</enum>
            </property>
            <property name="sizeHint" stdset="0">
             <size>

@@ -50,8 +50,9 @@ static inline bool check_path(const char *data, const char *path, string &output
 
 bool GetDataFilePath(const char *data, string &output)
 {
-	if (check_path(data, "data/obs-studio/", output))
+	if (check_path(data, "data/obs-studio/", output)) {
 		return true;
+	}
 
 	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
@@ -72,20 +73,23 @@ static vector<string> GetUserPreferredLocales()
 	vector<string> result;
 
 	ULONG num, length = 0;
-	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr, &length))
+	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr, &length)) {
 		return result;
+	}
 
 	vector<wchar_t> buffer(length);
-	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, &buffer.front(), &length))
+	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, &buffer.front(), &length)) {
 		return result;
+	}
 
 	result.reserve(num);
 	auto start = begin(buffer);
 	auto end_ = end(buffer);
 	decltype(start) separator;
 	while ((separator = find(start, end_, 0)) != end_) {
-		if (result.size() == num)
+		if (result.size() == num) {
 			break;
+		}
 
 		char conv[MAX_PATH] = {};
 		os_wcs_to_utf8(&*start, separator - start, conv, MAX_PATH);
@@ -107,14 +111,17 @@ vector<string> GetPreferredLocales()
 
 		for (auto &locale_pair : obs_locales) {
 			auto &locale = locale_pair.first;
-			if (locale == windows.substr(0, locale.size()))
+			if (locale == windows.substr(0, locale.size())) {
 				return locale;
+			}
 
-			if (lang_match.size())
+			if (lang_match.size()) {
 				continue;
+			}
 
-			if (locale.substr(0, 2) == windows.substr(0, 2))
+			if (locale.substr(0, 2) == windows.substr(0, 2)) {
 				lang_match = locale;
+			}
 		}
 
 		return lang_match;
@@ -125,11 +132,13 @@ vector<string> GetPreferredLocales()
 
 	for (const string &locale : windows_locales) {
 		string match = windows_to_obs(locale);
-		if (!match.size())
+		if (!match.size()) {
 			continue;
+		}
 
-		if (find(begin(result), end(result), match) != end(result))
+		if (find(begin(result), end(result), match) != end(result)) {
 			continue;
+		}
 
 		result.emplace_back(match);
 	}
@@ -180,19 +189,21 @@ void SetAlwaysOnTop(QWidget *window, bool enable)
 
 void SetProcessPriority(const char *priority)
 {
-	if (!priority)
+	if (!priority) {
 		return;
+	}
 
-	if (strcmp(priority, "High") == 0)
+	if (strcmp(priority, "High") == 0) {
 		SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
-	else if (strcmp(priority, "AboveNormal") == 0)
+	} else if (strcmp(priority, "AboveNormal") == 0) {
 		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
-	else if (strcmp(priority, "Normal") == 0)
+	} else if (strcmp(priority, "Normal") == 0) {
 		SetPriorityClass(GetCurrentProcess(), NORMAL_PRIORITY_CLASS);
-	else if (strcmp(priority, "BelowNormal") == 0)
+	} else if (strcmp(priority, "BelowNormal") == 0) {
 		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-	else if (strcmp(priority, "Idle") == 0)
+	} else if (strcmp(priority, "Idle") == 0) {
 		SetPriorityClass(GetCurrentProcess(), IDLE_PRIORITY_CLASS);
+	}
 }
 
 void SetWin32DropStyle(QWidget *window)
@@ -212,10 +223,11 @@ bool SetDisplayAffinitySupported(void)
 	   older Windows builds behaves like WDA_MONITOR (black box) */
 
 	if (!checked) {
-		if (GetWindowsVersion() > 0x0A00 || GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041)
+		if (GetWindowsVersion() > 0x0A00 || GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041) {
 			supported = true;
-		else
+		} else {
 			supported = false;
+		}
 
 		checked = true;
 	}
@@ -233,25 +245,30 @@ bool DisableAudioDucking(bool disable)
 
 	HRESULT result = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_INPROC_SERVER,
 					  __uuidof(IMMDeviceEnumerator), (void **)&devEmum);
-	if (FAILED(result))
+	if (FAILED(result)) {
 		return false;
+	}
 
 	result = devEmum->GetDefaultAudioEndpoint(eRender, eConsole, &device);
-	if (FAILED(result))
+	if (FAILED(result)) {
 		return false;
+	}
 
 	result = device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_INPROC_SERVER, nullptr,
 				  (void **)&sessionManager2);
-	if (FAILED(result))
+	if (FAILED(result)) {
 		return false;
+	}
 
 	result = sessionManager2->GetAudioSessionControl(nullptr, 0, &sessionControl);
-	if (FAILED(result))
+	if (FAILED(result)) {
 		return false;
+	}
 
 	result = sessionControl->QueryInterface(&sessionControl2);
-	if (FAILED(result))
+	if (FAILED(result)) {
 		return false;
+	}
 
 	result = sessionControl2->SetDuckingPreference(disable);
 	return SUCCEEDED(result);
@@ -306,8 +323,9 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 	if (wname) {
 		wchar_t *temp = wname;
 		while (*temp) {
-			if (!iswalnum(*temp))
+			if (!iswalnum(*temp)) {
 				*temp = L'_';
+			}
 			temp++;
 		}
 	}
@@ -315,8 +333,9 @@ RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 	HANDLE h = OpenMutexW(SYNCHRONIZE, false, wname.Get());
 	already_running = !!h;
 
-	if (!already_running)
+	if (!already_running) {
 		h = CreateMutexW(nullptr, false, wname.Get());
+	}
 
 	RunOnceMutex rom(h ? new RunOnceMutexData(h) : nullptr);
 	return rom;
@@ -350,8 +369,9 @@ bool IsRunningOnWine()
 	HMODULE nt;
 
 	nt = GetModuleHandleW(L"ntdll");
-	if (!nt)
+	if (!nt) {
 		return false;
+	}
 
 	func = (WINEGETVERSION)GetProcAddress(nt, "wine_get_version");
 	if (func) {
@@ -403,8 +423,9 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	if (!qicon.isNull()) {
 		Q_GUI_EXPORT HICON qt_pixmapToWinHICON(const QPixmap &p);
 		hicon = qt_pixmapToWinHICON(qicon.pixmap(GetSystemMetrics(SM_CXSMICON)));
-		if (!hicon)
+		if (!hicon) {
 			return;
+		}
 	}
 
 	taskbarIcon->SetOverlayIcon(hwnd, hicon, nullptr);
@@ -417,8 +438,9 @@ bool HighContrastEnabled()
 	HIGHCONTRAST hc = {};
 	hc.cbSize = sizeof(HIGHCONTRAST);
 
-	if (SystemParametersInfo(SPI_GETHIGHCONTRAST, hc.cbSize, &hc, 0))
+	if (SystemParametersInfo(SPI_GETHIGHCONTRAST, hc.cbSize, &hc, 0)) {
 		return hc.dwFlags & HCF_HIGHCONTRASTON;
+	}
 
 	return false;
 }

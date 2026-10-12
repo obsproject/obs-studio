@@ -18,8 +18,9 @@ DeviceCaptureToolbar::DeviceCaptureToolbar(QWidget *parent, OBSSource source)
 	active = obs_data_get_bool(settings, "active");
 
 	obs_module_t *mod = obs_get_module("win-dshow");
-	if (!mod)
+	if (!mod) {
 		return;
+	}
 
 	activateText = obs_module_get_locale_text(mod, "Activate");
 	deactivateText = obs_module_get_locale_text(mod, "Deactivate");

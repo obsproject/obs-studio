@@ -43,8 +43,9 @@ QVariant ExtraBrowsersModel::data(const QModelIndex &index, int role) const
 	int count = items.size();
 	bool validRole = role == Qt::DisplayRole || role == Qt::AccessibleTextRole;
 
-	if (!validRole)
+	if (!validRole) {
 		return QVariant();
+	}
 
 	if (idx >= 0 && idx < count) {
 		switch (column) {
@@ -85,8 +86,9 @@ Qt::ItemFlags ExtraBrowsersModel::flags(const QModelIndex &index) const
 {
 	Qt::ItemFlags flags = QAbstractTableModel::flags(index);
 
-	if (index.column() != (int)Column::Delete)
+	if (index.column() != (int)Column::Delete) {
 		flags |= Qt::ItemIsEditable;
+	}
 
 	return flags;
 }
@@ -109,8 +111,9 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 
 void ExtraBrowsersModel::CheckToAdd()
 {
-	if (newTitle.isEmpty() || newURL.isEmpty())
+	if (newTitle.isEmpty() || newURL.isEmpty()) {
 		return;
+	}
 
 	int idx = items.size() + 1;
 	beginInsertRows(QModelIndex(), idx, idx);
@@ -201,8 +204,9 @@ void ExtraBrowsersModel::Apply()
 		main->extraBrowserDocks.removeAt(idx);
 	}
 
-	if (main->extraBrowserDocks.empty())
+	if (main->extraBrowserDocks.empty()) {
 		main->extraBrowserMenuDocksSeparator.clear();
+	}
 
 	deleted.clear();
 
@@ -249,6 +253,7 @@ void ExtraBrowsersModel::TabSelection(bool forward)
 
 void ExtraBrowsersModel::Init()
 {
-	for (int i = 0; i < items.count(); i++)
+	for (int i = 0; i < items.count(); i++) {
 		AddDeleteButton(i);
+	}
 }

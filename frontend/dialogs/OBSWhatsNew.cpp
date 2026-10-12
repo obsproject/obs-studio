@@ -37,17 +37,9 @@ OBSWhatsNew::OBSWhatsNew(QWidget *parent, const std::string &url) : QDialog(pare
 
 	connect(cefWidget, &QCefWidget::titleChanged, this, &OBSWhatsNew::setWindowTitle);
 
-	QPushButton *close = new QPushButton(QTStr("Close"));
-	connect(close, &QAbstractButton::clicked, this, &QDialog::accept);
-
-	QHBoxLayout *bottomLayout = new QHBoxLayout();
-	bottomLayout->addStretch();
-	bottomLayout->addWidget(close);
-	bottomLayout->addStretch();
-
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
+	topLayout->setContentsMargins(0, 0, 0, 0);
 	topLayout->addWidget(cefWidget);
-	topLayout->addLayout(bottomLayout);
 
 	show();
 #else

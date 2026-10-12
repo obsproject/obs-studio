@@ -54,8 +54,9 @@ bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
 	const QString errorKey = "YouTube.Errors." + lastErrorReason.toUtf8();
 	const QString translated = QTStr(QT_TO_UTF8(errorKey));
 	// No translation found
-	if (translated.startsWith("YouTube.Errors."))
+	if (translated.startsWith("YouTube.Errors.")) {
 		return false;
+	}
 	error_message = translated;
 	return true;
 }
@@ -69,23 +70,27 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url, const char *content_t
 
 #ifdef _DEBUG
 	blog(LOG_DEBUG, "YouTube API command URL: %s", url);
-	if (data && data[0] == '{') // only log JSON data
+	if (data && data[0] == '{') { // only log JSON data
 		blog(LOG_DEBUG, "YouTube API command data: %s", data);
+	}
 #endif
-	if (token.empty())
+	if (token.empty()) {
 		return false;
+	}
 	std::string output;
 	std::string error;
 	// Increase timeout by the time it takes to transfer `data_size` at 1 Mbps
 	int timeout = 60 + data_size / 125000;
 	bool success = GetRemoteFile(url, output, error, &httpStatusCode, content_type, request_type, data,
 				     {"Authorization: Bearer " + token}, nullptr, timeout, false, data_size);
-	if (error_code)
+	if (error_code) {
 		*error_code = httpStatusCode;
+	}
 
 	if (!success || output.empty()) {
-		if (!error.empty())
+		if (!error.empty()) {
 			blog(LOG_WARNING, "YouTube API request failed: %s", error.c_str());
+		}
 		return false;
 	}
 
@@ -121,8 +126,9 @@ bool YoutubeApiWrappers::UpdateAccessToken()
 	bool success = TryInsertCommand(youtubeLiveTokenUrl.data(), "application/x-www-form-urlencoded", "",
 					QT_TO_UTF8(data), json_out);
 
-	if (!success || json_out.object_items().find("error") != json_out.object_items().end())
+	if (!success || json_out.object_items().find("error") != json_out.object_items().end()) {
 		return false;
+	}
 	token = json_out["access_token"].string_value();
 	return token.empty() ? false : true;
 }
@@ -135,8 +141,9 @@ bool YoutubeApiWrappers::InsertCommand(const char *url, const char *content_type
 
 	if (error_code == 401) {
 		// Attempt to update access token and try again
-		if (!UpdateAccessToken())
+		if (!UpdateAccessToken()) {
 			return false;
+		}
 		success = TryInsertCommand(url, content_type, request_type, data, json_out, &error_code, data_size);
 	}
 
@@ -265,13 +272,15 @@ bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page, 
 			  "?part=snippet,contentDetails,status&broadcastType=all&maxResults=" +
 			  std::to_string(defaultBroadcastsPerQuery);
 
-	if (status.isEmpty())
+	if (status.isEmpty()) {
 		url += "&mine=true";
-	else
+	} else {
 		url += "&broadcastStatus=" + status.toStdString();
+	}
 
-	if (!page.isEmpty())
+	if (!page.isEmpty()) {
 		url += "&pageToken=" + page.toStdString();
+	}
 	return InsertCommand(url.c_str(), "application/json", "", nullptr, json_out);
 }
 
@@ -296,12 +305,14 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(QVector<CategoryDescription> &ca
 
 	Json json_out;
 	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out)) {
-		if (lastErrorReason != "unsupportedLanguageCode" && lastErrorReason != "invalidLanguage")
+		if (lastErrorReason != "unsupportedLanguageCode" && lastErrorReason != "invalidLanguage") {
 			return false;
+		}
 		// Try again with en-US if YouTube error indicates an unsupported locale
 		url = url_template.arg("US", "en_US");
-		if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out))
+		if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr, json_out)) {
 			return false;
+		}
 	}
 	category_list_out = {};
 	for (auto &j : json_out["items"].array_items()) {
@@ -365,15 +376,16 @@ bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 	lastErrorReason.clear();
 
 	Json json_out;
-	if (!FindBroadcast(broadcast_id, json_out))
+	if (!FindBroadcast(broadcast_id, json_out)) {
 		return false;
+	}
 
 	auto lifeCycleStatus = json_out["items"][0]["status"]["lifeCycleStatus"].string_value();
 
-	if (lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting")
+	if (lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting") {
 		// Broadcast is already (going to be) live
 		return true;
-	else if (lifeCycleStatus == "testStarting") {
+	} else if (lifeCycleStatus == "testStarting") {
 		// User will need to wait a few seconds before attempting to start broadcast
 		lastErrorMessage = QTStr("YouTube.Actions.Error.BroadcastTestStarting");
 		lastErrorReason.clear();
@@ -383,8 +395,9 @@ bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 	// Only reset if broadcast has monitoring enabled and is not already in "testing" mode
 	auto monitorStreamEnabled =
 		json_out["items"][0]["contentDetails"]["monitorStream"]["enableMonitorStream"].bool_value();
-	if (lifeCycleStatus != "testing" && monitorStreamEnabled && !ResetBroadcast(broadcast_id, json_out))
+	if (lifeCycleStatus != "testing" && monitorStreamEnabled && !ResetBroadcast(broadcast_id, json_out)) {
 		return false;
+	}
 
 	// TODO: Use std::format with C++20
 	const QString url_template =
@@ -486,8 +499,9 @@ bool YoutubeApiWrappers::FindBroadcast(const QString &id, json11::Json &json_out
 			  "?part=id,snippet,contentDetails,status&broadcastType=all&maxResults=1";
 	url += "&id=" + id.toStdString();
 
-	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out))
+	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out)) {
 		return false;
+	}
 
 	auto items = json_out["items"].array_items();
 	if (items.size() != 1) {
@@ -505,8 +519,9 @@ bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 	std::string url = std::string(youtubeLiveStreamUrl) + "?part=id,snippet,cdn,status&maxResults=1";
 	url += "&id=" + id.toStdString();
 
-	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out))
+	if (!InsertCommand(url.c_str(), "application/json", "", nullptr, json_out)) {
 		return false;
+	}
 
 	auto items = json_out["items"].array_items();
 	if (items.size() != 1) {

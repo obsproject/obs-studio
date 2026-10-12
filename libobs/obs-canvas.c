@@ -43,17 +43,17 @@ static const char *canvas_signals[] = {
 	NULL,
 };
 
-static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_source)
+static inline void canvas_dosignal(obs_canvas_t *canvas, const char *signal_obs, const char *signal_canvas)
 {
 	struct calldata data;
 	uint8_t stack[128];
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "canvas", canvas);
-	if (signal_obs)
+	if (signal_obs && !canvas->context.private)
 		signal_handler_signal(obs->signals, signal_obs, &data);
-	if (signal_source)
-		signal_handler_signal(canvas->context.signals, signal_source, &data);
+	if (signal_canvas)
+		signal_handler_signal(canvas->context.signals, signal_canvas, &data);
 }
 
 static inline void canvas_dosignal_source(const char *signal, obs_canvas_t *canvas, obs_source_t *source)
@@ -403,7 +403,7 @@ void obs_canvas_rename_source(obs_source_t *source, const char *name)
 
 bool obs_canvas_reset_video(obs_canvas_t *canvas, struct obs_video_info *ovi)
 {
-	if (!ovi || canvas->flags & MAIN || obs_video_active())
+	if (!ovi || canvas->flags & MAIN || obs_canvas_video_active(canvas))
 		return false;
 
 	return obs_canvas_reset_video_internal(canvas, ovi);
@@ -589,4 +589,28 @@ bool obs_canvas_has_video(obs_canvas_t *canvas)
 void obs_canvas_render(obs_canvas_t *canvas)
 {
 	obs_view_render(&canvas->view);
+}
+
+bool obs_canvas_video_active(obs_canvas_t *canvas)
+{
+	bool result = false;
+
+	if (!canvas || !canvas->mix)
+		return result;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
+		if (video != canvas->mix)
+			continue;
+
+		if (os_atomic_load_long(&video->raw_active) > 0 ||
+		    os_atomic_load_long(&video->gpu_encoder_active) > 0) {
+			result = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return result;
 }

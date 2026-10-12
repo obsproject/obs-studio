@@ -241,7 +241,7 @@ bool valid_extension(const char *ext)
 #ifdef _WIN32
 	       astrcmpi(ext, ".jxr") == 0 ||
 #endif
-	       astrcmpi(ext, ".gif") == 0;
+	       astrcmpi(ext, ".gif") == 0 || astrcmpi(ext, ".webp") == 0;
 }
 
 static inline bool item_valid(struct slideshow *ss)

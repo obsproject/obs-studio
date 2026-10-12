@@ -22,8 +22,9 @@ class TestMode {
 			gs_effect_set_vec4(randomvals[i], &r);
 		}
 
-		while (gs_effect_loop(solid, "Random"))
+		while (gs_effect_loop(solid, "Random")) {
 			gs_draw_sprite(nullptr, 0, cx, cy);
+		}
 	}
 
 public:
@@ -41,8 +42,9 @@ public:
 
 	inline ~TestMode()
 	{
-		for (uint32_t i = 0; i < 6; i++)
+		for (uint32_t i = 0; i < 6; i++) {
 			obs_set_output_source(i, source[i]);
+		}
 
 		obs_remove_main_render_callback(render_rand, this);
 		obs_reset_video(&ovi);

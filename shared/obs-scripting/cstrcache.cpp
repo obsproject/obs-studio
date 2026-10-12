@@ -13,8 +13,9 @@ static struct const_string_table table;
 
 const char *cstrcache_get(const char *str)
 {
-	if (!str || !*str)
+	if (!str || !*str) {
 		return "";
+	}
 
 	auto &strings = table.strings;
 	auto pair = strings.find(str);

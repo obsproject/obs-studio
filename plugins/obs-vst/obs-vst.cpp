@@ -74,8 +74,9 @@ std::string getFileMD5(const char *file)
 	QFile f(file);
 	if (f.open(QFile::ReadOnly)) {
 		QCryptographicHash hash(QCryptographicHash::Md5);
-		if (hash.addData(&f))
+		if (hash.addData(&f)) {
 			return std::string(hash.result().toHex());
+		}
 	}
 
 	return std::string();

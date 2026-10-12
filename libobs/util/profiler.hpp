@@ -18,8 +18,9 @@ struct ScopeProfiler {
 
 	void Stop()
 	{
-		if (!enabled)
+		if (!enabled) {
 			return;
+		}
 
 		profile_end(name);
 		enabled = false;

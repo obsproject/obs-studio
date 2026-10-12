@@ -115,8 +115,9 @@ public:
 
 	inline void UpdateSource(obs_source_t *target)
 	{
-		if (source == target)
+		if (source == target) {
 			UpdateFilters();
+		}
 	}
 
 protected:

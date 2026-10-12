@@ -35,6 +35,7 @@ runs:
         echo ::group::Install Dependencies
         eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
         echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+        brew update
         brew install --quiet zsh
         echo ::endgroup::
 
@@ -50,6 +51,8 @@ runs:
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
 
         print ::group::Install gersemi
+        brew update
+        brew trust obsproject/tools
         brew install --quiet obsproject/tools/gersemi@0.25
         print ::endgroup::
 

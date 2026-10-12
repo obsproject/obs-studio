@@ -40,13 +40,15 @@ void d3d11_free(void)
 	capture_free();
 
 	if (data.using_shtex) {
-		if (data.texture)
+		if (data.texture) {
 			data.texture->Release();
+		}
 	} else {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.copy_surfaces[i]) {
-				if (data.texture_mapped[i])
+				if (data.texture_mapped[i]) {
 					data.context->Unmap(data.copy_surfaces[i], 0);
+				}
 				data.copy_surfaces[i]->Release();
 			}
 		}
@@ -232,8 +234,9 @@ static void d3d11_init(IDXGISwapChain *swap)
 	}
 
 	const bool success = global_hook_info->force_shmem ? d3d11_shmem_init(window) : d3d11_shtex_init(window);
-	if (!success)
+	if (!success) {
 		d3d11_free();
+	}
 }
 
 static inline void d3d11_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
@@ -314,10 +317,11 @@ void d3d11_capture(void *swap_ptr, void *backbuffer_ptr)
 			return;
 		}
 
-		if (data.using_shtex)
+		if (data.using_shtex) {
 			d3d11_shtex_capture(backbuffer);
-		else
+		} else {
 			d3d11_shmem_capture(backbuffer);
+		}
 
 		backbuffer->Release();
 	}

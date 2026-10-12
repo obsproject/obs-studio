@@ -13,8 +13,9 @@ RoutingConfigurator::RoutingConfigurator()
 
 void RoutingConfigurator::AddPreset(const std::string &name, const RoutingPreset &preset)
 {
-	if (m_presets.find(name) != m_presets.end())
+	if (m_presets.find(name) != m_presets.end()) {
 		return;
+	}
 	m_presets.insert(RoutingPresetPair{name, preset});
 }
 
@@ -1778,8 +1779,9 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 	};
-	for (auto &&rp : kRoutingPresets)
+	for (auto &&rp : kRoutingPresets) {
 		AddPreset(std::move(rp.first), std::move(rp.second));
+	}
 }
 
 RoutingPresetMap RoutingConfigurator::GetPresetTable() const
@@ -1805,8 +1807,9 @@ bool RoutingConfigurator::FindFirstPreset(ConnectionKind kind, NTV2DeviceID id, 
 		RoutingPresets device_presets;
 		RoutingPresets non_device_presets;
 		for (auto &q : query) {
-			if (q.second.device_ids.size() == 0)
+			if (q.second.device_ids.size() == 0) {
 				non_device_presets.push_back(q.second);
+			}
 			for (const auto &device_id : q.second.device_ids) {
 				if (device_id == id) {
 					device_presets.push_back(q.second);

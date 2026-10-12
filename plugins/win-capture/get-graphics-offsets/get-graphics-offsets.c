@@ -17,6 +17,9 @@ int main(int argc, char *argv[])
 	wc.lpszClassName = DUMMY_WNDCLASS;
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
 
 	if (!RegisterClassA(&wc)) {
 		printf("failed to register '%s'\n", DUMMY_WNDCLASS);

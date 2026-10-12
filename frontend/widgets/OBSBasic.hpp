@@ -40,6 +40,7 @@
 #include <util/util.hpp>
 
 #include <QAccessible>
+#include <QPointer>
 #include <QSystemTrayIcon>
 
 #include <deque>
@@ -57,6 +58,7 @@ class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
+class ScreenshotObj;
 class VolumeControl;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
@@ -69,6 +71,7 @@ namespace OBS {
 class SceneCollection;
 struct Rect;
 enum class LogFileType;
+enum class ItemPasteType { Invalid, Reference, Duplicate, Both };
 } // namespace OBS
 
 #define SIMPLE_ENCODER_X264 "x264"
@@ -161,15 +164,17 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 static inline void UpdateProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority(priority);
+	}
 }
 
 static inline void ClearProcessPriority()
 {
 	const char *priority = config_get_string(App()->GetAppConfig(), "General", "ProcessPriority");
-	if (priority && strcmp(priority, "Normal") != 0)
+	if (priority && strcmp(priority, "Normal") != 0) {
 		SetProcessPriority("Normal");
+	}
 }
 #else
 #define UpdateProcessPriority() \
@@ -212,7 +217,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
-	friend class ScreenshotObj;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -406,6 +410,10 @@ public:
 	void CreateFilterPasteUndoRedoAction(const QString &text, obs_source_t *source, obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
 
+	void copySceneItem(OBSSceneItem item);
+	OBS::ItemPasteType getItemPasteType();
+	void pasteSceneItem(OBSScene scene, bool duplicate);
+
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ContextToolbar
 	 * -------------------------------------
@@ -416,6 +424,7 @@ private:
 	void SourceToolBarActionsSetEnabled();
 
 	void copyActionsDynamicProperties();
+	std::optional<QWidget *> createContextBarWidget(obs_source_t *source);
 
 private slots:
 	void on_toggleContextBar_toggled(bool visible);
@@ -487,7 +496,7 @@ private:
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys, replayBufHotkeys, vcamHotkeys,
 		togglePreviewHotkeys, contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey, saveReplayBufferHotkey;
 
 	void InitHotkeys();
 	void CreateHotkeys();
@@ -588,6 +597,10 @@ private:
 	QPointer<QWidgetAction> colorWidgetAction;
 	QPointer<ColorSelect> colorSelect;
 
+#ifdef ENABLE_IDIAN_PLAYGROUND
+	QPointer<QDialog> playground;
+#endif
+
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
@@ -647,9 +660,8 @@ private slots:
 
 	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
 
-	void updateCheckFinished();
-
 public slots:
+	void updateCheckFinished();
 	void on_actionAdvAudioProperties_triggered();
 
 public:
@@ -764,8 +776,9 @@ public:
 	inline void EnableOutputs(bool enable)
 	{
 		if (enable) {
-			if (--disableOutputsRef < 0)
+			if (--disableOutputsRef < 0) {
 				disableOutputsRef = 0;
+			}
 		} else {
 			disableOutputsRef++;
 		}
@@ -865,6 +878,7 @@ private slots:
 	void TogglePreview();
 
 public:
+	void addSnapGuide(SnapGuide guide);
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
@@ -909,6 +923,7 @@ private:
 	std::vector<std::string> GetRestartRequirements(const ConfigFile &config) const;
 	void ResetProfileData();
 	void CheckForSimpleModeX264Fallback();
+	void CheckForMissingEncoders();
 
 public:
 	inline const OBSProfileCache &GetProfileCache() const noexcept { return profiles; };
@@ -1323,7 +1338,7 @@ public:
 	 * -------------------------------------
 	 */
 private:
-	QPointer<QObject> screenshotData;
+	QPointer<ScreenshotObj> screenshotData;
 	std::string lastScreenshot;
 
 private slots:
@@ -1491,8 +1506,8 @@ private:
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
 	int transitionDuration;
 	std::string currentTransitionUuid;
-	obs_source_t *fadeTransition;
-	obs_source_t *cutTransition;
+	obs_source_t *fadeTransition = nullptr;
+	obs_source_t *cutTransition = nullptr;
 	std::vector<QuickTransition> quickTransitions;
 	bool swapScenesMode = true;
 

@@ -151,7 +151,7 @@ void SourceSelectButton::obsSourceRemoved(void *data, calldata_t *)
 
 void SourceSelectButton::obsSourceRenamed(void *data, calldata_t *params)
 {
-	const char *newNamePtr = static_cast<const char *>(calldata_ptr(params, "new_name"));
+	const char *newNamePtr = static_cast<const char *>(calldata_string(params, "new_name"));
 	if (!newNamePtr) {
 		return;
 	}

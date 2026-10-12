@@ -228,8 +228,9 @@ obs_audio_data *VSTPlugin::process(struct obs_audio_data *audio)
 	// Here we check the status firstly,
 	// which help avoid waiting for lock while unloadEffect() is running.
 	bool effectValid = (effect && effectReady && numChannels > 0);
-	if (!effectValid)
+	if (!effectValid) {
 		return audio;
+	}
 
 	std::lock_guard<std::recursive_mutex> lock(lockEffect);
 
@@ -294,8 +295,9 @@ bool VSTPlugin::isEditorOpen()
 
 void VSTPlugin::onEditorClosed()
 {
-	if (!editorWidget)
+	if (!editorWidget) {
 		return;
+	}
 
 	editorWidget->deleteLater();
 	editorWidget = nullptr;
@@ -335,8 +337,9 @@ void VSTPlugin::openEditor()
 
 void VSTPlugin::closeEditor()
 {
-	if (editorWidget)
+	if (editorWidget) {
 		editorWidget->close();
+	}
 }
 
 std::string VSTPlugin::getEffectPath()

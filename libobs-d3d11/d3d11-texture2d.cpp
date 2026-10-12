@@ -26,8 +26,9 @@ void gs_texture_2d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 	uint32_t actual_levels = levels;
 	size_t curTex = 0;
 
-	if (!actual_levels)
+	if (!actual_levels) {
 		actual_levels = gs_get_total_levels(width, height, 1);
+	}
 
 	rowSizeBytes /= 8;
 
@@ -61,8 +62,9 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 
 		for (uint32_t lv = 0; lv < levels; lv++) {
 			uint32_t i = levels * t + lv;
-			if (!data[i])
+			if (!data[i]) {
 				break;
+			}
 
 			uint32_t texSize = bbp * w * h / 8;
 
@@ -70,10 +72,12 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 			subData.resize(texSize);
 			memcpy(&subData[0], data[i], texSize);
 
-			if (w > 1)
+			if (w > 1) {
 				w /= 2;
-			if (h > 1)
+			}
+			if (h > 1) {
 				h /= 2;
+			}
 		}
 	}
 }
@@ -109,19 +113,23 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	td.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 	td.Usage = isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
 
-	if (type == GS_TEXTURE_CUBE)
+	if (type == GS_TEXTURE_CUBE) {
 		td.MiscFlags |= D3D11_RESOURCE_MISC_TEXTURECUBE;
+	}
 
-	if (isRenderTarget || isGDICompatible)
+	if (isRenderTarget || isGDICompatible) {
 		td.BindFlags |= D3D11_BIND_RENDER_TARGET;
+	}
 
-	if (isGDICompatible)
+	if (isGDICompatible) {
 		td.MiscFlags |= D3D11_RESOURCE_MISC_GDI_COMPATIBLE;
+	}
 
-	if ((flags & GS_SHARED_KM_TEX) != 0)
+	if ((flags & GS_SHARED_KM_TEX) != 0) {
 		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED_KEYEDMUTEX;
-	else if ((flags & GS_SHARED_TEX) != 0)
+	} else if ((flags & GS_SHARED_TEX) != 0) {
 		td.MiscFlags |= D3D11_RESOURCE_MISC_SHARED;
+	}
 
 	if (data) {
 		BackupTexture(data);
@@ -129,13 +137,15 @@ void gs_texture_2d::InitTexture(const uint8_t *const *data)
 	}
 
 	hr = device->device->CreateTexture2D(&td, data ? srd.data() : NULL, texture.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create 2D texture", hr);
+	}
 
 	if (isGDICompatible) {
 		hr = texture->QueryInterface(__uuidof(IDXGISurface1), (void **)gdiSurface.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create GDI surface", hr);
+		}
 	}
 
 	if (isShared) {
@@ -184,8 +194,9 @@ void gs_texture_2d::InitResourceView()
 	}
 
 	hr = device->device->CreateShaderResourceView(texture, &viewDesc, shaderRes.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create SRV", hr);
+	}
 
 	viewDescLinear = viewDesc;
 	viewDescLinear.Format = dxgiFormatViewLinear;
@@ -194,8 +205,9 @@ void gs_texture_2d::InitResourceView()
 		shaderResLinear = shaderRes;
 	} else {
 		hr = device->device->CreateShaderResourceView(texture, &viewDescLinear, shaderResLinear.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create linear SRV", hr);
+		}
 	}
 }
 
@@ -209,15 +221,17 @@ void gs_texture_2d::InitRenderTargets()
 		rtv.Texture2D.MipSlice = 0;
 
 		hr = device->device->CreateRenderTargetView(texture, &rtv, renderTarget[0].Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create RTV", hr);
+		}
 		if (dxgiFormatView == dxgiFormatViewLinear) {
 			renderTargetLinear[0] = renderTarget[0];
 		} else {
 			rtv.Format = dxgiFormatViewLinear;
 			hr = device->device->CreateRenderTargetView(texture, &rtv, renderTargetLinear[0].Assign());
-			if (FAILED(hr))
+			if (FAILED(hr)) {
 				throw HRError("Failed to create linear RTV", hr);
+			}
 		}
 	} else {
 		D3D11_RENDER_TARGET_VIEW_DESC rtv;
@@ -229,16 +243,18 @@ void gs_texture_2d::InitRenderTargets()
 		for (UINT i = 0; i < 6; i++) {
 			rtv.Texture2DArray.FirstArraySlice = i;
 			hr = device->device->CreateRenderTargetView(texture, &rtv, renderTarget[i].Assign());
-			if (FAILED(hr))
+			if (FAILED(hr)) {
 				throw HRError("Failed to create cube RTV", hr);
+			}
 			if (dxgiFormatView == dxgiFormatViewLinear) {
 				renderTargetLinear[i] = renderTarget[i];
 			} else {
 				rtv.Format = dxgiFormatViewLinear;
 				hr = device->device->CreateRenderTargetView(texture, &rtv,
 									    renderTargetLinear[i].Assign());
-				if (FAILED(hr))
+				if (FAILED(hr)) {
 					throw HRError("Failed to create linear cube RTV", hr);
+				}
 			}
 		}
 	}
@@ -267,8 +283,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t width, uint32_t heigh
 	InitTexture(data);
 	InitResourceView();
 
-	if (isRenderTarget)
+	if (isRenderTarget) {
 		InitRenderTargets();
+	}
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex, uint32_t flags_)
@@ -298,8 +315,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex, uint
 	this->dxgiFormatViewLinear = dxgi_format;
 
 	InitResourceView();
-	if (isRenderTarget)
+	if (isRenderTarget) {
 		InitRenderTargets();
+	}
 }
 
 gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle)
@@ -317,8 +335,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 							(void **)texture.Assign());
 	}
 
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to open shared 2D texture", hr);
+	}
 
 	texture->GetDesc(&td);
 

@@ -67,8 +67,9 @@ static string GenerateSourceName(const char *base)
 
 		OBSSourceAutoRelease source = obs_get_source_by_name(name.c_str());
 
-		if (!source)
+		if (!source) {
 			return name;
+		}
 	}
 }
 
@@ -88,10 +89,12 @@ void OBSBasic::AddDropURL(QUrl url, QString &name, obs_data_t *settings, const o
 	int cx = (int)ovi.base_width;
 	int cy = (int)ovi.base_height;
 
-	if (query.hasQueryItem("layer-width"))
+	if (query.hasQueryItem("layer-width")) {
 		cx = query.queryItemValue("layer-width").toInt();
-	if (query.hasQueryItem("layer-height"))
+	}
+	if (query.hasQueryItem("layer-height")) {
 		cy = query.queryItemValue("layer-height").toInt();
+	}
 	if (query.hasQueryItem("layer-css")) {
 		// QUrl::FullyDecoded does NOT properly decode a
 		// application/x-www-form-urlencoded space represented as '+'
@@ -180,8 +183,9 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		return;
 	}
 
-	if (name.isEmpty())
+	if (name.isEmpty()) {
 		name = obs_source_get_display_name(type);
+	}
 	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
 	OBSSourceAutoRelease source = obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
@@ -259,8 +263,9 @@ void OBSBasic::ConfirmDropUrl(const QString &url)
 		messageBox.setIcon(QMessageBox::Question);
 		messageBox.exec();
 
-		if (messageBox.clickedButton() == yesButton)
+		if (messageBox.clickedButton() == yesButton) {
 			AddDropSource(QT_TO_UTF8(url), DropType_Url);
+		}
 	}
 }
 

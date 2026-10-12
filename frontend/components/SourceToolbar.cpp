@@ -30,8 +30,9 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	OBSBasic *main = OBSBasic::Get();
 
 	OBSSource currentSceneSource = main->GetCurrentSceneSource();
-	if (!currentSceneSource)
+	if (!currentSceneSource) {
 		return;
+	}
 	std::string scene_uuid = obs_source_get_uuid(currentSceneSource);
 	auto undo_redo = [scene_uuid = std::move(scene_uuid), main](const std::string &data) {
 		OBSDataAutoRelease settings = obs_data_create_from_json(data.c_str());
@@ -52,9 +53,10 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 	std::string undo_data(obs_data_get_json(oldData));
 	std::string redo_data(obs_data_get_json(new_settings));
 
-	if (undo_data.compare(redo_data) != 0)
+	if (undo_data.compare(redo_data) != 0) {
 		main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo, undo_redo,
 					undo_data, redo_data, repeatable);
+	}
 
 	oldData = nullptr;
 }

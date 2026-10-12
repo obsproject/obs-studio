@@ -19,8 +19,9 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 	UINT i;
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		return std::nullopt;
+	}
 
 	std::vector<GoLiveApi::Gpu> adapter_info;
 
@@ -30,12 +31,14 @@ static std::optional<std::vector<GoLiveApi::Gpu>> system_gpu_data()
 		char driver_version[512] = "";
 
 		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 
@@ -78,8 +81,9 @@ static void get_processor_info(char **name, DWORD *speed)
 	memset(data, 0, sizeof(data));
 
 	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, L"HARDWARE\\DESCRIPTION\\System\\CentralProcessor\\0", &key);
-	if (status != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS) {
 		return;
+	}
 
 	size = sizeof(data);
 	status = RegQueryValueExW(key, L"ProcessorNameString", NULL, NULL, (LPBYTE)data, &size);
@@ -91,8 +95,9 @@ static void get_processor_info(char **name, DWORD *speed)
 
 	size = sizeof(*speed);
 	status = RegQueryValueExW(key, L"~MHz", NULL, NULL, (LPBYTE)speed, &size);
-	if (status != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS) {
 		*speed = 0;
+	}
 
 	RegCloseKey(key);
 }
@@ -106,8 +111,9 @@ static void get_processor_info(char **name, DWORD *speed)
 static std::optional<GoLiveApi::GamingFeatures> get_gaming_features_data(const win_version_info &ver)
 {
 	uint32_t win_ver = (ver.major << 8) | ver.minor;
-	if (win_ver < 0xA00)
+	if (win_ver < 0xA00) {
 		return std::nullopt;
+	}
 
 	GoLiveApi::GamingFeatures gaming_features;
 
@@ -171,22 +177,26 @@ static inline void get_reg_ver(struct win_version_info *ver)
 	wchar_t str[MAX_SZ_LEN];
 
 	status = RegOpenKeyW(HKEY_LOCAL_MACHINE, WINVER_REG_KEY, &key);
-	if (status != ERROR_SUCCESS)
+	if (status != ERROR_SUCCESS) {
 		return;
+	}
 
 	size = sizeof(dw_val);
 
 	status = RegQueryValueExW(key, L"CurrentMajorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
-	if (status == ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS) {
 		ver->major = (int)dw_val;
+	}
 
 	status = RegQueryValueExW(key, L"CurrentMinorVersionNumber", NULL, NULL, (LPBYTE)&dw_val, &size);
-	if (status == ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS) {
 		ver->minor = (int)dw_val;
+	}
 
 	status = RegQueryValueExW(key, L"UBR", NULL, NULL, (LPBYTE)&dw_val, &size);
-	if (status == ERROR_SUCCESS)
+	if (status == ERROR_SUCCESS) {
 		ver->revis = (int)dw_val;
+	}
 
 	if (get_reg_sz(key, L"CurrentBuildNumber", str, sizeof(str))) {
 		ver->build = wcstol(str, NULL, 10);
@@ -213,10 +223,12 @@ void system_info(GoLiveApi::Capabilities &capabilities)
 		DWORD processorSpeed;
 		char *processorName;
 		get_processor_info(&processorName, &processorSpeed);
-		if (processorSpeed)
+		if (processorSpeed) {
 			cpu_data.speed = processorSpeed;
-		if (processorName)
+		}
+		if (processorName) {
 			cpu_data.name = processorName;
+		}
 		bfree(processorName);
 	}
 

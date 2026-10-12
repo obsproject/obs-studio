@@ -15,7 +15,7 @@ include(compilerconfig)
 include(defaults)
 include(helpers)
 
-option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
+option(ENABLE_FRONTEND "Enable building with UI (requires Qt)" ON)
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(ENABLE_HEVC "Enable HEVC encoders" ON)
 

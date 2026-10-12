@@ -58,8 +58,9 @@ YoutubeAuth::YoutubeAuth(const Def &d) : OAuthStreamKey(d), section(SECTION_NAME
 
 YoutubeAuth::~YoutubeAuth()
 {
-	if (!uiLoaded)
+	if (!uiLoaded) {
 		return;
+	}
 
 #ifdef BROWSER_AVAILABLE
 	OBSBasic *main = OBSBasic::Get();
@@ -107,12 +108,14 @@ bool YoutubeAuth::LoadInternal()
 
 void YoutubeAuth::LoadUI()
 {
-	if (uiLoaded)
+	if (uiLoaded) {
 		return;
+	}
 
 #ifdef BROWSER_AVAILABLE
-	if (!cef)
+	if (!cef) {
 		return;
+	}
 
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
@@ -191,8 +194,9 @@ QString YoutubeAuth::GenerateState()
 	QRandomGenerator *rng = QRandomGenerator::system();
 	int i;
 
-	for (i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
+	for (i = 0; i < YOUTUBE_API_STATE_LENGTH; i++) {
 		state[i] = allowedChars[rng->bounded(0, allowedCount)];
+	}
 	state[i] = 0;
 
 	return state;
@@ -241,7 +245,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	dlg.setText(text);
 	dlg.setTextFormat(Qt::RichText);
 	dlg.setStandardButtons(QMessageBox::StandardButton::Cancel);
-#if defined(__APPLE__) && QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
+#if defined(__APPLE__)
 	/* We can't show clickable links with the native NSAlert, so let's
 	 * force the old non-native dialog instead. */
 	dlg.setOption(QMessageBox::Option::DontUseNativeDialog);
@@ -276,17 +280,11 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	QScopedPointer<QThread> thread(CreateQThread(open_external_browser));
 	thread->start();
 
-#if defined(__APPLE__) && QT_VERSION >= QT_VERSION_CHECK(6, 5, 0) && QT_VERSION < QT_VERSION_CHECK(6, 6, 0)
-	const bool nativeDialogs = qApp->testAttribute(Qt::AA_DontUseNativeDialogs);
-	App()->setAttribute(Qt::AA_DontUseNativeDialogs, true);
 	dlg.exec();
-	App()->setAttribute(Qt::AA_DontUseNativeDialogs, nativeDialogs);
-#else
-	dlg.exec();
-#endif
 
-	if (dlg.result() == QMessageBox::Cancel || dlg.result() == QDialog::Rejected)
+	if (dlg.result() == QMessageBox::Cancel || dlg.result() == QDialog::Rejected) {
 		return nullptr;
+	}
 
 	if (!auth->GetToken(YOUTUBE_TOKEN_URL, clientid, secret, QT_TO_UTF8(redirect_uri), YOUTUBE_SCOPE_VERSION,
 			    QT_TO_UTF8(auth_code), true)) {
@@ -297,8 +295,9 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner, const std::string &serv
 	config_remove_value(config, "YouTube", "ChannelName");
 
 	ChannelDescription cd;
-	if (auth->GetChannelDescription(cd))
+	if (auth->GetChannelDescription(cd)) {
 		config_set_string(config, "YouTube", "ChannelName", QT_TO_UTF8(cd.title));
+	}
 
 	config_save_safe(config, "tmp", nullptr);
 	return auth;

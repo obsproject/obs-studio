@@ -62,12 +62,15 @@ static inline bool d3d8_init(d3d8_info &info)
 
 static inline void d3d8_free(d3d8_info &info)
 {
-	if (info.device)
+	if (info.device) {
 		info.device->Release();
-	if (info.d3d8)
+	}
+	if (info.d3d8) {
 		info.d3d8->Release();
-	if (info.hwnd)
+	}
+	if (info.hwnd) {
 		DestroyWindow(info.hwnd);
+	}
 }
 
 void get_d3d8_offsets(struct d3d8_offsets *offsets)

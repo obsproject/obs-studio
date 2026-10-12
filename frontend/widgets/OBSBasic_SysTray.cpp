@@ -65,13 +65,15 @@ void OBSBasic::SystemTrayInit()
 	trayIcon->setContextMenu(trayMenu);
 	trayIcon->show();
 
-	if (outputHandler && !outputHandler->replayBuffer)
+	if (outputHandler && !outputHandler->replayBuffer) {
 		sysTrayReplayBuffer->setEnabled(false);
+	}
 
 	sysTrayVirtualCam->setEnabled(vcamEnabled);
 
-	if (Active())
+	if (Active()) {
 		OnActivate(true);
+	}
 
 	connect(trayIcon.data(), &QSystemTrayIcon::activated, this, &OBSBasic::IconActivated);
 	connect(showHide, &QAction::triggered, this, &OBSBasic::ToggleShowHide);
@@ -106,16 +108,19 @@ void OBSBasic::SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n
 
 void OBSBasic::SystemTray(bool firstStarted)
 {
-	if (!QSystemTrayIcon::isSystemTrayAvailable())
+	if (!QSystemTrayIcon::isSystemTrayAvailable()) {
 		return;
-	if (!trayIcon && !firstStarted)
+	}
+	if (!trayIcon && !firstStarted) {
 		return;
+	}
 
 	bool sysTrayWhenStarted = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayWhenStarted");
 	bool sysTrayEnabled = config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayEnabled");
 
-	if (firstStarted)
+	if (firstStarted) {
 		SystemTrayInit();
+	}
 
 	if (!sysTrayEnabled) {
 		trayIcon->hide();
@@ -130,10 +135,11 @@ void OBSBasic::SystemTray(bool firstStarted)
 		}
 	}
 
-	if (isVisible())
+	if (isVisible()) {
 		showHide->setText(QTStr("Basic.SystemTray.Hide"));
-	else
+	} else {
 		showHide->setText(QTStr("Basic.SystemTray.Show"));
+	}
 }
 
 bool OBSBasic::sysTrayMinimizeToTray()

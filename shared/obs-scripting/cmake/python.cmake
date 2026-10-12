@@ -27,7 +27,7 @@ if(ENABLE_SCRIPTING_PYTHON)
   target_sources(
     obs-scripting
     PRIVATE
-      $<$<BOOL:${ENABLE_UI}>:obs-scripting-python-frontend.c>
+      $<$<BOOL:${ENABLE_FRONTEND}>:obs-scripting-python-frontend.c>
       $<$<PLATFORM_ID:Windows,Darwin>:obs-scripting-python-import.c>
       obs-scripting-python-import.h
       obs-scripting-python.c

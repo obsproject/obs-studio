@@ -242,16 +242,18 @@ public:
 
 	inline OBSPtr &operator=(T obj_)
 	{
-		if (obj_ != obj)
+		if (obj_ != obj) {
 			destroy(obj);
+		}
 		obj = obj_;
 		return *this;
 	}
 	inline OBSPtr &operator=(const OBSPtr &) = delete;
 	inline OBSPtr &operator=(OBSPtr &&other)
 	{
-		if (obj)
+		if (obj) {
 			destroy(obj);
+		}
 		obj = other.obj;
 		other.obj = nullptr;
 		return *this;

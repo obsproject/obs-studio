@@ -9,6 +9,8 @@ if(NOT XCODE)
   message(FATAL_ERROR "Building OBS Studio on macOS requires Xcode generator.")
 endif()
 
+enable_language(Swift)
+
 include(compiler_common)
 
 add_compile_options("$<$<NOT:$<COMPILE_LANGUAGE:Swift>>:-fopenmp-simd>")
@@ -19,8 +21,8 @@ endif()
 
 # Ensure recent enough Xcode and platform SDK
 function(check_sdk_requirements)
-  set(obs_macos_minimum_sdk 15.0) # Keep in sync with Xcode
-  set(obs_macos_minimum_xcode 16.0) # Keep in sync with SDK
+  set(obs_macos_minimum_sdk 26.5) # Keep in sync with Xcode
+  set(obs_macos_minimum_xcode 26.5) # Keep in sync with SDK
   execute_process(
     COMMAND xcrun --sdk macosx --show-sdk-platform-version
     OUTPUT_VARIABLE obs_macos_current_sdk

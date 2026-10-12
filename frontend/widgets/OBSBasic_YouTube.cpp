@@ -49,8 +49,9 @@ void OBSBasic::YouTubeActionDialogOk(const std::string &broadcastId, const std::
 
 	emit BroadcastStreamReady(broadcastReady);
 
-	if (startNow)
-		QMetaObject::invokeMethod(this, "StartStreaming");
+	if (startNow) {
+		QMetaObject::invokeMethod(this, &OBSBasic::StartStreaming);
+	}
 }
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
@@ -58,7 +59,7 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 	YoutubeApiWrappers *apiYouTube(dynamic_cast<YoutubeApiWrappers *>(GetAuth()));
 	if (!apiYouTube) {
 		/* technically we should never get here -Lain */
-		QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(this, &OBSBasic::ForceStopStreaming, Qt::QueuedConnection);
 		youtubeStreamCheckThread->deleteLater();
 		blog(LOG_ERROR, "==========================================");
 		blog(LOG_ERROR, "%s: Uh, hey, we got here", __FUNCTION__);
@@ -72,13 +73,13 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 
 	while (StreamingActive()) {
 		if (timeout == 14) {
-			QMetaObject::invokeMethod(this, "ForceStopStreaming", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::ForceStopStreaming, Qt::QueuedConnection);
 			break;
 		}
 
 		if (!apiYouTube->FindStream(id, json)) {
-			QMetaObject::invokeMethod(this, "DisplayStreamStartError", Qt::QueuedConnection);
-			QMetaObject::invokeMethod(this, "StopStreaming", Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::DisplayStreamStartError, Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, &OBSBasic::StopStreaming, Qt::QueuedConnection);
 			break;
 		}
 
@@ -118,7 +119,7 @@ void OBSBasic::ShowYouTubeAutoStartWarning()
 
 	bool warned = config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutYouTubeAutoStart");
 	if (!warned) {
-		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 	}
 }
 #endif
@@ -136,11 +137,13 @@ void OBSBasic::BroadcastButtonClicked()
 		if (ytAuth.get()) {
 			if (!ytAuth->StartLatestBroadcast()) {
 				auto last_error = ytAuth->GetLastError();
-				if (last_error.isEmpty())
+				if (last_error.isEmpty()) {
 					last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-				if (!ytAuth->GetTranslatedError(last_error))
+				}
+				if (!ytAuth->GetTranslatedError(last_error)) {
 					last_error = QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
 							     .arg(last_error, ytAuth->GetBroadcastId());
+				}
 
 				OBSMessageBox::warning(this, QTStr("Output.BroadcastStartFailed"), last_error, true);
 				return;
@@ -159,19 +162,22 @@ void OBSBasic::BroadcastButtonClicked()
 				this, QTStr("ConfirmStop.Title"), QTStr("YouTube.Actions.AutoStopStreamingWarning"),
 				QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-			if (button == QMessageBox::No)
+			if (button == QMessageBox::No) {
 				return;
+			}
 		}
 
 		std::shared_ptr<YoutubeApiWrappers> ytAuth = dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
 			if (!ytAuth->StopLatestBroadcast()) {
 				auto last_error = ytAuth->GetLastError();
-				if (last_error.isEmpty())
+				if (last_error.isEmpty()) {
 					last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-				if (!ytAuth->GetTranslatedError(last_error))
+				}
+				if (!ytAuth->GetTranslatedError(last_error)) {
 					last_error = QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
 							     .arg(last_error, ytAuth->GetBroadcastId());
+				}
 
 				OBSMessageBox::warning(this, QTStr("Output.BroadcastStopFailed"), last_error, true);
 			}
@@ -181,7 +187,7 @@ void OBSBasic::BroadcastButtonClicked()
 		broadcastReady = false;
 
 		autoStopBroadcast = true;
-		QMetaObject::invokeMethod(this, "StopStreaming");
+		QMetaObject::invokeMethod(this, &OBSBasic::StopStreaming);
 		emit BroadcastStreamReady(broadcastReady);
 		SetBroadcastFlowEnabled(true);
 	}
@@ -216,32 +222,37 @@ YouTubeAppDock *OBSBasic::GetYouTubeAppDock()
 
 void OBSBasic::NewYouTubeAppDock()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return;
+	}
 
 	/* make sure that the youtube app dock can't be immediately recreated.
 	 * dumb hack. blame chromium. or this particular dock. or both. if CEF
 	 * creates/destroys/creates a widget too quickly it can lead to a
 	 * crash. */
 	uint64_t ts = os_gettime_ns();
-	if ((ts - lastYouTubeAppDockCreationTime) < (5ULL * SEC_TO_NSEC))
+	if ((ts - lastYouTubeAppDockCreationTime) < (5ULL * SEC_TO_NSEC)) {
 		return;
+	}
 
 	lastYouTubeAppDockCreationTime = ts;
 
-	if (youtubeAppDock)
+	if (youtubeAppDock) {
 		RemoveDockWidget(youtubeAppDock->objectName());
+	}
 
 	youtubeAppDock = new YouTubeAppDock("YouTube Live Control Panel");
 }
 
 void OBSBasic::DeleteYouTubeAppDock()
 {
-	if (!cef_js_avail)
+	if (!cef_js_avail) {
 		return;
+	}
 
-	if (youtubeAppDock)
+	if (youtubeAppDock) {
 		RemoveDockWidget(youtubeAppDock->objectName());
+	}
 
 	youtubeAppDock = nullptr;
 }

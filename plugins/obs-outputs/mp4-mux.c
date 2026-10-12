@@ -2501,18 +2501,30 @@ static void process_packets(struct mp4_mux *mux, struct mp4_track *track, uint64
 	if (!count)
 		return;
 
-	/* Only iterate upt to penultimate packet so we can determine duration
-	 * for all processed packets. */
-	for (size_t i = 0; i < count - 1; i++) {
+	/* Unless it is the final flush, only iterate up to penultimate packet so we can determine duration for all
+	 * processed packets. */
+	const bool final_flush = mux->next_frag_pts == 0;
+	const size_t end_offset = final_flush ? 0 : 1;
+
+	for (size_t i = 0; i < count - end_offset; i++) {
 		struct encoder_packet *pkt = get_pkt_at(&track->packets, i);
 
-		if (mux->next_frag_pts && packet_pts_usec(pkt) >= mux->next_frag_pts)
+		if (!final_flush && packet_pts_usec(pkt) >= mux->next_frag_pts)
 			break;
 
-		struct encoder_packet *next = get_pkt_at(&track->packets, i + 1);
+		uint32_t duration;
+		if (i < count - 1) {
+			/* If a next packet is available: Duration is just distance between current and next DTS. */
+			struct encoder_packet *next = get_pkt_at(&track->packets, i + 1);
+			duration = (uint32_t)(next->dts - pkt->dts);
+		} else {
+			/* If this is the last packet, and we're doing a final flush: Reuse the previous duration */
+			if (!track->fragment_samples.num)
+				break; /* no previous sample */
 
-		/* Duration is just distance between current and next DTS. */
-		uint32_t duration = (uint32_t)(next->dts - pkt->dts);
+			duration = track->fragment_samples.array[track->fragment_samples.num - 1].duration;
+		}
+
 		uint32_t sample_count = 1;
 		uint32_t size = (uint32_t)pkt->size;
 		int32_t offset = (int32_t)(pkt->pts - pkt->dts);

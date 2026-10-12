@@ -28,14 +28,18 @@ enum FFmpegCodecType { AUDIO, VIDEO, UNKNOWN };
  */
 static bool strequal(const char *a, const char *b)
 {
-	if (!a && !b)
+	if (!a && !b) {
 		return true;
-	if (!a && *b == 0)
+	}
+	if (!a && *b == 0) {
 		return true;
-	if (!b && *a == 0)
+	}
+	if (!b && *a == 0) {
 		return true;
-	if (!a || !b)
+	}
+	if (!a || !b) {
 		return false;
+	}
 
 	return strcmp(a, b) == 0;
 }

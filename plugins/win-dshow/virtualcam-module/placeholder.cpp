@@ -120,8 +120,9 @@ static bool load_placeholder_internal()
 
 bool initialize_placeholder()
 {
-	if (initialized)
+	if (initialized) {
 		return true;
+	}
 
 	GdiplusStartupInput si;
 	ULONG_PTR token;
@@ -135,8 +136,9 @@ bool initialize_placeholder()
 
 const uint8_t *get_placeholder_ptr()
 {
-	if (initialized)
+	if (initialized) {
 		return placeholder.data();
+	}
 
 	return nullptr;
 }

@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
 if(NOT ENABLE_PULSEAUDIO)
-  target_disable(linux-pulseaudio)
   return()
 endif()
 

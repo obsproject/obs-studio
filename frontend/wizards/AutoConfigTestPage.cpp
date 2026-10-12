@@ -77,10 +77,11 @@ static inline void string_depad_key(string &key)
 {
 	while (!key.empty()) {
 		char ch = key.back();
-		if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r')
+		if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
 			key.pop_back();
-		else
+		} else {
 			break;
+		}
 	}
 }
 
@@ -102,7 +103,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	TestMode testMode;
 	testMode.SetVideo(128, 128, 60, 1);
 
-	QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, 0));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, 0);
 
 	/*
 	 * create encoders
@@ -110,7 +111,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	 * test for 10 seconds
 	 */
 
-	QMetaObject::invokeMethod(this, "UpdateMessage", Q_ARG(QString, QStringLiteral("")));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage, QStringLiteral(""));
 
 	/* -----------------------------------*/
 	/* create obs objects                 */
@@ -166,10 +167,11 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* determine which servers to test    */
 
 	std::vector<ServerInfo> servers;
-	if (wiz->customServer)
+	if (wiz->customServer) {
 		servers.emplace_back(wiz->server.c_str(), wiz->server.c_str());
-	else
+	} else {
 		GetServers(servers);
+	}
 
 	/* just use the first server if it only has one alternate server,
 	 * or if using Restream or Nimo TV due to their "auto" servers */
@@ -198,8 +200,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 			auto same_server =
 				std::find_if(std::begin(servers), std::end(servers),
 					     [&](const ServerInfo &si) { return si.address == it->address; });
-			if (same_server != std::end(servers))
+			if (same_server != std::end(servers)) {
 				servers.erase(same_server);
+			}
 			servers.emplace(std::begin(servers), it->name.c_str(), it->address.c_str());
 		}
 
@@ -238,12 +241,13 @@ void AutoConfigTestPage::TestBandwidthThread()
 		}
 
 		/* If third-party protocol, use the first enumerated type */
-		if (!output_type)
+		if (!output_type) {
 			obs_enum_output_types_with_protocol(protocol, &output_type, return_first_id);
+		}
 
 		/* If none, fail */
 		if (!output_type) {
-			QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_BW_NO_OUTPUT)));
+			QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_BW_NO_OUTPUT));
 			return;
 		}
 	}
@@ -318,15 +322,16 @@ void AutoConfigTestPage::TestBandwidthThread()
 		stopped = false;
 
 		int per = int((i + 1) * 100 / servers.size());
-		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_BW_CONNECTING).arg(server.name.c_str())));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, per);
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_BW_CONNECTING).arg(server.name.c_str()));
 
 		obs_data_set_string(service_settings, "server", server.address.c_str());
 		obs_service_update(service, service_settings);
 
-		if (!obs_output_start(output))
+		if (!obs_output_start(output)) {
 			continue;
+		}
 
 		unique_lock<mutex> ul(m);
 		if (cancel) {
@@ -334,24 +339,27 @@ void AutoConfigTestPage::TestBandwidthThread()
 			obs_output_force_stop(output);
 			return;
 		}
-		if (!stopped && !connected)
+		if (!stopped && !connected) {
 			cv.wait(ul);
+		}
 		if (cancel) {
 			ul.unlock();
 			obs_output_force_stop(output);
 			return;
 		}
-		if (!connected)
+		if (!connected) {
 			continue;
+		}
 
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_BW_SERVER).arg(server.name.c_str())));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_BW_SERVER).arg(server.name.c_str()));
 
 		/* ignore first 2.5 seconds due to possible buffering skewing
 		 * the result */
 		cv.wait_for(ul, chrono::milliseconds(2500));
-		if (stopped)
+		if (stopped) {
 			continue;
+		}
 		if (cancel) {
 			ul.unlock();
 			obs_output_force_stop(output);
@@ -363,8 +371,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		uint64_t t_start = os_gettime_ns();
 
 		cv.wait_for(ul, chrono::seconds(10));
-		if (stopped)
+		if (stopped) {
 			continue;
+		}
 		if (cancel) {
 			ul.unlock();
 			obs_output_force_stop(output);
@@ -375,8 +384,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		cv.wait(ul);
 
 		uint64_t total_time = os_gettime_ns() - t_start;
-		if (total_time == 0)
+		if (total_time == 0) {
 			total_time = 1;
+		}
 
 		int total_bytes = (int)obs_output_get_total_bytes(output) - start_bytes;
 		uint64_t bitrate = util_mul_div64(total_bytes, 8ULL * 1000000000ULL / 1000ULL, total_time);
@@ -391,7 +401,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	}
 
 	if (!success) {
-		QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_BW_CONNECT_FAIL)));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_BW_CONNECT_FAIL));
 		return;
 	}
 
@@ -415,7 +425,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	wiz->serverName = std::move(bestServerName);
 	wiz->idealBitrate = bestBitrate;
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 /* this is used to estimate the lower bitrate limit for a given
@@ -475,7 +485,7 @@ static void CalcBaseRes(int &baseCX, int &baseCY)
 bool AutoConfigTestPage::TestSoftwareEncoding()
 {
 	TestMode testMode;
-	QMetaObject::invokeMethod(this, "UpdateMessage", Q_ARG(QString, QStringLiteral("")));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage, QStringLiteral(""));
 
 	/* -----------------------------------*/
 	/* create obs objects                 */
@@ -573,14 +583,16 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 	auto testRes = [&](int cy, int fps_num, int fps_den, bool force) {
 		int per = ++i * 100 / count;
-		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, per);
 
-		if (cy > baseCY)
+		if (cy > baseCY) {
 			return true;
+		}
 
 		/* no need for more than 3 tests max */
-		if (results.size() >= 3)
+		if (results.size() >= 3) {
 			return true;
+		}
 
 		if (!fps_num || !fps_den) {
 			fps_num = wiz->specificFPSNum;
@@ -593,13 +605,15 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 		if (!force && wiz->type != AutoConfig::Type::Recording) {
 			int est = EstimateMinBitrate(cx, cy, fps_num, fps_den);
-			if (est > wiz->idealBitrate)
+			if (est > wiz->idealBitrate) {
 				return true;
+			}
 		}
 
 		long double rate = (long double)cx * (long double)cy * fps;
-		if (!force && rate > maxDataRate)
+		if (!force && rate > maxDataRate) {
 			return true;
+		}
 
 		testMode.SetVideo(cx, cy, fps_num, fps_den);
 
@@ -614,15 +628,16 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 		QString fpsStr = (fps_den > 1) ? QString::number(fps, 'f', 2) : QString::number(fps, 'g', 2);
 
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_RES_VAL).arg(cxStr, cyStr, fpsStr)));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_RES_VAL).arg(cxStr, cyStr, fpsStr));
 
 		unique_lock<mutex> ul(m);
-		if (cancel)
+		if (cancel) {
 			return false;
+		}
 
 		if (!obs_output_start(output)) {
-			QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_RES_FAIL)));
+			QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_RES_FAIL));
 			return false;
 		}
 
@@ -632,58 +647,80 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 		cv.wait(ul);
 
 		int skipped = (int)video_output_get_skipped_frames(obs_get_video());
-		if (force || skipped <= 10)
+		if (force || skipped <= 10) {
 			results.emplace_back(cx, cy, fps_num, fps_den);
+		}
 
 		return !cancel;
 	};
 
 	if (wiz->specificFPSNum && wiz->specificFPSDen) {
 		count = 7;
-		if (!testRes(2160, 0, 0, false))
+		if (!testRes(2160, 0, 0, false)) {
 			return false;
-		if (!testRes(1440, 0, 0, false))
+		}
+		if (!testRes(1440, 0, 0, false)) {
 			return false;
-		if (!testRes(1080, 0, 0, false))
+		}
+		if (!testRes(1080, 0, 0, false)) {
 			return false;
-		if (!testRes(720, 0, 0, false))
+		}
+		if (!testRes(720, 0, 0, false)) {
 			return false;
-		if (!testRes(480, 0, 0, false))
+		}
+		if (!testRes(480, 0, 0, false)) {
 			return false;
-		if (!testRes(360, 0, 0, false))
+		}
+		if (!testRes(360, 0, 0, false)) {
 			return false;
-		if (!testRes(240, 0, 0, true))
+		}
+		if (!testRes(240, 0, 0, true)) {
 			return false;
+		}
 	} else {
 		count = 14;
-		if (!testRes(2160, 60, 1, false))
+		if (!testRes(2160, 60, 1, false)) {
 			return false;
-		if (!testRes(2160, 30, 1, false))
+		}
+		if (!testRes(2160, 30, 1, false)) {
 			return false;
-		if (!testRes(1440, 60, 1, false))
+		}
+		if (!testRes(1440, 60, 1, false)) {
 			return false;
-		if (!testRes(1440, 30, 1, false))
+		}
+		if (!testRes(1440, 30, 1, false)) {
 			return false;
-		if (!testRes(1080, 60, 1, false))
+		}
+		if (!testRes(1080, 60, 1, false)) {
 			return false;
-		if (!testRes(1080, 30, 1, false))
+		}
+		if (!testRes(1080, 30, 1, false)) {
 			return false;
-		if (!testRes(720, 60, 1, false))
+		}
+		if (!testRes(720, 60, 1, false)) {
 			return false;
-		if (!testRes(720, 30, 1, false))
+		}
+		if (!testRes(720, 30, 1, false)) {
 			return false;
-		if (!testRes(480, 60, 1, false))
+		}
+		if (!testRes(480, 60, 1, false)) {
 			return false;
-		if (!testRes(480, 30, 1, false))
+		}
+		if (!testRes(480, 30, 1, false)) {
 			return false;
-		if (!testRes(360, 60, 1, false))
+		}
+		if (!testRes(360, 60, 1, false)) {
 			return false;
-		if (!testRes(360, 30, 1, false))
+		}
+		if (!testRes(360, 30, 1, false)) {
 			return false;
-		if (!testRes(240, 60, 1, false))
+		}
+		if (!testRes(240, 60, 1, false)) {
 			return false;
-		if (!testRes(240, 30, 1, true))
+		}
+		if (!testRes(240, 30, 1, true)) {
 			return false;
+		}
 	}
 
 	/* -----------------------------------*/
@@ -697,8 +734,9 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 		if (result1.fps_num == 30 && result2.fps_num == 60) {
 			int nextArea = result2.cx * result2.cy;
-			if (nextArea >= minArea)
+			if (nextArea >= minArea) {
 				results.erase(results.begin());
+			}
 		}
 	}
 
@@ -718,11 +756,13 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	}
 
 	if (wiz->testMultitrackVideo && wiz->multitrackVideo.testSuccessful &&
-	    !wiz->multitrackVideo.bitrate.has_value())
+	    !wiz->multitrackVideo.bitrate.has_value()) {
 		wiz->multitrackVideo.bitrate = wiz->idealBitrate;
+	}
 
-	if (wiz->idealBitrate > upperBitrate)
+	if (wiz->idealBitrate > upperBitrate) {
 		wiz->idealBitrate = upperBitrate;
+	}
 
 	softwareTested = true;
 	return true;
@@ -745,11 +785,13 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 	}
 
 	auto testRes = [&](int cy, int fps_num, int fps_den, bool force) {
-		if (cy > baseCY)
+		if (cy > baseCY) {
 			return;
+		}
 
-		if (results.size() >= 3)
+		if (results.size() >= 3) {
 			return;
+		}
 
 		if (!fps_num || !fps_den) {
 			fps_num = wiz->specificFPSNum;
@@ -761,8 +803,9 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 		int cx = int(((long double)baseCX / (long double)baseCY) * (long double)cy);
 
 		long double rate = (long double)cx * (long double)cy * fps;
-		if (!force && rate > maxDataRate)
+		if (!force && rate > maxDataRate) {
 			return;
+		}
 
 		AutoConfig::Encoder encType = wiz->streamingEncoder;
 		bool nvenc = encType == AutoConfig::Encoder::NVENC;
@@ -773,13 +816,16 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 		 * ratio, so increase the minimum bitrate estimate for them.
 		 * NVENC currently is the exception because of the improvements
 		 * its made to its quality in recent generations. */
-		if (!nvenc)
+		if (!nvenc) {
 			minBitrate = minBitrate * 114 / 100;
+		}
 
-		if (wiz->type == AutoConfig::Type::Recording)
+		if (wiz->type == AutoConfig::Type::Recording) {
 			force = true;
-		if (force || wiz->idealBitrate >= minBitrate)
+		}
+		if (force || wiz->idealBitrate >= minBitrate) {
 			results.emplace_back(cx, cy, fps_num, fps_den);
+		}
 	};
 
 	if (wiz->specificFPSNum && wiz->specificFPSDen) {
@@ -815,8 +861,9 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 
 		if (result1.fps_num == 30 && result2.fps_num == 60) {
 			int nextArea = result2.cx * result2.cy;
-			if (nextArea >= minArea)
+			if (nextArea >= minArea) {
 				results.erase(results.begin());
+			}
 		}
 	}
 
@@ -839,14 +886,15 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 	}
 
 	if (!softwareTested) {
-		if (wiz->nvencAvailable)
+		if (wiz->nvencAvailable) {
 			wiz->streamingEncoder = AutoConfig::Encoder::NVENC;
-		else if (wiz->qsvAvailable)
+		} else if (wiz->qsvAvailable) {
 			wiz->streamingEncoder = AutoConfig::Encoder::QSV;
-		else if (wiz->appleAvailable)
+		} else if (wiz->appleAvailable) {
 			wiz->streamingEncoder = AutoConfig::Encoder::Apple;
-		else
+		} else {
 			wiz->streamingEncoder = AutoConfig::Encoder::AMD;
+		}
 	} else {
 		wiz->streamingEncoder = AutoConfig::Encoder::x264;
 	}
@@ -861,10 +909,11 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 	}
 #endif
 
-	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable)
+	if (preferHardware && !softwareTested && wiz->hardwareEncodingAvailable) {
 		FindIdealHardwareResolution();
+	}
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 void AutoConfigTestPage::TestRecordingEncoderThread()
@@ -875,22 +924,24 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 		}
 	}
 
-	if (wiz->type == AutoConfig::Type::Recording && wiz->hardwareEncodingAvailable)
+	if (wiz->type == AutoConfig::Type::Recording && wiz->hardwareEncodingAvailable) {
 		FindIdealHardwareResolution();
+	}
 
 	wiz->recordingQuality = AutoConfig::Quality::High;
 
 	bool recordingOnly = wiz->type == AutoConfig::Type::Recording;
 
 	if (wiz->hardwareEncodingAvailable) {
-		if (wiz->nvencAvailable)
+		if (wiz->nvencAvailable) {
 			wiz->recordingEncoder = AutoConfig::Encoder::NVENC;
-		else if (wiz->qsvAvailable)
+		} else if (wiz->qsvAvailable) {
 			wiz->recordingEncoder = AutoConfig::Encoder::QSV;
-		else if (wiz->appleAvailable)
+		} else if (wiz->appleAvailable) {
 			wiz->recordingEncoder = AutoConfig::Encoder::Apple;
-		else
+		} else {
 			wiz->recordingEncoder = AutoConfig::Encoder::AMD;
+		}
 	} else {
 		wiz->recordingEncoder = AutoConfig::Encoder::x264;
 	}
@@ -902,7 +953,7 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 		}
 	}
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
@@ -974,8 +1025,9 @@ void AutoConfigTestPage::FinalizeResults()
 		OBSDataAutoRelease vencoder_settings = obs_data_create();
 
 		if (wiz->testMultitrackVideo && wiz->multitrackVideo.testSuccessful &&
-		    !wiz->multitrackVideo.bitrate.has_value())
+		    !wiz->multitrackVideo.bitrate.has_value()) {
 			wiz->multitrackVideo.bitrate = wiz->idealBitrate;
+		}
 
 		obs_data_set_int(vencoder_settings, "bitrate", wiz->idealBitrate);
 
@@ -1002,9 +1054,10 @@ void AutoConfigTestPage::FinalizeResults()
 
 		wiz->idealBitrate = (int)obs_data_get_int(vencoder_settings, "bitrate");
 
-		if (!wiz->customServer)
+		if (!wiz->customServer) {
 			form->addRow(newLabel("Basic.AutoConfig.StreamPage.Service"),
 				     new QLabel(wiz->serviceName.c_str(), ui->finishPage));
+		}
 		form->addRow(newLabel("Basic.AutoConfig.StreamPage.Server"),
 			     new QLabel(wiz->serverName.c_str(), ui->finishPage));
 		form->addRow(newLabel("Basic.Settings.Stream.MultitrackVideoLabel"),
@@ -1029,8 +1082,9 @@ void AutoConfigTestPage::FinalizeResults()
 		QString("%1x%2").arg(QString::number(wiz->idealResolutionCX), QString::number(wiz->idealResolutionCY));
 
 	if (wiz->recordingEncoder != AutoConfig::Encoder::Stream ||
-	    wiz->recordingQuality != AutoConfig::Quality::Stream)
+	    wiz->recordingQuality != AutoConfig::Quality::Stream) {
 		form->addRow(newLabel(TEST_RESULT_RE), new QLabel(encName(wiz->recordingEncoder), ui->finishPage));
+	}
 
 	QString recQuality;
 
@@ -1061,10 +1115,12 @@ void AutoConfigTestPage::FinalizeResults()
 
 void AutoConfigTestPage::NextStage()
 {
-	if (testThread.joinable())
+	if (testThread.joinable()) {
 		testThread.join();
-	if (cancel)
+	}
+	if (cancel) {
 		return;
+	}
 
 	ui->subProgressLabel->setText(QString());
 
@@ -1136,8 +1192,9 @@ AutoConfigTestPage::~AutoConfigTestPage()
 		testThread.join();
 	}
 
-	if (started)
+	if (started) {
 		blog(LOG_INFO, STOPPING_SEPARATOR);
+	}
 }
 
 void AutoConfigTestPage::initializePage()

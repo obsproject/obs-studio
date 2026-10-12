@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 option(ENABLE_OSS "Enable building with OSS audio support" ON)
 
 if(NOT ENABLE_OSS)
-  target_disable(oss-audio)
   return()
 endif()
 

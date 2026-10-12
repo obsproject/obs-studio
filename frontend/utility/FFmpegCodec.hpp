@@ -60,8 +60,9 @@ struct FFmpegCodec {
 
 	bool operator==(const FFmpegCodec &codec) const
 	{
-		if (id != codec.id)
+		if (id != codec.id) {
 			return false;
+		}
 
 		return strequal(name, codec.name);
 	}

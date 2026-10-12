@@ -17,8 +17,9 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	ui->setupUi(this);
 
 	obs_module_t *mod = obs_get_module("win-capture");
-	if (!mod)
+	if (!mod) {
 		return;
+	}
 
 	ui->modeLabel->setText(obs_module_get_locale_text(mod, "Mode"));
 	ui->windowLabel->setText(obs_module_get_locale_text(mod, "WindowCapture.Window"));

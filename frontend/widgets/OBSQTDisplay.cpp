@@ -10,9 +10,6 @@
 #include <QWindow>
 #ifdef ENABLE_WAYLAND
 #include <QApplication>
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-#include <qpa/qplatformnativeinterface.h>
-#endif
 #endif
 
 #ifdef _WIN32
@@ -52,12 +49,7 @@ static bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 		break;
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND: {
-#if QT_VERSION < QT_VERSION_CHECK(6, 9, 0)
-		QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-		gswindow.display = native->nativeResourceForWindow("surface", window);
-#else
 		gswindow.display = (void *)window->winId();
-#endif
 		success = gswindow.display != nullptr;
 		break;
 	}
@@ -130,14 +122,17 @@ void OBSQTDisplay::UpdateDisplayBackgroundColor()
 
 void OBSQTDisplay::CreateDisplay()
 {
-	if (display)
+	if (display) {
 		return;
+	}
 
-	if (destroying)
+	if (destroying) {
 		return;
+	}
 
-	if (!windowHandle()->isExposed())
+	if (!windowHandle()->isExposed()) {
 		return;
+	}
 
 	QSize size = GetPixelSize(this);
 
@@ -147,8 +142,9 @@ void OBSQTDisplay::CreateDisplay()
 	info.format = GS_BGRA;
 	info.zsformat = GS_ZS_NONE;
 
-	if (!QTToGSWindow(windowHandle(), info.window))
+	if (!QTToGSWindow(windowHandle(), info.window)) {
 		return;
+	}
 
 	display = obs_display_create(&info, backgroundColor);
 
@@ -205,12 +201,14 @@ QPaintEngine *OBSQTDisplay::paintEngine() const
 
 void OBSQTDisplay::OnMove()
 {
-	if (display)
+	if (display) {
 		obs_display_update_color_space(display);
+	}
 }
 
 void OBSQTDisplay::OnDisplayChange()
 {
-	if (display)
+	if (display) {
 		obs_display_update_color_space(display);
+	}
 }

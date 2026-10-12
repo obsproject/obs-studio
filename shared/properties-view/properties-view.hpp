@@ -59,7 +59,7 @@ public:
 	{
 		if (update_timer) {
 			update_timer->stop();
-			QMetaObject::invokeMethod(update_timer, "timeout");
+			QMetaObject::invokeMethod(update_timer, &QTimer::stop);
 			update_timer->deleteLater();
 		}
 	}
@@ -167,10 +167,11 @@ public:
 
 	inline void UpdateSettings()
 	{
-		if (callback)
+		if (callback) {
 			callback(OBSGetStrongRef(weakObj), nullptr, settings);
-		else if (visUpdateCb)
+		} else if (visUpdateCb) {
 			visUpdateCb(OBSGetStrongRef(weakObj), settings);
+		}
 	}
 	inline bool DeferUpdate() const { return deferUpdate; }
 	inline void SetDeferrable(bool deferrable) { enableDefer = deferrable; }

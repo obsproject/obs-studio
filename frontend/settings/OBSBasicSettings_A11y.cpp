@@ -181,8 +181,9 @@ void OBSBasicSettings::on_choose1_clicked()
 {
 	QColor color = GetColor(selectRed, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectRed"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	selectRed = color_to_int(color);
 
@@ -200,8 +201,9 @@ void OBSBasicSettings::on_choose2_clicked()
 {
 	QColor color = GetColor(selectGreen, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectGreen"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	selectGreen = color_to_int(color);
 
@@ -219,8 +221,9 @@ void OBSBasicSettings::on_choose3_clicked()
 {
 	QColor color = GetColor(selectBlue, QTStr("Basic.Settings.Accessibility.ColorOverrides.SelectBlue"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	selectBlue = color_to_int(color);
 
@@ -238,8 +241,9 @@ void OBSBasicSettings::on_choose4_clicked()
 {
 	QColor color = GetColor(mixerGreen, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreen"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerGreen = color_to_int(color);
 
@@ -257,8 +261,9 @@ void OBSBasicSettings::on_choose5_clicked()
 {
 	QColor color = GetColor(mixerYellow, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellow"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerYellow = color_to_int(color);
 
@@ -276,8 +281,9 @@ void OBSBasicSettings::on_choose6_clicked()
 {
 	QColor color = GetColor(mixerRed, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRed"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerRed = color_to_int(color);
 
@@ -296,8 +302,9 @@ void OBSBasicSettings::on_choose7_clicked()
 	QColor color =
 		GetColor(mixerGreenActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerGreenActive"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerGreenActive = color_to_int(color);
 
@@ -316,8 +323,9 @@ void OBSBasicSettings::on_choose8_clicked()
 	QColor color =
 		GetColor(mixerYellowActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerYellowActive"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerYellowActive = color_to_int(color);
 
@@ -335,8 +343,9 @@ void OBSBasicSettings::on_choose9_clicked()
 {
 	QColor color = GetColor(mixerRedActive, QTStr("Basic.Settings.Accessibility.ColorOverrides.MixerRedActive"));
 
-	if (!color.isValid())
+	if (!color.isValid()) {
 		return;
+	}
 
 	mixerRedActive = color_to_int(color);
 

@@ -47,29 +47,35 @@ bool CalculateFileHash(const wchar_t *path, B2Hash &hash)
 {
 	static __declspec(thread) vector<BYTE> hashBuffer;
 	blake2b_state blake2;
-	if (blake2b_init(&blake2, kBlake2HashLength) != 0)
+	if (blake2b_init(&blake2, kBlake2HashLength) != 0) {
 		return false;
+	}
 
 	hashBuffer.resize(1048576);
 
 	WinHandle handle = CreateFileW(path, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, 0, nullptr);
-	if (handle == INVALID_HANDLE_VALUE)
+	if (handle == INVALID_HANDLE_VALUE) {
 		return false;
+	}
 
 	for (;;) {
 		DWORD read = 0;
-		if (!ReadFile(handle, hashBuffer.data(), (DWORD)hashBuffer.size(), &read, nullptr))
+		if (!ReadFile(handle, hashBuffer.data(), (DWORD)hashBuffer.size(), &read, nullptr)) {
 			return false;
+		}
 
-		if (!read)
+		if (!read) {
 			break;
+		}
 
-		if (blake2b_update(&blake2, hashBuffer.data(), read) != 0)
+		if (blake2b_update(&blake2, hashBuffer.data(), read) != 0) {
 			return false;
+		}
 	}
 
-	if (blake2b_final(&blake2, hash.data(), hash.size()) != 0)
+	if (blake2b_final(&blake2, hash.data(), hash.size()) != 0) {
 		return false;
+	}
 
 	return true;
 }

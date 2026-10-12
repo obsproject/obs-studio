@@ -37,16 +37,16 @@ bool NativeEventFilter::nativeEventFilter(const QByteArray &eventType, void *mes
 
 		switch (msg->message) {
 		case WM_QUERYENDSESSION:
-			main->saveAll();
-			if (msg->lParam == ENDSESSION_CRITICAL) {
-				break;
+			if (msg->lParam & ENDSESSION_CRITICAL) {
+				main->saveAll();
+				return false;
 			}
 
 			if (main->shouldPromptForClose()) {
 				if (result) {
 					*result = FALSE;
 				}
-				QTimer::singleShot(1, main, &OBSBasic::close);
+				QMetaObject::invokeMethod(main, "close", Qt::QueuedConnection);
 				return true;
 			}
 
