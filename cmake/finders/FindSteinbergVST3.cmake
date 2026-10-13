@@ -48,19 +48,19 @@ set(
   vst3sdk/public.sdk/source/vst/vstinitiids.cpp
 )
 
-if(OS_WINDOWS)
+if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
     vst3sdk/public.sdk/source/common/threadchecker_win32.cpp
     vst3sdk/public.sdk/source/vst/hosting/module_win32.cpp
   )
-elseif(OS_MACOS)
+elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
     vst3sdk/public.sdk/source/common/threadchecker_mac.mm
     vst3sdk/public.sdk/source/vst/hosting/module_mac.mm
   )
-elseif(OS_LINUX)
+elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
     vst3sdk/public.sdk/source/common/threadchecker_linux.cpp
@@ -119,17 +119,19 @@ if(SteinbergVST3_FOUND)
   endif()
 endif()
 
-set_property(
-  SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/common/commonstringconvert.cpp"
-  PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
-)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|AppleClang|Clang")
+  set_property(
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/common/commonstringconvert.cpp"
+    PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
+  )
 
-set_property(
-  SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp"
-  PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
-)
+  set_property(
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp"
+    PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
+  )
+endif()
 
-if(OS_MACOS)
+if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   set_property(
     SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/common/threadchecker_mac.mm"
     PROPERTY COMPILE_OPTIONS "-fobjc-arc"
