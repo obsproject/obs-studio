@@ -22,7 +22,7 @@
 #endif
 #include "VST3HostApp.h"
 #include "VST3Plugin.h"
-#include "vst3-scan/VST3Scanner.h"
+#include <VST3Scanner.h>
 
 #include <pluginterfaces/vst/ivstcomponent.h>
 #include <pluginterfaces/vst/vstspeaker.h>

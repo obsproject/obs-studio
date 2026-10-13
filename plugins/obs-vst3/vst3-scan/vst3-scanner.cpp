@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "VST3Scanner.h"
+#include <VST3Scanner.h>
 
 #include <obs-module.h>
 #include <util/platform.h>
