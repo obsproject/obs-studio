@@ -40,7 +40,6 @@ build() {
   if (( ! ${+SCRIPT_HOME} )) typeset -g SCRIPT_HOME=${ZSH_ARGZERO:A:h}
   local host_os=${${(s:-:)ZSH_ARGZERO:t:r}[2]}
   local project_root=${SCRIPT_HOME:A:h:h}
-  local buildspec_file=${project_root}/CMakePresets.json
 
   fpath=(${SCRIPT_HOME}/utils.zsh ${fpath})
   autoload -Uz log_group log_error log_output check_${host_os}
@@ -126,10 +125,6 @@ build() {
       if (( debug )) {
         cmake_args+=(CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_DIAGNOSTIC_REMARKS:STRING=YES)
       }
-
-      local deps_version
-      read -r deps_version <<< "$(jq -r '.obsproject.com/obs-studio.dependencies.prebuilt.version' "${buildspec_file}")"
-      cmake_args+=(-DVST3SDK_PATH:STRING=${project_root}/.deps/obs-deps-${deps_version}-universal/include/vst3sdk)
 
       typeset -gx NSUnbufferedIO=YES
 
@@ -217,8 +212,8 @@ build() {
       cmake_args+=(
         --preset ubuntu-ci
         -DENABLE_BROWSER:BOOL=ON
+        -DCMAKE_PREFIX_PATH:PATH="${project_root}/.deps"
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
-        -DVST3SDK_PATH:PATH="${project_root}/.deps/vst3sdk"
       )
 
       cmake_build_args+=(build_${target%%-*} --config ${config} --parallel)
