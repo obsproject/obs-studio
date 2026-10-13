@@ -136,7 +136,7 @@ if(OS_MACOS)
   )
   set_property(
     SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/vst/hosting/module_mac.mm"
-    PROPERTY COMPILE_OPTIONS "-fobjc-arc"
+    PROPERTY COMPILE_OPTIONS "-fobjc-arc;-Wno-unused-parameter"
   )
 endif()
 
