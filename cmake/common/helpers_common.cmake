@@ -508,6 +508,8 @@ function(add_core_module target)
 
   if(found_platform AND found_architecture)
     add_subdirectory(${target})
+  else()
+    return()
   endif()
 
   if(TARGET ${target})
