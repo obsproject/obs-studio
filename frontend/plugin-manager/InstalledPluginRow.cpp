@@ -101,9 +101,11 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 			legacyNotice->setLayout(new QHBoxLayout{});
 			legacyNotice->layout()->setContentsMargins(0, 0, 0, 0);
 
-			auto warningIcon = new QLabel{moduleText};
-			warningIcon->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-			warningIcon->setPixmap(getWarningIcon().pixmap(16, 16));
+			// TODO: https://github.com/obsproject/obs-studio/issues/14029
+			// Re-enable this icon before the major version where we remove legacy plugin paths.
+			//auto warningIcon = new QLabel{moduleText};
+			//warningIcon->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+			//warningIcon->setPixmap(getWarningIcon().pixmap(16, 16));
 
 			auto legacyInfo =
 				new QLabel{QTStr("PluginManager.Status.Legacy.Description").arg(kLegacyPluginInfoLink),
@@ -112,7 +114,7 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 			legacyInfo->setOpenExternalLinks(true);
 			idian::Utils::addClass(legacyInfo, "description");
 
-			legacyNotice->layout()->addWidget(warningIcon);
+			//legacyNotice->layout()->addWidget(warningIcon);
 			legacyNotice->layout()->addWidget(legacyInfo);
 
 			detailsLayout->addWidget(legacyNotice);
