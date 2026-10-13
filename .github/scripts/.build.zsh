@@ -212,6 +212,7 @@ build() {
       cmake_args+=(
         --preset ubuntu-ci
         -DENABLE_BROWSER:BOOL=ON
+        -DCMAKE_PREFIX_PATH:PATH="${project_root}/.deps"
         -DCEF_ROOT_DIR:PATH="${project_root}/.deps/cef_binary_${CEF_VERSION}_${target//ubuntu-/linux_}"
       )
 
