@@ -23,8 +23,8 @@ goto checkAdmin
 	RMDIR /S /Q "%PROGRAMDATA%\obs-studio\shader-cache"
 
 :uninstallDLLs
-	regsvr32.exe /u /s %1\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll
-	regsvr32.exe /u /s %1\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll
+	regsvr32.exe /u /s %1\core\win-dshow\data\obs-virtualcam-module32.dll
+	regsvr32.exe /u /s %1\core\win-dshow\data\obs-virtualcam-module64.dll
 
 :endSuccess
 	echo Virtual Cam uninstalled!
