@@ -103,7 +103,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	TestMode testMode;
 	testMode.SetVideo(128, 128, 60, 1);
 
-	QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, 0));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, 0);
 
 	/*
 	 * create encoders
@@ -111,7 +111,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	 * test for 10 seconds
 	 */
 
-	QMetaObject::invokeMethod(this, "UpdateMessage", Q_ARG(QString, QStringLiteral("")));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage, QStringLiteral(""));
 
 	/* -----------------------------------*/
 	/* create obs objects                 */
@@ -247,7 +247,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		/* If none, fail */
 		if (!output_type) {
-			QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_BW_NO_OUTPUT)));
+			QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_BW_NO_OUTPUT));
 			return;
 		}
 	}
@@ -322,9 +322,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		stopped = false;
 
 		int per = int((i + 1) * 100 / servers.size());
-		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_BW_CONNECTING).arg(server.name.c_str())));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, per);
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_BW_CONNECTING).arg(server.name.c_str()));
 
 		obs_data_set_string(service_settings, "server", server.address.c_str());
 		obs_service_update(service, service_settings);
@@ -351,8 +351,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 			continue;
 		}
 
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_BW_SERVER).arg(server.name.c_str())));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_BW_SERVER).arg(server.name.c_str()));
 
 		/* ignore first 2.5 seconds due to possible buffering skewing
 		 * the result */
@@ -401,7 +401,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	}
 
 	if (!success) {
-		QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_BW_CONNECT_FAIL)));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_BW_CONNECT_FAIL));
 		return;
 	}
 
@@ -425,7 +425,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 	wiz->serverName = std::move(bestServerName);
 	wiz->idealBitrate = bestBitrate;
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 /* this is used to estimate the lower bitrate limit for a given
@@ -485,7 +485,7 @@ static void CalcBaseRes(int &baseCX, int &baseCY)
 bool AutoConfigTestPage::TestSoftwareEncoding()
 {
 	TestMode testMode;
-	QMetaObject::invokeMethod(this, "UpdateMessage", Q_ARG(QString, QStringLiteral("")));
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage, QStringLiteral(""));
 
 	/* -----------------------------------*/
 	/* create obs objects                 */
@@ -583,7 +583,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 	auto testRes = [&](int cy, int fps_num, int fps_den, bool force) {
 		int per = ++i * 100 / count;
-		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::Progress, per);
 
 		if (cy > baseCY) {
 			return true;
@@ -628,8 +628,8 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 
 		QString fpsStr = (fps_den > 1) ? QString::number(fps, 'f', 2) : QString::number(fps, 'g', 2);
 
-		QMetaObject::invokeMethod(this, "UpdateMessage",
-					  Q_ARG(QString, QTStr(TEST_RES_VAL).arg(cxStr, cyStr, fpsStr)));
+		QMetaObject::invokeMethod(this, &AutoConfigTestPage::UpdateMessage,
+					  QTStr(TEST_RES_VAL).arg(cxStr, cyStr, fpsStr));
 
 		unique_lock<mutex> ul(m);
 		if (cancel) {
@@ -637,7 +637,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 		}
 
 		if (!obs_output_start(output)) {
-			QMetaObject::invokeMethod(this, "Failure", Q_ARG(QString, QTStr(TEST_RES_FAIL)));
+			QMetaObject::invokeMethod(this, &AutoConfigTestPage::Failure, QTStr(TEST_RES_FAIL));
 			return false;
 		}
 
@@ -913,7 +913,7 @@ void AutoConfigTestPage::TestStreamEncoderThread()
 		FindIdealHardwareResolution();
 	}
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 void AutoConfigTestPage::TestRecordingEncoderThread()
@@ -953,7 +953,7 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 		}
 	}
 
-	QMetaObject::invokeMethod(this, "NextStage");
+	QMetaObject::invokeMethod(this, &AutoConfigTestPage::NextStage);
 }
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x

@@ -25,6 +25,9 @@
 #include <QObject>
 #include <QDesktopServices>
 #include <QUuid>
+
+#include "DoubleSpinBox.hpp"
+#include "SpinBox.hpp"
 #include "double-slider.hpp"
 #include "spinbox-ignorewheel.hpp"
 #include "moc_properties-view.cpp"
@@ -206,7 +209,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj, Prope
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesReloadCallback reloadCallback,
@@ -221,7 +224,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, PropertiesReloadCallback reloadCallback_,
@@ -233,7 +236,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, Prope
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	QMetaObject::invokeMethod(this, "ReloadProperties", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
 }
 
 void OBSPropertiesView::SetDisabled(bool disabled)
@@ -272,11 +275,7 @@ QWidget *OBSPropertiesView::AddCheckbox(obs_property_t *prop)
 	QCheckBox *checkbox = new QCheckBox(QT_UTF8(desc));
 	checkbox->setCheckState(val ? Qt::Checked : Qt::Unchecked);
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	QWidget *widget = NewWidget(prop, checkbox, &QCheckBox::checkStateChanged);
-#else
-	QWidget *widget = NewWidget(prop, checkbox, &QCheckBox::stateChanged);
-#endif
 
 	if (!long_desc) {
 		return widget;
@@ -434,7 +433,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout, QLabel
 
 	const char *name = obs_property_name(prop);
 	int val = (int)obs_data_get_int(settings, name);
-	QSpinBox *spin = new SpinBoxIgnoreScroll();
+	OBS::SpinBox *spin = new OBS::SpinBox();
 
 	spin->setEnabled(obs_property_enabled(prop));
 
@@ -482,7 +481,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout, QLab
 
 	const char *name = obs_property_name(prop);
 	double val = obs_data_get_double(settings, name);
-	QDoubleSpinBox *spin = new QDoubleSpinBox();
+	OBS::DoubleSpinBox *spin = new OBS::DoubleSpinBox();
 
 	if (!obs_property_enabled(prop)) {
 		spin->setEnabled(false);
@@ -517,8 +516,8 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout, QLab
 		slider->setOrientation(Qt::Horizontal);
 		subLayout->addWidget(slider);
 
-		connect(slider, &DoubleSlider::doubleValChanged, spin, &QDoubleSpinBox::setValue);
-		connect(spin, &QDoubleSpinBox::valueChanged, slider, &DoubleSlider::setDoubleVal);
+		connect(slider, &DoubleSlider::doubleValChanged, spin, &OBS::DoubleSpinBox::setValue);
+		connect(spin, &OBS::DoubleSpinBox::valueChanged, slider, &DoubleSlider::setDoubleVal);
 	}
 
 	connect(spin, &QDoubleSpinBox::valueChanged, info, &WidgetInfo::ControlChanged);
@@ -1438,8 +1437,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 	stack->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	auto comboIndexChanged = static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged);
-	connect(combo, comboIndexChanged, stack, [=](int index) {
+	connect(combo, &QComboBox::currentIndexChanged, stack, [=](int index) {
 		bool out_of_bounds = index >= stack->count();
 		auto idx = out_of_bounds ? stack->count() - 1 : index;
 		stack->setCurrentIndex(idx);
@@ -1452,7 +1450,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->simpleFPS, comboIndexChanged, info, [=](int) {
+	connect(widget->simpleFPS, &QComboBox::currentIndexChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1460,7 +1458,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->fpsRange, comboIndexChanged, info, [=](int) {
+	connect(widget->fpsRange, &QComboBox::currentIndexChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1468,8 +1466,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		UpdateFPSLabels(widget);
 	});
 
-	auto sbValueChanged = static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged);
-	connect(widget->numEdit, sbValueChanged, info, [=](int) {
+	connect(widget->numEdit, &QSpinBox::valueChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -1477,7 +1474,7 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning, QFormL
 		emit info->ControlChanged();
 	});
 
-	connect(widget->denEdit, sbValueChanged, info, [=](int) {
+	connect(widget->denEdit, &QSpinBox::valueChanged, info, [=](int) {
 		if (widget->updating) {
 			return;
 		}
@@ -2028,7 +2025,7 @@ void WidgetInfo::ButtonClicked()
 	OBSObject strongObj = view->GetObject();
 	void *obj = strongObj ? strongObj.Get() : view->rawObj;
 	if (obs_property_button_clicked(property, obj)) {
-		QMetaObject::invokeMethod(view, "RefreshProperties", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(view, &OBSPropertiesView::RefreshProperties, Qt::QueuedConnection);
 	}
 }
 
@@ -2136,7 +2133,7 @@ void WidgetInfo::ControlChanged()
 
 	if (obs_property_modified(property, view->settings)) {
 		view->lastFocused = setting;
-		QMetaObject::invokeMethod(view, "RefreshProperties", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(view, &OBSPropertiesView::RefreshProperties, Qt::QueuedConnection);
 	}
 }
 

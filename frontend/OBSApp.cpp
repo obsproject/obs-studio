@@ -30,9 +30,6 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-#include <qpa/qplatformnativeinterface.h>
-#endif
 #endif
 #include <qt-wrappers.hpp>
 
@@ -48,9 +45,9 @@
 #endif
 
 #include <chrono>
+#include <sstream>
 
 #ifdef _WIN32
-#include <sstream>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -81,12 +78,43 @@ extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
+constexpr double kDefaultSnapDistance = 5.0;
+
 namespace {
 
 typedef struct UncleanLaunchAction {
 	bool useSafeMode = false;
 	bool sendCrashReport = false;
 } UncleanLaunchAction;
+
+enum class PluginFailureAction { Continue, OpenPluginManager };
+
+PluginFailureAction handlePluginFailure()
+{
+	QMessageBox pluginWarning;
+
+	pluginWarning.setIcon(QMessageBox::Warning);
+
+	pluginWarning.setWindowTitle(QTStr("PluginFailure.Dialog.Title"));
+	pluginWarning.setText(QTStr("PluginFailure.Labels.Text"));
+
+	QPushButton *continueButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Continue"), QMessageBox::RejectRole);
+	QPushButton *handleButton =
+		pluginWarning.addButton(QTStr("PluginFailure.Dialog.Open"), QMessageBox::AcceptRole);
+
+	pluginWarning.setDefaultButton(continueButton);
+
+	pluginWarning.exec();
+
+	bool openPluginManager = pluginWarning.clickedButton() == handleButton;
+
+	if (openPluginManager) {
+		return PluginFailureAction::OpenPluginManager;
+	} else {
+		return PluginFailureAction::Continue;
+	}
+}
 
 UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 {
@@ -97,9 +125,7 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 	QMessageBox crashWarning;
 
 	crashWarning.setIcon(QMessageBox::Warning);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
 	crashWarning.setOption(QMessageBox::Option::DontUseNativeDialog);
-#endif
 	crashWarning.setWindowTitle(QTStr("CrashHandling.Dialog.Title"));
 	crashWarning.setText(QTStr("CrashHandling.Labels.Text"));
 
@@ -361,7 +387,7 @@ void OBSApp::InitUserConfigDefaults()
 	config_set_default_bool(userConfig, "BasicWindow", "ScreenSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "SourceSnapping", true);
 	config_set_default_bool(userConfig, "BasicWindow", "CenterSnapping", false);
-	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", 10.0);
+	config_set_default_double(userConfig, "BasicWindow", "SnapDistance", kDefaultSnapDistance);
 	config_set_default_bool(userConfig, "BasicWindow", "SpacingHelpersEnabled", true);
 	config_set_default_bool(userConfig, "BasicWindow", "RecordWhenStreaming", false);
 	config_set_default_bool(userConfig, "BasicWindow", "KeepRecordingWhenStreamStops", false);
@@ -628,7 +654,8 @@ bool OBSApp::InitUserConfig(std::filesystem::path &userConfigLocation, uint32_t 
 
 void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 {
-	bool hasChanges = false;
+	bool hasUserConfigChanges = false;
+	bool hasGlobalConfigChanges = false;
 
 	const uint32_t v19 = MAKE_SEMANTIC_VERSION(19, 0, 0);
 	const uint32_t v21 = MAKE_SEMANTIC_VERSION(21, 0, 0);
@@ -644,7 +671,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			bool useOldDefaults = lastVersion && lastVersion < version;
 			config_set_bool(userConfig, "General", configKey.c_str(), useOldDefaults);
 
-			hasChanges = true;
+			hasUserConfigChanges = true;
 		}
 	}
 
@@ -653,7 +680,7 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 
 		bool layoutUpdated = UpdatePre22MultiviewLayout(layout);
 
-		hasChanges = hasChanges | layoutUpdated;
+		hasUserConfigChanges = hasUserConfigChanges | layoutUpdated;
 	}
 
 	if (lastVersion && lastVersion < v24) {
@@ -663,11 +690,33 @@ void OBSApp::MigrateLegacySettings(const uint32_t lastVersion)
 			config_set_string(userConfig, "General", "HotkeyFocusType", "DisableHotkeysInFocus");
 		}
 
-		hasChanges = true;
+		hasUserConfigChanges = true;
 	}
 
-	if (hasChanges) {
+	if (lastVersion && lastVersion < MAKE_SEMANTIC_VERSION(33, 0, 0)) {
+		bool migratedUserSettings = config_has_user_value(appConfig, "General", "Pre33.0Migrated");
+
+		if (!migratedUserSettings) {
+			double currentSnapDistance = config_get_double(userConfig, "BasicWindow", "SnapDistance");
+
+			if (currentSnapDistance == 10.0) {
+				double newDefaultSnapDistance = kDefaultSnapDistance;
+				config_set_double(userConfig, "BasicWindow", "SnapDistance", newDefaultSnapDistance);
+			}
+
+			config_set_bool(appConfig, "General", "Pre33.0Migrated", true);
+
+			hasUserConfigChanges = true;
+			hasGlobalConfigChanges = true;
+		}
+	}
+
+	if (hasUserConfigChanges) {
 		userConfig.SaveSafe("tmp");
+	}
+
+	if (hasGlobalConfigChanges) {
+		appConfig.SaveSafe("tmp");
 	}
 }
 
@@ -1219,7 +1268,7 @@ static void ui_task_handler(obs_task_t task, void *param, bool wait)
 		/* to get clang-format to behave */
 		task(param);
 	};
-	QMetaObject::invokeMethod(App(), "Exec", wait ? WaitConnection() : Qt::AutoConnection, Q_ARG(VoidFunc, doTask));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, wait ? WaitConnection() : Qt::AutoConnection, doTask);
 }
 
 bool OBSApp::OBSInit()
@@ -1230,11 +1279,9 @@ bool OBSApp::OBSInit()
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	if (QApplication::platformName() == "xcb") {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
 
@@ -1243,11 +1290,9 @@ bool OBSApp::OBSInit()
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_WAYLAND);
 		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
@@ -1256,10 +1301,6 @@ bool OBSApp::OBSInit()
 	}
 #endif
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-	QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-	obs_set_nix_platform_display(native->nativeResourceForIntegration("display"));
-#endif
 #endif
 
 #ifdef __APPLE__
@@ -2037,16 +2078,27 @@ void OBSApp::addLogLine(int logLevel, const QString &message)
 	emit logLineAdded(logLevel, message);
 }
 
-void OBSApp::loadAppModules(struct obs_module_failure_info &mfi)
+void OBSApp::loadAppModules()
 {
-	pluginManager_->preLoad();
-	blog(LOG_INFO, "---------------------------------");
-	obs_load_all_modules2(&mfi);
-	blog(LOG_INFO, "---------------------------------");
-	obs_log_loaded_modules();
-	blog(LOG_INFO, "---------------------------------");
-	obs_post_load_modules();
-	pluginManager_->postLoad();
+	using PluginMode = OBS::PluginManager::Mode;
+	PluginMode mode = (disable_3p_plugins || safe_mode) ? PluginMode::CoreOnly : PluginMode::Full;
+	pluginManager_->setPluginMode(mode);
+
+	pluginManager_->loadAllPlugins(portable_mode);
+}
+
+void OBSApp::handlePluginLoadState()
+{
+	using PluginState = OBS::PluginManager::State;
+	PluginState loadState = pluginManager_->loadState();
+
+	if (loadState != PluginState::Success) {
+		PluginFailureAction action = handlePluginFailure();
+
+		if (action == PluginFailureAction::OpenPluginManager) {
+			pluginManagerOpenDialog();
+		}
+	}
 }
 
 void OBSApp::pluginManagerOpenDialog()

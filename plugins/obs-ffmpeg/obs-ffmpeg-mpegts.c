@@ -371,11 +371,7 @@ fail:
 	return err;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR >= 61
 typedef int (*write_packet_cb)(void *, const uint8_t *, int);
-#else
-typedef int (*write_packet_cb)(void *, uint8_t *, int);
-#endif
 
 static inline int allocate_custom_aviocontext(struct ffmpeg_output *stream, bool is_rist)
 {

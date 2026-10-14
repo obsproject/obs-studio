@@ -30,6 +30,7 @@ runs:
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
         fi
+        brew update
         brew install --quiet python3
 
         python3 -m venv .venv

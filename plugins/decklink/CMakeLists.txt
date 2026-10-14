@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_DECKLINK "Build OBS with Decklink support" ON)
 if(NOT ENABLE_DECKLINK)
-  target_disable(decklink)
   return()
 endif()
 

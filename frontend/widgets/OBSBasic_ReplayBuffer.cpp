@@ -61,7 +61,7 @@ void OBSBasic::ShowReplayBufferPauseWarning()
 
 	bool warned = config_get_bool(App()->GetUserConfig(), "General", "WarnedAboutReplayBufferPausing");
 	if (!warned) {
-		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+		QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 	}
 }
 
@@ -159,6 +159,8 @@ void OBSBasic::ReplayBufferSave()
 	if (!outputHandler->ReplayBufferActive()) {
 		return;
 	}
+
+	OnEvent(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING);
 
 	calldata_t cd = {0};
 	proc_handler_t *ph = obs_output_get_proc_handler(outputHandler->replayBuffer);

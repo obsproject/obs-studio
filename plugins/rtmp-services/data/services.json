@@ -355,24 +355,6 @@
             ]
         },
         {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
@@ -855,36 +837,18 @@
             ]
         },
         {
-            "name": "SOOP Korea",
+            "name": "SOOP",
             "alt_names": [
                 "AfreecaTV",
                 "아프리카TV",
-                "Afreeca.TV"
+                "Afreeca.TV",
+                "SOOP Korea",
+                "SOOP Global"
             ],
             "servers": [
                 {
-                    "name": "Asia : Korea",
-                    "url": "rtmp://stream.sooplive.co.kr/app/"
-                },
-                {
-                    "name": "North America : US East",
-                    "url": "rtmp://rtmp-esu.sooplive.co.kr/app/"
-                },
-                {
-                    "name": "North America : US West",
-                    "url": "rtmp://rtmp-wsu.sooplive.co.kr/app/"
-                },
-                {
-                    "name": "South America : Brazil",
-                    "url": "rtmp://rtmp-brz.sooplive.co.kr/app/"
-                },
-                {
-                    "name": "Europe : UK",
-                    "url": "rtmp://rtmp-uk.sooplive.co.kr/app/"
-                },
-                {
-                    "name": "Asia : Singapore",
-                    "url": "rtmp://rtmp-sgp.sooplive.co.kr/app/"
+                    "name": "Default",
+                    "url": "rtmp://stream.soop.live/app/"
                 }
             ],
             "recommended": {
@@ -1495,8 +1459,20 @@
             "name": "Piczel.tv",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://piczel.tv:1935/live"
+                    "name": "US East: 1",
+                    "url": "rtmp://boston.piczel.tv/live"
+                },
+                {
+                    "name": "US East: 2",
+                    "url": "rtmp://boston-2.piczel.tv/live"
+                },
+                {
+                    "name": "France",
+                    "url": "rtmp://france.piczel.tv/live"
+                },
+                {
+                    "name": "Brazil",
+                    "url": "rtmp://brazil.piczel.tv/live"
                 }
             ],
             "recommended": {
@@ -1504,23 +1480,6 @@
                 "max video bitrate": 2500,
                 "max audio bitrate": 256,
                 "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "DLive",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.dlive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
             },
             "supported video codecs": [
                 "h264"
@@ -1940,24 +1899,6 @@
             ]
         },
         {
-            "name": "OPENREC.tv - Premium member (プレミアム会員)",
-            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://a.station.openrec.tv:1935/live1"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
@@ -2083,18 +2024,6 @@
                 {
                     "name": "BoxCast",
                     "url": "rtmp://rtmp.boxcast.com/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Disciple Media",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ],
             "supported video codecs": [
@@ -2270,13 +2199,20 @@
             "stream_key_link": "https://whowatch.tv/publish",
             "servers": [
                 {
-                    "name": "default",
-                    "url": "rtmp://live.whowatch.tv/live/"
+                    "name": "Global - グローバル (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global - グローバル (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
                 }
             ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "recommended": {
+                "profile": "baseline",
                 "keyint": 2,
-                "max video bitrate": 1800,
+                "bframes": 0,
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
             },
             "supported video codecs": [
@@ -2300,8 +2236,12 @@
                     "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
-                    "name": "New York, US",
-                    "url": "rtmps://stream.ewr.irl.run/ingest"
+                    "name": "Chicago, US",
+                    "url": "rtmps://stream.ord.irl.run/ingest"
+                },
+                {
+                    "name": "Ashburn, US",
+                    "url": "rtmps://stream.iad.irl.run/ingest"
                 },
                 {
                     "name": "Miami, US",
@@ -2318,6 +2258,10 @@
                 {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Seoul, SK",
+                    "url": "rtmps://stream.icn.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
@@ -2493,6 +2437,8 @@
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
+            "multitrack_video_name": "시차없는 LIVE+ [화질 최적화]",
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "servers": [
                 {
                     "name": "Default",
@@ -2577,7 +2523,7 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://injest.streamway.in/LiveApp"
+                    "url": "rtmps://injest.streamway.in:443/live"
                 },
                 {
                     "name": "Backup",
@@ -3490,102 +3436,31 @@
             }
         },
         {
-            "name": "SOOP Global",
-            "common": false,
-            "more_info_link": "https://sooplive.helpshift.com/hc/en/3-soop/faq/20",
-            "stream_key_link": "https://www.sooplive.com/dashboard",
+            "name": "Spoon",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://global-stream.sooplive.com/app"
+                    "name": "Korea (RTMPS)",
+                    "url": "rtmps://kr-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Korea (RTMP)",
+                    "url": "rtmp://kr-rtmp.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMPS)",
+                    "url": "rtmps://jp-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMP)",
+                    "url": "rtmp://jp-rtmp.spooncast.net/live"
                 }
-            ],
-            "protocol": "RTMP",
-            "supported video codecs": [
-                "h264"
             ],
             "supported audio codecs": [
                 "aac"
             ],
             "recommended": {
-                "keyint": 1,
-                "profile": "main",
-                "bframes": 0,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720",
-                    "960x540",
-                    "640x360"
-                ],
-                "bitrate matrix": [
-                    {
-                        "res": "640x360",
-                        "fps": 30,
-                        "max bitrate": 500
-                    },
-                    {
-                        "res": "640x360",
-                        "fps": 60,
-                        "max bitrate": 1000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 30,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "960x540",
-                        "fps": 60,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 30,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1280x720",
-                        "fps": 60,
-                        "max bitrate": 4000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 30,
-                        "max bitrate": 8000
-                    },
-                    {
-                        "res": "1920x1080",
-                        "fps": 60,
-                        "max bitrate": 8000
-                    }
-                ],
-                "max fps": 60,
-                "max video bitrate": 8000,
-                "max audio bitrate": 192
+                "max audio bitrate": 96
             }
-        },
-        {
-            "name": "Sportify",
-            "more_info_link": "https://www.homegroundapp.com",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.homegroundapp.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 3500,
-                "max audio bitrate": 192,
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720"
-                ],
-                "max fps": 30
-            },
-            "supported video codecs": [
-                "h264"
-            ]
         }
     ]
 }

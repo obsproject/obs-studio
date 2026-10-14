@@ -19,8 +19,8 @@
 
 void OBSBasic::CanvasRemoved(void *data, calldata_t *params)
 {
-	obs_canvas_t *canvas = static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
-	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), "RemoveCanvas", Q_ARG(OBSCanvas, OBSCanvas(canvas)));
+	OBSCanvas canvas = static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::RemoveCanvas, canvas);
 }
 
 const OBS::Canvas &OBSBasic::AddCanvas(const std::string &name, obs_video_info *ovi, int flags)

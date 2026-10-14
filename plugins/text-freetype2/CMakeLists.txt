@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.28...3.30)
 option(ENABLE_FREETYPE "Enable FreeType text plugin" ON)
 
 if(NOT ENABLE_FREETYPE)
-  target_disable(text-freetype2)
   return()
 endif()
 

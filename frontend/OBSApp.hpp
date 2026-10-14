@@ -137,7 +137,6 @@ private:
 
 private slots:
 	void commitData(QSessionManager &manager);
-	void addLogLine(int logLevel, const QString &message);
 	void themeFileChanged(const QString &);
 	void applicationShutdown() noexcept;
 
@@ -236,14 +235,16 @@ public:
 	static void sigQuitSignalHandler(int);
 #endif
 
-	void loadAppModules(struct obs_module_failure_info &mfi);
+	void loadAppModules();
 
 	ThumbnailManager *thumbnails() const { return thumbnailManager; }
 
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();
+	void handlePluginLoadState();
 
 public slots:
+	void addLogLine(int logLevel, const QString &message);
 	void Exec(VoidFunc func);
 	void processSigInt();
 	void processSigTerm();

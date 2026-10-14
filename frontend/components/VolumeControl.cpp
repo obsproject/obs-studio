@@ -16,9 +16,8 @@ namespace {
 bool isSourceUnassigned(obs_source_t *source)
 {
 	uint32_t mixes = (obs_source_get_audio_mixers(source) & ((1 << MAX_AUDIO_MIXES) - 1));
-	obs_monitoring_type mt = obs_source_get_monitoring_type(source);
 
-	return mixes == 0 && mt != OBS_MONITORING_TYPE_MONITOR_ONLY;
+	return mixes == 0;
 }
 
 void showUnassignedWarning(const char *name)
@@ -41,7 +40,7 @@ void showUnassignedWarning(const char *name)
 		}
 	};
 
-	QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection, Q_ARG(VoidFunc, msgBox));
+	QMetaObject::invokeMethod(App(), &OBSApp::Exec, Qt::QueuedConnection, msgBox);
 }
 } // namespace
 
@@ -52,8 +51,6 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	  contextMenu(nullptr),
 	  QFrame(parent)
 {
-	utils = std::make_unique<idian::Utils>(this);
-
 	uuid = obs_source_get_uuid(source);
 
 	mainLayout = new QBoxLayout(QBoxLayout::LeftToRight, this);
@@ -63,21 +60,21 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 
 	categoryLabel = new QLabel("Active");
 	categoryLabel->setAlignment(Qt::AlignCenter);
-	utils->addClass(categoryLabel, "mixer-category");
-	utils->addClass(categoryLabel, "text-tiny");
+	idian::Utils::addClass(categoryLabel, "mixer-category");
+	idian::Utils::addClass(categoryLabel, "text-tiny");
 
 	nameButton = new VolumeName(source, this);
 	nameButton->setMaximumWidth(280);
-	utils->addClass(nameButton, "text-small");
-	utils->addClass(nameButton, "mixer-name");
+	idian::Utils::addClass(nameButton, "text-small");
+	idian::Utils::addClass(nameButton, "mixer-name");
 
 	muteButton = new QPushButton(this);
 	muteButton->setCheckable(true);
-	utils->addClass(muteButton, "btn-mute");
+	idian::Utils::addClass(muteButton, "btn-mute");
 
 	monitorButton = new QPushButton(this);
 	monitorButton->setCheckable(true);
-	utils->addClass(monitorButton, "btn-monitor");
+	idian::Utils::addClass(monitorButton, "btn-monitor");
 
 	volumeLabel = new QLabel(this);
 	volumeLabel->setIndent(0);
@@ -90,14 +87,14 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	sourceName = obs_source_get_name(source);
 	setObjectName(sourceName);
 
-	utils->applyStateStylingEventFilter(muteButton);
-	utils->applyStateStylingEventFilter(monitorButton);
+	idian::Utils::applyStateStylingEventFilter(muteButton);
+	idian::Utils::applyStateStylingEventFilter(monitorButton);
 
 	volumeMeter = new VolumeMeter(this, source);
 
 	obsMuted = obs_source_muted(source);
 	bool unassigned = isSourceUnassigned(source);
-	obsMonitoringType = obs_source_get_monitoring_type(source);
+	obsMonitoring = obs_source_get_monitoring_enabled(source);
 
 	volumeMeter->setMuted(obsMuted || unassigned);
 
@@ -109,7 +106,7 @@ VolumeControl::VolumeControl(obs_source_t *source, QWidget *parent, bool vertica
 	obsSignals.reserve(9);
 	obsSignals.emplace_back(obs_source_get_signal_handler(source), "mute", obsVolumeMuted, this);
 	obsSignals.emplace_back(obs_source_get_signal_handler(source), "audio_mixers", obsMixersChanged, this);
-	obsSignals.emplace_back(obs_source_get_signal_handler(source), "audio_monitoring", obsMonitoringChanged, this);
+	obsSignals.emplace_back(obs_source_get_signal_handler(source), "monitor", obsMonitoringChanged, this);
 	obsSignals.emplace_back(obs_source_get_signal_handler(source), "activate", VolumeControl::obsSourceActivated,
 				this);
 	obsSignals.emplace_back(obs_source_get_signal_handler(source), "deactivate",
@@ -198,7 +195,7 @@ void VolumeControl::obsVolumeChanged(void *data, float)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 
-	QMetaObject::invokeMethod(volControl, "changeVolume", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::changeVolume, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsVolumeMuted(void *data, calldata_t *params)
@@ -206,38 +203,39 @@ void VolumeControl::obsVolumeMuted(void *data, calldata_t *params)
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
 	bool muted = calldata_bool(params, "muted");
 
-	QMetaObject::invokeMethod(volControl, "onMuteChanged", Qt::QueuedConnection, Q_ARG(bool, muted));
+	QMetaObject::invokeMethod(volControl, &VolumeControl::onMuteChanged, Qt::QueuedConnection, muted);
 }
 
 void VolumeControl::obsMixersChanged(void *data, calldata_t *)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
-	QMetaObject::invokeMethod(volControl, "processMixerState", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(volControl, &VolumeControl::processMixerState, Qt::QueuedConnection);
 }
 
 void VolumeControl::obsMonitoringChanged(void *data, calldata_t *params)
 {
 	VolumeControl *volControl = static_cast<VolumeControl *>(data);
-	auto type = static_cast<int>(calldata_int(params, "type"));
+	bool enable = calldata_bool(params, "monitor");
 
-	QMetaObject::invokeMethod(volControl, "onMonitoringChanged", Qt::QueuedConnection, Q_ARG(int, type));
+	QMetaObject::invokeMethod(volControl, &VolumeControl::onMonitoringChanged, Qt::QueuedConnection, enable);
 }
 
 void VolumeControl::obsSourceActivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, true));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceActiveChanged,
+				  Qt::QueuedConnection, true);
 }
 
 void VolumeControl::obsSourceDeactivated(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceActiveChanged", Qt::QueuedConnection,
-				  Q_ARG(bool, false));
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceActiveChanged,
+				  Qt::QueuedConnection, false);
 }
 
 void VolumeControl::obsSourceDestroy(void *data, calldata_t *)
 {
-	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), "onSourceDestroyed", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(static_cast<VolumeControl *>(data), &VolumeControl::onSourceDestroyed,
+				  Qt::QueuedConnection);
 }
 
 void VolumeControl::setLayoutVertical(bool vertical)
@@ -608,9 +606,9 @@ void VolumeControl::onMuteChanged(bool muted)
 	processMixerState();
 }
 
-void VolumeControl::onMonitoringChanged(int type)
+void VolumeControl::onMonitoringChanged(bool enabled)
 {
-	obsMonitoringType = static_cast<obs_monitoring_type>(type);
+	obsMonitoring = enabled;
 	processMixerState();
 }
 
@@ -641,11 +639,11 @@ void VolumeControl::updateCategoryLabel()
 	bool styleUnassigned = mixerStatus().has(VolumeControl::MixerStatus::Unassigned);
 	bool stylePreviewed = mixerStatus().has(VolumeControl::MixerStatus::Preview);
 
-	utils->toggleClass("volume-pinned", stylePinned);
-	utils->toggleClass("volume-inactive", styleInactive);
-	utils->toggleClass("volume-preview", styleInactive && stylePreviewed);
-	utils->toggleClass("volume-hidden", styleHidden && !stylePinned);
-	utils->toggleClass("volume-unassigned", styleUnassigned);
+	idian::Utils::toggleClass(this, "volume-pinned", stylePinned);
+	idian::Utils::toggleClass(this, "volume-inactive", styleInactive);
+	idian::Utils::toggleClass(this, "volume-preview", styleInactive && stylePreviewed);
+	idian::Utils::toggleClass(this, "volume-hidden", styleHidden && !stylePinned);
+	idian::Utils::toggleClass(this, "volume-unassigned", styleUnassigned);
 
 	categoryLabel->setText(labelText);
 	categoryLabel->setAlignment(Qt::AlignCenter);
@@ -719,27 +717,26 @@ void VolumeControl::setMuted(bool mute)
 					   std::bind(undo_redo, std::placeholders::_1, mute), uuid, uuid);
 }
 
-void VolumeControl::setMonitoring(obs_monitoring_type type)
+void VolumeControl::setMonitoring(bool enabled)
 {
 	OBSSource source = OBSGetStrongRef(weakSource());
 	if (!source) {
 		return;
 	}
 
-	obs_monitoring_type prevMonitoringType = obs_source_get_monitoring_type(source);
-	obs_source_set_monitoring_type(source, type);
+	bool prevMonitoring = obs_source_get_monitoring_enabled(source);
+	obs_source_set_monitoring_enabled(source, enabled);
 
-	auto undo_redo = [](const std::string &uuid, obs_monitoring_type val) {
+	auto undo_redo = [](const std::string &uuid, bool val) {
 		OBSSourceAutoRelease source = obs_get_source_by_uuid(uuid.c_str());
-		obs_source_set_monitoring_type(source, val);
+		obs_source_set_monitoring_enabled(source, val);
 	};
 
 	QString text = QTStr("Undo.MonitoringType.Change");
 
 	const char *name = obs_source_get_name(source);
-	OBSBasic::Get()->undo_s.add_action(text.arg(name),
-					   std::bind(undo_redo, std::placeholders::_1, prevMonitoringType),
-					   std::bind(undo_redo, std::placeholders::_1, type), uuid, uuid);
+	OBSBasic::Get()->undo_s.add_action(text.arg(name), std::bind(undo_redo, std::placeholders::_1, prevMonitoring),
+					   std::bind(undo_redo, std::placeholders::_1, enabled), uuid, uuid);
 }
 
 void VolumeControl::onSourceActiveChanged(bool active)
@@ -770,10 +767,10 @@ void VolumeControl::processMixerState()
 	QSignalBlocker blockMute(muteButton);
 	QSignalBlocker blockMonitor(monitorButton);
 
-	bool showAsMuted = obsMuted || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
-	bool showAsMonitored = obsMonitoringType != OBS_MONITORING_TYPE_NONE;
+	bool showAsMuted = obsMuted;
+	bool showAsMonitored = obsMonitoring;
 	bool showAsUnassigned = !obsMuted && unassigned;
-	bool showWarningIcon = showAsUnassigned || obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY;
+	bool showWarningIcon = showAsUnassigned;
 
 	volumeMeter->setMuted((showAsMuted || showAsUnassigned) && !showAsMonitored);
 	setUseDisabledColors(showAsMuted || !isActive);
@@ -804,10 +801,10 @@ void VolumeControl::processMixerState()
 
 	// Qt doesn't support overriding the QPushButton icon using pseudo state selectors like :checked
 	// in QSS so we set a checked class selector on the button to be used instead.
-	utils->toggleClass(muteButton, "checked", showAsMuted);
-	utils->toggleClass(monitorButton, "checked", showAsMonitored);
+	idian::Utils::toggleClass(muteButton, "checked", showAsMuted);
+	idian::Utils::toggleClass(monitorButton, "checked", showAsMonitored);
 
-	utils->toggleClass(muteButton, "mute-warning", showWarningIcon);
+	idian::Utils::toggleClass(muteButton, "mute-warning", showWarningIcon);
 
 	style()->polish(muteButton);
 	style()->polish(monitorButton);
@@ -818,18 +815,11 @@ void VolumeControl::processMixerState()
 void VolumeControl::handleMuteButton(bool mute)
 {
 	setMuted(mute);
-
-	if (!mute && obsMonitoringType == OBS_MONITORING_TYPE_MONITOR_ONLY) {
-		setMonitoring(OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
-	}
 }
 
 void VolumeControl::handleMonitorButton(bool enableMonitoring)
 {
-	obs_monitoring_type newType = (enableMonitoring) ? OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT
-							 : OBS_MONITORING_TYPE_NONE;
-
-	setMonitoring(newType);
+	setMonitoring(enableMonitoring);
 }
 
 void VolumeControl::sliderChanged(int vol)

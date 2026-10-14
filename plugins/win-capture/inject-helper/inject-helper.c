@@ -101,10 +101,6 @@ int main(void)
 	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	SetDllDirectoryW(L"");
 
-	PROCESS_MITIGATION_IMAGE_LOAD_POLICY policy = {0};
-	policy.PreferSystem32Images = 1;
-	SetProcessMitigationPolicy(ProcessImageLoadPolicy, &policy, sizeof(policy));
-
 	load_debug_privilege();
 
 	pCommandLineW = GetCommandLineW();

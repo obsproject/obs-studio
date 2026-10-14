@@ -36,7 +36,7 @@ QPixmap getDefaultThumbnail(obs_source_t *source)
 	OBSBasic *main = OBSBasic::Get();
 	if (main && id) {
 		QIcon icon = OBSBasic::Get()->GetSourceIcon(id);
-		QPixmap iconPixmap = icon.pixmap(90, 90);
+		QPixmap iconPixmap = icon.pixmap(QSize(90, 90), 1.0);
 
 		QPixmap defaultPixmap(kDefaultWidth, kDefaultHeight);
 		defaultPixmap.fill(Qt::transparent);
@@ -185,9 +185,11 @@ bool ThumbnailItem::update()
 			return false;
 		}
 
-		auto *obj = new ScreenshotObj(source);
-		obj->setSaveToFile(false);
-		obj->setSize(kDefaultWidth, kDefaultHeight);
+		ScreenshotObj::Options options;
+		options.outputToFile = false;
+		options.size = {kDefaultWidth, kDefaultHeight};
+
+		auto *obj = new ScreenshotObj(source, options);
 
 		connect(obj, &ScreenshotObj::imageReady, this, &ThumbnailItem::updatePixmapFromImage);
 	}

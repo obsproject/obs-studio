@@ -26,6 +26,7 @@ set_target_properties_obs(
              XCODE_ATTRIBUTE_CLANG_WARN_SUSPICIOUS_IMPLICIT_CONVERSION YES
              XCODE_ATTRIBUTE_GCC_WARN_SHADOW YES
 )
+target_enable(mac-avcapture-legacy)
 
 add_library(mac-avcapture MODULE)
 add_library(OBS::avcapture ALIAS mac-avcapture)

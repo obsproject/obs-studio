@@ -121,17 +121,19 @@ static const char *wgc_whole_match_classes[] = {
 	"Windows.UI.Core.CoreWindow",
 	"WinUIDesktopWin32WindowClass",
 	"GAMINGSERVICESUI_HOSTING_WINDOW_CLASS",
-	"XLMAIN",            /* Microsoft Excel */
-	"PPTFrameClass",     /* Microsoft PowerPoint */
-	"screenClass",       /* Microsoft PowerPoint (Slide Show) */
-	"PodiumParent",      /* Microsoft PowerPoint (Presenter View) */
-	"OpusApp",           /* Microsoft Word */
-	"OMain",             /* Microsoft Access */
-	"Framework::CFrame", /* Microsoft OneNote */
-	"rctrl_renwnd32",    /* Microsoft Outlook */
-	"MSWinPub",          /* Microsoft Publisher */
-	"OfficeApp-Frame",   /* Microsoft 365 Software */
+	"XLMAIN",                 /* Microsoft Excel */
+	"PPTFrameClass",          /* Microsoft PowerPoint */
+	"screenClass",            /* Microsoft PowerPoint (Slide Show) */
+	"PodiumParent",           /* Microsoft PowerPoint (Presenter View) */
+	"OpusApp",                /* Microsoft Word */
+	"OMain",                  /* Microsoft Access */
+	"Framework::CFrame",      /* Microsoft OneNote */
+	"rctrl_renwnd32",         /* Microsoft Outlook */
+	"MSWinPub",               /* Microsoft Publisher */
+	"OfficeApp-Frame",        /* Microsoft 365 Software */
+	"WindowsWebview2Wrapper", /* Construct 3 Games */
 	"SDL_app",
+	"WINDOWSCLIENT", /* Roblox */
 	NULL,
 };
 
@@ -535,9 +537,9 @@ static obs_properties_t *wc_properties(void *data)
 
 	p = obs_properties_add_list(ppts, "method", TEXT_METHOD, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
-	obs_property_list_add_int(p, TEXT_METHOD_BITBLT, METHOD_BITBLT);
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
-	obs_property_list_item_disable(p, 2, !wgc_supported);
+	obs_property_list_add_int(p, TEXT_METHOD_BITBLT, METHOD_BITBLT);
+	obs_property_list_item_disable(p, 1, !wgc_supported);
 	obs_property_set_modified_callback(p, wc_capture_method_changed);
 
 	p = obs_properties_add_list(ppts, "priority", TEXT_MATCH_PRIORITY, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

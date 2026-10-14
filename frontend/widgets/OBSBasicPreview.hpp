@@ -31,6 +31,17 @@ enum class ItemHandle : uint32_t {
 	Rot = ITEM_ROT
 };
 
+struct SnapGuide {
+	vec2 start;
+	vec2 end;
+
+	explicit SnapGuide(vec2 start, vec2 end)
+	{
+		this->start = start;
+		this->end = end;
+	}
+};
+
 class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
@@ -80,6 +91,7 @@ private:
 	bool updatingXScrollBar = false;
 	bool updatingYScrollBar = false;
 
+	std::vector<SnapGuide> snapGuides;
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
 	std::mutex selectMutex;
@@ -190,6 +202,8 @@ public:
 	OBSSourceAutoRelease spacerLabel[4];
 	int spacerPx[4] = {0};
 
+	void addSnapGuide(SnapGuide guide);
+	void DrawSnapGuides();
 	void DrawSpacingHelpers();
 	void ClampScrollingOffsets();
 	void UpdateXScrollBar(float cx);

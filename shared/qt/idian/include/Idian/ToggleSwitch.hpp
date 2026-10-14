@@ -31,7 +31,7 @@
 
 namespace idian {
 
-class ToggleSwitch : public QAbstractButton, public Utils {
+class ToggleSwitch : public QAbstractButton {
 	Q_OBJECT
 	Q_PROPERTY(int xpos MEMBER xPos WRITE setPos)
 	Q_PROPERTY(QColor background MEMBER backgroundInactive DESIGNABLE true)

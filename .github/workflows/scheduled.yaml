@@ -34,7 +34,7 @@ jobs:
 
   cache-cleanup:
     name: Cache Cleanup 🧹
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     permissions:
       actions: write
     steps:
@@ -107,7 +107,7 @@ jobs:
   upload-language-files:
     name: Upload Language Files 🌐
     if: github.repository_owner == 'obsproject' && github.ref_name == 'master'
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:

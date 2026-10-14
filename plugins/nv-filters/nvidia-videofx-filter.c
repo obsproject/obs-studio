@@ -48,7 +48,6 @@
 enum nvvfx_fx_id { S_FX_AIGS, S_FX_BLUR, S_FX_BG_BLUR };
 
 bool nvvfx_loaded = false;
-bool nvvfx_new_sdk = false;
 
 /* clang-format off */
 struct nvvfx_data {
@@ -317,7 +316,6 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 		uint8_t minor = (filter->version >> 16) & 0x00ff;
 		uint8_t build = (filter->version >> 8) & 0x0000ff;
 		uint8_t revision = (filter->version >> 0) & 0x000000ff;
-		nvvfx_new_sdk = filter->version >= MIN_VFX_SDK_VERSION && nvvfx_new_sdk;
 	}
 #endif
 	/* 1. Create FX */
@@ -343,7 +341,7 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	obs_leave_graphics();
 
 	/* 4. Allocate state for the AIGS & background blur */
-	if (nvvfx_new_sdk && id != S_FX_BLUR) {
+	if (get_lib_version() >= MIN_VFX_LOGGER_VERSION && id != S_FX_BLUR) {
 		vfxErr = NvVFX_AllocateState(filter->handle, &filter->stateObjectHandle);
 		if (NVCV_SUCCESS != vfxErr)
 			return log_nverror_destroy(filter, vfxErr);
@@ -360,7 +358,7 @@ static void *nvvfx_filter_create(obs_data_t *settings, obs_source_t *context, en
 	nvvfx_filter_update(filter, settings);
 
 	/* Setup NVIDIA logger */
-	if (nvvfx_new_sdk)
+	if (get_lib_version() >= MIN_VFX_LOGGER_VERSION)
 		vfxErr = NvVFX_ConfigureLogger(NVCV_LOG_ERROR, NULL, &nvvfx_logger_callback, filter);
 
 	return filter;
@@ -1087,7 +1085,6 @@ static void nvvfx_filter_defaults(obs_data_t *settings)
 
 bool load_nvidia_vfx(void)
 {
-	bool old_sdk_loaded = false;
 	unsigned int version = get_lib_version();
 	uint8_t major = (version >> 24) & 0xff;
 	uint8_t minor = (version >> 16) & 0x00ff;
@@ -1101,7 +1098,7 @@ bool load_nvidia_vfx(void)
 			     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated. Please update both audio & video SDK.");
 		}
 	}
-	if (!load_nv_vfx_libs()) {
+	if (!load_nv_vfx_libs(version)) {
 		blog(LOG_INFO, "[NVIDIA VIDEO FX]: FX disabled, redistributable not found or could not be loaded.");
 		return false;
 	}
@@ -1110,17 +1107,7 @@ bool load_nvidia_vfx(void)
 	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                               \
 		DWORD err = GetLastError();                                                              \
 		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		release_nv_vfx();                                                                        \
 		goto unload_everything;                                                                  \
-	}
-
-#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                                                \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                                               \
-		DWORD err = GetLastError();                                                              \
-		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll ": %lu (0x%lx)", err, err); \
-		nvvfx_new_sdk = false;                                                                   \
-	} else {                                                                                         \
-		nvvfx_new_sdk = true;                                                                    \
 	}
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_videofx, "NVVideoEffects.dll")
@@ -1153,42 +1140,20 @@ bool load_nvidia_vfx(void)
 	LOAD_SYM(NvVFX_AllocateState);
 	LOAD_SYM(NvVFX_DeallocateState);
 	LOAD_SYM(NvVFX_ResetState);
-	old_sdk_loaded = true;
+	LOAD_SYM(NvVFX_ConfigureLogger);
 #undef LOAD_SYM
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cvimage, "NVCVImage.dll")
 	LOAD_SYM(NvCV_GetErrorStringFromCode);
 	LOAD_SYM(NvCVImage_Init);
-	LOAD_SYM(NvCVImage_InitView);
 	LOAD_SYM(NvCVImage_Alloc);
 	LOAD_SYM(NvCVImage_Realloc);
-	LOAD_SYM(NvCVImage_Dealloc);
 	LOAD_SYM(NvCVImage_Create);
 	LOAD_SYM(NvCVImage_Destroy);
-	LOAD_SYM(NvCVImage_ComponentOffsets);
 	LOAD_SYM(NvCVImage_Transfer);
-	LOAD_SYM(NvCVImage_TransferRect);
-	LOAD_SYM(NvCVImage_TransferFromYUV);
-	LOAD_SYM(NvCVImage_TransferToYUV);
 	LOAD_SYM(NvCVImage_MapResource);
 	LOAD_SYM(NvCVImage_UnmapResource);
-	LOAD_SYM(NvCVImage_Composite);
-	LOAD_SYM(NvCVImage_CompositeRect);
-	LOAD_SYM(NvCVImage_CompositeOverConstant);
-	LOAD_SYM(NvCVImage_FlipY);
-	LOAD_SYM(NvCVImage_GetYUVPointers);
 	LOAD_SYM(NvCVImage_InitFromD3D11Texture);
-	LOAD_SYM(NvCVImage_ToD3DFormat);
-	LOAD_SYM(NvCVImage_FromD3DFormat);
-	LOAD_SYM(NvCVImage_ToD3DColorSpace);
-	LOAD_SYM(NvCVImage_FromD3DColorSpace);
-#undef LOAD_SYM
-
-#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
-	LOAD_SYM(NvVFX_ConfigureLogger);
-	if (!nvvfx_new_sdk) {
-		blog(LOG_INFO, "[NVIDIA VIDEO FX]: SDK loaded but old redistributable detected. Please upgrade.");
-	}
 #undef LOAD_SYM
 
 	int err;
@@ -1212,13 +1177,13 @@ bool load_nvidia_vfx(void)
 unload_everything:
 	nvvfx_loaded = false;
 	blog(LOG_INFO, "[NVIDIA VIDEO FX]: disabled, redistributable not found");
-	release_nv_vfx();
+	release_vfx_lib();
 	return false;
 }
 
 void unload_nvidia_vfx(void)
 {
-	release_nv_vfx();
+	release_vfx_lib();
 }
 
 struct obs_source_info nvidia_greenscreen_filter_info = {

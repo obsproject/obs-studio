@@ -25,7 +25,7 @@
 
 using idian::ComboBox;
 
-ComboBox::ComboBox(QWidget *parent) : QComboBox(parent), Utils(this)
+ComboBox::ComboBox(QWidget *parent) : QComboBox(parent)
 {
 	Utils::applyStateStylingEventFilter(this);
 }

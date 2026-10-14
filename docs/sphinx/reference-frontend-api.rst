@@ -150,6 +150,10 @@ Structures/Enumerations
 
      Triggered when the replay buffer has fully stopped.
 
+   - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING**
+
+     Triggered when the replay buffer is saving.
+
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED**
 
      Triggered when the replay buffer has been saved.
@@ -1010,3 +1014,11 @@ Functions
    :param duplicate: *true* for paste duplicate, *false* for paste reference
 
    .. versionadded:: 32.2
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_safe_mode_enabled(void)
+
+   :return: *true* if OBS was launched in Safe Mode, *false* otherwise
+
+   .. versionadded:: 33.0

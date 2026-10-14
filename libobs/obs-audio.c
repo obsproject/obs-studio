@@ -493,18 +493,15 @@ static inline void release_audio_sources(struct obs_core_audio *audio)
 static inline void execute_audio_tasks(void)
 {
 	struct obs_core_audio *audio = &obs->audio;
-	bool tasks_remaining = true;
-
-	while (tasks_remaining) {
-		pthread_mutex_lock(&audio->task_mutex);
-		if (audio->tasks.size) {
-			struct obs_task_info info;
-			deque_pop_front(&audio->tasks, &info, sizeof(info));
-			info.task(info.param);
-		}
-		tasks_remaining = !!audio->tasks.size;
+	pthread_mutex_lock(&audio->task_mutex);
+	while (audio->tasks.size) {
+		struct obs_task_info info;
+		deque_pop_front(&audio->tasks, &info, sizeof(info));
 		pthread_mutex_unlock(&audio->task_mutex);
+		info.task(info.param);
+		pthread_mutex_lock(&audio->task_mutex);
 	}
+	pthread_mutex_unlock(&audio->task_mutex);
 }
 
 /* In case monitoring and an 'Audio Output Capture' source have the same device, one silences all the monitored
@@ -517,15 +514,11 @@ static inline bool should_silence_monitored_source(obs_source_t *source, struct 
 	if (!dup_src || !obs_source_active(dup_src))
 		return false;
 
-	if (dup_src->monitoring_type == OBS_MONITORING_TYPE_MONITOR_ONLY)
-		return false;
-
 	bool fader_muted = close_float(audio->monitoring_duplicating_source->volume, 0.0f, 0.0001f);
 	bool output_capture_unmuted = !audio->monitoring_duplicating_source->muted && !fader_muted;
 
 	if (output_capture_unmuted) {
-		if (source->monitoring_type == OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT &&
-		    source != audio->monitoring_duplicating_source) {
+		if (source->monitoring_enabled && source != audio->monitoring_duplicating_source) {
 			return true;
 		}
 	}

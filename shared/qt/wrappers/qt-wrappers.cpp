@@ -90,6 +90,7 @@ void OBSMessageBox::warning(QWidget *parent, const QString &title, const QString
 	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::NoButton, parent);
 	if (enableRichText) {
 		mb.setTextFormat(Qt::RichText);
+		mb.setOption(QMessageBox::Option::DontUseNativeDialog, true);
 	}
 	mb.addButton(tr("OK"), QMessageBox::AcceptRole);
 	mb.exec();
@@ -225,7 +226,7 @@ void ExecuteFuncSafeBlock(std::function<void()> func)
 
 	auto wait = [&]() {
 		func();
-		QMetaObject::invokeMethod(&eventLoop, "quit", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&eventLoop, &QEventLoop::quit, Qt::QueuedConnection);
 	};
 
 	os_atomic_inc_long(&insideEventLoop);
@@ -246,7 +247,7 @@ void ExecuteFuncSafeBlockMsgBox(std::function<void()> func, const QString &title
 
 	auto wait = [&]() {
 		func();
-		QMetaObject::invokeMethod(&dlg, "accept", Qt::QueuedConnection);
+		QMetaObject::invokeMethod(&dlg, &QMessageBox::accept, Qt::QueuedConnection);
 	};
 
 	os_atomic_inc_long(&insideEventLoop);
