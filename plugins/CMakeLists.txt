@@ -7,8 +7,15 @@ endif()
 option(ENABLE_CORE_MODULES "Enable building OBS Core Modules" ON)
 set_property(GLOBAL PROPERTY ENABLE_PLUGINS ${ENABLE_CORE_MODULES})
 
+# FIXME: Remove with OBS 34.0.0
+if(DEFINED ENABLE_PLUGINS)
+  message(DEPRECATION "The ENABLE_PLUGINS cache variable is deprecated, use 'ENABLE_CORE_MODULES' instead")
+  set(ENABLE_CORE_MODULES ${ENABLE_PLUGINS})
+endif()
+
 if(NOT ENABLE_CORE_MODULES)
   set_property(GLOBAL APPEND PROPERTY OBS_FEATURES_DISABLED "Core Modules")
+  set_obs_core_modules()
   return()
 endif()
 
