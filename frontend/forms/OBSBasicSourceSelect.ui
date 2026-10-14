@@ -152,13 +152,13 @@
             <number>0</number>
            </property>
            <property name="verticalScrollBarPolicy">
-            <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOn</enum>
+            <enum>Qt::ScrollBarPolicy::ScrollBarAsNeeded</enum>
            </property>
            <property name="horizontalScrollBarPolicy">
             <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
            </property>
            <property name="sizeAdjustPolicy">
-            <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContentsOnFirstShow</enum>
+            <enum>QAbstractScrollArea::SizeAdjustPolicy::AdjustToContents</enum>
            </property>
            <property name="editTriggers">
             <set>QAbstractItemView::EditTrigger::NoEditTriggers</set>
@@ -167,9 +167,6 @@
             <bool>false</bool>
            </property>
            <property name="verticalScrollMode">
-            <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
-           </property>
-           <property name="horizontalScrollMode">
             <enum>QAbstractItemView::ScrollMode::ScrollPerPixel</enum>
            </property>
            <property name="resizeMode">
@@ -490,25 +487,19 @@
                 </widget>
                </item>
                <item>
-                <widget class="QWidget" name="addExistingContainer">
-                 <property name="minimumSize">
-                  <size>
-                   <width>0</width>
-                   <height>0</height>
-                  </size>
-                 </property>
+                <widget class="QFrame" name="addExistingContainer">
                  <layout class="QHBoxLayout" name="horizontalLayout_4">
                   <property name="leftMargin">
-                   <number>0</number>
+                   <number>1</number>
                   </property>
                   <property name="topMargin">
-                   <number>0</number>
+                   <number>1</number>
                   </property>
                   <property name="rightMargin">
-                   <number>0</number>
+                   <number>1</number>
                   </property>
                   <property name="bottomMargin">
-                   <number>0</number>
+                   <number>1</number>
                   </property>
                   <item>
                    <widget class="QPushButton" name="addExistingButton">
