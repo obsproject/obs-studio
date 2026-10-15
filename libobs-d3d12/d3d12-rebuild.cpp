@@ -321,8 +321,9 @@ try {
 
 	/* ----------------------------------------------------------------- */
 
-	for (gs_device_loss &callback : loss_callbacks)
+	for (gs_device_loss &callback : loss_callbacks) {
 		callback.device_loss_release(callback.data);
+	}
 
 	gs_obj *obj = first_obj;
 
@@ -458,8 +459,9 @@ try {
 	curFramebufferInvalidate = true;
 	curToplogy = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
-	for (gs_device_loss &callback : loss_callbacks)
+	for (gs_device_loss &callback : loss_callbacks) {
 		callback.device_loss_rebuild(dev, callback.data);
+	}
 
 	blog(LOG_WARNING, "Device rebuild complete!");
 

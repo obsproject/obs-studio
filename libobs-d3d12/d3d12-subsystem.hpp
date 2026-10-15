@@ -649,12 +649,15 @@ struct gs_vertex_shader : gs_shader {
 	inline uint32_t NumBuffersExpected() const
 	{
 		uint32_t count = nTexUnits + 1;
-		if (hasNormals)
+		if (hasNormals) {
 			count++;
-		if (hasColors)
+		}
+		if (hasColors) {
 			count++;
-		if (hasTangents)
+		}
+		if (hasTangents) {
 			count++;
+		}
 
 		return count;
 	}
@@ -701,10 +704,12 @@ struct gs_pixel_shader : gs_shader {
 	inline void GetSamplerStates(gs_samplerstate_t **descriptor)
 	{
 		size_t i;
-		for (i = 0; i < samplers.size(); i++)
+		for (i = 0; i < samplers.size(); i++) {
 			descriptor[i] = &samplers[i]->sampler;
-		for (; i < GS_MAX_TEXTURES; i++)
+		}
+		for (; i < GS_MAX_TEXTURES; i++) {
 			descriptor[i] = NULL;
+		}
 	}
 
 	gs_pixel_shader(gs_device_t *device, const char *file, const char *shaderString);

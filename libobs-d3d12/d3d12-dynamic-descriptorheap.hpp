@@ -22,10 +22,12 @@ public:
 
 	void operator+=(INT OffsetScaledByDescriptorSize)
 	{
-		if (m_CpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+		if (m_CpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
 			m_CpuHandle.ptr += OffsetScaledByDescriptorSize;
-		if (m_GpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+		}
+		if (m_GpuHandle.ptr != D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
 			m_GpuHandle.ptr += OffsetScaledByDescriptorSize;
+		}
 	}
 
 	const D3D12_CPU_DESCRIPTOR_HANDLE *operator&() const { return &m_CpuHandle; }

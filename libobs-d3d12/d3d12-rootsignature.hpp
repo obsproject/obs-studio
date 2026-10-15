@@ -14,8 +14,9 @@ public:
 
 	void Clear()
 	{
-		if (m_RootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE)
+		if (m_RootParam.ParameterType == D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE) {
 			delete[] m_RootParam.DescriptorTable.pDescriptorRanges;
+		}
 
 		m_RootParam.ParameterType = (D3D12_ROOT_PARAMETER_TYPE)0xFFFFFFFF;
 	}
@@ -108,16 +109,18 @@ public:
 
 	void Reset(UINT NumRootParams, UINT NumStaticSamplers = 0)
 	{
-		if (NumRootParams > 0)
+		if (NumRootParams > 0) {
 			m_ParamArray.reset(new RootParameter[NumRootParams]);
-		else
+		} else {
 			m_ParamArray = nullptr;
+		}
 		m_NumParameters = NumRootParams;
 
-		if (NumStaticSamplers > 0)
+		if (NumStaticSamplers > 0) {
 			m_SamplerArray.reset(new D3D12_STATIC_SAMPLER_DESC[NumStaticSamplers]);
-		else
+		} else {
 			m_SamplerArray = nullptr;
+		}
 		m_NumSamplers = NumStaticSamplers;
 		m_NumInitializedStaticSamplers = 0;
 	}

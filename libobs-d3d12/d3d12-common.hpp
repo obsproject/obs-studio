@@ -63,8 +63,9 @@ struct Color {
 inline size_t HashRange(const uint32_t *const Begin, const uint32_t *const End, size_t Hash)
 {
 	// An inexpensive hash for CPUs lacking SSE4.2
-	for (const uint32_t *Iter = Begin; Iter < End; ++Iter)
+	for (const uint32_t *Iter = Begin; Iter < End; ++Iter) {
 		Hash = 16777619U * Hash ^ *Iter;
+	}
 
 	return Hash;
 }
