@@ -9,8 +9,9 @@ void gs_texture_2d::InitSRD(std::vector<D3D12_SUBRESOURCE_DATA> &srd)
 	uint32_t actual_levels = levels;
 	size_t curTex = 0;
 
-	if (!actual_levels)
+	if (!actual_levels) {
 		actual_levels = gs_get_total_levels(width, height, 1);
+	}
 
 	rowSizeBytes /= 8;
 
@@ -44,8 +45,9 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 
 		for (uint32_t lv = 0; lv < levels; lv++) {
 			uint32_t i = levels * t + lv;
-			if (!data[i])
+			if (!data[i]) {
 				break;
+			}
 
 			uint32_t texSize = bbp * w * h / 8;
 
@@ -53,10 +55,12 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 			subData.resize(texSize);
 			memcpy(&subData[0], data[i], texSize);
 
-			if (w > 1)
+			if (w > 1) {
 				w /= 2;
-			if (h > 1)
+			}
+			if (h > 1) {
 				h /= 2;
+			}
 		}
 	}
 }
@@ -170,8 +174,9 @@ void gs_texture_2d::InitResourceView(int32_t PlaneSliceCount)
 		SRVDesc.Texture2D.PlaneSlice = PlaneSliceCount;
 	}
 
-	if (shaderSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+	if (shaderSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
 		shaderSRV = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 
 	ID3D12Resource *Resource = m_pResource.Get();
 	device->d3d12Instance->GetDevice()->CreateShaderResourceView(Resource, &SRVDesc, shaderSRV);
@@ -328,8 +333,9 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle, bool ntHandle
 
 	HRESULT hr = device->d3d12Instance->GetDevice()->OpenSharedHandle((HANDLE)(uintptr_t)handle,
 									  IID_PPV_ARGS(&m_pResource));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to open shared 2D texture", hr);
+	}
 
 	texDesc = m_pResource->GetDesc();
 

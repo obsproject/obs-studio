@@ -7,8 +7,9 @@ static inline bool get_monitor(IDXGIAdapter1 *adaptor, int monitor_idx, IDXGIOut
 
 	hr = adaptor->EnumOutputs(monitor_idx, dxgiOutput);
 	if (FAILED(hr)) {
-		if (hr == DXGI_ERROR_NOT_FOUND)
+		if (hr == DXGI_ERROR_NOT_FOUND) {
 			return false;
+		}
 
 		throw HRError("Failed to get output", hr);
 	}
@@ -24,20 +25,24 @@ void gs_duplicator::Start()
 	HRESULT hr;
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create DXGIFactory", hr);
+	}
 
 	hr = factory->EnumAdapters1(idx, &adapter);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to enumerate DXGIAdapter", hr);
+	}
 
 	hr = D3D11CreateDevice(adapter.Get(), D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL, 0, D3D11_SDK_VERSION,
 			       device11.Assign(), NULL, context11.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create D3D11 Device", hr);
+	}
 
-	if (!get_monitor(adapter, idx, output.Assign()))
+	if (!get_monitor(adapter, idx, output.Assign())) {
 		throw "Invalid monitor index";
+	}
 
 	hr = output->QueryInterface(IID_PPV_ARGS(output5.Assign()));
 	hdr = false;
@@ -49,8 +54,9 @@ void gs_duplicator::Start()
 		};
 		hr = output5->DuplicateOutput1(device11, 0, _countof(supportedFormats), supportedFormats,
 					       duplicator.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to DuplicateOutput1", hr);
+		}
 		DXGI_OUTPUT_DESC desc;
 		if (SUCCEEDED(output->GetDesc(&desc))) {
 			gs_monitor_color_info info = device->GetMonitorColorInfo(desc.Monitor);
@@ -59,12 +65,14 @@ void gs_duplicator::Start()
 		}
 	} else {
 		hr = output->QueryInterface(IID_PPV_ARGS(output1.Assign()));
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to query IDXGIOutput1", hr);
+		}
 
 		hr = output1->DuplicateOutput(device11, duplicator.Assign());
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to DuplicateOutput", hr);
+		}
 	}
 }
 
@@ -98,18 +106,22 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device, int monitor_
 		ComPtr<IDXGIFactory1> factory;
 		ComPtr<IDXGIAdapter1> adapter;
 		hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to create DXGIFactory", hr);
+		}
 
 		hr = factory->EnumAdapters1(monitor_idx, &adapter);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("Failed to enumerate DXGIAdapter", hr);
-		if (!get_monitor(adapter, monitor_idx, output.Assign()))
+		}
+		if (!get_monitor(adapter, monitor_idx, output.Assign())) {
 			return false;
+		}
 
 		hr = output->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			throw HRError("GetDesc failed", hr);
+		}
 
 	} catch (const HRError &error) {
 		blog(LOG_ERROR,
@@ -156,14 +168,16 @@ EXPORT int device_duplicator_get_monitor_index(gs_device_t *device, void *monito
 	while (index == -1) {
 		IDXGIOutput *pOutput;
 		const HRESULT hr = device->d3d12Instance->GetAdapter()->EnumOutputs(output, &pOutput);
-		if (hr == DXGI_ERROR_NOT_FOUND)
+		if (hr == DXGI_ERROR_NOT_FOUND) {
 			break;
+		}
 
 		if (SUCCEEDED(hr)) {
 			DXGI_OUTPUT_DESC desc;
 			if (SUCCEEDED(pOutput->GetDesc(&desc))) {
-				if (desc.Monitor == handle)
+				if (desc.Monitor == handle) {
 					index = output;
+				}
 			} else {
 				blog(LOG_ERROR,
 				     "device_duplicator_get_monitor_index: "

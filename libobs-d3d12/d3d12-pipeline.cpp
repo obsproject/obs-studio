@@ -62,8 +62,9 @@ void GraphicsPSO::SetRenderTargetFormats(UINT NumRTVs, const DXGI_FORMAT *RTVFor
 		}
 		m_PSODesc.RTVFormats[i] = RTVFormats[i];
 	}
-	for (UINT i = NumRTVs; i < m_PSODesc.NumRenderTargets; ++i)
+	for (UINT i = NumRTVs; i < m_PSODesc.NumRenderTargets; ++i) {
 		m_PSODesc.RTVFormats[i] = DXGI_FORMAT_UNKNOWN;
+	}
 	m_PSODesc.NumRenderTargets = NumRTVs;
 	m_PSODesc.DSVFormat = DSVFormat;
 	m_PSODesc.SampleDesc.Count = MsaaCount;
@@ -79,8 +80,9 @@ void GraphicsPSO::SetInputLayout(UINT NumElements, const D3D12_INPUT_ELEMENT_DES
 			(D3D12_INPUT_ELEMENT_DESC *)malloc(sizeof(D3D12_INPUT_ELEMENT_DESC) * NumElements);
 		memcpy(NewElements, pInputElementDescs, NumElements * sizeof(D3D12_INPUT_ELEMENT_DESC));
 		m_InputLayouts.reset((const D3D12_INPUT_ELEMENT_DESC *)NewElements);
-	} else
+	} else {
 		m_InputLayouts = nullptr;
+	}
 }
 
 void GraphicsPSO::SetPrimitiveRestart(D3D12_INDEX_BUFFER_STRIP_CUT_VALUE IBProps)
@@ -156,8 +158,9 @@ void GraphicsPSO::Finalize()
 		if (iter == m_DeviceInstance->GetGraphicsPSOHashMap().end()) {
 			firstCompile = true;
 			PSORef = m_DeviceInstance->GetGraphicsPSOHashMap()[HashCode];
-		} else
+		} else {
 			PSORef = iter->second;
+		}
 	}
 	if (firstCompile) {
 		HRESULT hr =
@@ -168,8 +171,9 @@ void GraphicsPSO::Finalize()
 		m_DeviceInstance->GetGraphicsPSOHashMap()[HashCode].Set(m_PSO);
 		m_PSO->SetName(m_Name);
 	} else {
-		while (PSORef == nullptr)
+		while (PSORef == nullptr) {
 			std::this_thread::yield();
+		}
 		m_PSO = PSORef;
 	}
 }

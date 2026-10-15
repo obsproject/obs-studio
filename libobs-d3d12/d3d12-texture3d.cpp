@@ -7,8 +7,9 @@ void gs_texture_3d::InitSRD(std::vector<D3D12_SUBRESOURCE_DATA> &srd)
 	uint32_t sliceSizeBytes = height * rowSizeBits / 8;
 	uint32_t actual_levels = levels;
 
-	if (!actual_levels)
+	if (!actual_levels) {
 		actual_levels = gs_get_total_levels(width, height, depth);
+	}
 
 	uint32_t newRowSize = rowSizeBits / 8;
 	uint32_t newSlizeSize = sliceSizeBytes;
@@ -35,8 +36,9 @@ void gs_texture_3d::BackupTexture(const uint8_t *const *data)
 	const uint32_t bbp = gs_get_format_bpp(format);
 
 	for (uint32_t i = 0; i < levels; i++) {
-		if (!data[i])
+		if (!data[i]) {
 			break;
+		}
 
 		const uint32_t texSize = bbp * w * h * d / 8;
 		this->data[i].resize(texSize);
@@ -44,12 +46,15 @@ void gs_texture_3d::BackupTexture(const uint8_t *const *data)
 		std::vector<uint8_t> &subData = this->data[i];
 		memcpy(&subData[0], data[i], texSize);
 
-		if (w > 1)
+		if (w > 1) {
 			w /= 2;
-		if (h > 1)
+		}
+		if (h > 1) {
 			h /= 2;
-		if (d > 1)
+		}
+		if (d > 1) {
 			d /= 2;
+		}
 	}
 }
 
@@ -138,8 +143,9 @@ void gs_texture_3d::InitResourceView()
 	SRVDesc.Texture3D.MipLevels = genMipmaps || !levels ? -1 : levels;
 	SRVDesc.Texture3D.MostDetailedMip = 0;
 
-	if (shaderSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN)
+	if (shaderSRV.ptr == D3D12_GPU_VIRTUAL_ADDRESS_UNKNOWN) {
 		shaderSRV = device->d3d12Instance->AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	}
 
 	ID3D12Resource *Resource = m_pResource.Get();
 	device->d3d12Instance->GetDevice()->CreateShaderResourceView(Resource, &SRVDesc, shaderSRV);
@@ -181,8 +187,9 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
 {
 	HRESULT hr = device->d3d12Instance->GetDevice()->OpenSharedHandle((HANDLE)(uintptr_t)handle,
 									  IID_PPV_ARGS(&m_pResource));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to open shared 2D texture", hr);
+	}
 
 	texDesc = m_pResource->GetDesc();
 

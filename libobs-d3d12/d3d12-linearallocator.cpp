@@ -75,8 +75,9 @@ LinearAllocationPage *LinearAllocatorPageManager::CreateNewPage(size_t PageSize)
 
 void LinearAllocatorPageManager::DiscardPages(uint64_t FenceValue, const std::vector<LinearAllocationPage *> &UsedPages)
 {
-	for (auto iter = UsedPages.begin(); iter != UsedPages.end(); ++iter)
+	for (auto iter = UsedPages.begin(); iter != UsedPages.end(); ++iter) {
 		m_RetiredPages.push(std::make_pair(FenceValue, *iter));
+	}
 }
 
 void LinearAllocatorPageManager::FreeLargePages(uint64_t FenceValue,
@@ -121,8 +122,9 @@ DynAlloc LinearAllocator::Allocate(size_t SizeInBytes, size_t Alignment)
 	// Align the allocation
 	const size_t AlignedSize = AlignUpWithMask(SizeInBytes, AlignmentMask);
 
-	if (AlignedSize > m_PageSize)
+	if (AlignedSize > m_PageSize) {
 		return AllocateLargePage(AlignedSize);
+	}
 
 	m_CurOffset = AlignUp(m_CurOffset, Alignment);
 

@@ -25,12 +25,15 @@ UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader, D3D12Graphics::G
 	UINT numBuffers = 0;
 	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3), "point");
 
-	if (shader->hasNormals)
+	if (shader->hasNormals) {
 		PushBuffer(&numBuffers, buffers, strides, normalBuffer, sizeof(vec3), "normal");
-	if (shader->hasColors)
+	}
+	if (shader->hasColors) {
 		PushBuffer(&numBuffers, buffers, strides, colorBuffer, sizeof(uint32_t), "color");
-	if (shader->hasTangents)
+	}
+	if (shader->hasTangents) {
 		PushBuffer(&numBuffers, buffers, strides, tangentBuffer, sizeof(vec3), "tangent");
+	}
 	if (shader->nTexUnits <= uvBuffers.size()) {
 		for (size_t i = 0; i < shader->nTexUnits; i++) {
 			buffers[numBuffers] = uvBuffers[i];
@@ -63,22 +66,27 @@ void gs_vertex_buffer::BuildBuffers()
 {
 	InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->points, &vertexBuffer);
 
-	if (vbd.data->normals)
+	if (vbd.data->normals) {
 		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->normals, &normalBuffer);
+	}
 
-	if (vbd.data->tangents)
+	if (vbd.data->tangents) {
 		InitBuffer(sizeof(vec3), vbd.data->num, vbd.data->tangents, &tangentBuffer);
+	}
 
-	if (vbd.data->colors)
+	if (vbd.data->colors) {
 		InitBuffer(sizeof(uint32_t), vbd.data->num, vbd.data->colors, &colorBuffer);
+	}
 
 	for (size_t i = 0; i < vbd.data->num_tex; i++) {
 		struct gs_tvertarray *tverts = vbd.data->tvarray + i;
 
-		if (tverts->width != 2 && tverts->width != 4)
+		if (tverts->width != 2 && tverts->width != 4) {
 			throw "Invalid texture vertex size specified";
-		if (!tverts->array)
+		}
+		if (!tverts->array) {
 			throw "No texture vertices specified";
+		}
 
 		D3D12Graphics::GpuBuffer *buffer;
 		InitBuffer(tverts->width * sizeof(float), vbd.data->num, tverts->array, &buffer);
@@ -128,10 +136,12 @@ gs_vertex_buffer::gs_vertex_buffer(gs_device_t *device, struct gs_vb_data *data,
 	  vbd(data),
 	  numVerts(data->num)
 {
-	if (!data->num)
+	if (!data->num) {
 		throw "Cannot initialize vertex buffer with 0 vertices";
-	if (!data->points)
+	}
+	if (!data->points) {
 		throw "No points specified for vertex buffer";
+	}
 
 	BuildBuffers();
 }

@@ -44,19 +44,22 @@ void RootSignature::InitStaticSampler(UINT Register, const D3D12_SAMPLER_DESC &N
 		}
 
 		if (NonStaticSamplerDesc.BorderColor[3] == 1.0f) {
-			if (NonStaticSamplerDesc.BorderColor[0] == 1.0f)
+			if (NonStaticSamplerDesc.BorderColor[0] == 1.0f) {
 				StaticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_WHITE;
-			else
+			} else {
 				StaticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_OPAQUE_BLACK;
-		} else
+			}
+		} else {
 			StaticSamplerDesc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
+		}
 	}
 }
 
 void RootSignature::Finalize(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAGS Flags)
 {
-	if (m_Finalized)
+	if (m_Finalized) {
 		return;
+	}
 
 	if (m_NumInitializedStaticSamplers != m_NumSamplers) {
 		throw HRError("RootSignature: m_NumInitializedStaticSamplers != m_NumSamplers");
@@ -89,17 +92,20 @@ void RootSignature::Finalize(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAG
 
 			// We keep track of sampler descriptor tables separately from CBV_SRV_UAV descriptor tables
 			if (RootParam.DescriptorTable.pDescriptorRanges->RangeType ==
-			    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER)
+			    D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER) {
 				m_SamplerTableBitMap |= (1 << Param);
-			else
+			} else {
 				m_DescriptorTableBitMap |= (1 << Param);
+			}
 
 			for (UINT TableRange = 0; TableRange < RootParam.DescriptorTable.NumDescriptorRanges;
-			     ++TableRange)
+			     ++TableRange) {
 				m_DescriptorTableSize[Param] +=
 					RootParam.DescriptorTable.pDescriptorRanges[TableRange].NumDescriptors;
-		} else
+			}
+		} else {
 			HashCode = HashState(&RootParam, 1, HashCode);
+		}
 	}
 
 	ComPtr<ID3D12RootSignature> RSRef = nullptr;
@@ -111,8 +117,9 @@ void RootSignature::Finalize(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAG
 		if (iter == m_DeviceInstance->GetRootSignatureHashMap().end()) {
 			RSRef = m_DeviceInstance->GetRootSignatureHashMap()[HashCode];
 			firstCompile = true;
-		} else
+		} else {
 			RSRef = iter->second;
+		}
 	}
 	if (firstCompile) {
 		ComPtr<ID3DBlob> pOutBlob, pErrorBlob;
@@ -133,8 +140,9 @@ void RootSignature::Finalize(const std::wstring &name, D3D12_ROOT_SIGNATURE_FLAG
 
 		m_DeviceInstance->GetRootSignatureHashMap()[HashCode].Set(m_Signature);
 	} else {
-		while (RSRef == nullptr)
+		while (RSRef == nullptr) {
 			std::this_thread::yield();
+		}
 		m_Signature = RSRef;
 	}
 

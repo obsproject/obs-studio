@@ -22,8 +22,9 @@ CommandContext::CommandContext(D3D12DeviceInstance *DeviceInstance, D3D12_COMMAN
 
 CommandContext::~CommandContext(void)
 {
-	if (m_CommandList != nullptr)
+	if (m_CommandList != nullptr) {
 		m_CommandList->Release();
+	}
 }
 
 void CommandContext::Reset(void)
@@ -56,8 +57,9 @@ uint64_t CommandContext::Flush(bool WaitForCompletion)
 
 	uint64_t FenceValue = m_DeviceInstance->GetCommandManager().GetQueue(m_Type).ExecuteCommandList(m_CommandList);
 
-	if (WaitForCompletion)
+	if (WaitForCompletion) {
 		m_DeviceInstance->GetCommandManager().WaitForFence(FenceValue);
+	}
 
 	m_CommandList->Reset(m_CurrentAllocator, nullptr);
 
@@ -95,8 +97,9 @@ uint64_t CommandContext::Finish(bool WaitForCompletion)
 	m_DynamicViewDescriptorHeap.CleanupUsedHeaps(FenceValue);
 	m_DynamicSamplerDescriptorHeap.CleanupUsedHeaps(FenceValue);
 
-	if (WaitForCompletion)
+	if (WaitForCompletion) {
 		m_DeviceInstance->GetCommandManager().WaitForFence(FenceValue);
+	}
 
 	m_DeviceInstance->GetContextManager().FreeContext(this);
 
@@ -264,22 +267,26 @@ void CommandContext::TransitionResource(GpuResource &Resource, D3D12_RESOURCE_ST
 		if (NewState == Resource.m_TransitioningState) {
 			BarrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_END_ONLY;
 			Resource.m_TransitioningState = (D3D12_RESOURCE_STATES)-1;
-		} else
+		} else {
 			BarrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+		}
 
 		Resource.m_UsageState = NewState;
-	} else if (NewState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+	} else if (NewState == D3D12_RESOURCE_STATE_UNORDERED_ACCESS) {
 		InsertUAVBarrier(Resource, FlushImmediate);
+	}
 
-	if (FlushImmediate || m_NumBarriersToFlush == kMaxNumDescriptorTables)
+	if (FlushImmediate || m_NumBarriersToFlush == kMaxNumDescriptorTables) {
 		FlushResourceBarriers();
+	}
 }
 
 void CommandContext::BeginResourceTransition(GpuResource &Resource, D3D12_RESOURCE_STATES NewState, bool FlushImmediate)
 {
 	// If it's already transitioning, finish that transition
-	if (Resource.m_TransitioningState != (D3D12_RESOURCE_STATES)-1)
+	if (Resource.m_TransitioningState != (D3D12_RESOURCE_STATES)-1) {
 		TransitionResource(Resource, Resource.m_TransitioningState);
+	}
 
 	D3D12_RESOURCE_STATES OldState = Resource.m_UsageState;
 
@@ -300,8 +307,9 @@ void CommandContext::BeginResourceTransition(GpuResource &Resource, D3D12_RESOUR
 		Resource.m_TransitioningState = NewState;
 	}
 
-	if (FlushImmediate || m_NumBarriersToFlush == kMaxNumDescriptorTables)
+	if (FlushImmediate || m_NumBarriersToFlush == kMaxNumDescriptorTables) {
 		FlushResourceBarriers();
+	}
 }
 
 void CommandContext::InsertUAVBarrier(GpuResource &Resource, bool FlushImmediate)
@@ -315,8 +323,9 @@ void CommandContext::InsertUAVBarrier(GpuResource &Resource, bool FlushImmediate
 	BarrierDesc.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
 	BarrierDesc.UAV.pResource = Resource.GetResource();
 
-	if (FlushImmediate)
+	if (FlushImmediate) {
 		FlushResourceBarriers();
+	}
 }
 
 void CommandContext::InsertAliasBarrier(GpuResource &Before, GpuResource &After, bool FlushImmediate)
@@ -331,8 +340,9 @@ void CommandContext::InsertAliasBarrier(GpuResource &Before, GpuResource &After,
 	BarrierDesc.Aliasing.pResourceBefore = Before.GetResource();
 	BarrierDesc.Aliasing.pResourceAfter = After.GetResource();
 
-	if (FlushImmediate)
+	if (FlushImmediate) {
 		FlushResourceBarriers();
+	}
 }
 
 void CommandContext::FlushResourceBarriers(void)
@@ -379,15 +389,17 @@ void CommandContext::SetDescriptorHeaps(UINT HeapCount, D3D12_DESCRIPTOR_HEAP_TY
 		}
 	}
 
-	if (AnyChanged)
+	if (AnyChanged) {
 		BindDescriptorHeaps();
+	}
 }
 
 void CommandContext::SetPipelineState(const PSO &PSO)
 {
 	ID3D12PipelineState *PipelineState = PSO.GetPipelineStateObject();
-	if (PipelineState == m_CurPipelineState)
+	if (PipelineState == m_CurPipelineState) {
 		return;
+	}
 
 	m_CommandList->SetPipelineState(PipelineState);
 	m_CurPipelineState = PipelineState;
@@ -404,12 +416,14 @@ void CommandContext::BindDescriptorHeaps(void)
 	ID3D12DescriptorHeap *HeapsToBind[D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES];
 	for (UINT i = 0; i < D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES; ++i) {
 		ID3D12DescriptorHeap *HeapIter = m_CurrentDescriptorHeaps[i];
-		if (HeapIter != nullptr)
+		if (HeapIter != nullptr) {
 			HeapsToBind[NonNullHeaps++] = HeapIter;
+		}
 	}
 
-	if (NonNullHeaps > 0)
+	if (NonNullHeaps > 0) {
 		m_CommandList->SetDescriptorHeaps(NonNullHeaps, HeapsToBind);
+	}
 }
 
 void GraphicsContext::ClearUAV(GpuBuffer &Target)
@@ -472,8 +486,9 @@ void GraphicsContext::ResolveQueryData(ID3D12QueryHeap *QueryHeap, D3D12_QUERY_T
 
 void GraphicsContext::SetRootSignature(const RootSignature &RootSig)
 {
-	if (RootSig.GetSignature() == m_CurGraphicsRootSignature)
+	if (RootSig.GetSignature() == m_CurGraphicsRootSignature) {
 		return;
+	}
 
 	m_CommandList->SetGraphicsRootSignature(m_CurGraphicsRootSignature = RootSig.GetSignature());
 
@@ -758,8 +773,9 @@ void ComputeContext::ClearUAV(GpuBuffer &Target)
 
 void ComputeContext::SetRootSignature(const RootSignature &RootSig)
 {
-	if (RootSig.GetSignature() == m_CurComputeRootSignature)
+	if (RootSig.GetSignature() == m_CurComputeRootSignature) {
 		return;
+	}
 
 	m_CommandList->SetComputeRootSignature(m_CurComputeRootSignature = RootSig.GetSignature());
 
@@ -891,8 +907,9 @@ void ContextManager::FreeContext(CommandContext *UsedContext)
 
 void ContextManager::DestroyAllContexts()
 {
-	for (uint32_t i = 0; i < 4; ++i)
+	for (uint32_t i = 0; i < 4; ++i) {
 		m_ContextPool[i].clear();
+	}
 }
 
 } // namespace D3D12Graphics

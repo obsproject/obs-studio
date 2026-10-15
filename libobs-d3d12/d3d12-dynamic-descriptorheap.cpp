@@ -152,8 +152,9 @@ void DescriptorHandleCache::UnbindAllValid()
 	unsigned long RootIndex;
 	while (_BitScanForward(&RootIndex, TableParams)) {
 		TableParams ^= (1 << RootIndex);
-		if (m_RootDescriptorTable[RootIndex].AssignedHandlesBitMap != 0)
+		if (m_RootDescriptorTable[RootIndex].AssignedHandlesBitMap != 0) {
 			m_StaleRootParamsBitMap |= (1 << RootIndex);
+		}
 	}
 }
 
@@ -170,8 +171,9 @@ void DescriptorHandleCache::StageDescriptorHandles(UINT RootIndex, UINT Offset, 
 
 	DescriptorTableCache &TableCache = m_RootDescriptorTable[RootIndex];
 	D3D12_CPU_DESCRIPTOR_HANDLE *CopyDest = TableCache.TableStart + Offset;
-	for (UINT i = 0; i < NumHandles; ++i)
+	for (UINT i = 0; i < NumHandles; ++i) {
 		CopyDest[i] = Handles[i];
+	}
 	TableCache.AssignedHandlesBitMap |= ((1 << NumHandles) - 1) << Offset;
 	m_StaleRootParamsBitMap |= (1 << RootIndex);
 }
@@ -277,16 +279,18 @@ void DynamicDescriptorHeap::ParseComputeRootSignature(const RootSignature &RootS
 
 void DynamicDescriptorHeap::CommitGraphicsRootDescriptorTables(ID3D12GraphicsCommandList *CmdList)
 {
-	if (m_GraphicsHandleCache->m_StaleRootParamsBitMap != 0)
+	if (m_GraphicsHandleCache->m_StaleRootParamsBitMap != 0) {
 		CopyAndBindStagedTables(*m_GraphicsHandleCache, CmdList,
 					&ID3D12GraphicsCommandList::SetGraphicsRootDescriptorTable);
+	}
 }
 
 void DynamicDescriptorHeap::CommitComputeRootDescriptorTables(ID3D12GraphicsCommandList *CmdList)
 {
-	if (m_ComputeHandleCache->m_StaleRootParamsBitMap != 0)
+	if (m_ComputeHandleCache->m_StaleRootParamsBitMap != 0) {
 		CopyAndBindStagedTables(*m_ComputeHandleCache, CmdList,
 					&ID3D12GraphicsCommandList::SetComputeRootDescriptorTable);
+	}
 }
 
 bool DynamicDescriptorHeap::HasSpace(uint32_t Count)

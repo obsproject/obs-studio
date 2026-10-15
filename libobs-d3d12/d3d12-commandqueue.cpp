@@ -20,8 +20,9 @@ void CommandAllocatorPool::Create(D3D12DeviceInstance *DeviceInstance)
 
 void CommandAllocatorPool::Shutdown()
 {
-	for (size_t i = 0; i < m_AllocatorPool.size(); ++i)
+	for (size_t i = 0; i < m_AllocatorPool.size(); ++i) {
 		m_AllocatorPool[i]->Release();
+	}
 
 	m_AllocatorPool.clear();
 }
@@ -118,8 +119,9 @@ void CommandQueue::Create(D3D12DeviceInstance *DeviceInstance)
 
 void CommandQueue::Shutdown()
 {
-	if (m_CommandQueue == nullptr)
+	if (m_CommandQueue == nullptr) {
 		return;
+	}
 
 	m_AllocatorPool->Shutdown();
 
@@ -145,8 +147,9 @@ uint64_t CommandQueue::IncrementFence(void)
 
 bool CommandQueue::IsFenceComplete(uint64_t FenceValue)
 {
-	if (FenceValue > m_LastCompletedFenceValue)
+	if (FenceValue > m_LastCompletedFenceValue) {
 		m_LastCompletedFenceValue = std::max(m_LastCompletedFenceValue, m_pFence->GetCompletedValue());
+	}
 
 	return FenceValue <= m_LastCompletedFenceValue;
 }
@@ -165,8 +168,9 @@ void CommandQueue::StallForProducer(CommandQueue &Producer)
 
 void CommandQueue::WaitForFence(uint64_t FenceValue)
 {
-	if (IsFenceComplete(FenceValue))
+	if (IsFenceComplete(FenceValue)) {
 		return;
+	}
 
 	// TODO:  Think about how this might affect a multi-threaded situation.  Suppose thread A
 	// wants to wait for fence 100, then thread B comes along and wants to wait for 99.  If

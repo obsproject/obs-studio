@@ -239,8 +239,9 @@ void D3D12DeviceInstance::DiscardDynamicDescriptorHeaps(D3D12_DESCRIPTOR_HEAP_TY
 							const std::vector<ID3D12DescriptorHeap *> &UsedHeaps)
 {
 	uint32_t idx = HeapType == D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER ? 1 : 0;
-	for (auto iter = UsedHeaps.begin(); iter != UsedHeaps.end(); ++iter)
+	for (auto iter = UsedHeaps.begin(); iter != UsedHeaps.end(); ++iter) {
 		m_DynamicRetiredDescriptorHeaps[idx].push(std::make_pair(FenceValueForReset, *iter));
+	}
 }
 
 D3D12_CPU_DESCRIPTOR_HANDLE D3D12DeviceInstance::AllocateDescriptor(D3D12_DESCRIPTOR_HEAP_TYPE Type, UINT Count)
@@ -320,8 +321,9 @@ inline UINT64 UpdateSubresources(_In_ ID3D12GraphicsCommandList *pCmdList, _In_ 
 	}
 
 	for (UINT i = 0; i < NumSubresources; ++i) {
-		if (pRowSizesInBytes[i] > SIZE_T(-1))
+		if (pRowSizesInBytes[i] > SIZE_T(-1)) {
 			return 0;
+		}
 		D3D12_MEMCPY_DEST DestData = {pData + pLayouts[i].Offset, pLayouts[i].Footprint.RowPitch,
 					      SIZE_T(pLayouts[i].Footprint.RowPitch) * SIZE_T(pNumRows[i])};
 		MemcpySubresource(&DestData, &pSrcData[i], static_cast<SIZE_T>(pRowSizesInBytes[i]), pNumRows[i],
@@ -635,8 +637,9 @@ std::optional<HagsStatus> D3D12DeviceInstance::GetAdapterHagsStatus(const DXGI_A
 		args.PrivateDriverDataSize = sizeof(ext_caps);
 		res = D3DKMTQueryAdapterInfo(&args);
 
-		if (SUCCEEDED(res))
+		if (SUCCEEDED(res)) {
 			status.SetDriverSupport(ext_caps.HwSchSupportState);
+		}
 
 		ret = status;
 	} else {
@@ -660,25 +663,29 @@ void D3D12DeviceInstance::EnumD3DAdapters(bool (*callback)(void *, const char *,
 	UINT i;
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create DXGIFactory", hr);
+	}
 
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
 		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 
-		if (!callback(param, name, i))
+		if (!callback(param, name, i)) {
 			break;
+		}
 	}
 }
 
@@ -849,8 +856,9 @@ ULONG D3D12DeviceInstance::GetSdrMaxNits(HMONITOR monitor)
 		header.size = sizeof(level);
 		header.adapterId = targetInfo.adapterId;
 		header.id = targetInfo.id;
-		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS)
+		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS) {
 			nits = (level.SDRWhiteLevel * 80) / 1000;
+		}
 	}
 
 	return nits;
@@ -902,8 +910,9 @@ void D3D12DeviceInstance::LogAdapterMonitors(IDXGIAdapter1 *adapter)
 
 	for (i = 0; adapter->EnumOutputs(i, &output) == S_OK; ++i) {
 		DXGI_OUTPUT_DESC desc;
-		if (FAILED(output->GetDesc(&desc)))
+		if (FAILED(output->GetDesc(&desc))) {
 			continue;
+		}
 
 		unsigned refresh = 0;
 
@@ -1023,20 +1032,23 @@ void D3D12DeviceInstance::LogD3DAdapters()
 	blog(LOG_INFO, "Available Video Adapters: ");
 
 	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create DXGIFactory", hr);
+	}
 
 	for (i = 0; factory->EnumAdapters1(i, adapter.Assign()) == S_OK; ++i) {
 		DXGI_ADAPTER_DESC desc;
 		char name[512] = "";
 
 		hr = adapter->GetDesc(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		os_wcs_to_utf8(desc.Description, 0, name, sizeof(name));
 		blog(LOG_INFO, "\tAdapter %u: %s", i, name);
@@ -1098,32 +1110,38 @@ void D3D12DeviceInstance::CreateD3DAdapterAndDevice(uint32_t index)
 	     ++Idx) {
 		DXGI_ADAPTER_DESC1 desc;
 		HRESULT hr = pAdapter->GetDesc1(&desc);
-		if (FAILED(hr))
+		if (FAILED(hr)) {
 			continue;
+		}
 		// Is a software adapter?
-		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
+		if (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) {
 			continue;
+		}
 
 		/* ignore Microsoft's 'basic' renderer' */
-		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c)
+		if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
 			continue;
+		}
 
 		// Can create a D3D12 device?
-		if (FAILED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice))))
+		if (FAILED(D3D12CreateDevice(pAdapter.Get(), D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&pDevice)))) {
 			continue;
+		}
 
 		// Does support DXR if required?
 		/* if (RequireDXRSupport && !IsDirectXRaytracingSupported(pDevice.Get()))
 			continue;*/
 
 		// By default, search for the adapter with the most memory because that's usually the dGPU.
-		if (desc.DedicatedVideoMemory < MaxSize)
+		if (desc.DedicatedVideoMemory < MaxSize) {
 			continue;
+		}
 
 		MaxSize = desc.DedicatedVideoMemory;
 
-		if (m_Device != nullptr)
+		if (m_Device != nullptr) {
 			m_Device->Release();
+		}
 
 		adapters.push_back(pAdapter);
 	}
@@ -1152,13 +1170,14 @@ void D3D12DeviceInstance::CreateD3DAdapterAndDevice(uint32_t index)
 	LARGE_INTEGER umd;
 	uint64_t driverVersion = 0;
 	HRESULT hr = m_Adapter->CheckInterfaceSupport(__uuidof(IDXGIDevice), &umd);
-	if (SUCCEEDED(hr))
+	if (SUCCEEDED(hr)) {
 		driverVersion = umd.QuadPart;
+	}
 
 	/* Always true for non-NVIDIA GPUs */
-	if (desc.VendorId != 0x10de)
+	if (desc.VendorId != 0x10de) {
 		m_FastClearSupported = true;
-	else {
+	} else {
 		const uint16_t aa = (driverVersion >> 48) & 0xffff;
 		const uint16_t bb = (driverVersion >> 32) & 0xffff;
 		const uint16_t ccccc = (driverVersion >> 16) & 0xffff;
@@ -1226,8 +1245,9 @@ bool D3D12DeviceInstance::IsDirectXRaytracingSupported(ID3D12Device *testDevice)
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 featureSupport = {};
 
 	if (FAILED(testDevice->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &featureSupport,
-						   sizeof(featureSupport))))
+						   sizeof(featureSupport)))) {
 		return false;
+	}
 
 	return featureSupport.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED;
 }

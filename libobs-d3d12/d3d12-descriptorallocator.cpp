@@ -20,8 +20,9 @@ D3D12_CPU_DESCRIPTOR_HANDLE DescriptorAllocator::Allocate(uint32_t Count)
 		m_CurrentHandle = m_CurrentHeap->GetCPUDescriptorHandleForHeapStart();
 		m_RemainingFreeHandles = kMaxNumDescriptors;
 
-		if (m_DescriptorSize == 0)
+		if (m_DescriptorSize == 0) {
 			m_DescriptorSize = m_DeviceInstance->GetDevice()->GetDescriptorHandleIncrementSize(m_Type);
+		}
 
 		for (int32_t i = 0; i < kMaxNumDescriptors; ++i) {
 			m_DescriptorPoolNodes[i].index = i;
