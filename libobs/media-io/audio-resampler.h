@@ -36,6 +36,10 @@ struct resample_info {
 EXPORT audio_resampler_t *audio_resampler_create(const struct resample_info *dst, const struct resample_info *src);
 EXPORT void audio_resampler_destroy(audio_resampler_t *resampler);
 
+EXPORT void audio_resampler_set_compensation_error(audio_resampler_t *resampler, int delta_ns_per_s);
+
+EXPORT void audio_resampler_disable_compensation(audio_resampler_t *resampler);
+
 EXPORT bool audio_resampler_resample(audio_resampler_t *resampler, uint8_t *output[], uint32_t *out_frames,
 				     uint64_t *ts_offset, const uint8_t *const input[], uint32_t in_frames);
 
