@@ -1,0 +1,70 @@
+#include <graphics/vec4.h>
+#include <float.h>
+
+#include "d3d12-subsystem.hpp"
+
+static inline D3D12_TEXTURE_ADDRESS_MODE ConvertGSAddressMode(gs_address_mode mode)
+{
+	switch (mode) {
+	case GS_ADDRESS_WRAP:
+		return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+	case GS_ADDRESS_CLAMP:
+		return D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
+	case GS_ADDRESS_MIRROR:
+		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR;
+	case GS_ADDRESS_BORDER:
+		return D3D12_TEXTURE_ADDRESS_MODE_BORDER;
+	case GS_ADDRESS_MIRRORONCE:
+		return D3D12_TEXTURE_ADDRESS_MODE_MIRROR_ONCE;
+	}
+
+	return D3D12_TEXTURE_ADDRESS_MODE_WRAP;
+}
+
+static inline D3D12_FILTER ConvertGSFilter(gs_sample_filter filter)
+{
+	switch (filter) {
+	case GS_FILTER_POINT:
+		return D3D12_FILTER_MIN_MAG_MIP_POINT;
+	case GS_FILTER_LINEAR:
+		return D3D12_FILTER_MIN_MAG_MIP_LINEAR;
+	case GS_FILTER_MIN_MAG_POINT_MIP_LINEAR:
+		return D3D12_FILTER_MIN_MAG_POINT_MIP_LINEAR;
+	case GS_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
+		return D3D12_FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+	case GS_FILTER_MIN_POINT_MAG_MIP_LINEAR:
+		return D3D12_FILTER_MIN_POINT_MAG_MIP_LINEAR;
+	case GS_FILTER_MIN_LINEAR_MAG_MIP_POINT:
+		return D3D12_FILTER_MIN_LINEAR_MAG_MIP_POINT;
+	case GS_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+		return D3D12_FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+	case GS_FILTER_MIN_MAG_LINEAR_MIP_POINT:
+		return D3D12_FILTER_MIN_MAG_LINEAR_MIP_POINT;
+	case GS_FILTER_ANISOTROPIC:
+		return D3D12_FILTER_ANISOTROPIC;
+	}
+
+	return D3D12_FILTER_MIN_MAG_MIP_POINT;
+}
+
+gs_sampler_state::gs_sampler_state(gs_device_t *device, const gs_sampler_info *info)
+	: gs_obj(device, gs_type::gs_sampler_state),
+	  info(*info),
+	  sampleDesc(device->d3d12Instance)
+{
+	vec4 v4;
+	vec4_from_rgba(&v4, info->border_color);
+
+	sampleDesc.Filter = ConvertGSFilter(info->filter);
+
+	D3D12Graphics::Color borderColor = {v4.x, v4.y, v4.z, v4.w};
+	sampleDesc.SetBorderColor(borderColor);
+	sampleDesc.SetTextureAddressMode(D3D12_TEXTURE_ADDRESS_MODE_CLAMP);
+
+	sampleDesc.AddressU = ConvertGSAddressMode(info->address_u);
+	sampleDesc.AddressV = ConvertGSAddressMode(info->address_v);
+	sampleDesc.AddressW = ConvertGSAddressMode(info->address_w);
+	sampleDesc.ComparisonFunc = D3D12_COMPARISON_FUNC_NEVER;
+	sampleDesc.MaxAnisotropy = 0;
+	sampleDesc.CreateDescriptor();
+}
