@@ -36,14 +36,12 @@ function Build {
 
     $ScriptHome = $PSScriptRoot
     $ProjectRoot = Resolve-Path -Path "$PSScriptRoot/../.."
-
     $UtilityFunctions = Get-ChildItem -Path $PSScriptRoot/utils.pwsh/*.ps1 -Recurse
 
     foreach($Utility in $UtilityFunctions) {
         Write-Debug "Loading $($Utility.FullName)"
         . $Utility.FullName
     }
-
     Install-BuildDependencies -WingetFile "${ScriptHome}/.Wingetfile"
 
     Push-Location -Stack BuildTemp
