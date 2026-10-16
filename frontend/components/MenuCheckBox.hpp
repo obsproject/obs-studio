@@ -30,10 +30,9 @@ class MenuCheckBox : public QCheckBox {
 public:
 	explicit MenuCheckBox(const QString &text, QWidget *parent = nullptr);
 
-	void setAction(QAction *action);
-
 protected:
 	void focusInEvent(QFocusEvent *event) override;
+	void focusOutEvent(QFocusEvent *event) override;
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
 	void mouseReleaseEvent(QMouseEvent *event) override;
@@ -42,7 +41,6 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 
 private:
-	QPointer<QAction> menuAction = nullptr;
 	bool mousePressInside = false;
 
 	bool isHovered = false;
