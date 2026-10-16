@@ -263,10 +263,11 @@ char *os_get_config_path_ptr(const char *name)
 			bcrash("Could not get $HOME\n");
 
 		dstr_init_copy(&path, home_ptr);
-		dstr_cat(&path, "/.config/");
-		dstr_cat(&path, name);
+		dstr_cat(&path, "/.config");
 	} else {
 		dstr_init_copy(&path, xdg_ptr);
+	}
+	if (name && *name) {
 		dstr_cat(&path, "/");
 		dstr_cat(&path, name);
 	}
