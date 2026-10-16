@@ -27,16 +27,12 @@ static std::string trim_string(const std::string &source)
 
 static std::string value_for_header(const std::string &header, const std::string &val)
 {
-	if (val.size() <= header.size() || astrcmpi_n(header.c_str(), val.c_str(), header.size()) != 0) {
+	if (val.size() <= header.size() || val[header.size()] != ':' ||
+	    astrcmpi_n(header.c_str(), val.c_str(), header.size()) != 0) {
 		return "";
 	}
 
-	auto delimiter = val.find_first_of(" ");
-	if (delimiter == std::string::npos) {
-		return "";
-	}
-
-	return val.substr(delimiter + 1);
+	return trim_string(val.substr(header.size() + 1));
 }
 
 static size_t curl_writefunction(char *data, size_t size, size_t nmemb, void *priv_data)

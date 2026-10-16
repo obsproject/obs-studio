@@ -1,0 +1,211 @@
+name: WHIP builds
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    paths:
+      - 'plugins/obs-webrtc/**'
+      - 'plugins/mac-videotoolbox/**'
+      - 'plugins/obs-x264/**'
+      - 'plugins/obs-nvenc/**'
+      - 'plugins/obs-ffmpeg/texture-amf.cpp'
+      - 'build-aux/*whip*'
+      - 'build-aux/whip-dependency/**'
+      - 'test/whip/**'
+      - 'CMakePresets.json'
+      - '.github/workflows/whip-builds.yaml'
+  workflow_dispatch:
+    inputs:
+      notarize_macos:
+        description: 'Require Developer ID signed and notarized Mac release packages (master only)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  # Routine pushes must not interrupt an Apple notarization submission.
+  group: whip-${{ github.workflow }}-${{ github.ref }}-${{ inputs.notarize_macos && 'release' || 'test' }}
+  cancel-in-progress: true
+
+jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.versions.outputs.matrix }}
+    steps:
+      - name: Restrict signed builds to master
+        if: inputs.notarize_macos && github.ref != 'refs/heads/master'
+        run: exit 1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+      - name: Test Mac release gates
+        run: |
+          python3 test/whip/test-macos-signing.py
+          python3 test/whip/test-macos-release.py
+      - name: Resolve OBS versions
+        id: versions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, os, re, subprocess
+          releases = json.loads(subprocess.check_output(['gh', 'api', 'repos/obsproject/obs-studio/releases?per_page=30']))
+          stable = next(r['tag_name'] for r in releases if not r['draft'] and not r['prerelease'])
+          preview = next((r['tag_name'] for r in releases if not r['draft'] and r['prerelease']), None)
+          for tag in [stable] + ([preview] if preview else []):
+              subprocess.run(['git', 'fetch', '--no-tags', 'https://github.com/obsproject/obs-studio.git', 'tag', tag], check=True)
+          fork_version = subprocess.check_output(['git', 'describe', '--tags', '--match', '[0-9]*', '--abbrev=0'], text=True).strip()
+          versions = [{'track': 'fork', 'ref': '', 'version': fork_version}, {'track': 'stable', 'ref': stable, 'version': stable}]
+          def release_version(tag):
+              return tuple(int(n) for n in re.match(r'^(\d+)\.(\d+)\.(\d+)', tag).groups())
+          if preview and release_version(preview) > release_version(stable):
+              versions.append({'track': 'preview', 'ref': preview, 'version': preview})
+          platforms = [('windows-2025-vs2026', 'windows', 'x64', ''), ('macos-26', 'macos', 'arm64', ''), ('macos-26', 'macos', 'x86_64', ''), ('ubuntu-24.04', 'linux', 'x86_64', 'ubuntu:26.04')]
+          matrix = {'include': [dict(v, runner=r, platform=p, arch=a, container=c) for v in versions for r, p, a, c in platforms]}
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('matrix=' + json.dumps(matrix) + '\n')
+          PY
+
+  build:
+    needs: versions
+    strategy:
+      fail-fast: false
+      max-parallel: 12
+      matrix: ${{ fromJSON(needs.versions.outputs.matrix) }}
+    name: ${{ matrix.track }} / ${{ matrix.platform }} / ${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    container: ${{ matrix.container }}
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Set up Linux container
+        if: matrix.platform == 'linux'
+        run: |
+          apt-get update -qq
+          apt-get install -y git sudo python3 python-is-python3 curl ca-certificates
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - name: Prepare compatibility source
+        env:
+          OBS_REF: ${{ matrix.ref }}
+          OBS_VERSION: ${{ matrix.version }}
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          # Nested Windows capture builds discover their version from git tags.
+          git fetch --no-tags https://github.com/obsproject/obs-studio.git tag "$OBS_VERSION"
+          if [[ -n "$OBS_REF" ]]; then
+            python build-aux/prepare-whip-source.py --ref "$OBS_REF" --destination build_whip_ci/source
+            echo 'OBS_SOURCE=build_whip_ci/source' >> "$GITHUB_ENV"
+          else
+            echo 'OBS_SOURCE=.' >> "$GITHUB_ENV"
+          fi
+      - name: Set up Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y zsh ninja-build libssl-dev jq xz-utils cmake pkg-config libnss3 libnspr4 libxrandr2
+          cd "$OBS_SOURCE"
+          zsh --no-rcs --errexit --pipefail -c '
+            project_root=$PWD
+            target=ubuntu-x86_64
+            _loglevel=1
+            fpath=($PWD/.github/scripts/utils.zsh $fpath)
+            autoload -Uz setup_ubuntu
+            setup_ubuntu
+          '
+      - name: Set up macOS dependencies
+        if: runner.os == 'macOS'
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+          HOMEBREW_NO_INSTALL_CLEANUP: '1'
+        run: |
+          brew install cmake ninja
+          sudo xcode-select --switch /Applications/Xcode_26.5.app/Contents/Developer
+      - name: Require Mac release credentials
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        env:
+          SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          SIGNING_CERT: ${{ secrets.MACOS_SIGNING_CERT }}
+          SIGNING_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          NOTARY_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          for name in SIGNING_IDENTITY SIGNING_CERT SIGNING_PASSWORD NOTARY_USER NOTARY_PASSWORD; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing required signing/notarization secret: $name"
+              exit 1
+            fi
+          done
+          [[ "$SIGNING_IDENTITY" == 'Developer ID Application:'* ]]
+      - name: Set up Mac release signing
+        id: signing
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        uses: ./.github/actions/setup-macos-codesigning
+        with:
+          codesignIdentity: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          codesignCertificate: ${{ secrets.MACOS_SIGNING_CERT }}
+          certificatePassword: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          notarizationUser: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          notarizationPassword: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+      - name: Store and validate notarization credentials
+        if: runner.os == 'macOS' && inputs.notarize_macos
+        env:
+          SIGNING_IDENTITY: ${{ steps.signing.outputs.codesignIdent }}
+          SIGNING_TEAM: ${{ steps.signing.outputs.codesignTeam }}
+          NOTARY_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
+          NOTARY_PASSWORD: ${{ secrets.MACOS_NOTARIZATION_PASSWORD }}
+        run: |
+          xcrun notarytool store-credentials OBS-WHIP-CI --apple-id "$NOTARY_USER" \
+            --team-id "$SIGNING_TEAM" --password "$NOTARY_PASSWORD" \
+            --keychain "$RUNNER_TEMP/app-signing.keychain-db" >/dev/null
+          {
+            echo "MACOS_SIGNING_IDENTITY=$SIGNING_IDENTITY"
+            echo "MACOS_SIGNING_TEAM=$SIGNING_TEAM"
+            echo 'MACOS_NOTARY_PROFILE=OBS-WHIP-CI'
+          } >> "$GITHUB_ENV"
+      - name: Build patched OBS and run ICE regressions
+        env:
+          OBS_VERSION: ${{ matrix.version }}
+          OBS_ARCH: ${{ matrix.arch }}
+          MACOS_RELEASE: ${{ runner.os == 'macOS' && inputs.notarize_macos }}
+        run: |
+          cd "$OBS_SOURCE"
+          args=()
+          if [[ "$MACOS_RELEASE" == true ]]; then args+=(--macos-release); fi
+          python build-aux/build-whip.py --version "$OBS_VERSION" --arch "$OBS_ARCH" --jobs 4 "${args[@]}"
+      - name: Upload build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: obs-whip-${{ matrix.track }}-${{ matrix.version }}-${{ matrix.platform }}-${{ matrix.arch }}${{ runner.os == 'macOS' && inputs.notarize_macos && '-notarized' || '' }}
+          path: ${{ env.OBS_SOURCE }}/build_whip/obs-whip-*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload build diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: diagnostics-${{ matrix.track }}-${{ matrix.platform }}-${{ matrix.arch }}
+          path: |
+            ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/manifest.json
+            ${{ env.OBS_SOURCE }}/build_whip/whip-dependency/tests/Testing/Temporary/LastTest.log
+            ${{ env.OBS_SOURCE }}/build_whip/CMakeFiles/CMakeConfigureLog.yaml
+            ${{ env.OBS_SOURCE }}/build_whip/macos-notarization/*.json
+            ${{ env.OBS_SOURCE }}/build_whip/macos-notarization/gatekeeper.txt
+          retention-days: 14
+      - name: Remove temporary signing credentials
+        if: always() && runner.os == 'macOS' && inputs.notarize_macos
+        run: |
+          if [[ -f "$RUNNER_TEMP/app-signing.keychain-db" ]]; then
+            security delete-keychain "$RUNNER_TEMP/app-signing.keychain-db"
+          fi
+          rm -f "$RUNNER_TEMP/build_certificate.p12"
