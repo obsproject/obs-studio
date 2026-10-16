@@ -260,5 +260,5 @@ bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, nvtex->mapped_res, pts, packet, received_packet);
+	return nvenc_encode_base(enc, bs, nvtex->mapped_res, pts, packet, received_packet, texture->flags);
 }
