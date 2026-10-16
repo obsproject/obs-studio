@@ -8,6 +8,8 @@
 #include <QCheckBox>
 #include <QStackedWidget>
 
+#include <array>
+
 #include "moc_OBSAdvAudioCtrl.cpp"
 
 #ifndef NSEC_PER_MSEC
@@ -19,6 +21,7 @@
 
 static inline void setMixer(obs_source_t *source, const int mixerIdx, const bool checked);
 
+static void applyMixerTrackLabel(QCheckBox *box, int trackIndex, config_t *config);
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(source_)
 {
 	QHBoxLayout *hlayout;
@@ -49,6 +52,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 	mixer4 = new QCheckBox();
 	mixer5 = new QCheckBox();
 	mixer6 = new QCheckBox();
+
+	static_assert(MAX_AUDIO_MIXES == 6, "Number of mixer checkboxes must match MAX_AUDIO_MIXES");
+	const std::array<QCheckBox *, MAX_AUDIO_MIXES> mixerBoxes = {mixer1, mixer2, mixer3, mixer4, mixer5, mixer6};
 
 	sigs.emplace_back(handler, "activate", OBSSourceActivated, this);
 	sigs.emplace_back(handler, "deactivate", OBSSourceDeactivated, this);
@@ -155,24 +161,11 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 	monitoringCheckBox->setChecked(obs_source_get_monitoring_enabled(source));
 	monitoringCheckBox->setAccessibleName(QTStr("Basic.AdvAudio.MonitoringSource").arg(sourceName));
 
-	mixer1->setText("1");
-	mixer1->setChecked(mixers & (1 << 0));
-	mixer1->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track1"));
-	mixer2->setText("2");
-	mixer2->setChecked(mixers & (1 << 1));
-	mixer2->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track2"));
-	mixer3->setText("3");
-	mixer3->setChecked(mixers & (1 << 2));
-	mixer3->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track3"));
-	mixer4->setText("4");
-	mixer4->setChecked(mixers & (1 << 3));
-	mixer4->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track4"));
-	mixer5->setText("5");
-	mixer5->setChecked(mixers & (1 << 4));
-	mixer5->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track5"));
-	mixer6->setText("6");
-	mixer6->setChecked(mixers & (1 << 5));
-	mixer6->setAccessibleName(QTStr("Basic.Settings.Output.Adv.Audio.Track6"));
+	config_t *config = main->Config();
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		applyMixerTrackLabel(mixerBoxes[i], i, config);
+		mixerBoxes[i]->setChecked(mixers & (1 << i));
+	}
 
 	balanceContainer->layout()->addWidget(labelL);
 	balanceContainer->layout()->addWidget(balance);
@@ -184,12 +177,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 		balanceContainer->setEnabled(false);
 	}
 
-	mixerContainer->layout()->addWidget(mixer1);
-	mixerContainer->layout()->addWidget(mixer2);
-	mixerContainer->layout()->addWidget(mixer3);
-	mixerContainer->layout()->addWidget(mixer4);
-	mixerContainer->layout()->addWidget(mixer5);
-	mixerContainer->layout()->addWidget(mixer6);
+	for (auto &mixerBox : mixerBoxes) {
+		mixerContainer->layout()->addWidget(mixerBox);
+	}
 	mixerContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
 	connect(volume, &QDoubleSpinBox::valueChanged, this, &OBSAdvAudioCtrl::volumeChanged);
@@ -204,12 +194,9 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 		connect(mixer, &QCheckBox::clicked, this,
 			[this, num](bool checked) { setMixer(source, num, checked); });
 	};
-	connectMixer(mixer1, 0);
-	connectMixer(mixer2, 1);
-	connectMixer(mixer3, 2);
-	connectMixer(mixer4, 3);
-	connectMixer(mixer5, 4);
-	connectMixer(mixer6, 5);
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		connectMixer(mixerBoxes[i], i);
+	}
 
 	setObjectName(sourceName);
 }
@@ -532,6 +519,36 @@ void OBSAdvAudioCtrl::monitoringChanged(bool enabled)
 	OBSBasic::Get()->undo_s.add_action(QTStr("Undo.MonitoringType.Change").arg(name),
 					   std::bind(undo_redo, std::placeholders::_1, prev),
 					   std::bind(undo_redo, std::placeholders::_1, enabled), uuid, uuid);
+}
+
+static QString getLocalizedMixerNameByIndex(const int trackIndex)
+{
+	const QByteArray localeKey =
+		QStringLiteral("Basic.Settings.Output.Adv.Audio.Track%1").arg(trackIndex + 1).toUtf8();
+
+	return QTStr(localeKey.constData());
+}
+
+static QString getCustomTrackLabelByIndex(const int trackIndex, config_t *config)
+{
+	const QByteArray configKey = QStringLiteral("Track%1Name").arg(trackIndex + 1).toUtf8();
+
+	//lookup the user's advanced settings for a label for the track
+	const char *labelOverride = config_get_string(config, "AdvOut", configKey.constData());
+	if (labelOverride && *labelOverride) {
+		return QString::fromUtf8(labelOverride);
+	}
+
+	//default to locale-specific track name, eg: Track 1
+	return getLocalizedMixerNameByIndex(trackIndex);
+}
+
+static void applyMixerTrackLabel(QCheckBox *box, const int trackIndex, config_t *config)
+{
+	const QString customLabel = getCustomTrackLabelByIndex(trackIndex, config);
+	box->setText(QString::fromUtf8(std::to_string(trackIndex+1)));
+	box->setToolTip(customLabel);
+	box->setAccessibleName(getLocalizedMixerNameByIndex(trackIndex));
 }
 
 static inline void setMixer(obs_source_t *source, const int mixerIdx, const bool checked)
