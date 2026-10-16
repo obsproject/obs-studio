@@ -1029,8 +1029,8 @@ static void on_registry_global_remove_cb(void *user_data, uint32_t id)
 	while (g_hash_table_iter_next(&iter, (gpointer *)&device_id, (gpointer *)&device)) {
 		if (device->id != id)
 			continue;
-		g_hash_table_iter_remove(&iter);
 		blog(LOG_INFO, "[pipewire-camera] Removed device %s", device_id);
+		g_hash_table_iter_remove(&iter);
 	}
 	for (size_t i = 0; i < connection->sources->len; i++) {
 		struct camera_portal_source *camera_source = g_ptr_array_index(connection->sources, i);
