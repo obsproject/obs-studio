@@ -99,7 +99,6 @@ void CollapsibleGroup::toggleVisibility()
 void CollapsibleGroup::setExpanded(bool expand)
 {
 	Utils::toggleClass(this, "expanded", expand);
-	Utils::repolish(rowWidget);
 
 	propertyList->setVisible(expand);
 	expandButton->setChecked(expand);

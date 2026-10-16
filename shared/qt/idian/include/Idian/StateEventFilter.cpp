@@ -45,7 +45,7 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 	switch (event->type()) {
 	case QEvent::StyleChange:
 	case QEvent::ThemeChange:
-		Utils::repolish(widget);
+		Utils::polishNow(widget);
 
 		Utils::polishChildren(widget);
 
