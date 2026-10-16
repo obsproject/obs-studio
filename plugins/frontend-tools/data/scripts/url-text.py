@@ -73,5 +73,5 @@ def script_properties():
 
 		obs.source_list_release(sources)
 
-	obs.obs_properties_add_button(props, "button", "Refresh", refresh_pressed)
+	obs.obs_properties_add_button2(props, "button", "Refresh", refresh_pressed)
 	return props
