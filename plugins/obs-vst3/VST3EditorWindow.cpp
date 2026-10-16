@@ -23,8 +23,10 @@
 #include <pluginterfaces/gui/iplugview.h>
 #include <pluginterfaces/gui/iplugviewcontentscalesupport.h>
 
+#include <obs-frontend-api.h>
 #include <QCloseEvent>
 #include <QEvent>
+#include <QMainWindow>
 #include <QResizeEvent>
 #include <QString>
 #include <QWindow>
@@ -140,7 +142,9 @@ VST3EditorWindow::VST3EditorWindow(IPlugView *view, const std::string &title) : 
 		flags |= Qt::WindowMaximizeButtonHint;
 	}
 
-	setWindowFlags(flags);
+	auto *main = static_cast<QMainWindow *>(obs_frontend_get_main_window());
+	QWidget::setParent(main, flags);
+
 	setWindowTitle(QString::fromUtf8(title.data(), static_cast<qsizetype>(title.size())));
 
 #ifdef __APPLE__
