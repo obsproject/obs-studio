@@ -63,8 +63,9 @@ target_sources(
     DecklinkInput.hpp
     DecklinkOutput.cpp
     DecklinkOutput.hpp
-    OBSVideoFrame.cpp
-    OBSVideoFrame.h
+    DeckLinkVideoBufferAccess.hpp
+    HDRVideoFrame.cpp
+    HDRVideoFrame.hpp
     platform.hpp
     plugin-main.cpp
     util.cpp
