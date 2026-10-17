@@ -118,6 +118,7 @@ void OBSBasic::DrawBackdrop(float cx, float cy)
 	gs_matrix_scale3f(float(cx), float(cy), 1.0f);
 
 	gs_load_vertexbuffer(box);
+	gs_load_indexbuffer(nullptr);
 	gs_draw(GS_TRISTRIP, 0, 0);
 
 	gs_matrix_pop();
