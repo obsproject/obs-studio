@@ -194,11 +194,11 @@ static int mp_media_next_packet(mp_media_t *media)
 
 static inline bool mp_media_ready_to_start(mp_media_t *m)
 {
-	if (m->has_audio && !m->a.eof && !m->a.frame_ready)
-		return false;
-	if (m->has_video && !m->v.eof && !m->v.frame_ready)
-		return false;
-	return true;
+	if (m->has_audio && !m->a.eof && m->a.frame_ready)
+		return true;
+	if (m->has_video && !m->v.eof && m->v.frame_ready)
+		return true;
+	return false;
 }
 
 static inline bool mp_decode_frame(struct mp_decode *d)
@@ -287,9 +287,9 @@ bool mp_media_prepare_frames(mp_media_t *m)
 		 * threading issue) */
 		m->obsframe.data[0] = NULL;
 
-		if (m->has_video && !mp_decode_frame(&m->v))
-			return false;
-		if (m->has_audio && !mp_decode_frame(&m->a))
+		const bool video_ready = m->has_video && mp_decode_frame(&m->v);
+		const bool audio_ready = m->has_audio && mp_decode_frame(&m->a);
+		if (!video_ready && !audio_ready)
 			return false;
 	}
 
@@ -504,11 +504,6 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 		delta = 0;
 		m->seek_next_ts = false;
 	} else {
-#ifdef _DEBUG
-		assert(delta >= 0);
-#endif
-		if (delta < 0)
-			delta = 0;
 		if (delta > 3000000000)
 			delta = 0;
 	}
