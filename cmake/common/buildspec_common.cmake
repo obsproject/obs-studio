@@ -135,7 +135,10 @@ function(_check_dependencies)
     elseif(dependency STREQUAL cef)
       if(NOT ENABLE_BROWSER)
         set(skip TRUE)
-      elseif(OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash} AND (CEF_ROOT_DIR AND EXISTS "${CEF_ROOT_DIR}"))
+      elseif(
+        OBS_DEPENDENCY_${dependency}_${arch}_HASH STREQUAL ${hash}
+        AND (DEFINED CEF_ROOT_DIR AND EXISTS "${CEF_ROOT_DIR}")
+      )
         set(skip TRUE)
       endif()
     endif()
