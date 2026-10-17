@@ -90,6 +90,9 @@ static void *gpu_encode_thread(void *data)
 			pkt.timebase_den = encoder->timebase_den;
 			pkt.encoder = encoder;
 
+			if (os_atomic_load_bool(&encoder->gpu_encode_failed))
+				continue;
+
 			if (encoder->encoder_group && !encoder->start_ts) {
 				struct obs_encoder_group *group = encoder->encoder_group;
 				bool ready = false;
