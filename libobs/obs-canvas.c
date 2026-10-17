@@ -133,6 +133,11 @@ obs_canvas_t *obs_weak_canvas_get_canvas(obs_weak_canvas_t *weak)
 	return NULL;
 }
 
+bool obs_weak_canvas_references_canvas(obs_weak_canvas_t *weak, obs_canvas_t *canvas)
+{
+	return weak && canvas && weak->canvas == canvas;
+}
+
 /*** Creation / Destruction ***/
 
 static obs_canvas_t *obs_canvas_create_internal(const char *name, const char *uuid, struct obs_video_info *ovi,
