@@ -19,6 +19,8 @@ target_link_libraries(
   PRIVATE OBS::hook-config OBS::d3d8-api d3d9.lib dxgi.lib d3d11.lib
 )
 
+target_link_options(get-graphics-offsets PRIVATE $<$<PLATFORM_ID:Windows>:/DEPENDENTLOADFLAG:0x800>)
+
 if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
   if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
     add_custom_command(
