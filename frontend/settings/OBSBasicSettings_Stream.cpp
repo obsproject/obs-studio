@@ -697,11 +697,11 @@ QString OBSBasicSettings::FindProtocol()
 			return QString("RTMPS");
 		}
 
-		if (server.startsWith("srt://")) {
+		if (obs_is_output_protocol_registered("SRT") && server.startsWith("srt://")) {
 			return QString("SRT");
 		}
 
-		if (server.startsWith("rist://")) {
+		if (obs_is_output_protocol_registered("RIST") && server.startsWith("rist://")) {
 			return QString("RIST");
 		}
 
@@ -1465,6 +1465,9 @@ bool OBSBasicSettings::ServiceAndVCodecCompatible()
 		char **output_codecs;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
+		if (!output) {
+			return false;
+		}
 
 		output_codecs = strlist_split(obs_get_output_supported_video_codecs(output), ';', false);
 
@@ -1500,6 +1503,10 @@ bool OBSBasicSettings::ServiceAndACodecCompatible()
 		char **output_codecs;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
+		if (!output) {
+			return false;
+		}
+
 		output_codecs = strlist_split(obs_get_output_supported_audio_codecs(output), ';', false);
 
 		ret = service_supports_codec((const char **)output_codecs, QT_TO_UTF8(codec));
@@ -1668,16 +1675,20 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		const char *output = nullptr;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
-		output_vcodecs = strlist_split(obs_get_output_supported_video_codecs(output), ';', false);
-		vcodecs = (const char **)output_vcodecs.Get();
+		if (output) {
+			output_vcodecs = strlist_split(obs_get_output_supported_video_codecs(output), ';', false);
+			vcodecs = (const char **)output_vcodecs.Get();
+		}
 	}
 
 	if (!acodecs || IsCustomService()) {
 		const char *output = nullptr;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
-		output_acodecs = strlist_split(obs_get_output_supported_audio_codecs(output), ';', false);
-		acodecs = (const char **)output_acodecs.Get();
+		if (output) {
+			output_acodecs = strlist_split(obs_get_output_supported_audio_codecs(output), ';', false);
+			acodecs = (const char **)output_acodecs.Get();
+		}
 	}
 
 	QSignalBlocker s1(ui->simpleOutStrEncoder);

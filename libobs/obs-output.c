@@ -121,9 +121,6 @@ static inline bool log_flag_service(const struct obs_output *output, const char 
 
 const struct obs_output_info *find_output(const char *id)
 {
-	if (!id)
-		return NULL;
-
 	size_t i;
 	for (i = 0; i < obs->output_types.num; i++)
 		if (strcmp(obs->output_types.array[i].id, id) == 0)
