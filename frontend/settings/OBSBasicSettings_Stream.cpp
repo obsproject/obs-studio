@@ -1461,7 +1461,7 @@ bool OBSBasicSettings::ServiceAndVCodecCompatible()
 	const char **codecs = obs_service_get_supported_video_codecs(service);
 
 	if (!codecs || IsCustomService()) {
-		const char *output;
+		const char *output = nullptr;
 		char **output_codecs;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
@@ -1496,7 +1496,7 @@ bool OBSBasicSettings::ServiceAndACodecCompatible()
 	const char **codecs = obs_service_get_supported_audio_codecs(service);
 
 	if (!codecs || IsCustomService()) {
-		const char *output;
+		const char *output = nullptr;
 		char **output_codecs;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
@@ -1665,7 +1665,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 	size_t idx = 0;
 
 	if (!vcodecs || IsCustomService()) {
-		const char *output;
+		const char *output = nullptr;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
 		output_vcodecs = strlist_split(obs_get_output_supported_video_codecs(output), ';', false);
@@ -1673,7 +1673,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 	}
 
 	if (!acodecs || IsCustomService()) {
-		const char *output;
+		const char *output = nullptr;
 
 		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol), &output, return_first_id);
 		output_acodecs = strlist_split(obs_get_output_supported_audio_codecs(output), ';', false);
