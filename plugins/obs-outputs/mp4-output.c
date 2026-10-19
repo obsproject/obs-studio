@@ -352,7 +352,7 @@ static inline bool should_split(struct mp4_output *out, struct encoder_packet *p
 	if (out->max_time > 0) {
 		const int64_t current_runtime = packet->dts_usec - out->start_time;
 		/* Allow a small error in timestamps (up to 1 ms). */
-		return llabs(out->max_time - current_runtime) < 1000LL;
+		return out->max_time - current_runtime < 1000LL;
 	}
 
 	return false;
