@@ -28,8 +28,12 @@
 #include <windows.h>
 
 // Blacklist taken from JUCE to which I added Realtek ASIO.
+#ifdef _DEBUG
+static const char *blacklisted_drivers[] = {"ASIO DirectX Full Duplex", "ASIO Multimedia Driver", "Realtek ASIO",
+					    "Yamaha Steinberg USB ASIO", NULL};
+#else
 static const char *blacklisted_drivers[] = {"ASIO DirectX Full Duplex", "ASIO Multimedia Driver", "Realtek ASIO", NULL};
-
+#endif
 static bool is_blacklisted_driver(const char *name)
 {
 	for (int i = 0; blacklisted_drivers[i]; ++i) {
