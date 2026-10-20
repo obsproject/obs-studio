@@ -3391,6 +3391,28 @@
             "recommended": {
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "Streamable",
+            "more_info_link": "https://streamable.run/guides/how-to-add-obs-as-an-ingest",
+            "stream_key_link": "https://streamable.run/ingests?utm_source=obs&utm_medium=service-list",
+            "servers": [
+                {
+                    "name": "Global (Default)",
+                    "url": "rtmp://in.streamable.run:1935/live"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://jp.in.streamable.run:1935/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 8000
+            }
         }
     ]
 }
