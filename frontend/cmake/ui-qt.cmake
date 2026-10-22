@@ -43,6 +43,7 @@ target_sources(
     forms/OBSBasicProperties.ui
     forms/OBSBasicSettings.ui
     forms/OBSBasicSourceSelect.ui
+    forms/OBSBasicTransitions.ui
     forms/OBSBasicVCamConfig.ui
     forms/OBSExtraBrowsers.ui
     forms/OBSImporter.ui
