@@ -100,7 +100,7 @@ add_core_module(obs-text PLATFORMS WINDOWS)
 add_core_module(obs-transitions)
 add_core_module(
     obs-vst
-    PLATFORMS WINDOWS MACOS LINUX
+    PLATFORMS WINDOWS MACOS LINUX FREEBSD
     WITH_MESSAGE
 )
 add_core_module(obs-webrtc)
