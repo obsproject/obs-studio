@@ -43,9 +43,8 @@ Contributing
 ------------
 
 - If you would like to help fund or sponsor the project, you can do so
-  via `Patreon <https://www.patreon.com/obsproject>`_, `OpenCollective
-  <https://opencollective.com/obsproject>`_, or `PayPal
-  <https://www.paypal.me/obsproject>`_.  See our `contribute page
+  via `Patreon <https://www.patreon.com/obsproject>`_ or `OpenCollective
+  <https://opencollective.com/obsproject>`_.  See our `contribute page
   <https://obsproject.com/contribute>`_ for more information.
 
 - If you wish to contribute code to the project, please make sure to
