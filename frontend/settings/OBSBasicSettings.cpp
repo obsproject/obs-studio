@@ -411,6 +411,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->ignoreRecommended,    CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->whipSimulcastTotalLayers, SCROLL_CHANGED, STREAM1_CHANGED);
 	HookWidget(ui->enableMultitrackVideo,      CHECK_CHANGED,  STREAM1_CHANGED);
+	HookWidget(ui->enableMultitrackAudio,      CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrateAuto, CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumAggregateBitrate,     SCROLL_CHANGED, STREAM1_CHANGED);
 	HookWidget(ui->multitrackVideoMaximumVideoTracksAuto, CHECK_CHANGED,  STREAM1_CHANGED);
@@ -2228,6 +2229,9 @@ void OBSBasicSettings::LoadOutputSettings()
 
 	int modeIdx = astrcmpi(mode, "Advanced") == 0 ? 1 : 0;
 	ui->outputMode->setCurrentIndex(modeIdx);
+
+	/* Depends on the output mode being loaded */
+	UpdateMultitrackAudio();
 
 	LoadSimpleOutputSettings();
 	LoadAdvOutputStreamingSettings();
@@ -4294,6 +4298,7 @@ void OBSBasicSettings::OutputsChanged()
 		EnableApplyButton(true);
 
 		UpdateMultitrackVideo();
+		UpdateMultitrackAudio();
 	}
 }
 
@@ -5998,6 +6003,27 @@ void OBSBasicSettings::UpdateMultitrackVideo()
 		update_advanced_output_settings(false);
 		update_advanced_output_audio_tracks(false);
 	}
+}
+
+void OBSBasicSettings::UpdateMultitrackAudio()
+{
+	/* Like multitrack video, output settings can't be changed while
+	 * outputs are active, and availability is limited to the RTMP
+	 * protocol. Unlike multitrack video, availability can not be queried
+	 * from common services, so it is only offered for custom services.
+	 * Track selection is only implemented for the advanced output mode. */
+	auto toggle_available = !main->Active();
+
+	bool advanced_output = ui->outputMode->currentIndex() != 0;
+	auto available = advanced_output && IsCustomService() && protocol.startsWith("RTMP");
+
+	ui->multitrackAudioGroupBox->setVisible(available);
+
+	ui->enableMultitrackAudio->setEnabled(toggle_available);
+
+	auto multitrack_audio_name = QTStr("Basic.Settings.Stream.MultitrackAudioLabel");
+	ui->enableMultitrackAudio->setText(
+		QTStr("Basic.Settings.Stream.EnableMultitrackAudio").arg(multitrack_audio_name));
 }
 
 void OBSBasicSettings::SimpleStreamAudioEncoderChanged()

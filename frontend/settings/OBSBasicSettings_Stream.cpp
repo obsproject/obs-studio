@@ -149,6 +149,8 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	ui->enableMultitrackVideo->setChecked(config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo"));
 
+	ui->enableMultitrackAudio->setChecked(config_get_bool(main->Config(), "Stream1", "EnableMultitrackAudio"));
+
 	ui->multitrackVideoMaximumAggregateBitrateAuto->setChecked(
 		config_get_bool(main->Config(), "Stream1", "MultitrackVideoMaximumAggregateBitrateAuto"));
 	if (config_has_user_value(main->Config(), "Stream1", "MultitrackVideoMaximumAggregateBitrate")) {
@@ -232,6 +234,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	UpdateVodTrackSetting();
 	UpdateServiceRecommendations();
 	UpdateMultitrackVideo();
+	UpdateMultitrackAudio();
 
 	bool streamActive = obs_frontend_streaming_active();
 	ui->streamPage->setEnabled(!streamActive);
@@ -249,8 +252,14 @@ void OBSBasicSettings::LoadStream1Settings()
 
 bool OBSBasicSettings::AllowsMultiTrack(const char *protocol)
 {
-	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
-	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
+	if (astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
+	    astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0) {
+		return true;
+	}
+	if (astrcmpi_n(protocol, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) == 0) {
+		return config_get_bool(main->Config(), "Stream1", "EnableMultitrackAudio");
+	}
+	return false;
 }
 
 void OBSBasicSettings::SwapMultiTrack(const char *protocol)
@@ -345,6 +354,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveSpinBox(ui->whipSimulcastTotalLayers, "Stream1", "WHIPSimulcastTotalLayers");
 
 	auto oldMultitrackVideoSetting = config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo");
+	auto oldMultitrackAudioSetting = config_get_bool(main->Config(), "Stream1", "EnableMultitrackAudio");
 
 	if (!IsCustomService()) {
 		OBSDataAutoRelease settings = obs_data_create();
@@ -362,6 +372,13 @@ void OBSBasicSettings::SaveStream1Settings()
 	} else {
 		SaveCheckBox(ui->enableMultitrackVideo, "Stream1", "EnableMultitrackVideo");
 	}
+
+	/* Multitrack audio via Enhanced RTMP is only offered for custom services */
+	if (IsCustomService()) {
+		SaveCheckBox(ui->enableMultitrackAudio, "Stream1", "EnableMultitrackAudio");
+	} else {
+		config_remove_value(main->Config(), "Stream1", "EnableMultitrackAudio");
+	}
 	SaveCheckBox(ui->multitrackVideoMaximumAggregateBitrateAuto, "Stream1",
 		     "MultitrackVideoMaximumAggregateBitrateAuto");
 	SaveSpinBox(ui->multitrackVideoMaximumAggregateBitrate, "Stream1", "MultitrackVideoMaximumAggregateBitrate");
@@ -373,6 +390,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	SaveComboData(ui->multitrackVideoAdditionalCanvas, "Stream1", "MultitrackExtraCanvas");
 
 	if (oldMultitrackVideoSetting != ui->enableMultitrackVideo->isChecked() ||
+	    oldMultitrackAudioSetting != ui->enableMultitrackAudio->isChecked() ||
 	    oldWHIPSimulcastTotalLayers != ui->whipSimulcastTotalLayers->value()) {
 		main->ResetOutputs();
 	}
@@ -594,6 +612,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
 	UpdateMultitrackVideo();
+	UpdateMultitrackAudio();
 
 	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits()) {
 		lastServiceIdx = idx;
@@ -622,6 +641,7 @@ void OBSBasicSettings::on_customServer_textChanged(const QString &)
 	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
 	UpdateMultitrackVideo();
+	UpdateMultitrackAudio();
 
 	if (ServiceSupportsCodecCheck()) {
 		lastCustomServer = ui->customServer->text();
@@ -646,7 +666,10 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 
 		ui->enableMultitrackVideo->setChecked(
 			config_get_bool(main->Config(), "Stream1", "EnableMultitrackVideo"));
+		ui->enableMultitrackAudio->setChecked(
+			config_get_bool(main->Config(), "Stream1", "EnableMultitrackAudio"));
 		UpdateMultitrackVideo();
+		UpdateMultitrackAudio();
 	}
 
 	ui->useAuth->setVisible(custom);

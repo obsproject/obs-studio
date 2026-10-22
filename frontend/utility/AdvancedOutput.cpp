@@ -286,6 +286,11 @@ inline bool AdvancedOutput::allowsMultiTrack()
 	if (!protocol) {
 		return false;
 	}
+	if (astrcmpi_n(protocol, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) == 0) {
+		/* Multitrack audio over RTMP requires Enhanced RTMP and is
+		 * opt-in for custom services. */
+		return config_get_bool(main->Config(), "Stream1", "EnableMultitrackAudio");
+	}
 	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
 	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
 }
@@ -589,6 +594,11 @@ inline std::optional<size_t> AdvancedOutput::VodTrackMixerIdx(obs_service_t *ser
 	bool vodTrackEnabled = config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	int vodTrackIndex = config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
 	bool enableForCustomServer = config_get_bool(App()->GetUserConfig(), "General", "EnableCustomServerVodTrack");
+
+	/* The VOD track would clobber track index 1 of multitrack audio streams */
+	if (allowsMultiTrack()) {
+		return std::nullopt;
+	}
 
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0) {

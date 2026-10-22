@@ -232,6 +232,7 @@ private:
 
 private slots:
 	void UpdateMultitrackVideo();
+	void UpdateMultitrackAudio();
 	void RecreateOutputResolutionWidget();
 	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
