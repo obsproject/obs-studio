@@ -1,9 +1,11 @@
 #include "window-helpers.h"
 
 #include <util/windows/obfuscate.h>
-
+#include <util/darray.h>
 #include <dwmapi.h>
 #include <psapi.h>
+
+static DARRAY(HWND) captured_windows = {0};
 
 static inline void encode_dstr(struct dstr *str)
 {
@@ -420,6 +422,19 @@ void ms_fill_window_list(obs_property_t *p, enum window_search_mode mode, add_wi
 	}
 }
 
+static bool hwnd_in_use(HWND hwnd)
+{
+	if (!hwnd)
+		return false;
+
+	for (size_t i = 0; i < captured_windows.num; ++i) {
+		if (captured_windows.array[i] == hwnd) {
+			return true;
+		}
+	}
+	return false;
+}
+
 static int window_rating(HWND window, enum window_priority priority, const char *class, const char *title,
 			 const char *exe, bool uwp_window, bool generic_class)
 {
@@ -459,6 +474,10 @@ static int window_rating(HWND window, enum window_priority priority, const char 
 		val = exe_matches ? title_val : 0x7FFFFFFF;
 	}
 
+	if (hwnd_in_use(window)) {
+		val = INT_MAX;
+	}
+
 	dstr_free(&cur_class);
 	dstr_free(&cur_title);
 	dstr_free(&cur_exe);
@@ -491,6 +510,32 @@ static bool is_uwp_class(const char *window_class)
 	       strcmp(window_class, "WinUIDesktopWin32WindowClass") == 0;
 }
 
+static void add_to_captured_list(HWND hwnd)
+{
+	if (!hwnd)
+		return;
+
+	for (size_t i = 0; i < captured_windows.num; ++i) {
+		if (captured_windows.array[i] == hwnd)
+			return;
+	}
+
+	da_push_back(captured_windows, &hwnd);
+}
+
+void remove_captured_window(HWND hwnd)
+{
+	if (!hwnd)
+		return;
+
+	for (size_t i = 0; i < captured_windows.num; ++i) {
+		if (captured_windows.array[i] == hwnd) {
+			da_erase(captured_windows, i);
+			return;
+		}
+	}
+}
+
 HWND ms_find_window(enum window_search_mode mode, enum window_priority priority, const char *class, const char *title,
 		    const char *exe)
 {
@@ -518,6 +563,8 @@ HWND ms_find_window(enum window_search_mode mode, enum window_priority priority,
 
 		window = next_window(window, mode, &parent, use_findwindowex);
 	}
+
+	add_to_captured_list(best_window);
 
 	return best_window;
 }
@@ -571,5 +618,6 @@ HWND ms_find_window_top_level(enum window_search_mode mode, enum window_priority
 	data.best_window = NULL;
 	data.best_rating = 0x7FFFFFFF;
 	EnumWindows(enum_windows_proc, (LPARAM)&data);
+	add_to_captured_list(data.best_window);
 	return data.best_window;
 }
