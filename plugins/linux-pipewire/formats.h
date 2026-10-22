@@ -30,7 +30,6 @@ struct obs_pw_video_format {
 	uint32_t drm_format;
 	enum gs_color_format gs_format;
 	enum video_format video_format;
-	bool swap_red_blue;
 	uint32_t bpp;
 	const char *pretty_name;
 };
