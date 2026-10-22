@@ -55,10 +55,12 @@ static void netif_convert_to_string(char *dest, struct sockaddr_storage *byte_ad
 	else if (family == AF_INET6)
 		inet_ntop(family, &(((struct sockaddr_in6 *)byte_address)->sin6_addr), temp_char, INET6_ADDRSTRLEN);
 #else
+	wchar_t temp_wchar[INET6_ADDRSTRLEN] = {0};
 	if (family == AF_INET)
-		InetNtopA(family, &(((SOCKADDR_IN *)byte_address)->sin_addr), temp_char, INET6_ADDRSTRLEN);
+		InetNtopW(family, &(((SOCKADDR_IN *)byte_address)->sin_addr), temp_wchar, INET6_ADDRSTRLEN);
 	else if (family == AF_INET6)
-		InetNtopA(family, &(((SOCKADDR_IN6 *)byte_address)->sin6_addr), temp_char, INET6_ADDRSTRLEN);
+		InetNtopW(family, &(((SOCKADDR_IN6 *)byte_address)->sin6_addr), temp_wchar, INET6_ADDRSTRLEN);
+	WideCharToMultiByte(CP_UTF8, 0, temp_wchar, -1, temp_char, INET6_ADDRSTRLEN, NULL, NULL);
 #endif
 	strncpy(dest, temp_char, INET6_ADDRSTRLEN);
 }
@@ -113,7 +115,10 @@ bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len, const char *
 	*addr_len = sizeof(*out);
 
 #ifdef _WIN32
-	int ret = WSAStringToAddressA((LPSTR)addr, out->ss_family, NULL, (LPSOCKADDR)out, addr_len);
+	wchar_t *waddr = NULL;
+	os_utf8_to_wcs_ptr(addr, 0, &waddr);
+	int ret = WSAStringToAddressW((LPWSTR)waddr, out->ss_family, NULL, (LPSOCKADDR)out, addr_len);
+	bfree(waddr);
 	if (ret == SOCKET_ERROR)
 		warn("Could not parse address, error code: %d", GetLastError());
 	return ret != SOCKET_ERROR;
@@ -200,16 +205,20 @@ static inline PIP_ADAPTER_ADDRESSES get_adapters(void)
 	} while ((ret == ERROR_BUFFER_OVERFLOW) && (i < max_tries));
 
 	if (ret != NO_ERROR && ret != ERROR_NO_DATA) {
-		LPSTR msg_buf = NULL;
+		LPWSTR msg_buf = NULL;
 
 		bfree(adapter);
 		adapter = NULL;
 
-		FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+		FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
 				       FORMAT_MESSAGE_IGNORE_INSERTS,
-			       NULL, ret, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg_buf, 0, NULL);
+			       NULL, ret, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPWSTR)&msg_buf, 0, NULL);
 		if (msg_buf) {
-			warn("Call to GetAdaptersAddresses failed: %s (%d)", msg_buf, ret);
+			char *msg_utf8 = NULL;
+			os_wcs_to_utf8_ptr(msg_buf, 0, &msg_utf8);
+			warn("Call to GetAdaptersAddresses failed: %s (%d)", msg_utf8 ? msg_utf8 : "<unknown error>",
+			     ret);
+			bfree(msg_utf8);
 			LocalFree(msg_buf);
 		}
 	}

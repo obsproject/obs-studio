@@ -190,20 +190,28 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM 
 
 	bool match = false;
 
-	MONITORINFOEXA mi;
+	MONITORINFOEXW mi;
 	mi.cbSize = sizeof(mi);
-	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
-		DISPLAY_DEVICEA device;
+	if (GetMonitorInfoW(handle, (LPMONITORINFO)&mi)) {
+		DISPLAY_DEVICEW device;
 		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			match = strcmp(monitor->device_id, device.DeviceID) == 0;
+		if (EnumDisplayDevicesW(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+
+			char *device_id;
+			char *alt_id;
+			os_wcs_to_utf8_ptr(device.DeviceID, 0, &device_id);
+			os_wcs_to_utf8_ptr(mi.szDevice, 0, &alt_id);
+
+			match = strcmp(monitor->device_id, device_id) == 0;
 			if (match) {
-				strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
-				strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
+				strcpy_s(monitor->id, _countof(monitor->id), device_id);
+				strcpy_s(monitor->alt_id, _countof(monitor->alt_id), alt_id);
 				GetMonitorName(handle, monitor->name, _countof(monitor->name));
 				monitor->rect = *rect;
 				monitor->handle = handle;
 			}
+			bfree(device_id);
+			bfree(alt_id);
 		}
 	}
 
