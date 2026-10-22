@@ -6,7 +6,6 @@ Linux XShm capture plugin
 
 Todo:
 
- - handle resolution changes of screens
  - handle adding/removing screens while recording
  - support different depths
 
