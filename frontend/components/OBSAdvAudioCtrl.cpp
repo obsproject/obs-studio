@@ -150,7 +150,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_) : source(
 	monitoringCheckBox->setAccessibleName(QTStr("Basic.AdvAudio.MonitoringSource").arg(sourceName));
 
 	mixersAssignments.reserve(MAX_AUDIO_MIXES);
-	for (size_t i = 0; i < mixersAssignments.capacity(); i++) {
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		auto checkbox = new QCheckBox();
 		checkbox->setText(QString::number(i + 1));
 		checkbox->setChecked(mixers & (1 << i));

@@ -983,6 +983,7 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		delete vodTrackCheckbox;
 		delete vodTrackContainer;
 		delete simpleVodTrack;
+		vodTracks.clear();
 		return;
 	}
 
@@ -1014,7 +1015,7 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	vodTrackContainer = new QWidget(this);
 	QHBoxLayout *vodTrackLayout = new QHBoxLayout();
 	vodTracks.reserve(MAX_AUDIO_MIXES);
-	for (size_t i = 0; i < vodTracks.capacity(); i++) {
+	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
 		auto vodRadio = new QRadioButton(QString::number(i + 1));
 		vodTrackLayout->addWidget(vodRadio);
 		vodTracks.emplace_back(vodRadio);
