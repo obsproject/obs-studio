@@ -166,6 +166,7 @@ Encoder Definition Structure (obs_encoder_info)
    - **OBS_ENCODER_CAP_ROI** - Encoder supports region of interest feature
    - **OBS_ENCODER_CAP_SCALING** - Encoder implements its own scaling logic,
                                    desiring to receive unscaled frames
+   - **OBS_ENCODER_CAP_FORCE_IDR** - Encoder supports forcing frames to be IDRs (keyframes)
 
 .. member:: size_t (*get_priming_samples)(void *data)
 
@@ -604,6 +605,20 @@ General Encoder Functions
    :return: Number of priming samples
 
    .. versionadded:: 32.1
+
+---------------------
+
+.. function:: bool obs_encoder_request_idr(obs_encoder_t *encoder)
+              bool obs_encoder_group_request_idr(obs_encoder_group_t *group)
+
+   Requests the video encoder or video encoder group to produce an IDR frame, requires the encoder(s) to advertise **OBS_ENCODER_CAP_FORCE_IDR**.
+
+   For an ungrouped encoder this will be the next frame.
+   For grouped encoders a future frame all encoders are expected to process will be picked instead (e.g. when FPS divisors are used).
+
+   **Note:** An encoder inside a group will automatically call :c:func:`obs_encoder_group_request_idr()` on its group instead.
+
+   :return: *true* if the request was successful, *false* otherwise
 
 ---------------------
 

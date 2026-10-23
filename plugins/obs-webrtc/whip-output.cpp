@@ -3,6 +3,8 @@
 
 #include <obs.hpp>
 
+#include <cinttypes>
+
 /*
  * Sets the maximum size for a video fragment. Effective range is
  * 576-1470, with a lower value equating to more packets created,
@@ -25,6 +27,9 @@ const uint8_t video_payload_type = 96;
 
 // ~3 seconds of 8.5 Megabit video
 const int video_nack_buffer_size = 4000;
+
+// Minimum keyframe request (PLI) interval of 500 ms to avoid DOSing our encoders
+constexpr int64_t min_pli_interval_ns = 500 * 1000000LL;
 
 const std::string rtpHeaderExtUriMid = "urn:ietf:params:rtp-hdrext:sdes:mid";
 const std::string rtpHeaderExtUriRid = "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id";
@@ -132,6 +137,10 @@ void WHIPOutput::Data(struct encoder_packet *packet)
 		videoLayerState->sequenceNumber = rtp_config->sequenceNumber;
 		videoLayerState->lastVideoTimestamp = packet->dts_usec;
 		videoLayerState->rtpTimestamp = rtp_config->timestamp;
+
+		if (packet->keyframe) {
+			last_keyframe_ns.store(os_gettime_ns(), std::memory_order_relaxed);
+		}
 	}
 }
 
@@ -238,6 +247,12 @@ void WHIPOutput::ConfigureVideoTrack(std::string media_stream_id, std::string cn
 	video_sr_reporter = std::make_shared<rtc::RtcpSrReporter>(rtp_config);
 	packetizer->addToChain(video_sr_reporter);
 	packetizer->addToChain(std::make_shared<rtc::RtcpNackResponder>(video_nack_buffer_size));
+	if ((obs_encoder_get_caps(encoder) & OBS_ENCODER_CAP_FORCE_IDR) != 0) {
+		do_log(LOG_INFO, "PLI requests are supported.");
+		packetizer->addToChain(std::make_shared<rtc::PliHandler>([this]() -> void { OnPliRequest(); }));
+	} else {
+		do_log(LOG_INFO, "PLI requests are not supported.");
+	}
 
 	if (video_bitrate != 0) {
 		packetizer->addToChain(std::make_shared<rtc::PacingHandler>(static_cast<double>(video_bitrate * 10000),
@@ -728,6 +743,31 @@ void WHIPOutput::Send(void *data, uintptr_t size, uint64_t duration, std::shared
 	} catch (const std::exception &e) {
 		do_log(LOG_ERROR, "error: %s ", e.what());
 	}
+}
+
+void WHIPOutput::OnPliRequest()
+{
+	const auto now = os_gettime_ns();
+	const auto delta = now - last_keyframe_ns.load(std::memory_order_relaxed);
+
+	if (delta < min_pli_interval_ns) {
+		do_log(LOG_DEBUG,
+		       "Ignoring PLI Request, delta of %" PRIu64 " ms below minimum interval (%" PRIu64 " ms).",
+		       delta / 1000000, min_pli_interval_ns / 1000000);
+		return;
+	}
+
+	// ToDo: Update to only request keyframe from encoder with matching SSRC once libdatachannel is updated
+	for (auto &[encoder, _] : videoLayerStates) {
+		if (!obs_encoder_request_idr(encoder)) {
+			do_log(LOG_WARNING, "Requesting IDR from encoder '%s' failed!", obs_encoder_get_name(encoder));
+		} else {
+			do_log(LOG_DEBUG, "Requested IDR from encoder '%s' after %" PRIu64 " ms.",
+			       obs_encoder_get_name(encoder), delta / 1000000);
+		}
+	}
+
+	last_keyframe_ns.store(now, std::memory_order_relaxed);
 }
 
 void register_whip_output()
