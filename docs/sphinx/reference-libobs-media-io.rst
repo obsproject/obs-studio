@@ -228,6 +228,9 @@ Video Handler
 
 .. function:: double video_output_get_frame_rate(const video_t *video)
 
+   .. deprecated: 34.0
+   Use :c:func:`video_output_get_info` to fetch FPS numerator and denominator instead.
+
    Gets the frame rate (as a floating point) of the video output
    handler.
 
