@@ -62,7 +62,7 @@ popd
 
 log_group 'Installing obs-studio build dependencies from apt...'
 
-sudo apt-get install -y --no-install-recommends \
+local -a packages=( \
   build-essential libglib2.0-dev \
   extra-cmake-modules lsb-release dh-cmake \
   libcurl4-openssl-dev \
@@ -91,4 +91,10 @@ sudo apt-get install -y --no-install-recommends \
   nlohmann-json3-dev libwebsocketpp-dev libasio-dev libqrcodegencpp-dev \
   libffmpeg-nvenc-dev librist-dev libsrt-openssl-dev \
   qt6-base-dev libqt6svg6-dev qt6-base-private-dev \
-  libvpl-dev libvpl2
+)
+
+if [[ "${target}" == "ubuntu-x86_64" ]] {
+  packages+=(libvpl-dev libvpl2)
+}
+
+sudo apt-get install -y --no-install-recommends ${packages}
