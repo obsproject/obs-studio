@@ -7607,11 +7607,13 @@
   <tabstop>simpleOutRecQuality</tabstop>
   <tabstop>simpleOutRecFormat</tabstop>
   <tabstop>simpleOutRecEncoder</tabstop>
+  <tabstop>simpleOutRecAEncoder</tabstop>
   <tabstop>simpleOutMuxCustom</tabstop>
   <tabstop>simpleReplayBuf</tabstop>
   <tabstop>simpleRBSecMax</tabstop>
   <tabstop>simpleRBMegsMax</tabstop>
   <tabstop>advOutTabs</tabstop>
+  <tabstop>advOutAEncoder</tabstop>
   <tabstop>advOutEncoder</tabstop>
   <tabstop>advOutRescaleFilter</tabstop>
   <tabstop>advOutRescale</tabstop>
@@ -7621,6 +7623,7 @@
   <tabstop>advOutNoSpace</tabstop>
   <tabstop>advOutRecFormat</tabstop>
   <tabstop>advOutRecEncoder</tabstop>
+  <tabstop>advOutRecAEncoder</tabstop>
   <tabstop>advOutRecRescaleFilter</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>

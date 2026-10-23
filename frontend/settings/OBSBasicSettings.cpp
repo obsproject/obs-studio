@@ -311,6 +311,34 @@ static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget, QStrin
 	}
 }
 
+void OBSBasicSettings::SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
+{
+	bool hasChecked = false;
+	for (QRadioButton *radio : group) {
+		hasChecked |= radio->isChecked();
+		radio->setFocusPolicy(radio->isChecked() ? Qt::StrongFocus : Qt::ClickFocus);
+	}
+
+	// This can happen if the user selected track #8 and then reduced the track count, for example, to 6.
+	// Without the fallback below, Tab would never move focus into this group.
+	if (!hasChecked) {
+		group.front()->setFocusPolicy(Qt::StrongFocus);
+	}
+}
+
+void OBSBasicSettings::BindRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
+{
+	for (QRadioButton *radio : group) {
+		QObject::connect(radio, &QRadioButton::toggled, radio, [&group](bool checked) {
+			if (checked) {
+				SyncRadioTabFocus(group);
+			}
+		});
+	}
+
+	SyncRadioTabFocus(group);
+}
+
 void RestrictResetBitrates(std::vector<QPointer<QComboBox>> boxes, int maxbitrate);
 
 /* clang-format off */
@@ -749,6 +777,16 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		advOutputTracksBitrateLabels.emplace_back(bitrateLabel);
 		advOutputTracksNames.emplace_back(trackNameInput);
 	}
+
+	SetMixersAssignmentsTabOrder(ui->simpleOutRecAEncoder, simpleOutRecTracks, ui->simpleOutMuxCustom);
+	SetMixersAssignmentsTabOrder(ui->advOutTabs, advOutStreamSingleTracks, advOutStreamMultiTracks.front());
+	SetMixersAssignmentsTabOrder(advOutStreamSingleTracks.back(), advOutStreamMultiTracks, ui->advOutAEncoder);
+	SetMixersAssignmentsTabOrder(ui->advOutRecAEncoder, advOutRecTracks, advOutFlvTracks.front());
+	SetMixersAssignmentsTabOrder(advOutRecTracks.back(), advOutFlvTracks, ui->advOutRecRescaleFilter);
+	SetMixersAssignmentsTabOrder(ui->advOutFFABitrate, advOutFFTracks, ui->advOutFFAEncoder);
+
+	BindRadioTabFocus(advOutStreamSingleTracks);
+	BindRadioTabFocus(advOutFlvTracks);
 
 	connect(ui->streamDelaySec, &QSpinBox::valueChanged, this, &OBSBasicSettings::UpdateStreamDelayEstimate);
 	connect(ui->outputMode, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::UpdateStreamDelayEstimate);

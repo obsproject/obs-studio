@@ -181,6 +181,21 @@ private:
 		widget->setProperty("changed", QVariant(false));
 	}
 
+	template<typename Widget>
+	static void SetMixersAssignmentsTabOrder(QWidget *before, const std::vector<QPointer<Widget>> &items, QWidget *after)
+	{
+		QWidget *prev = before;
+		for (QWidget *item : items) {
+			QWidget::setTabOrder(prev, item);
+			prev = item;
+		}
+
+		QWidget::setTabOrder(prev, after);
+	}
+
+	static void SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group);
+	static void BindRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group);
+
 	bool QueryChanges();
 	bool QueryAllowedToClose();
 

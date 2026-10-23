@@ -1040,6 +1040,10 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	for (size_t i = 0; i < vodTracks.size(); i++) {
 		vodTracks[i]->setChecked(((int)i + 1) == trackIndex);
 	}
+
+	QWidget::setTabOrder(ui->advOutAEncoder, vodTrackCheckbox);
+	SetMixersAssignmentsTabOrder(vodTrackCheckbox, vodTracks, ui->advOutEncoder);
+	BindRadioTabFocus(vodTracks);
 }
 
 OBSService OBSBasicSettings::GetStream1Service()
