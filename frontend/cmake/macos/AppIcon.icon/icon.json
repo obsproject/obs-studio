@@ -1,0 +1,97 @@
+{
+  "fill-specializations" : [
+    {
+      "value" : {
+        "linear-gradient" : [
+          "srgb:0.09020,0.14118,0.32157,1.00000",
+          "srgb:0.04706,0.08235,0.18824,1.00000"
+        ]
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : "system-dark"
+    }
+  ],
+  "groups" : [
+    {
+      "blend-mode-specializations" : [
+        {
+          "appearance" : "tinted",
+          "value" : "screen"
+        }
+      ],
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "04-silver-symbol.svg",
+          "name" : "04 Silver OBS Symbol"
+        }
+      ],
+      "name" : "04 Silver OBS Symbol",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.12
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.12
+      }
+    },
+    {
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "03-white-rim.svg",
+          "name" : "03 White Rim"
+        }
+      ],
+      "name" : "03 White Rim",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.18
+      },
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.15
+      }
+    },
+    {
+      "hidden-specializations" : [
+        {
+          "value" : false
+        },
+        {
+          "appearance" : "dark",
+          "value" : true
+        },
+        {
+          "appearance" : "tinted",
+          "value" : true
+        }
+      ],
+      "layers" : [
+        {
+          "glass" : true,
+          "image-name" : "02-emblem-disc.svg",
+          "name" : "02 Emblem Disc (Default Only)"
+        }
+      ],
+      "name" : "02 Emblem Disc (Default Only)",
+      "shadow" : {
+        "kind" : "neutral",
+        "opacity" : 0.25
+      },
+      "specular" : true,
+      "translucency" : {
+        "enabled" : true,
+        "value" : 0.12
+      }
+    }
+  ],
+  "supported-platforms" : {
+    "squares" : [
+      "macOS"
+    ]
+  }
+}
