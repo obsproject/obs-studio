@@ -1,14 +1,16 @@
 #include "VisibilityItemWidget.hpp"
 
 #include <components/OBSSourceLabel.hpp>
+#include <qt-wrappers.hpp>
 
 #include <QCheckBox>
 #include <QHBoxLayout>
 
 #include "moc_VisibilityItemWidget.cpp"
 
-VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
+VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_, QListWidgetItem *item_)
 	: source(source_),
+	  item(item_),
 	  enabledSignal(obs_source_get_signal_handler(source), "enable", OBSSourceEnabled, this)
 {
 	bool enabled = obs_source_enabled(source);
@@ -17,6 +19,10 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	vis->setProperty("class", "checkbox-icon indicator-visibility");
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setChecked(enabled);
+
+	const char *name = obs_source_get_name(source);
+	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
+	vis->setAccessibleDescription(QTStr("Basic.Main.Sources.VisibilityDescription").arg(QT_UTF8(name)));
 
 	label = new OBSSourceLabel(source);
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
@@ -51,6 +57,10 @@ void VisibilityItemWidget::SourceEnabled(bool enabled)
 	if (vis->isChecked() != enabled) {
 		vis->setChecked(enabled);
 	}
+
+	if (item) {
+		item->setData(Qt::AccessibleDescriptionRole, enabled ? QTStr("Enable") : QTStr("Disable"));
+	}
 }
 
 void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool selected_)
@@ -72,7 +82,14 @@ void VisibilityItemWidget::SetColor(const QColor &color, bool active_, bool sele
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item, obs_source_t *source)
 {
-	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source);
+	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source, item);
+
+	if (item) {
+		const char *name = obs_source_get_name(source);
+		item->setData(Qt::AccessibleTextRole, QT_UTF8(name));
+		item->setData(Qt::AccessibleDescriptionRole,
+			      obs_source_enabled(source) ? QTStr("Enable") : QTStr("Disable"));
+	}
 
 	list->setItemWidget(item, baseWidget);
 }
