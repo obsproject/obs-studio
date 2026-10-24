@@ -24,6 +24,7 @@ struct ipc_pipe_server {
 	HANDLE ready_event;
 	HANDLE stop_event;
 	HANDLE thread;
+	bool connected;
 
 	uint8_t *read_data;
 	size_t size;
