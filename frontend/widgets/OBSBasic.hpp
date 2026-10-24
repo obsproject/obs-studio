@@ -1575,7 +1575,7 @@ public slots:
 	void SetTransitionDuration(int duration);
 
 private slots:
-	void AddTransition(const char *id);
+	void AddTransition(const char *id, const char *transitionName, bool showProperties);
 	void RenameTransition(OBSSource transition);
 
 	void TransitionClicked();
