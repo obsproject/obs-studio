@@ -995,16 +995,11 @@ bool OBSApp::SetTheme(const QString &name)
 
 #ifdef _DEBUG
 	/* Write resulting QSS to file in config dir "themes" folder. */
-	string filename("obs-studio/themes/");
-	filename += theme->id.toStdString();
-	filename += ".out";
+	std::filesystem::path filePath = GetAppConfigPath("obs-studio/themes");
+	std::filesystem::path fileName = std::filesystem::u8path(theme->id.toStdString() + ".out");
 
-	filesystem::path debugOut;
-	char configPath[512];
-	if (GetAppConfigPath(configPath, sizeof(configPath), filename.c_str())) {
-		debugOut = absolute(filesystem::u8path(configPath));
-		filesystem::create_directories(debugOut.parent_path());
-	}
+	filesystem::path debugOut = absolute(filePath / fileName);
+	filesystem::create_directories(debugOut.parent_path());
 
 	QFile debugFile(debugOut);
 	if (debugFile.open(QIODeviceBase::WriteOnly)) {
@@ -1063,9 +1058,8 @@ bool OBSApp::InitTheme()
 		QDir::addSearchPath("theme", absolute(installSearchDir));
 	}
 
-	char userDir[512];
-	if (GetAppConfigPath(userDir, sizeof(userDir), "obs-studio/themes")) {
-		auto configSearchDir = filesystem::u8path(userDir);
+	auto configSearchDir = GetAppConfigPath("obs-studio/themes");
+	if (!configSearchDir.empty()) {
 		QDir::addSearchPath("theme", absolute(configSearchDir));
 	}
 
