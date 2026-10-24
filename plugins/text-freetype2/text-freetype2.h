@@ -40,6 +40,7 @@ struct ft2_source {
 	bool antialiasing;
 	char *text_file;
 	wchar_t *text;
+	size_t text_len;
 	time_t m_timestamp;
 	bool update_file;
 	uint64_t last_checked;
@@ -73,14 +74,14 @@ extern FT_Library ft2_lib;
 void draw_outlines(struct ft2_source *srcdata);
 void draw_drop_shadow(struct ft2_source *srcdata);
 
-uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata);
+uint32_t get_ft2_text_width(wchar_t *text, size_t text_len, struct ft2_source *srcdata);
 
 time_t get_modified_timestamp(char *filename);
 void load_text_from_file(struct ft2_source *srcdata, const char *filename);
 void read_from_end(struct ft2_source *srcdata, const char *filename);
 
 void cache_standard_glyphs(struct ft2_source *srcdata);
-void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs);
+void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs, size_t len);
 
 void set_up_vertex_buffer(struct ft2_source *srcdata);
 void fill_vertex_buffer(struct ft2_source *srcdata);
