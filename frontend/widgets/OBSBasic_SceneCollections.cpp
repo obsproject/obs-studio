@@ -370,6 +370,75 @@ void OBSBasic::ChangeSceneCollection()
 	blog(LOG_INFO, "Switched to scene collection '%s' (%s)", selectedCollection.getName().c_str(),
 	     selectedCollection.getFileName().c_str());
 	blog(LOG_INFO, "------------------------------------------------");
+
+	CheckSceneCollectionCanvasMismatch(selectedCollection);
+}
+
+void OBSBasic::CheckSceneCollectionCanvasMismatch(const SceneCollection &collection)
+{
+	/* Profiles cannot be changed while outputs are active */
+	if (!lastOutputResolution || Active()) {
+		return;
+	}
+
+	obs_video_info ovi;
+	if (!obs_get_video_info(&ovi)) {
+		return;
+	}
+
+	const auto [collectionWidth, collectionHeight] = lastOutputResolution.value();
+
+	if (collectionWidth == ovi.base_width && collectionHeight == ovi.base_height) {
+		return;
+	}
+
+	const OBSProfile &currentProfile = GetCurrentProfile();
+	std::optional<OBSProfile> matchingProfile;
+
+	for (const auto &[profileName, profile] : profiles) {
+		if (profileName == currentProfile.name) {
+			continue;
+		}
+
+		ConfigFile config;
+
+		if (config.Open(profile.profileFile.u8string().c_str(), CONFIG_OPEN_EXISTING) != CONFIG_SUCCESS) {
+			continue;
+		}
+
+		if (config_get_uint(config, "Video", "BaseCX") == collectionWidth &&
+		    config_get_uint(config, "Video", "BaseCY") == collectionHeight) {
+			matchingProfile = profile;
+			break;
+		}
+	}
+
+	if (!matchingProfile) {
+		return;
+	}
+
+	QString message = QTStr("Basic.Main.SceneCollectionCanvasMismatch.Text")
+				  .arg(QString::fromStdString(collection.getName()))
+				  .arg(collectionWidth)
+				  .arg(collectionHeight)
+				  .arg(QString::fromStdString(currentProfile.name))
+				  .arg(ovi.base_width)
+				  .arg(ovi.base_height)
+				  .arg(QString::fromStdString(matchingProfile->name));
+
+	auto answer = OBSMessageBox::question(this, QTStr("Basic.Main.SceneCollectionCanvasMismatch.Title"), message);
+
+	if (answer != QMessageBox::Yes) {
+		return;
+	}
+
+	OnEvent(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
+	ActivateProfile(matchingProfile.value(), true);
+
+	blog(LOG_INFO, "Switched to profile '%s' (%s) to match scene collection canvas", matchingProfile->name.c_str(),
+	     matchingProfile->directoryName.c_str());
+	blog(LOG_INFO, "------------------------------------------------");
 }
 
 void OBSBasic::RefreshSceneCollections(bool refreshCache)
