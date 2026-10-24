@@ -242,7 +242,7 @@ static void gs_image_file_ex_init_internal(gs_image_file_ex_t *image, const char
 void gs_image_file_ex_init(gs_image_file_ex_t *image, const char *file, enum gs_image_alpha_mode alpha_mode)
 {
 	enum gs_color_space unused;
-	gs_image_file_ex_init_internal(image, file, NULL, &unused, alpha_mode);
+	gs_image_file_ex_init_internal(image, file, &image->mem_usage, &unused, alpha_mode);
 }
 
 void gs_image_file_ex_free(gs_image_file_ex_t *image)
