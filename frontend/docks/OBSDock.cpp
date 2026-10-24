@@ -7,6 +7,16 @@
 
 #include "moc_OBSDock.cpp"
 
+OBSDock::OBSDock(QWidget *parent) : QDockWidget(parent)
+{
+	this->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
+}
+
+OBSDock::OBSDock(const QString &title, QWidget *parent) : QDockWidget(title, parent)
+{
+	this->setAttribute(Qt::WA_MacAlwaysShowToolWindow, true);
+}
+
 void OBSDock::closeEvent(QCloseEvent *event)
 {
 	auto msgBox = []() {
