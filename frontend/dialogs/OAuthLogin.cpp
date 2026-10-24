@@ -38,7 +38,7 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token) : QD
 	}
 
 	connect(cefWidget, &QCefWidget::titleChanged, this, &OAuthLogin::setWindowTitle);
-	connect(cefWidget, &QCefWidget::urlChanged, this, &OAuthLogin::urlChanged);
+	connect(cefWidget, &QCefWidget::urlChanged, this, &OAuthLogin::urlChanged, Qt::QueuedConnection);
 
 	QPushButton *close = new QPushButton(QTStr("Cancel"));
 	connect(close, &QAbstractButton::clicked, this, &QDialog::reject);
