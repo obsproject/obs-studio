@@ -39,6 +39,7 @@
 #include <dialogs/OBSBasicTransform.hpp>
 #include <models/SceneCollection.hpp>
 #include <settings/OBSBasicSettings.hpp>
+#include <utility/audio-tracks.hpp>
 #include <utility/QuickTransition.hpp>
 #include <utility/SceneRenameDelegate.hpp>
 #include <utility/ScreenshotObj.hpp>
@@ -672,8 +673,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(activeConfiguration, "AdvOut", "FFAudioMixes", 1);
 
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
-		std::string trackBitrateConfigKey = "Track" + std::to_string(i + 1) + "Bitrate";
-		config_set_default_uint(activeConfiguration, "AdvOut", trackBitrateConfigKey.c_str(), 160);
+		config_set_default_uint(activeConfiguration, "AdvOut", GetTrackBitrateConfigKey(i).c_str(), 160);
 	}
 
 	config_set_default_uint(activeConfiguration, "AdvOut", "RecSplitFileTime", 15);

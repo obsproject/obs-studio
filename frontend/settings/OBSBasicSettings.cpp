@@ -28,6 +28,7 @@
 #include <docks/YouTubeAppDock.hpp>
 #endif
 #include <utility/audio-encoders.hpp>
+#include <utility/audio-tracks.hpp>
 #include <utility/BaseLexer.hpp>
 #include <utility/FFmpegCodec.hpp>
 #include <utility/FFmpegFormat.hpp>
@@ -2210,11 +2211,8 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	}
 
 	for (size_t i = 0; i < advOutputTracksBitrates.size(); i++) {
-		std::string trackBitrateConfigKey = "Track" + std::to_string(i + 1) + "Bitrate";
-		auto trackBitrateRaw = config_get_uint(main->Config(), "AdvOut", trackBitrateConfigKey.c_str());
-
-		std::string trackNameConfigKey = "Track" + std::to_string(i + 1) + "Name";
-		auto trackName = config_get_string(main->Config(), "AdvOut", trackNameConfigKey.c_str());
+		auto trackBitrateRaw = config_get_uint(main->Config(), "AdvOut", GetTrackBitrateConfigKey(i).c_str());
+		auto trackName = config_get_string(main->Config(), "AdvOut", GetTrackNameConfigKey(i).c_str());
 
 		auto trackBitrate = FindClosestAvailableAudioBitrate(advOutputTracksBitrates[i], trackBitrateRaw);
 
@@ -3553,11 +3551,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	config_set_int(main->Config(), "AdvOut", "FFAudioMixes", MultiselectToBitmap(advOutFFTracks));
 
 	for (size_t i = 0; i < advOutputTracksBitrates.size(); i++) {
-		std::string trackBitrateConfigKey = "Track" + std::to_string(i + 1) + "Bitrate";
-		SaveCombo(advOutputTracksBitrates[i], "AdvOut", trackBitrateConfigKey.c_str());
-
-		std::string trackNameConfigKey = "Track" + std::to_string(i + 1) + "Name";
-		SaveEdit(advOutputTracksNames[i], "AdvOut", trackNameConfigKey.c_str());
+		SaveCombo(advOutputTracksBitrates[i], "AdvOut", GetTrackBitrateConfigKey(i).c_str());
+		SaveEdit(advOutputTracksNames[i], "AdvOut", GetTrackNameConfigKey(i).c_str());
 	}
 
 	if (vodTrackCheckbox) {
@@ -4335,8 +4330,7 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 		SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 
 		for (size_t i = 0; i < advOutputTracksBitrates.size(); i++) {
-			std::string trackBitrateConfigKey = "Track" + std::to_string(i + 1) + "Bitrate";
-			SaveCombo(advOutputTracksBitrates[i], "AdvOut", trackBitrateConfigKey.c_str());
+			SaveCombo(advOutputTracksBitrates[i], "AdvOut", GetTrackBitrateConfigKey(i).c_str());
 		}
 	}
 

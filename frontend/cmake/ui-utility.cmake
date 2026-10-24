@@ -68,6 +68,8 @@ target_sources(
     utility/VCamConfig.hpp
     utility/audio-encoders.cpp
     utility/audio-encoders.hpp
+    utility/audio-tracks.cpp
+    utility/audio-tracks.hpp
     utility/display-helpers.hpp
     utility/item-widget-helpers.cpp
     utility/item-widget-helpers.hpp
