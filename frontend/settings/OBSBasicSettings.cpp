@@ -57,6 +57,48 @@ extern bool restart;
 extern bool opt_allow_opengl;
 extern bool cef_js_avail;
 
+namespace {
+
+int RadioToIdx(const std::vector<QPointer<QRadioButton>> &values)
+{
+	int idx = 1;
+	for (size_t i = 0; i < values.size(); i++) {
+		if (values[i]->isChecked()) {
+			idx = (int)i + 1;
+			break;
+		}
+	}
+
+	return idx;
+}
+
+int MultiselectToBitmap(const std::vector<QPointer<QCheckBox>> &values)
+{
+	int bitmap = 0;
+	for (size_t i = 0; i < values.size(); i++) {
+		bitmap |= values[i]->isChecked() ? (1 << i) : 0;
+	}
+
+	return bitmap;
+}
+
+void SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
+{
+	bool hasChecked = false;
+	for (QRadioButton *radio : group) {
+		hasChecked |= radio->isChecked();
+		radio->setFocusPolicy(radio->isChecked() ? Qt::StrongFocus : Qt::ClickFocus);
+	}
+
+	// This can happen if the user selected track #8 and then reduced the track count, for example, to 6.
+	// Without the fallback below, Tab would never move focus into this group.
+	if (!hasChecked) {
+		group.front()->setFocusPolicy(Qt::StrongFocus);
+	}
+}
+
+} // namespace
+
 static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 {
 	return cx > 16384 || cy > 16384;
@@ -308,21 +350,6 @@ static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget, QStrin
 
 		label->style()->unpolish(label);
 		label->style()->polish(label);
-	}
-}
-
-void OBSBasicSettings::SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
-{
-	bool hasChecked = false;
-	for (QRadioButton *radio : group) {
-		hasChecked |= radio->isChecked();
-		radio->setFocusPolicy(radio->isChecked() ? Qt::StrongFocus : Qt::ClickFocus);
-	}
-
-	// This can happen if the user selected track #8 and then reduced the track count, for example, to 6.
-	// Without the fallback below, Tab would never move focus into this group.
-	if (!hasChecked) {
-		group.front()->setFocusPolicy(Qt::StrongFocus);
 	}
 }
 
@@ -3373,29 +3400,6 @@ static void WriteJsonData(OBSPropertiesView *view, const char *path)
 			obs_data_save_json_safe(settings, jsonFilePath.u8string().c_str(), "tmp", "bak");
 		}
 	}
-}
-
-static int RadioToIdx(std::vector<QPointer<QRadioButton>> values)
-{
-	int idx = 1;
-	for (size_t i = 0; i < values.size(); i++) {
-		if (values[i]->isChecked()) {
-			idx = (int)i + 1;
-			break;
-		}
-	}
-
-	return idx;
-}
-
-static int MultiselectToBitmap(std::vector<QPointer<QCheckBox>> values)
-{
-	int bitmap = 0;
-	for (size_t i = 0; i < values.size(); i++) {
-		bitmap |= values[i]->isChecked() ? (1 << i) : 0;
-	}
-
-	return bitmap;
 }
 
 void OBSBasicSettings::SaveFormat(QComboBox *combo)

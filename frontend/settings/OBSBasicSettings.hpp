@@ -193,7 +193,6 @@ private:
 		QWidget::setTabOrder(prev, after);
 	}
 
-	static void SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group);
 	static void BindRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group);
 
 	bool QueryChanges();
