@@ -22,7 +22,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 	struct obs_source_frame *next_frame = source->async_frames.array[0];
 	struct obs_source_frame *prev_frame = NULL;
 	struct obs_source_frame *frame = NULL;
-	uint64_t sys_offset = sys_time - source->last_sys_timestamp;
+	uint64_t sys_offset = sys_time - source->last_frame_sys_ts;
 	uint64_t frame_time = next_frame->timestamp;
 	uint64_t frame_offset = 0;
 	size_t idx = 1;
@@ -50,18 +50,18 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 			source->async_frames.array[0]->prev_frame = prev_frame;
 		}
 		source->deinterlace_offset = 0;
-		source->last_frame_ts = next_frame->timestamp;
+		set_ready_frame_timing(source, next_frame->timestamp, sys_time);
 		return true;
 	}
 
 	/* account for timestamp invalidation */
 	if (frame_out_of_bounds(source, frame_time)) {
-		source->last_frame_ts = next_frame->timestamp;
+		set_ready_frame_timing(source, next_frame->timestamp, source->last_frame_sys_ts);
 		source->deinterlace_offset = 0;
 		return true;
 	} else {
 		frame_offset = frame_time - source->last_frame_ts;
-		source->last_frame_ts += sys_offset;
+		set_ready_frame_timing(source, source->last_frame_ts + sys_offset, source->last_frame_sys_ts);
 	}
 
 	while (source->last_frame_ts > next_frame->timestamp) {
@@ -105,7 +105,7 @@ static bool ready_deinterlace_frames(obs_source_t *source, uint64_t sys_time)
 
 		/* more timestamp checking and compensating */
 		if ((next_frame->timestamp - frame_time) > MAX_TS_VAR) {
-			source->last_frame_ts = next_frame->timestamp - frame_offset;
+			set_ready_frame_timing(source, next_frame->timestamp - frame_offset, source->last_frame_sys_ts);
 			source->deinterlace_offset = 0;
 		}
 
@@ -181,7 +181,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s, uint64_t sys_
 		}
 
 		if (!s->last_frame_ts)
-			s->last_frame_ts = s->cur_async_frame->timestamp;
+			set_ready_frame_timing(s, s->cur_async_frame->timestamp, s->last_frame_sys_ts);
 
 		s->deinterlace_frame_ts = s->cur_async_frame->timestamp;
 
