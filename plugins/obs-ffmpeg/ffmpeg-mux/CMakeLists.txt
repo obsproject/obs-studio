@@ -14,6 +14,8 @@ target_link_libraries(
   PRIVATE OBS::libobs FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
 )
 
+target_link_options(obs-ffmpeg-mux PRIVATE $<$<PLATFORM_ID:Windows>:/DEPENDENTLOADFLAG:0x1000>)
+
 target_compile_definitions(obs-ffmpeg-mux PRIVATE $<$<BOOL:${ENABLE_FFMPEG_MUX_DEBUG}>:ENABLE_FFMPEG_MUX_DEBUG>)
 
 set_target_properties_obs(obs-ffmpeg-mux PROPERTIES FOLDER plugins/obs-ffmpeg)
