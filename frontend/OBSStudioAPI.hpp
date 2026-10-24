@@ -230,6 +230,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate) override;
 
+	bool obs_frontend_is_safe_mode_enabled(void) override;
+
 	void on_load(obs_data_t *settings) override;
 
 	void on_preload(obs_data_t *settings) override;

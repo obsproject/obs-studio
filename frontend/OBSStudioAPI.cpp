@@ -11,6 +11,7 @@ extern volatile bool recording_active;
 extern volatile bool recording_paused;
 extern volatile bool replaybuf_active;
 extern volatile bool virtualcam_active;
+extern bool safe_mode;
 
 template<typename T>
 inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks, T callback, void *private_data)
@@ -66,10 +67,11 @@ obs_source_t *OBSStudioAPI::obs_frontend_get_current_scene()
 void OBSStudioAPI::obs_frontend_set_current_scene(obs_source_t *scene)
 {
 	if (main->IsPreviewProgramMode()) {
-		QMetaObject::invokeMethod(main, [this, scene]() { main->TransitionToScene(scene); }, WaitConnection());
+		QMetaObject::invokeMethod(
+			main, [this, scene = OBSSource(scene)]() { main->TransitionToScene(scene); }, WaitConnection());
 	} else {
 		QMetaObject::invokeMethod(main, qOverload<OBSSource, bool>(&OBSBasic::SetCurrentScene),
-					  WaitConnection(), scene, false);
+					  WaitConnection(), OBSSource(scene), false);
 	}
 }
 
@@ -718,6 +720,11 @@ bool OBSStudioAPI::obs_frontend_can_paste_sceneitem(bool duplicate)
 void OBSStudioAPI::obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
 {
 	main->pasteSceneItem(scene, duplicate);
+}
+
+bool OBSStudioAPI::obs_frontend_is_safe_mode_enabled()
+{
+	return safe_mode;
 }
 
 void OBSStudioAPI::on_load(obs_data_t *settings)

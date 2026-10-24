@@ -179,9 +179,7 @@ static bool update_hook_file(bool b64)
 	wchar_t src_json[MAX_PATH];
 	wchar_t dst_json[MAX_PATH];
 
-	StringCbCopyW(temp, sizeof(temp),
-		      L"..\\..\\data\\core\\"
-		      L"win-capture\\");
+	StringCbCopyW(temp, sizeof(temp), L"..\\..\\core\\win-capture\\data\\");
 	make_filename(temp, L"obs-vulkan", L".json");
 
 	if (_wfullpath(src_json, temp, MAX_PATH) == NULL) {
@@ -189,9 +187,7 @@ static bool update_hook_file(bool b64)
 		return false;
 	}
 
-	StringCbCopyW(temp, sizeof(temp),
-		      L"..\\..\\data\\obs-plugins\\"
-		      L"win-capture\\");
+	StringCbCopyW(temp, sizeof(temp), L"..\\..\\core\\win-capture\\data\\");
 	make_filename(temp, L"graphics-hook", L".dll");
 
 	if (_wfullpath(src, temp, MAX_PATH) == NULL) {

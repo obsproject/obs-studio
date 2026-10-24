@@ -138,7 +138,7 @@ jobs:
 
   sign-windows-build:
     name: Windows Signing ✍️
-    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@ac19ea663375cd02997be92b7d8ff6dd89a511ad
+    uses: obsproject/obs-studio/.github/workflows/sign-windows.yaml@04a973a1d9c585bed7292eb11234c397e606dd02
     if: github.repository_owner == 'obsproject' && github.ref_type == 'tag'
     needs: build-project
     permissions:

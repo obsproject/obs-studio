@@ -12,7 +12,7 @@ include(cmake/obs-core-modules.cmake)
 find_package(SIMDe REQUIRED)
 find_package(Threads REQUIRED)
 
-find_package(FFmpeg 6.1 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
+find_package(FFmpeg 8.0 REQUIRED avformat avutil swscale swresample OPTIONAL_COMPONENTS avcodec)
 
 find_package(ZLIB REQUIRED)
 find_package(Uthash REQUIRED)

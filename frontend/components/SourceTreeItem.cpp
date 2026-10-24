@@ -72,6 +72,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_) : tre
 		iconLabel->setStyleSheet("background: none");
 		idian::Utils::addClass(iconLabel, "source-icon");
 		idian::Utils::toggleClass(iconLabel, "text-muted", !sourceVisible);
+		style()->polish(iconLabel);
 		idian::Utils::applyColorToIcon(iconLabel);
 	}
 
@@ -207,8 +208,8 @@ void SourceTreeItem::ReconnectSignals()
 
 	auto removeItem = [](void *data, calldata_t *cd) {
 		SourceTreeItem *this_ = static_cast<SourceTreeItem *>(data);
-		obs_sceneitem_t *curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
-		obs_scene_t *curScene = (obs_scene_t *)calldata_ptr(cd, "scene");
+		OBSSceneItem curItem = (obs_sceneitem_t *)calldata_ptr(cd, "item");
+		OBSScene curScene = (obs_scene_t *)calldata_ptr(cd, "scene");
 
 		if (curItem == this_->sceneitem) {
 			QMetaObject::invokeMethod(this_->tree, &SourceTree::Remove, curItem, curScene);
@@ -483,6 +484,7 @@ void SourceTreeItem::VisibilityChanged(bool visible)
 {
 	if (iconLabel) {
 		idian::Utils::toggleClass(iconLabel, "text-muted", !visible);
+		style()->polish(iconLabel);
 		idian::Utils::applyColorToIcon(iconLabel);
 	}
 	idian::Utils::toggleClass(label, "text-muted", !visible);

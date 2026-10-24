@@ -686,3 +686,8 @@ void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate)
 		return c->obs_frontend_paste_sceneitem(scene, duplicate);
 	}
 }
+
+bool obs_frontend_is_safe_mode_enabled(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_safe_mode_enabled() : false;
+}

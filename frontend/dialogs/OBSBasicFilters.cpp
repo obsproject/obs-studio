@@ -638,7 +638,7 @@ bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, qintptr *)
 void OBSBasicFilters::OBSSourceFilterAdded(void *param, calldata_t *data)
 {
 	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
-	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
+	OBSSource filter = (obs_source_t *)calldata_ptr(data, "filter");
 
 	QMetaObject::invokeMethod(window, &OBSBasicFilters::AddFilter, filter, true);
 }
@@ -646,7 +646,7 @@ void OBSBasicFilters::OBSSourceFilterAdded(void *param, calldata_t *data)
 void OBSBasicFilters::OBSSourceFilterRemoved(void *param, calldata_t *data)
 {
 	OBSBasicFilters *window = static_cast<OBSBasicFilters *>(param);
-	obs_source_t *filter = (obs_source_t *)calldata_ptr(data, "filter");
+	OBSSource filter = (obs_source_t *)calldata_ptr(data, "filter");
 
 	QMetaObject::invokeMethod(window, &OBSBasicFilters::RemoveFilter, filter);
 }

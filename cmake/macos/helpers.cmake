@@ -169,6 +169,11 @@ function(set_target_properties_obs target)
             "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources"
           COMMENT "Add OBS::python import module"
         )
+        set_property(TARGET ${target} APPEND PROPERTY XCODE_EMBED_PLUGINS obspython)
+      endif()
+
+      if(TARGET obslua)
+        set_property(TARGET ${target} APPEND PROPERTY XCODE_EMBED_PLUGINS obslua)
       endif()
 
       if(

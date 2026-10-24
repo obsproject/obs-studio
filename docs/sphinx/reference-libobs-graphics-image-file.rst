@@ -10,24 +10,24 @@ animated gif files.
 
    #include <graphics/image-file.h>
 
-.. struct:: gs_image_file
+.. struct:: gs_image_file_ex
 
    Image file structure
 
-.. type:: gs_texture_t *gs_image_file.texture
+.. type:: gs_texture_t *gs_image_file_ex.texture
 
    Texture
 
-.. type:: struct gs_image_file gs_image_file_t
+.. type:: struct gs_image_file_ex gs_image_file_ex_t
 
    Image file type
 
 ---------------------
 
-.. function:: void gs_image_file_init(gs_image_file_t *image, const char *file)
+.. function:: void gs_image_file_ex_init(gs_image_file_ex_t *image, const char *file, enum gs_image_alpha_mode alpha_mode)
 
    Loads an initializes an image file helper.  Does not initialize the
-   texture; call :c:func:`gs_image_file_init_texture()` to initialize
+   texture; call :c:func:`gs_image_file_ex_init_texture()` to initialize
    the texture.
 
    :param image: Image file helper to initialize
@@ -35,7 +35,7 @@ animated gif files.
 
 ---------------------
 
-.. function:: void gs_image_file_free(gs_image_file_t *image)
+.. function:: void gs_image_file_ex_free(gs_image_file_ex_t *image)
 
    Frees an image file helper
 
@@ -43,28 +43,28 @@ animated gif files.
 
 ---------------------
 
-.. function:: void gs_image_file_init_texture(gs_image_file_t *image)
+.. function:: void gs_image_file_ex_init_texture(gs_image_file_ex_t *image)
 
    Initializes the texture of an image file helper.  This is separate
-   from :c:func:`gs_image_file_init()` because it allows deferring the
+   from :c:func:`gs_image_file_ex_init()` because it allows deferring the
    graphics initialization if needed.
 
    :param image: Image file helper
 
 ---------------------
 
-.. function:: bool gs_image_file_tick(gs_image_file_t *image, uint64_t elapsed_time_ns)
+.. function:: bool gs_image_file_ex_tick(gs_image_file_ex_t *image, uint64_t elapsed_time_ns)
 
    Performs a tick operation on the image file helper (used primarily
    for animated file).  Does not update the texture until
-   :c:func:`gs_image_file_update_texture()` is called.
+   :c:func:`gs_image_file_ex_update_texture()` is called.
 
    :param image:           Image file helper
    :param elapsed_time_ns: Elapsed time in nanoseconds
 
 ---------------------
 
-.. function:: void gs_image_file_update_texture(gs_image_file_t *image)
+.. function:: void gs_image_file_ex_update_texture(gs_image_file_ex_t *image)
 
    Updates the texture (used primarily for animated files)
 

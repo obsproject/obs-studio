@@ -90,6 +90,7 @@ void OBSMessageBox::warning(QWidget *parent, const QString &title, const QString
 	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::NoButton, parent);
 	if (enableRichText) {
 		mb.setTextFormat(Qt::RichText);
+		mb.setOption(QMessageBox::Option::DontUseNativeDialog, true);
 	}
 	mb.addButton(tr("OK"), QMessageBox::AcceptRole);
 	mb.exec();

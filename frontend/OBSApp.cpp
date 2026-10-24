@@ -30,9 +30,6 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-#include <qpa/qplatformnativeinterface.h>
-#endif
 #endif
 #include <qt-wrappers.hpp>
 
@@ -48,9 +45,9 @@
 #endif
 
 #include <chrono>
+#include <sstream>
 
 #ifdef _WIN32
-#include <sstream>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #else
@@ -128,9 +125,7 @@ UncleanLaunchAction handleUncleanShutdown(bool enableCrashUpload)
 	QMessageBox crashWarning;
 
 	crashWarning.setIcon(QMessageBox::Warning);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 6, 0)
 	crashWarning.setOption(QMessageBox::Option::DontUseNativeDialog);
-#endif
 	crashWarning.setWindowTitle(QTStr("CrashHandling.Dialog.Title"));
 	crashWarning.setText(QTStr("CrashHandling.Labels.Text"));
 
@@ -1284,11 +1279,9 @@ bool OBSApp::OBSInit()
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	if (QApplication::platformName() == "xcb") {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QX11Application>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
 
@@ -1297,11 +1290,9 @@ bool OBSApp::OBSInit()
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		auto native = qGuiApp->nativeInterface<QNativeInterface::QWaylandApplication>();
 
 		obs_set_nix_platform_display(native->display());
-#endif
 
 		obs_set_nix_platform(OBS_NIX_PLATFORM_WAYLAND);
 		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
@@ -1310,10 +1301,6 @@ bool OBSApp::OBSInit()
 	}
 #endif
 
-#if QT_VERSION < QT_VERSION_CHECK(6, 5, 0)
-	QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
-	obs_set_nix_platform_display(native->nativeResourceForIntegration("display"));
-#endif
 #endif
 
 #ifdef __APPLE__
