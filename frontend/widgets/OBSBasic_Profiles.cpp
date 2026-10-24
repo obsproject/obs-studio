@@ -40,7 +40,7 @@ constexpr std::string_view OBSProfileSettingsFile = "basic.ini";
 extern bool restart;
 
 extern void DestroyPanelCookieManager();
-extern void DuplicateCurrentCookieProfile(ConfigFile &config);
+extern void DuplicateCurrentCookieProfile();
 extern void CheckExistingCookieId();
 extern void DeleteCookies();
 extern const char *get_simple_output_encoder(const char *name);
@@ -106,6 +106,8 @@ void OBSBasic::SetupDuplicateProfile(const std::string &profileName)
 	}
 
 	ActivateProfile(newProfile);
+
+	DuplicateCurrentCookieProfile();
 
 	blog(LOG_INFO, "Created profile '%s' (duplicate, %s)", newProfile.name.c_str(),
 	     newProfile.directoryName.c_str());
