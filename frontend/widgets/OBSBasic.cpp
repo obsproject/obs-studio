@@ -62,9 +62,7 @@
 #include <QWidgetAction>
 
 #include <mutex>
-#ifdef _WIN32
 #include <sstream>
-#endif
 #include <string>
 
 #ifdef _WIN32

@@ -22,6 +22,8 @@
 #include <qt-wrappers.hpp>
 #include <util/curl/curl-helper.h>
 
+#include <iterator>
+
 #include "moc_RemoteTextThread.cpp"
 
 using namespace std;

@@ -106,9 +106,11 @@ static LSTATUS get_reg(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name, bool b64)
 	} while (false)
 
 #define IMPLICIT_LAYERS L"SOFTWARE\\Khronos\\Vulkan\\ImplicitLayers"
-#define HOOK_LOCATION L"\\core\\win-capture\\data\\"
 
-static bool update_hook_file(bool b64)
+#define LEGACY_HOOK_LOCATION L"\\data\\obs-plugins\\win-capture\\"
+#define CORE_HOOK_LOCATION L"\\core\\win-capture\\data\\"
+
+static bool update_hook_file(LPCWSTR location, bool b64)
 {
 	wchar_t temp[MAX_PATH];
 	wchar_t src[MAX_PATH];
@@ -117,11 +119,11 @@ static bool update_hook_file(bool b64)
 	wchar_t dst_json[MAX_PATH];
 
 	GetCurrentDirectoryW(_countof(src_json), src_json);
-	StringCbCat(src_json, sizeof(src_json), HOOK_LOCATION);
+	StringCbCat(src_json, sizeof(src_json), location);
 	make_filename(src_json, L"obs-vulkan", L".json");
 
 	GetCurrentDirectoryW(_countof(src), src);
-	StringCbCat(src, sizeof(src), HOOK_LOCATION);
+	StringCbCat(src, sizeof(src), location);
 	make_filename(src, L"graphics-hook", L".dll");
 
 	get_programdata_path(temp, L"obs-studio-hook\\");
@@ -184,10 +186,18 @@ finish:
 		RegCloseKey(key);
 }
 
+void UpdateHookFilesLegacy(void)
+{
+	if (update_hook_file(LEGACY_HOOK_LOCATION, true))
+		update_vulkan_registry(true);
+	if (update_hook_file(LEGACY_HOOK_LOCATION, false))
+		update_vulkan_registry(false);
+}
+
 void UpdateHookFiles(void)
 {
-	if (update_hook_file(true))
+	if (update_hook_file(CORE_HOOK_LOCATION, true))
 		update_vulkan_registry(true);
-	if (update_hook_file(false))
+	if (update_hook_file(CORE_HOOK_LOCATION, false))
 		update_vulkan_registry(false);
 }

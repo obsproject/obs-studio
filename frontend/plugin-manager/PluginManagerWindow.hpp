@@ -31,13 +31,14 @@ class PluginManagerWindow : public QDialog {
 	std::unique_ptr<Ui::PluginManagerWindow> ui;
 
 public:
-	enum class Status { Invalid = 0, Loadable, Error, Missing };
+	enum class Category { Invalid = 0, Installed, Error, Missing };
 
 	struct Entry {
-		OBS::ModuleInfo *module{nullptr};
+		OBS::ModuleInfo module;
 		QString name{};
-		Status status{Status::Invalid};
+		Category category{Category::Invalid};
 		bool isLegacy{false};
+		bool hasLoadedBefore{true};
 	};
 
 	enum class Page { Installed };

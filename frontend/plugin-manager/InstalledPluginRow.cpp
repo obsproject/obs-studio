@@ -27,12 +27,12 @@ constexpr std::string_view kLegacyPluginInfoLink{"https://obsproject.com/go/lega
 namespace OBS {
 InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindow::Entry &entry) : idian::Row(parent)
 {
-	OBS::ModuleInfo *metadata = entry.module;
+	const OBS::ModuleInfo &metadata = entry.module;
 
 	setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
 	QString name = entry.name;
 
-	QString version = metadata && !metadata->version.empty() ? metadata->version.c_str() : "";
+	QString version = !metadata.version.empty() ? metadata.version.c_str() : "";
 
 	auto *moduleText = new QWidget{this};
 	moduleText->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
@@ -49,7 +49,7 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 	nameLabel->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Minimum);
 	nameLabel->setIndent(0);
 	idian::Utils::addClass(nameLabel, "title");
-	if (metadata && !metadata->enabledAtLaunch) {
+	if (!metadata.enabledAtLaunch) {
 		idian::Utils::addClass(nameLabel, "text-muted");
 	}
 	headerLayout->addWidget(nameLabel);
@@ -72,13 +72,19 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 	this->addWidget(moduleText);
 
 	InfoChip *statusChip{nullptr};
-	if (entry.status == PluginManagerWindow::Status::Error) {
+	if (obs_frontend_is_safe_mode_enabled()) {
+		idian::Utils::addClass(nameLabel, "text-muted");
+
+		statusChip = new InfoChip{QTStr("PluginManager.Status.Disabled"), moduleText};
+		idian::Utils::addClass(statusChip, "bg-info");
+		idian::Utils::addClass(statusChip, "text-muted");
+	} else if (entry.category == PluginManagerWindow::Category::Error) {
 		idian::Utils::addClass(nameLabel, "text-muted");
 
 		statusChip = new InfoChip{QTStr("PluginManager.Status.Error"), moduleText};
 		idian::Utils::addClass(statusChip, "bg-warning");
 		idian::Utils::addClass(statusChip, "text-warning");
-	} else if (entry.status == PluginManagerWindow::Status::Missing) {
+	} else if (entry.category == PluginManagerWindow::Category::Missing) {
 		idian::Utils::addClass(nameLabel, "text-muted");
 
 		statusChip = new InfoChip{QTStr("PluginManager.Status.Missing"), moduleText};
@@ -95,9 +101,11 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 			legacyNotice->setLayout(new QHBoxLayout{});
 			legacyNotice->layout()->setContentsMargins(0, 0, 0, 0);
 
-			auto warningIcon = new QLabel{moduleText};
-			warningIcon->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-			warningIcon->setPixmap(getWarningIcon().pixmap(16, 16));
+			// TODO: https://github.com/obsproject/obs-studio/issues/14029
+			// Re-enable this icon before the major version where we remove legacy plugin paths.
+			//auto warningIcon = new QLabel{moduleText};
+			//warningIcon->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+			//warningIcon->setPixmap(getWarningIcon().pixmap(16, 16));
 
 			auto legacyInfo =
 				new QLabel{QTStr("PluginManager.Status.Legacy.Description").arg(kLegacyPluginInfoLink),
@@ -106,13 +114,13 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 			legacyInfo->setOpenExternalLinks(true);
 			idian::Utils::addClass(legacyInfo, "description");
 
-			legacyNotice->layout()->addWidget(warningIcon);
+			//legacyNotice->layout()->addWidget(warningIcon);
 			legacyNotice->layout()->addWidget(legacyInfo);
 
 			detailsLayout->addWidget(legacyNotice);
 		}
 
-		if (metadata && !metadata->enabledAtLaunch) {
+		if (!metadata.enabledAtLaunch) {
 			statusChip = new InfoChip{QTStr("PluginManager.Status.Disabled"), moduleText};
 			idian::Utils::addClass(statusChip, "bg-info");
 			idian::Utils::addClass(statusChip, "text-muted");
@@ -123,20 +131,17 @@ InstalledPluginRow::InstalledPluginRow(QWidget *parent, const PluginManagerWindo
 		headerLayout->addWidget(statusChip);
 	}
 
-	if (metadata) {
+	if (entry.hasLoadedBefore) {
 		auto toggleSwitch = new idian::ToggleSwitch(this);
-		toggleSwitch->setChecked(metadata->enabled);
+		toggleSwitch->setChecked(metadata.enabled);
 		addWidget(toggleSwitch);
 		toggleSwitch->setAccessibleDescription(QTStr("PluginManager.Button.Enable").arg(name));
 
-		connect(toggleSwitch, &idian::ToggleSwitch::toggled, this, [this, metadata](bool checked) {
-			metadata->enabled = checked;
-
-			emit toggleChanged();
-		});
+		connect(toggleSwitch, &idian::ToggleSwitch::toggled, this,
+			[this](bool checked) { emit toggleChanged(checked); });
 	}
 
-	if (entry.status == PluginManagerWindow::Status::Missing) {
+	if (entry.category == PluginManagerWindow::Category::Missing) {
 		auto removeButton = new idian::InlineButton(this);
 		removeButton->setAccessibleName(QTStr("Remove"));
 		removeButton->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);

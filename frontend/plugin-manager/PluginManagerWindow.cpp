@@ -39,15 +39,15 @@
 extern bool safe_mode;
 
 namespace {
-using Status = OBS::PluginManagerWindow::Status;
-constexpr int getStatusSortOrder(Status s)
+using Category = OBS::PluginManagerWindow::Category;
+constexpr int getCategorySortOrder(Category c)
 {
-	switch (s) {
-	case Status::Loadable:
+	switch (c) {
+	case Category::Installed:
 		return 0;
-	case Status::Error:
+	case Category::Error:
 		return 1;
-	case Status::Missing:
+	case Category::Missing:
 		return 2;
 	default:
 		return 3;
@@ -121,6 +121,22 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 						   QTStr("PluginManager.Section.Missing.Description"));
 	missingPluginList->addHeader(missingHeader);
 
+	bool isSafeMode = obs_frontend_is_safe_mode_enabled();
+	if (isSafeMode) {
+		auto *safeModeFrame = new QFrame{};
+		safeModeFrame->setLayout(new QVBoxLayout);
+		safeModeFrame->layout()->setContentsMargins(0, 0, 0, 0);
+		safeModeFrame->setProperty("class", "frame-notice");
+
+		auto *safeModeLabel = new QLabel(ui->modulesList);
+		safeModeLabel->setText(QTStr("PluginManager.SafeMode"));
+		safeModeLabel->setAlignment(Qt::AlignCenter);
+		safeModeLabel->setIndent(0);
+
+		safeModeFrame->layout()->addWidget(safeModeLabel);
+		ui->installedPage->layout()->addWidget(safeModeFrame);
+	}
+
 	ui->modulesList->layout()->addWidget(installedPluginList);
 	ui->modulesList->layout()->addWidget(errorPluginList);
 	ui->modulesList->layout()->addWidget(missingPluginList);
@@ -132,11 +148,11 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 		// Check if the module is missing:
 		obs_module_t *moduleData = obs_get_module(module_name.data());
 
-		Status status{Status::Loadable};
+		Category category{Category::Installed};
 
 		bool isLoaded = moduleData != nullptr;
 		if (!isLoaded) {
-			status = Status::Missing;
+			category = Category::Missing;
 			moduleData = obs_get_disabled_module(module_name.data());
 		}
 
@@ -147,11 +163,11 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 			if (failedModuleIterator != failedModules.end()) {
 				// This module is in the plugin manager cache so it has loaded properly before but now failed.
 				// Remove entry from the failedModules list so we don't create a dummy entry for it.
-				status = Status::Error;
+				category = Category::Error;
 				failedModules.erase(failedModuleIterator);
 			} else {
 				// Module is disabled but did not fail to load.
-				status = Status::Loadable;
+				category = Category::Installed;
 			}
 		}
 
@@ -161,24 +177,30 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 							      : metadata.module_name.c_str();
 		QString version = !metadata.version.empty() ? metadata.version.c_str() : "";
 
-		Entry newEntry{&metadata, name, status, isLegacyModule};
+		Entry newEntry{metadata, name, category, isLegacyModule};
 		installedPluginEntries.push_back(newEntry);
 	}
 
 	for (const std::string &moduleName : failedModules) {
 		// This failed module is not in the plugin manager cache which means it has never been loaded successfully.
 		// Create a dummy visual entry for it.
+		OBS::ModuleInfo dummyModule;
 		QString name = QString::fromStdString(moduleName.data());
-		Status status{Status::Error};
+		Category category{Category::Error};
 		bool isLegacy{false};
+		bool hasLoadedBefore{false};
 
-		Entry newEntry{nullptr, name, status, isLegacy};
+		dummyModule.module_name = moduleName;
+		dummyModule.enabled = false;
+		dummyModule.enabledAtLaunch = false;
+
+		Entry newEntry{dummyModule, name, category, isLegacy, hasLoadedBefore};
 		installedPluginEntries.push_back(newEntry);
 	}
 
 	std::sort(installedPluginEntries.begin(), installedPluginEntries.end(), [](const Entry &a, const Entry &b) {
-		if (a.status != b.status) {
-			return getStatusSortOrder(a.status) < getStatusSortOrder(b.status);
+		if (a.category != b.category) {
+			return getCategorySortOrder(a.category) < getCategorySortOrder(b.category);
 		}
 
 		return a.name.toLower() < b.name.toLower();
@@ -186,6 +208,9 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 
 	QWidget *previousRow{nullptr};
 	for (Entry &entry : installedPluginEntries) {
+		if (isSafeMode) {
+			entry.category = Category::Installed;
+		}
 		auto newRow = new InstalledPluginRow(ui->modulesList, entry);
 
 		if (!previousRow) {
@@ -196,27 +221,36 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 
 		previousRow = newRow;
 
-		if (entry.status == Status::Loadable) {
+		if (entry.category == Category::Installed) {
 			installedPluginList->addRow(newRow);
-
-			connect(newRow, &InstalledPluginRow::toggleChanged, this,
-				[this]() { ui->manageRestartLabel->setVisible(isEnabledPluginsChanged()); });
-
-		} else if (entry.status == Status::Error) {
+		} else if (entry.category == Category::Error) {
 			errorPluginList->addRow(newRow);
-		} else if (entry.status == Status::Missing) {
+		} else if (entry.category == Category::Missing) {
 			missingPluginList->addRow(newRow);
 
-			connect(newRow, &InstalledPluginRow::trashClicked, this, [this, newRow, entry]() {
-				auto it = std::find_if(modules_.begin(), modules_.end(), [&entry](const auto &module) {
-					return &module == entry.module;
-				});
+			connect(newRow, &InstalledPluginRow::trashClicked, this, [this, entry]() {
+				auto it = std::find_if(modules_.begin(), modules_.end(),
+						       [&entry](const ModuleInfo &module) {
+							       return module.module_name == entry.module.module_name;
+						       });
 
 				if (it != modules_.end()) {
 					modules_.erase(it);
 				}
 			});
 		}
+
+		connect(newRow, &InstalledPluginRow::toggleChanged, this, [this, entry](bool enabled) {
+			auto it = std::find_if(modules_.begin(), modules_.end(), [&entry](const ModuleInfo &module) {
+				return module.module_name == entry.module.module_name;
+			});
+
+			if (it != modules_.end()) {
+				it->enabled = enabled;
+			}
+
+			ui->manageRestartLabel->setVisible(isEnabledPluginsChanged());
+		});
 	}
 
 	setTabOrder(previousRow, ui->buttonBox);
@@ -231,16 +265,6 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 
 	if (missingPluginList->count() == 0) {
 		missingPluginList->setVisible(false);
-	}
-
-	QVBoxLayout *layout = qobject_cast<QVBoxLayout *>(ui->modulesList->layout());
-	if (safe_mode) {
-		QLabel *safeModeLabel = new QLabel(ui->modulesList);
-		safeModeLabel->setText(QTStr("PluginManager.SafeMode"));
-		safeModeLabel->setProperty("class", "text-muted text-italic");
-		safeModeLabel->setIndent(0);
-
-		layout->insertWidget(0, safeModeLabel);
 	}
 
 	// Qt is weird about how styling from dynamic properties affects certain widgets such as scroll areas.
@@ -277,10 +301,14 @@ void PluginManagerWindow::setSection(int sidebarRow)
 
 bool PluginManagerWindow::isEnabledPluginsChanged()
 {
+	if (obs_frontend_is_safe_mode_enabled()) {
+		return false;
+	}
+
 	bool result = false;
 	for (auto &entry : installedPluginEntries) {
 		// Only prompt for restart when a loadable plugin entry changed.
-		if (entry.status == Status::Loadable && entry.module->enabledAtLaunch != entry.module->enabled) {
+		if (entry.category == Category::Installed && entry.module.enabledAtLaunch != entry.module.enabled) {
 			result = true;
 			break;
 		}

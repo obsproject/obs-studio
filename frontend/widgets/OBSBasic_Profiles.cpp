@@ -558,7 +558,8 @@ void OBSBasic::on_actionImportProfile_triggered()
 	const QString sourceDirectory = SelectDirectory(this, QTStr("Basic.MainMenu.Profile.Import"), home);
 
 	if (!sourceDirectory.isEmpty() && !sourceDirectory.isNull()) {
-		const std::filesystem::path sourcePath = std::filesystem::u8path(sourceDirectory.toStdString());
+		const std::filesystem::path sourcePath =
+			std::filesystem::u8path(QDir::cleanPath(sourceDirectory).toStdString());
 		const std::string directoryName = sourcePath.filename().u8string();
 
 		if (auto profile = GetProfileByDirectoryName(directoryName)) {
@@ -1065,12 +1066,21 @@ void OBSBasic::CheckForMissingEncoders()
 	const QString encoderListItem = QTStr("EncoderMissing.ItemText");
 	const QString unknownErrorText = QTStr("EncoderMissing.Unknown");
 
-	std::unordered_set<std::string_view> missing_encoders = {
-		config_get_string(activeConfiguration, "AdvOut", "Encoder"),
-		config_get_string(activeConfiguration, "AdvOut", "RecEncoder"),
-		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder")),
-		get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder")),
-	};
+	const char *outputMode = config_get_string(activeConfiguration, "Output", "Mode");
+
+	std::unordered_set<std::string_view> missing_encoders;
+	if (strcmp(outputMode, "Advanced") != 0) {
+		missing_encoders = {
+			get_simple_output_encoder(
+				config_get_string(activeConfiguration, "SimpleOutput", "StreamEncoder")),
+			get_simple_output_encoder(config_get_string(activeConfiguration, "SimpleOutput", "RecEncoder")),
+		};
+	} else {
+		missing_encoders = {
+			config_get_string(activeConfiguration, "AdvOut", "Encoder"),
+			config_get_string(activeConfiguration, "AdvOut", "RecEncoder"),
+		};
+	}
 
 	size_t idx = 0;
 	const char *id;
@@ -1109,5 +1119,5 @@ void OBSBasic::CheckForMissingEncoders()
 	// Format and show error message
 	const QString encoderMissingMessage =
 		QTStr("EncoderMissing.Text").arg(encoderList.join("\n")).arg(kbURL.arg(crumb));
-	OBSMessageBox::warning(this, QTStr("EncoderMissing.Title"), encoderMissingMessage, true);
+	OBSMessageBox::warning(nullptr, QTStr("EncoderMissing.Title"), encoderMissingMessage, true);
 }
