@@ -19,7 +19,9 @@
 #include <stdio.h>
 #include <wchar.h>
 #include <sys/types.h>
+#include <locale.h>
 #include "c99defs.h"
+#include "darray.h"
 
 /*
  * Platform-independent functions for Accessing files, encoding, DLLs,
@@ -117,6 +119,21 @@ EXPORT const char *os_get_path_extension(const char *path);
 
 EXPORT bool os_get_emulation_status(void);
 
+#ifdef _WIN32
+typedef _locale_t os_locale_t;
+#else
+typedef locale_t os_locale_t;
+#endif
+
+typedef int (*os_locale_aware_cmp)(const void *a, const void *b, os_locale_t locale);
+
+EXPORT int os_strcoll_l(const char *a, const char *b, os_locale_t locale);
+EXPORT int os_wcscoll_l(const wchar_t *a, const wchar_t *b, os_locale_t locale);
+EXPORT os_locale_t os_get_locale(const char *locale);
+EXPORT void os_free_locale(os_locale_t locale);
+EXPORT void os_locale_aware_sort(void *base, size_t elements, size_t element_size, os_locale_aware_cmp cmp,
+				 os_locale_t locale);
+
 struct os_dir;
 typedef struct os_dir os_dir_t;
 
@@ -125,9 +142,12 @@ struct os_dirent {
 	bool directory;
 };
 
+typedef bool (*dir_filter_func)(struct os_dirent *);
+
 EXPORT os_dir_t *os_opendir(const char *path);
 EXPORT struct os_dirent *os_readdir(os_dir_t *dir);
 EXPORT void os_closedir(os_dir_t *dir);
+EXPORT void os_sortdir_natural(os_dir_t *dir, struct darray *sorted, dir_filter_func filter_func);
 
 struct os_globent {
 	char *path;
