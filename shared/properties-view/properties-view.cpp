@@ -1981,7 +1981,7 @@ void WidgetInfo::GroupChanged(const char *setting)
 void WidgetInfo::EditableListChanged()
 {
 	const char *setting = obs_property_name(property);
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	OBSDataArrayAutoRelease array = obs_data_array_create();
 
 	for (int i = 0; i < list->count(); i++) {
@@ -2031,7 +2031,7 @@ void WidgetInfo::ButtonClicked()
 
 void WidgetInfo::TogglePasswordText(bool show)
 {
-	reinterpret_cast<QLineEdit *>(widget)->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
+	static_cast<QLineEdit *>(widget)->setEchoMode(show ? QLineEdit::Normal : QLineEdit::Password);
 }
 
 void WidgetInfo::ControlChanged()
@@ -2232,7 +2232,7 @@ void WidgetInfo::EditListAdd()
 
 void WidgetInfo::EditListAddText()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	const char *desc = obs_property_description(property);
 
 	EditableItemDialog dialog(widget->window(), QString(), false);
@@ -2256,7 +2256,7 @@ void WidgetInfo::EditListAddText()
 
 void WidgetInfo::EditListAddFiles()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	const char *desc = obs_property_description(property);
 	const char *filter = obs_property_editable_list_filter(property);
 	const char *default_path = obs_property_editable_list_default_path(property);
@@ -2284,7 +2284,7 @@ void WidgetInfo::EditListAddFiles()
 
 void WidgetInfo::EditListAddDir()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	const char *desc = obs_property_description(property);
 	const char *default_path = obs_property_editable_list_default_path(property);
 
@@ -2309,7 +2309,7 @@ void WidgetInfo::EditListAddDir()
 
 void WidgetInfo::EditListRemove()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	QList<QListWidgetItem *> items = list->selectedItems();
 
 	for (QListWidgetItem *item : items) {
@@ -2320,7 +2320,7 @@ void WidgetInfo::EditListRemove()
 
 void WidgetInfo::EditListEdit()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	enum obs_editable_list_type type = obs_property_editable_list_type(property);
 	const char *desc = obs_property_description(property);
 	const char *filter = obs_property_editable_list_filter(property);
@@ -2369,7 +2369,7 @@ void WidgetInfo::EditListEdit()
 
 void WidgetInfo::EditListUp()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	int lastItemRow = -1;
 
 	for (int i = 0; i < list->count(); i++) {
@@ -2395,7 +2395,7 @@ void WidgetInfo::EditListUp()
 
 void WidgetInfo::EditListDown()
 {
-	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
+	QListWidget *list = static_cast<QListWidget *>(widget);
 	int lastItemRow = list->count();
 
 	for (int i = list->count() - 1; i >= 0; i--) {
