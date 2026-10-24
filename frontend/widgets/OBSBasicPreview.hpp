@@ -202,6 +202,9 @@ public:
 	OBSSourceAutoRelease spacerLabel[4];
 	int spacerPx[4] = {0};
 
+	bool isDestroyed{false};
+	void destroyPreview();
+
 	void addSnapGuide(SnapGuide guide);
 	void DrawSnapGuides();
 	void DrawSpacingHelpers();
