@@ -284,6 +284,11 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 
 void OBSBasic::TransitionFullyStopped()
 {
+	OBSSourceAutoRelease transition = obs_get_output_source(0);
+	if (transition && obs_transition_is_active(transition)) {
+		return;
+	}
+
 	EnableTransitionWidgets(true);
 
 	if (overridingTransition) {

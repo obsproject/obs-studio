@@ -1045,6 +1045,14 @@ void obs_transition_swap_begin(obs_source_t *tr_dest, obs_source_t *tr_source)
 	for (size_t i = 0; i < 2; i++)
 		old_children[i] = copy_source_state(tr_dest, tr_source, i);
 
+	tr_dest->transitioning_video = tr_source->transitioning_video;
+	tr_dest->transitioning_audio = tr_source->transitioning_audio;
+	tr_dest->transition_start_time = tr_source->transition_start_time;
+	tr_dest->transition_duration = tr_source->transition_duration;
+	tr_dest->transition_mode = tr_source->transition_mode;
+	tr_dest->transition_manual_val = tr_source->transition_manual_val;
+	tr_dest->transition_manual_target = tr_source->transition_manual_target;
+
 	unlock_transition(tr_dest);
 	unlock_transition(tr_source);
 
