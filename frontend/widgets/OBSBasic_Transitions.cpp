@@ -128,6 +128,10 @@ void OBSBasic::TriggerQuickTransition(int id)
 			swapCurrentTransition(qt->source);
 		}
 
+		if (qt->fadeToBlack) {
+			source = GetProgramSource();
+		}
+
 		TransitionToScene(source, false, true, qt->duration, qt->fadeToBlack);
 	}
 }
@@ -320,6 +324,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 	}
 
 	if (usingPreviewProgram) {
+		if (black && prevFTBSource) {
+			// Already faded to black, skip trying another one.
+			return;
+		}
+
 		if (!tBarActive) {
 			lastProgramScene = programScene;
 		}
@@ -381,6 +390,10 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		}
 	}
 
+	if (!black) {
+		prevFTBSource = nullptr;
+	}
+
 	if (force) {
 		obs_transition_set(transition, source);
 		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
@@ -423,11 +436,6 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		if (black && !prevFTBSource) {
 			prevFTBSource = source;
 			source = nullptr;
-		} else if (black && prevFTBSource) {
-			source = prevFTBSource;
-			prevFTBSource = nullptr;
-		} else if (!black) {
-			prevFTBSource = nullptr;
 		}
 
 		if (quickTransition) {
