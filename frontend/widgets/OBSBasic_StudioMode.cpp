@@ -66,6 +66,7 @@ void OBSBasic::CreateProgramDisplay()
 void OBSBasic::CreateProgramOptions()
 {
 	programOptions = new QWidget();
+	programOptions->setObjectName("studioTransitionControls");
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setSpacing(4);
 
