@@ -275,11 +275,19 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
 
-	if (transition != oldTransition) {
-		obs_transition_swap_begin(transition, oldTransition);
-		obs_set_output_source(0, transition);
-		obs_transition_swap_end(transition, oldTransition);
+	if (transition == oldTransition) {
+		return;
 	}
+
+	if (obs_transition_is_active(oldTransition)) {
+		// Force active transition to complete before swapping.
+		OBSSourceAutoRelease target = obs_transition_get_source(oldTransition, OBS_TRANSITION_SOURCE_B);
+		obs_transition_set(oldTransition, target);
+	}
+
+	obs_transition_swap_begin(transition, oldTransition);
+	obs_set_output_source(0, transition);
+	obs_transition_swap_end(transition, oldTransition);
 }
 
 void OBSBasic::TransitionFullyStopped()
