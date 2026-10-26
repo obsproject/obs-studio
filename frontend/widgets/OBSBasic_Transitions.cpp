@@ -122,10 +122,10 @@ void OBSBasic::TriggerQuickTransition(int id)
 	if (qt && previewProgramMode) {
 		OBSScene scene = GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
+		OBSSourceAutoRelease currentTransition = obs_get_output_source(0);
 
-		if (GetCurrentTransition() != qt->source) {
-			OverrideTransition(qt->source);
-			overridingTransition = true;
+		if (currentTransition != qt->source) {
+			swapCurrentTransition(qt->source);
 		}
 
 		TransitionToScene(source, false, true, qt->duration, qt->fadeToBlack);
@@ -271,7 +271,7 @@ void OBSBasic::TransitionStopped()
 	swapScene = nullptr;
 }
 
-void OBSBasic::OverrideTransition(OBSSource transition)
+void OBSBasic::swapCurrentTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
 
@@ -293,11 +293,6 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 void OBSBasic::TransitionFullyStopped()
 {
 	EnableTransitionWidgets(true);
-
-	if (overridingTransition) {
-		OverrideTransition(GetCurrentTransition());
-		overridingTransition = false;
-	}
 }
 
 void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransition, int quickDuration, bool black,
@@ -335,7 +330,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		source = obs_scene_get_source(scene);
 	}
 
-	OBSSourceAutoRelease transition = obs_get_output_source(0);
+	OBSSourceAutoRelease tmp = obs_get_output_source(0);
+	OBSSource transition = tmp.Get();
 	if (!transition) {
 		if (usingPreviewProgram && sceneDuplicationMode) {
 			obs_scene_release(scene);
@@ -380,11 +376,19 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		/* check for scene override */
 		OBSSource trOverride = GetOverrideTransition(source);
 
-		if (trOverride && !overridingTransition && !quickTransition) {
-			transition = std::move(trOverride);
-			duration = GetOverrideTransitionDuration(source);
-			OverrideTransition(transition.Get());
-			overridingTransition = true;
+		// If quickTransition is true, it means the transition was set up already before calling this function.
+		// This is messy and should be cleaned up in the future.
+		if (!quickTransition) {
+			if (trOverride && trOverride != transition) {
+				// Source has an override and it does not match the current transition we are on.
+				transition = trOverride;
+				duration = GetOverrideTransitionDuration(source);
+				swapCurrentTransition(transition.Get());
+			} else if (!trOverride && transition != getDefaultTransition()) {
+				// Source does not have an override and the current transition is not the default transition.
+				transition = getDefaultTransition();
+				swapCurrentTransition(transition.Get());
+			}
 		}
 
 		if (black && !prevFTBSource) {
@@ -457,7 +461,7 @@ void OBSBasic::SetTransition(OBSSource transition)
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
-OBSSource OBSBasic::GetCurrentTransition()
+OBSSource OBSBasic::getDefaultTransition()
 {
 	auto transition = transitions.find(currentTransitionUuid);
 
@@ -642,7 +646,7 @@ void OBSBasic::RenameTransition(OBSSource transition)
 
 void OBSBasic::on_transitionProps_clicked()
 {
-	OBSSource source = GetCurrentTransition();
+	OBSSource source = getDefaultTransition();
 
 	if (!obs_source_configurable(source)) {
 		return;
@@ -811,14 +815,13 @@ void OBSBasic::TBarChanged(int value)
 		OBSSource tBarTr = GetOverrideTransition(sceneSource);
 
 		if (!ValidTBarTransition(tBarTr)) {
-			tBarTr = GetCurrentTransition();
+			tBarTr = getDefaultTransition();
 
 			if (!ValidTBarTransition(tBarTr)) {
 				tBarTr = FindTransition(obs_source_get_display_name("fade_transition"));
 			}
 
-			OverrideTransition(tBarTr);
-			overridingTransition = true;
+			swapCurrentTransition(tBarTr);
 
 			transition = std::move(tBarTr);
 		}
@@ -1405,7 +1408,7 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 	if (!enable) {
 		ui->transitionProps->setEnabled(false);
 	} else {
-		bool configurable = obs_source_configurable(GetCurrentTransition());
+		bool configurable = obs_source_configurable(getDefaultTransition());
 		ui->transitionProps->setEnabled(configurable);
 	}
 
