@@ -32,7 +32,7 @@
 //
 // * Flatpak Extension Point Path: /app/plugins
 //     * Binary: /app/plugins/<System Library Path>/obs-modules/plugins/<Plugin>.so
-//     * Data: /app/plugins/<System Data Path>/share/obs/obs-modules/plugins/<Plugin>
+//     * Data: /app/plugins/<System Data Path>/obs/obs-modules/plugins/<Plugin>
 //
 // * Legacy Flatpak Root Path: /app/plugins
 //     * Binary: <Legacy Flatpak Root Path>/<System Library Path>/obs-plugins/<Plugin>.so
@@ -79,7 +79,7 @@ State PluginManager::loadPlugins(bool /*usePortableMode*/)
 		binaryPath.append(Constants::kPlatformLibraryPath);
 		binaryPath.append("obs-modules/plugins/");
 		dataPath.append(Constants::kPlatformDataPath);
-		dataPath.append("obs-modules/plugins/%module%");
+		dataPath.append("obs/obs-modules/plugins/%module%");
 		ModuleLoadInfo info = {.path_info = {.binary = binaryPath.c_str(), .data = dataPath.c_str()},
 				       .type = OBS_MODULE_TYPE_PLUGIN,
 				       .name = nullptr};
