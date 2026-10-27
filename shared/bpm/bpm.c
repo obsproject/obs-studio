@@ -8,8 +8,11 @@ static void render_metrics_time(struct metrics_time *m_time)
 	 *   "2024-05-31T12:26:03.591Z"
 	 */
 	memset(&m_time->rfc3339_str, 0, sizeof(m_time->rfc3339_str));
-	strftime(m_time->rfc3339_str, sizeof(m_time->rfc3339_str), "%Y-%m-%dT%T", gmtime(&m_time->tspec.tv_sec));
-	sprintf(m_time->rfc3339_str + strlen(m_time->rfc3339_str), ".%03ldZ", m_time->tspec.tv_nsec / 1000000);
+	size_t current_length = strftime(m_time->rfc3339_str, sizeof(m_time->rfc3339_str), "%Y-%m-%dT%T",
+					 gmtime(&m_time->tspec.tv_sec));
+	size_t remaining_buffer_size = sizeof(m_time->rfc3339_str) - current_length;
+	snprintf(m_time->rfc3339_str + current_length, remaining_buffer_size, ".%03ldZ",
+		 m_time->tspec.tv_nsec / 1000000);
 	m_time->valid = true;
 }
 
