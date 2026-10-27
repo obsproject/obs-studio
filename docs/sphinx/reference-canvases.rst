@@ -204,6 +204,12 @@ Reference Counting Functions
 
 ---------------------
 
+.. function:: bool obs_weak_canvas_references_canvas(obs_weak_canvas_t *weak, obs_canvas_t *canvas)
+
+   Whether the weak canvas reference ties back to the specified canvas
+
+---------------------
+
 Canvas Channel Functions
 ------------------------
 
