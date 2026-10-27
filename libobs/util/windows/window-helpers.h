@@ -20,6 +20,8 @@ enum window_search_mode {
 	EXCLUDE_MINIMIZED,
 };
 
+EXPORT void remove_captured_window(HWND hwnd);
+
 EXPORT bool ms_get_window_exe(struct dstr *name, HWND window);
 EXPORT void ms_get_window_title(struct dstr *name, HWND hwnd);
 EXPORT void ms_get_window_class(struct dstr *window_class, HWND hwnd);
