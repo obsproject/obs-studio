@@ -19,11 +19,13 @@
 #include "moc_OBSSourceLabel.cpp"
 
 OBSSourceLabel::OBSSourceLabel(const obs_source_t *source, QWidget *parent, Qt::WindowFlags f)
-	: QLabel(obs_source_get_name(source), parent, f),
-	  renamedSignal(obs_source_get_signal_handler(source), "rename", &OBSSourceLabel::obsSourceRenamed, this),
-	  removedSignal(obs_source_get_signal_handler(source), "remove", &OBSSourceLabel::obsSourceRemoved, this),
-	  destroyedSignal(obs_source_get_signal_handler(source), "destroy", &OBSSourceLabel::obsSourceDestroyed, this)
+	: QLabel(obs_source_get_name(source), parent, f)
 {
+	signal_handler_t *handler = obs_source_get_signal_handler(source);
+
+	obsSignals.emplace_back(handler, "rename", &OBSSourceLabel::obsSourceRenamed, this);
+	obsSignals.emplace_back(handler, "remove", &OBSSourceLabel::obsSourceRemoved, this);
+	obsSignals.emplace_back(handler, "destroy", &OBSSourceLabel::obsSourceDestroyed, this);
 }
 
 void OBSSourceLabel::obsSourceRenamed(void *data, calldata_t *params)
@@ -46,10 +48,6 @@ void OBSSourceLabel::obsSourceDestroyed(void *data, calldata_t *)
 {
 	auto &label = *static_cast<OBSSourceLabel *>(data);
 	emit label.destroyed();
-
-	label.destroyedSignal.Disconnect();
-	label.removedSignal.Disconnect();
-	label.renamedSignal.Disconnect();
 }
 
 void OBSSourceLabel::mousePressEvent(QMouseEvent *event)
