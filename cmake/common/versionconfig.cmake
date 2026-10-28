@@ -23,6 +23,19 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
   if(_obs_version_result EQUAL 0)
     string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical ${_obs_version})
   endif()
+
+  # Unreleased checkouts may have no semantic version tag. Prefer an explicit
+  # override, otherwise retain the bootstrap default instead of passing a
+  # commit hash to project(VERSION ...).
+  if(NOT _obs_version MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+" OR NOT _obs_version_canonical MATCHES "^[0-9]+;[0-9]+;[0-9]+$")
+    if(DEFINED OBS_VERSION_OVERRIDE AND OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
+      string(REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*" "\\1;\\2;\\3" _obs_version_canonical "${OBS_VERSION_OVERRIDE}")
+      set(_obs_version "${OBS_VERSION_OVERRIDE}")
+    else()
+      set(_obs_version_canonical ${_obs_default_version})
+      set(_obs_version "${_obs_default_version}")
+    endif()
+  endif()
 elseif(DEFINED OBS_VERSION_OVERRIDE)
   if(OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
     string(

@@ -12,6 +12,16 @@
 !/plugins
 !/shared
 !/test
+!/AGENTS.md
+!/CLAUDE.md
+!/.agents
+!/.agents/**
+!/agent-os
+!/agent-os/**
+!/openspec
+!/openspec/**
+!/packages
+!/packages/**
 !.cirrus.xml
 !.clang-format
 !.editorconfig
