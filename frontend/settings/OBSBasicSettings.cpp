@@ -73,14 +73,14 @@ int RadioToIdx(const std::vector<QPointer<QRadioButton>> &values)
 	return idx;
 }
 
-int MultiselectToBitmap(const std::vector<QPointer<QCheckBox>> &values)
+int MultiselectToBitmask(const std::vector<QPointer<QCheckBox>> &values)
 {
-	int bitmap = 0;
+	int bitmask = 0;
 	for (size_t i = 0; i < values.size(); i++) {
-		bitmap |= values[i]->isChecked() ? (1 << i) : 0;
+		bitmask |= values[i]->isChecked() ? (1 << i) : 0;
 	}
 
-	return bitmap;
+	return bitmask;
 }
 
 void SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
@@ -3548,7 +3548,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEncoder(ui->advOutFFAEncoder, "AdvOut", "FFAEncoder");
 	SaveEdit(ui->advOutFFACfg, "AdvOut", "FFACustom");
 
-	config_set_int(main->Config(), "AdvOut", "FFAudioMixes", MultiselectToBitmap(advOutFFTracks));
+	config_set_int(main->Config(), "AdvOut", "FFAudioMixes", MultiselectToBitmask(advOutFFTracks));
 
 	for (size_t i = 0; i < advOutputTracksBitrates.size(); i++) {
 		SaveCombo(advOutputTracksBitrates[i], "AdvOut", GetTrackBitrateConfigKey(i).c_str());
@@ -5631,17 +5631,17 @@ int OBSBasicSettings::CurrentFLVTrack()
 
 int OBSBasicSettings::SimpleOutGetSelectedAudioTracks()
 {
-	return MultiselectToBitmap(simpleOutRecTracks);
+	return MultiselectToBitmask(simpleOutRecTracks);
 }
 
 int OBSBasicSettings::AdvOutGetSelectedAudioTracks()
 {
-	return MultiselectToBitmap(advOutRecTracks);
+	return MultiselectToBitmask(advOutRecTracks);
 }
 
 int OBSBasicSettings::AdvOutGetStreamingSelectedAudioTracks()
 {
-	return MultiselectToBitmap(advOutStreamMultiTracks);
+	return MultiselectToBitmask(advOutStreamMultiTracks);
 }
 
 /* Using setEditable(true) on a QComboBox when there's a custom style in use
