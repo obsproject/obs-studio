@@ -647,12 +647,14 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		"\trc_max_bitrate:        %d (kbps)\n"
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
+		"\tbframes:               %s\n"
 		"\tspatial_aq:            %s\n"
 		"\tprofile:               %s\n"
 		"\tcodec_type:            %.4s\n",
 		enc->vt_encoder_id, enc->rate_control, enc->bitrate, enc->quality, enc->fps_num, enc->fps_den,
 		enc->width, enc->height, enc->keyint, enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
-		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off", enc->spatial_aq ? "on" : "off",
+		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off", enc->bframes ? "on" : "off",
+		enc->spatial_aq ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile : "default",
 		codec_type_to_print_fmt(enc->codec_type));
 }
@@ -782,6 +784,16 @@ static bool vt_update(void *data, obs_data_t *settings)
 
 static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+	const struct vt_encoder_type_data *type_data = obs_encoder_get_type_data(encoder);
+	/* Apple's software HEVC emits B-slices even with AllowFrameReordering disabled. */
+	if (obs_data_get_bool(settings, "whip_no_bframes") && type_data->codec_type == kCMVideoCodecType_HEVC &&
+	    !type_data->hardware_accelerated) {
+		obs_encoder_set_last_error(
+			encoder,
+			"Apple's software HEVC encoder cannot meet WHIP's no-B-frame requirement. Use hardware HEVC or H.264.");
+		return NULL;
+	}
+
 	struct vt_encoder *enc = bzalloc(sizeof(struct vt_encoder));
 
 	OSStatus code;
