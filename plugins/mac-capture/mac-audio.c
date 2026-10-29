@@ -206,6 +206,9 @@ static inline enum audio_format convert_ca_format(UInt32 format_flags, UInt32 bi
 
 static char *sanitize_device_name(char *name)
 {
+	if (!name)
+		return bstrdup("");
+
 	const size_t max_len = 64;
 	size_t len = strlen(name);
 	char buf[64];
@@ -739,6 +742,7 @@ static void coreaudio_uninit(struct coreaudio_data *ca)
 		bfree(ca->channel_names);
 		ca->channel_names = NULL;
 	}
+	ca->available_channels = 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -885,14 +889,14 @@ static void coreaudio_fill_combo_with_inputs(const struct coreaudio_data *ca, ob
 	bool hasMutedChannel = false;
 	obs_property_list_clear(input_combo);
 
-	if (output_channel < ca->available_channels) {
+	if (ca->channel_names && output_channel < ca->available_channels) {
 		obs_property_list_add_int(input_combo, ca->channel_names[output_channel], output_channel + 1);
 	} else {
 		obs_property_list_add_int(input_combo, obs_module_text("CoreAudio.None"), -1);
 		hasMutedChannel = true;
 	}
 
-	for (uint32_t input_chan = 0; input_chan < ca->available_channels; input_chan++) {
+	for (uint32_t input_chan = 0; ca->channel_names && input_chan < ca->available_channels; input_chan++) {
 
 		if (input_chan != output_channel) {
 			obs_property_list_add_int(input_combo, ca->channel_names[input_chan], input_chan + 1);
@@ -952,7 +956,7 @@ static bool coreaudio_device_changed(void *data, obs_properties_t *props, obs_pr
 	if (ca != NULL) {
 		hide_all_output_channels(props);
 
-		if (!ca->enable_downmix) {
+		if (ca->au_initialized && !ca->enable_downmix) {
 			uint32_t channels = get_audio_channels(ca->speakers);
 			ensure_output_channels_visible(props, ca, channels);
 		}
@@ -972,7 +976,7 @@ static bool coreaudio_downmix_changed(void *data, obs_properties_t *props, obs_p
 
 		hide_all_output_channels(props);
 
-		if (!ca->enable_downmix) {
+		if (ca->au_initialized && !ca->enable_downmix) {
 			uint32_t channels = get_audio_channels(ca->speakers);
 			ensure_output_channels_visible(props, ca, channels);
 		}
