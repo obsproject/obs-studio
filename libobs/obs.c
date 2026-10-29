@@ -2313,7 +2313,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data, bool is_priva
 	sync = obs_data_get_int(source_data, "sync");
 	obs_source_set_sync_offset(source, sync);
 
-	obs_data_set_default_int(source_data, "mixers", 0x3F);
+	obs_data_set_default_int(source_data, "mixers", (1 << MAX_AUDIO_MIXES) - 1);
 	mixers = (uint32_t)obs_data_get_int(source_data, "mixers");
 	obs_source_set_audio_mixers(source, mixers);
 
@@ -2352,7 +2352,7 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data, bool is_priva
 			 * automatically if they added monitoring by default in
 			 * version 24 */
 			monitoring_type = OBS_MONITORING_TYPE_MONITOR_ONLY;
-			obs_source_set_audio_mixers(source, 0x3F);
+			obs_source_set_audio_mixers(source, (1 << MAX_AUDIO_MIXES) - 1);
 		}
 	}
 
