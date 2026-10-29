@@ -1038,8 +1038,10 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	connect(vodTrackCheckbox, &QCheckBox::clicked, vodTrackContainer, &QWidget::setEnabled);
 
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
-	for (size_t i = 0; i < vodTracks.size(); i++) {
-		vodTracks[i]->setChecked(((int)i + 1) == trackIndex);
+	if (trackIndex >= 1 && trackIndex <= (int)vodTracks.size()) {
+		vodTracks[(size_t)(trackIndex - 1)]->setChecked(true);
+	} else {
+		vodTracks[0]->setChecked(true);
 	}
 
 	QWidget::setTabOrder(ui->advOutAEncoder, vodTrackCheckbox);

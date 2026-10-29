@@ -91,8 +91,9 @@ void SyncRadioTabFocus(const std::vector<QPointer<QRadioButton>> &group)
 		radio->setFocusPolicy(radio->isChecked() ? Qt::StrongFocus : Qt::ClickFocus);
 	}
 
-	// This can happen if the user selected track #8 and then reduced the track count, for example, to 6.
-	// Without the fallback below, Tab would never move focus into this group.
+	// The first call happens right after the buttons are created, so no item is checked yet.
+	// Also there might be malformed config with non existing track index, so no checked item too.
+	// Give Tab focus to the first button until then, otherwise Tab would skip the whole group.
 	if (!hasChecked) {
 		group.front()->setFocusPolicy(Qt::StrongFocus);
 	}
@@ -1964,11 +1965,13 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	ui->filenameFormatting->setCompleter(specCompleter);
 	ui->filenameFormatting->setToolTip(makeFormatToolTip());
 
-	for (size_t i = 0; i < advOutStreamSingleTracks.size(); i++) {
-		if (trackIndex - 1 == (int)i) {
-			advOutStreamSingleTracks[i]->setChecked(true);
-		}
+	if (trackIndex >= 1 && trackIndex <= (int)advOutStreamSingleTracks.size()) {
+		advOutStreamSingleTracks[(size_t)(trackIndex - 1)]->setChecked(true);
+	} else {
+		advOutStreamSingleTracks[0]->setChecked(true);
+	}
 
+	for (size_t i = 0; i < advOutStreamMultiTracks.size(); i++) {
 		advOutStreamMultiTracks[i]->setChecked(audioMixes & (1 << i));
 	}
 
@@ -4797,7 +4800,11 @@ void OBSBasicSettings::UpdateAdvOutStreamDelayEstimate()
 
 	OBSData settings = streamEncoderProps->GetSettings();
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
-	auto aBitrateText = advOutputTracksBitrates[trackIndex]->currentText();
+	QString aBitrateText;
+	// Guard against malformed configuration
+	if (trackIndex >= 1 && trackIndex <= (int)advOutputTracksBitrates.size()) {
+		aBitrateText = advOutputTracksBitrates[(size_t)(trackIndex - 1)]->currentText();
+	}
 
 	int seconds = ui->streamDelaySec->value();
 	int vBitrate = (int)obs_data_get_int(settings, "bitrate");
