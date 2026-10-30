@@ -47,6 +47,7 @@ private:
 	void ParseLinkHeader(std::string linkHeader, std::vector<rtc::IceServer> &iceServers);
 	void Send(void *data, uintptr_t size, uint64_t duration, std::shared_ptr<rtc::Track> track,
 		  std::shared_ptr<rtc::RtcpSrReporter> rtcp_sr_reporter);
+	void OnPliRequest();
 
 	obs_output_t *output;
 
@@ -72,6 +73,7 @@ private:
 	std::atomic<int> connect_time_ms;
 	int64_t start_time_ns;
 	int64_t last_audio_timestamp;
+	std::atomic<uint64_t> last_keyframe_ns;
 };
 
 void register_whip_output();
