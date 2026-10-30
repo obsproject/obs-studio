@@ -148,6 +148,11 @@ static inline enum video_range_type convert_color_range(enum AVColorRange r)
 	return r == AVCOL_RANGE_JPEG ? VIDEO_RANGE_FULL : VIDEO_RANGE_DEFAULT;
 }
 
+static inline bool mp_decode_is_cover_art(const struct mp_decode *d)
+{
+	return d->stream && (d->stream->disposition & AV_DISPOSITION_ATTACHED_PIC);
+}
+
 static inline struct mp_decode *get_packet_decoder(mp_media_t *media, const AVPacket *pkt)
 {
 	if (media->has_audio && pkt->stream_index == media->a.stream->index)
@@ -183,7 +188,10 @@ static int mp_media_next_packet(mp_media_t *media)
 	}
 
 	struct mp_decode *d = get_packet_decoder(media, pkt);
-	if (d && pkt->size) {
+
+	bool skip_cover_packet = d == &media->v && d->eof && mp_decode_is_cover_art(d);
+
+	if (d && pkt->size && !skip_cover_packet) {
 		mp_decode_push_packet(d, pkt);
 	} else {
 		mp_media_free_packet(media, pkt);
@@ -308,15 +316,18 @@ bool mp_media_prepare_frames(mp_media_t *m)
 static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 {
 	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
+	bool audio_ready = m->has_audio && m->a.frame_ready;
+	bool video_ready = m->has_video && m->v.frame_ready;
 
-	if (m->has_video && m->v.frame_ready) {
-		if (m->v.frame_pts < min_next_ns)
-			min_next_ns = m->v.frame_pts;
+	/* Ignore video pts if it's cover art. */
+	if (audio_ready && mp_decode_is_cover_art(&m->v)) {
+		video_ready = false;
 	}
-	if (m->has_audio && m->a.frame_ready) {
-		if (m->a.frame_pts < min_next_ns)
-			min_next_ns = m->a.frame_pts;
-	}
+
+	if (video_ready && m->v.frame_pts < min_next_ns)
+		min_next_ns = m->v.frame_pts;
+	if (audio_ready && m->a.frame_pts < min_next_ns)
+		min_next_ns = m->a.frame_pts;
 
 	return min_next_ns;
 }
@@ -338,7 +349,7 @@ static inline int64_t mp_media_get_base_pts(mp_media_t *m)
 
 static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 {
-	if (m->full_decode)
+	if (m->full_decode || mp_decode_is_cover_art(d))
 		return d->frame_ready;
 	return d->frame_ready && (d->frame_pts <= m->next_pts_ns || (d->frame_pts - m->next_pts_ns > MAX_TS_VAR));
 }
@@ -386,6 +397,9 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 			return;
 
 		d->frame_ready = false;
+
+		if (mp_decode_is_cover_art(d))
+			d->eof = true;
 
 		if (!m->v_cb)
 			return;
@@ -450,8 +464,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return;
 
+	int64_t pts = d->frame_pts;
+	if (mp_decode_is_cover_art(d) && m->has_audio)
+		pts = m->a.frame_pts;
+
 	frame->timestamp = m->full_decode ? d->frame_pts
-					  : (m->base_ts + d->frame_pts - m->start_ts + m->play_sys_ts - base_sys_ts);
+					  : (m->base_ts + pts - m->start_ts + m->play_sys_ts - base_sys_ts);
 
 	frame->width = f->width;
 	frame->height = f->height;
@@ -520,6 +538,10 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 static void seek_to(mp_media_t *m, int64_t pos)
 {
 	AVStream *stream = m->fmt->streams[0];
+	if (m->has_audio && mp_decode_is_cover_art(&m->v))
+		stream = m->a.stream;
+
+	int stream_index = stream ? stream->index : 0;
 	int64_t seek_pos = pos;
 	int seek_flags;
 
@@ -533,19 +555,24 @@ static void seek_to(mp_media_t *m, int64_t pos)
 				      : seek_pos;
 
 	if (m->is_local_file) {
-		int ret = av_seek_frame(m->fmt, 0, seek_target, seek_flags);
+		int ret = av_seek_frame(m->fmt, stream_index, seek_target, seek_flags);
 		if (ret < 0) {
 			blog(LOG_WARNING, "MP: Failed to seek: %s", av_err2str(ret));
+		} else {
+			m->eof = false;
 		}
-	}
 
-	if (m->has_video && m->is_local_file) {
-		mp_decode_flush(&m->v);
-		if (m->seek_next_ts && m->pause && m->v_preload_cb && mp_media_prepare_frames(m))
-			mp_media_next_video(m, true);
+		bool keep_cover = mp_decode_is_cover_art(&m->v) && m->seek_next_ts && m->has_audio && m->v.eof &&
+				  !m->v.frame_ready;
+
+		if (m->has_video && !keep_cover) {
+			mp_decode_flush(&m->v);
+			if (m->seek_next_ts && m->pause && m->v_preload_cb && mp_media_prepare_frames(m))
+				mp_media_next_video(m, true);
+		}
+		if (m->has_audio)
+			mp_decode_flush(&m->a);
 	}
-	if (m->has_audio && m->is_local_file)
-		mp_decode_flush(&m->a);
 }
 
 bool mp_media_reset(mp_media_t *m)
