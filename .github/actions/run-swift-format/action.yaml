@@ -46,6 +46,7 @@ runs:
       working-directory: ${{ github.workspace }}
       env:
         CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+        FAIL_MODE: ${{ inputs.failCondition }}
       run: |
         : Run swift-format 🔥
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
@@ -55,7 +56,12 @@ runs:
         brew install --quiet swift-format
         print ::endgroup::
 
+        if [[ "${FAIL_MODE:-never}" == 'never' ]] {
+          setopt NO_ERR_EXIT
+          setopt NO_ERR_RETURN
+        }
+
         print ::group::Run swift-format
         local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
-        ./build-aux/run-swift-format --fail-${{ inputs.failCondition }} --check ${changes}
+        ./build-aux/run-swift-format --check --github ${changes}
         print ::endgroup::
