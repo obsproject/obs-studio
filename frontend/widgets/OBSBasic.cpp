@@ -1328,8 +1328,6 @@ void OBSBasic::applicationShutdown() noexcept
 	delete about;
 	delete remux;
 
-	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasic::RenderMain, this);
-
 	obs_enter_graphics();
 	gs_vertexbuffer_destroy(box);
 	gs_vertexbuffer_destroy(boxLeft);
@@ -1840,8 +1838,11 @@ void OBSBasic::closeWindow()
 	 * sometimes deleted before the lambda function is actually executed.
 	 * To avoid such a case, destroy displays earlier than others such as
 	 * deleting browser docks. */
-	ui->preview->DestroyDisplay();
+	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasic::RenderMain, this);
+	ui->preview->destroyPreview();
+
 	if (program) {
+		obs_display_remove_draw_callback(program->GetDisplay(), OBSBasic::RenderProgram, this);
 		program->DestroyDisplay();
 	}
 
