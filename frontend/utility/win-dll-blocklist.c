@@ -357,11 +357,17 @@ void install_dll_blocklist_hook(void)
 
 void log_blocked_dlls(void)
 {
+	// Wide (UTF-16) converted to UTF-8 char is at max 3 bytes
+	char name_utf8[MAX_PATH * 3];
 	for (int i = 0; i < _countof(blocked_modules); i++) {
 		blocked_module_t *b = &blocked_modules[i];
 		if (b->blocked_count) {
-			blog(LOG_WARNING, "Blocked loading of '%S' %" PRIu64 " time%S.", b->name, b->blocked_count,
-			     b->blocked_count == 1 ? L"" : L"s");
+
+			WideCharToMultiByte(CP_UTF8, 0, b->name, (int)b->name_len + 1, name_utf8, sizeof(name_utf8),
+					    NULL, NULL);
+
+			blog(LOG_WARNING, "Blocked loading of '%s' %" PRIu64 " time%s.", name_utf8, b->blocked_count,
+			     b->blocked_count == 1 ? "" : "s");
 		}
 	}
 }
