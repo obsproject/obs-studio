@@ -184,6 +184,14 @@ enum class Action {
 
 static DWORD CALLBACK DShowThread(LPVOID ptr);
 
+static BOOL CALLBACK CloseDShowDialogs(HWND window, LPARAM)
+{
+	if (IsWindowVisible(window)) {
+		PostMessage(window, WM_CLOSE, 0, 0);
+	}
+	return TRUE;
+}
+
 struct DShowInput {
 	obs_source_t *source;
 	Device device;
@@ -273,6 +281,7 @@ struct DShowInput {
 		}
 
 		ReleaseSemaphore(semaphore, 1, nullptr);
+		EnumThreadWindows(GetThreadId(thread), CloseDShowDialogs, 0);
 
 		WaitForSingleObject(thread, INFINITE);
 	}
