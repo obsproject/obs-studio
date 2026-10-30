@@ -323,7 +323,7 @@ public:
 
 protected:
 	bool isReadyToClose();
-	bool promptToClose();
+	void promptToClose();
 
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
