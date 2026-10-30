@@ -654,12 +654,19 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	if (obsqsv->params.nLADEPTH)
 		blog(LOG_INFO, "\tLookahead Depth:%d", (int)obsqsv->params.nLADEPTH);
 
-	if (obsqsv->params.nRateControl == MFX_RATECONTROL_CQP)
-		blog(LOG_INFO,
-		     "\tqpi:            %d\n"
-		     "\tqpb:            %d\n"
-		     "\tqpp:            %d",
-		     qpi, qpb, qpp);
+	if (obsqsv->params.nRateControl == MFX_RATECONTROL_CQP) {
+		if (ver == 1) {
+			blog(LOG_INFO,
+			     "\tqpi:            %d\n"
+			     "\tqpb:            %d\n"
+			     "\tqpp:            %d",
+			     qpi, qpb, qpp);
+		} else {
+			blog(LOG_INFO,
+			     "\tcqp:            %d",
+			     cqp);
+		}
+	}
 
 	blog(LOG_INFO,
 	     "\ttarget_usage:   %s\n"
