@@ -242,10 +242,10 @@ private:
 	/* stream */
 	void InitStreamPage();
 	bool IsCustomService() const;
-	bool IsCustomServiceType() const;
-	QString GetCustomServiceTypeId() const;
+	bool isCustomServiceType() const;
+	QString getCustomServiceTypeId() const;
 	inline bool IsWHIP() const;
-	int FindService(const std::function<bool(const ServiceItemData &)> &predicate);
+	int findService(const std::function<bool(const ServiceItemData &)> &predicate);
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();

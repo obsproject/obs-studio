@@ -41,14 +41,14 @@ bool OBSBasicSettings::IsCustomService() const
 	return serviceData.isCustom();
 }
 
-bool OBSBasicSettings::IsCustomServiceType() const
+bool OBSBasicSettings::isCustomServiceType() const
 {
 	QVariant data = ui->service->currentData();
 	ServiceItemData serviceData = data.value<ServiceItemData>();
 	return serviceData.isCustomServiceType();
 }
 
-QString OBSBasicSettings::GetCustomServiceTypeId() const
+QString OBSBasicSettings::getCustomServiceTypeId() const
 {
 	QVariant data = ui->service->currentData();
 	ServiceItemData serviceData = data.value<ServiceItemData>();
@@ -60,10 +60,10 @@ QString OBSBasicSettings::GetCustomServiceTypeId() const
 
 inline bool OBSBasicSettings::IsWHIP() const
 {
-	return GetCustomServiceTypeId() == "whip_custom";
+	return getCustomServiceTypeId() == "whip_custom";
 }
 
-int OBSBasicSettings::FindService(const std::function<bool(const ServiceItemData &)> &predicate)
+int OBSBasicSettings::findService(const std::function<bool(const ServiceItemData &)> &predicate)
 {
 	for (int i = 0; i < ui->service->count(); i++) {
 		QVariant data = ui->service->itemData(i);
@@ -149,7 +149,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	}
 
 	if (is_rtmp_custom) {
-		auto idx = FindService([](const ServiceItemData &serviceData) { return serviceData.isCustom(); });
+		auto idx = findService([](const ServiceItemData &serviceData) { return serviceData.isCustom(); });
 		if (idx == -1) {
 			idx = 0;
 		}
@@ -164,7 +164,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
 	} else if (is_rtmp_common) {
-		auto idx = FindService([&](const ServiceItemData &serviceData) {
+		auto idx = findService([&](const ServiceItemData &serviceData) {
 			return serviceData.isRtmpCommon() && serviceData.serviceId == service;
 		});
 
@@ -184,7 +184,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		idx = config_get_int(main->Config(), "Twitch", "AddonChoice");
 		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	} else {
-		auto idx = FindService([&](const ServiceItemData &serviceData) {
+		auto idx = findService([&](const ServiceItemData &serviceData) {
 			return serviceData.isCustomServiceType() && serviceData.serviceId == type;
 		});
 
@@ -323,7 +323,7 @@ void OBSBasicSettings::SwapMultiTrack(const char *protocol)
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	QString customServiceTypeId = GetCustomServiceTypeId();
+	QString customServiceTypeId = getCustomServiceTypeId();
 	const char *service_id = "rtmp_common";
 	QByteArray serviceIdUtf8;
 
@@ -439,7 +439,7 @@ void OBSBasicSettings::SaveStream1Settings()
 
 void OBSBasicSettings::UpdateMoreInfoLink()
 {
-	if (IsCustomService() || IsCustomServiceType()) {
+	if (IsCustomService() || isCustomServiceType()) {
 		ui->moreInfoButton->hide();
 		return;
 	}
@@ -728,7 +728,7 @@ void OBSBasicSettings::ServiceChanged(bool resetFields)
 {
 	std::string service = ui->service->currentText().toStdString();
 	bool custom = IsCustomService();
-	bool customServiceType = IsCustomServiceType();
+	bool customServiceType = isCustomServiceType();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
@@ -872,7 +872,7 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
-	QString customServiceTypeId = GetCustomServiceTypeId();
+	QString customServiceTypeId = getCustomServiceTypeId();
 	const char *service_id = "rtmp_common";
 	QByteArray serviceIdUtf8;
 
