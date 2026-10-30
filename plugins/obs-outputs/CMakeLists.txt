@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-find_package(MbedTLS 3...<4 REQUIRED)
 find_package(ZLIB REQUIRED)
 find_package(jansson REQUIRED)
 
@@ -61,7 +60,16 @@ target_sources(
     utils.h
 )
 
-target_compile_definitions(obs-outputs PRIVATE USE_MBEDTLS CRYPTO)
+include("${CMAKE_SOURCE_DIR}/cmake/common/crypto-backend.cmake")
+
+get_target_property(crypto_rtmp_definition
+  OBS::crypto OBS_CRYPTO_RTMP_DEFINITION
+)
+
+target_compile_definitions(obs-outputs PRIVATE
+  ${crypto_rtmp_definition}
+  CRYPTO
+)
 
 target_compile_options(
   obs-outputs
@@ -77,7 +85,7 @@ target_link_libraries(
     OBS::happy-eyeballs
     OBS::opts-parser
     OBS::bpm
-    MbedTLS::mbedtls
+    OBS::crypto
     ZLIB::ZLIB
     jansson::jansson
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>

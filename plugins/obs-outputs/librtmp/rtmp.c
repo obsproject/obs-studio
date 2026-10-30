@@ -100,6 +100,7 @@ static const char *my_dhm_G = "4";
 
 #define RTMP_SIG_SIZE 1536
 #define RTMP_LARGE_HEADER_SIZE 12
+#define RTMP_TLS_CERT_VERIFY_FAILED -0x2700
 
 static const int packetSize[] = { 12, 8, 4, 1 };
 
@@ -397,10 +398,10 @@ RTMP_TLS_Init(RTMP *r)
      * for now.
      */
     gnutls_global_init();
-    RTMP_TLS_ctx = malloc(sizeof(struct tls_ctx));
-    gnutls_certificate_allocate_credentials(&RTMP_TLS_ctx->cred);
-    gnutls_priority_init(&RTMP_TLS_ctx->prios, "NORMAL", NULL);
-    gnutls_certificate_set_x509_trust_file(RTMP_TLS_ctx->cred,
+    r->RTMP_TLS_ctx = malloc(sizeof(struct tls_ctx));
+    gnutls_certificate_allocate_credentials(&r->RTMP_TLS_ctx->cred);
+    gnutls_priority_init(&r->RTMP_TLS_ctx->prios, "NORMAL", NULL);
+    gnutls_certificate_set_x509_trust_file(r->RTMP_TLS_ctx->cred,
                                            "ca.pem", GNUTLS_X509_FMT_PEM);
 #elif !defined(NO_SSL) /* USE_OPENSSL */
     /* libcrypto doesn't need anything special */
@@ -961,7 +962,7 @@ RTMP_Connect1(RTMP *r, RTMPPacket *cp)
 #endif
 
         int connect_return = TLS_connect(r->m_sb.sb_ssl);
-        if (connect_return < 0)
+        if (!TLS_success(connect_return))
         {
 #if defined(USE_MBEDTLS)
             r->last_error_code = connect_return;
@@ -2572,7 +2573,7 @@ b64enc(const unsigned char *input, int length, char *output, int maxsize)
     }
 #elif defined(USE_GNUTLS)
     if (BASE64_ENCODE_RAW_LENGTH(length) <= maxsize)
-        base64_encode_raw((uint8_t*) output, length, input);
+        base64_encode_raw(output, length, input);
     else
     {
         RTMP_Log(RTMP_LOGDEBUG, "%s, error", __FUNCTION__);
@@ -2638,10 +2639,16 @@ typedef	mbedtls_md5_context MD5_CTX;
 #elif defined(USE_GNUTLS)
 typedef struct md5_ctx	MD5_CTX;
 #define MD5_Init(ctx)	md5_init(ctx)
-#define MD5_Update(ctx,data,len)	md5_update(ctx,len,data)
+#define MD5_Update(ctx,data,len)	md5_update(ctx,len,(uint8_t *)data)
 #define MD5_Final(dig,ctx)	md5_digest(ctx,MD5_DIGEST_LENGTH,dig)
-#else
 #endif
+
+static inline int
+MD5_Init_checked(MD5_CTX *ctx)
+{
+    MD5_Init(ctx);
+    return TRUE;
+}
 
 static const AVal av_authmod_adobe = AVC("authmod=adobe");
 static const AVal av_authmod_llnw  = AVC("authmod=llnw");
@@ -2672,6 +2679,7 @@ static int
 PublisherAuth(RTMP *r, AVal *description)
 {
     char *token_in = NULL;
+    char *orig_ptr = NULL;
     char *ptr;
     unsigned char md5sum_val[MD5_DIGEST_LENGTH+1];
     MD5_CTX md5ctx;
@@ -2716,7 +2724,7 @@ PublisherAuth(RTMP *r, AVal *description)
         }
         else if((token_in = strstr(description->av_val, "?reason=needauth")) != NULL)
         {
-            char *par, *val = NULL, *orig_ptr;
+            char *par, *val = NULL;
             AVal user, salt, opaque, challenge, *aptr = NULL;
 
             opaque.av_len = challenge.av_len = salt.av_len = user.av_len = 0;
@@ -2766,7 +2774,8 @@ PublisherAuth(RTMP *r, AVal *description)
                 aptr->av_len = (int)strlen(aptr->av_val);
 
             /* hash1 = base64enc(md5(user + _aodbeAuthSalt + password)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, user.av_val, user.av_len);
             MD5_Update(&md5ctx, salt.av_val, salt.av_len);
             MD5_Update(&md5ctx, r->Link.pubPasswd.av_val, r->Link.pubPasswd.av_len);
@@ -2783,7 +2792,8 @@ PublisherAuth(RTMP *r, AVal *description)
             b64enc((unsigned char *) &challenge2_data, sizeof(int), challenge2, CHALLENGE2_LEN);
             RTMP_Log(RTMP_LOGDEBUG, "%s, b64(%d) = %s", __FUNCTION__, challenge2_data, challenge2);
 
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, salted2, B64DIGEST_LEN);
             /* response = base64enc(md5(hash1 + opaque + challenge2)) */
             if (opaque.av_len)
@@ -2887,7 +2897,6 @@ PublisherAuth(RTMP *r, AVal *description)
         }
         else if((token_in = strstr(description->av_val, "?reason=needauth")) != NULL)
         {
-            char *orig_ptr;
             char *par, *val = NULL;
             char hash1[HEXHASH_LEN+1], hash2[HEXHASH_LEN+1], hash3[HEXHASH_LEN+1];
             AVal user, nonce, *aptr = NULL;
@@ -2953,7 +2962,8 @@ PublisherAuth(RTMP *r, AVal *description)
             snprintf(cnonce, sizeof(cnonce), "%08x", rand());
 
             /* hash1 = hexenc(md5(user + ":" + realm + ":" + password)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, user.av_val, user.av_len);
             MD5_Update(&md5ctx, ":", 1);
             MD5_Update(&md5ctx, (void *)realm, sizeof(realm)-1);
@@ -2972,7 +2982,8 @@ PublisherAuth(RTMP *r, AVal *description)
             if (ptr)
                 apptmp.av_len = ptr - apptmp.av_val;
 
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, (void *)method, sizeof(method)-1);
             MD5_Update(&md5ctx, ":/", 2);
             MD5_Update(&md5ctx, apptmp.av_val, apptmp.av_len);
@@ -2985,7 +2996,8 @@ PublisherAuth(RTMP *r, AVal *description)
             hexenc(md5sum_val, MD5_DIGEST_LENGTH, hash2, sizeof(hash2));
 
             /* hash3 = hexenc(md5(hash1 + ":" + nonce + ":" + nchex + ":" + cnonce + ":" + qop + ":" + hash2)) */
-            MD5_Init(&md5ctx);
+            if (!MD5_Init_checked(&md5ctx))
+                goto md5_error;
             MD5_Update(&md5ctx, hash1, HEXHASH_LEN);
             MD5_Update(&md5ctx, ":", 1);
             MD5_Update(&md5ctx, nonce.av_val, nonce.av_len);
@@ -3066,6 +3078,11 @@ PublisherAuth(RTMP *r, AVal *description)
         return 0;
     }
     return 1;
+
+md5_error:
+    free(orig_ptr);
+    r->Link.pFlags |= RTMP_PUB_CLEAN;
+    return 0;
 }
 #endif
 
