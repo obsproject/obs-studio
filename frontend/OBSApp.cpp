@@ -55,6 +55,12 @@
 #include <sys/socket.h>
 #endif
 
+#include <QDoubleSpinBox>
+#include <QLineEdit>
+#include <QPlainTextEdit>
+#include <QSpinBox>
+#include <QTextEdit>
+
 #include "moc_OBSApp.cpp"
 
 using namespace std;
@@ -174,6 +180,21 @@ QAccessibleInterface *alignmentSelectorFactory(const QString &classname, QObject
 		}
 	}
 	return nullptr;
+}
+
+bool isWidgetEditable(QWidget *widget)
+{
+	if (!widget) {
+		return false;
+	}
+
+	if (qobject_cast<QLineEdit *>(widget) || qobject_cast<QTextEdit *>(widget) ||
+	    qobject_cast<QPlainTextEdit *>(widget) || qobject_cast<QSpinBox *>(widget) ||
+	    qobject_cast<QDoubleSpinBox *>(widget)) {
+		return true;
+	} else {
+		return false;
+	}
 }
 } // namespace
 
@@ -1365,7 +1386,31 @@ bool OBSApp::OBSInit()
 	connect(crashHandler_.get(), &OBS::CrashHandler::crashLogUploadFinished, this,
 		[this](const QString &fileUrl) { emit this->logUploadFinished(OBS::LogFileType::CrashLog, fileUrl); });
 
+	connect(this, &QApplication::focusChanged, this, &OBSApp::widgetFocusChanged);
+
 	return true;
+}
+
+void OBSApp::widgetFocusChanged(QWidget *, QWidget *now)
+{
+	bool wasDisabled = hotkeysDisabled;
+	bool nowDisabled = false;
+
+	QWidget *modalWidget = QApplication::activeModalWidget();
+
+	if (modalWidget || isWidgetEditable(now)) {
+		nowDisabled = true;
+	}
+
+	if (wasDisabled != nowDisabled) {
+		if (!wasDisabled) {
+			DisableHotkeys();
+			hotkeysDisabled = true;
+		} else {
+			UpdateHotkeyFocusSetting();
+			hotkeysDisabled = false;
+		}
+	}
 }
 
 string OBSApp::GetVersionString(bool platform) const
