@@ -221,14 +221,24 @@ static BOOL CALLBACK enum_all_modules(PCTSTR module_name, DWORD64 module_base, U
 		dstr_copy(&data->module_name, name_utf8);
 		strlwr(data->module_name.array);
 	}
-
+	struct win_version_info ver = {0};
+	if (get_dll_ver(module_name, &ver)) {
 #ifdef _WIN64
-	dstr_catf(&data->module_list, "%016" PRIX64 "-%016" PRIX64 " %s\r\n", module_base, module_base + module_size,
-		  name_utf8);
+		dstr_catf(&data->module_list, "%016" PRIX64 "-%016" PRIX64 " %s (%d.%d.%d.%d)\r\n", module_base,
+			  module_base + module_size, name_utf8, ver.major, ver.minor, ver.build, ver.revis);
 #else
-	dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s\r\n", module_base, module_base + module_size,
-		  name_utf8);
+		dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s (%d.%d.%d.%d)\r\n", module_base,
+			  module_base + module_size, name_utf8, ver.major, ver.minor, ver.build, ver.revis);
 #endif
+	} else {
+#ifdef _WIN64
+		dstr_catf(&data->module_list, "%016" PRIX64 "-%016" PRIX64 " %s\r\n", module_base,
+			  module_base + module_size, name_utf8);
+#else
+		dstr_catf(&data->module_list, "%08" PRIX64 "-%08" PRIX64 " %s\r\n", module_base,
+			  module_base + module_size, name_utf8);
+#endif
+	}
 	return true;
 }
 
