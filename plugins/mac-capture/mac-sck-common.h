@@ -5,6 +5,7 @@
 #include <obs-module.h>
 #include <util/threading.h>
 #include <pthread.h>
+#include <sys/sysctl.h>
 
 #include <IOSurface/IOSurface.h>
 #include <ScreenCaptureKit/ScreenCaptureKit.h>
@@ -67,6 +68,8 @@ struct API_AVAILABLE(macos(12.5)) screen_capture {
 };
 
 bool is_screen_capture_available(void);
+
+OSType sck_get_preferred_pixel_format(void);
 
 API_AVAILABLE(macos(12.5)) void screen_capture_build_content_list(struct screen_capture *sc, bool display_capture);
 

@@ -9,6 +9,24 @@ bool is_screen_capture_available(void)
     }
 }
 
+OSType sck_get_preferred_pixel_format(void)
+{
+    int64_t isAarch64 = 0;
+    size_t size = sizeof(isAarch64);
+    sysctlbyname("hw.optional.arm64", &isAarch64, &size, NULL, 0);
+    // Use 64RGBAHalf where available, for superior 16-bit float color and alpha depth. On prior macOS versions, or
+    // x86_64 machines where 64RGBAHalf is unavailable, fall back to 32BGRA (8-bit UInt color and alpha).
+    if (@available(macOS 15.0, *)) {
+        if (isAarch64 == 1) {
+            return kCVPixelFormatType_64RGBAHalf;
+        } else {
+            return kCVPixelFormatType_32BGRA;
+        }
+    } else {
+        return kCVPixelFormatType_32BGRA;
+    }
+}
+
 #pragma mark - ScreenCaptureDelegate
 
 @implementation ScreenCaptureDelegate
