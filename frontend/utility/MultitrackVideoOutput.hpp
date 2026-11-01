@@ -9,19 +9,14 @@
 #include <string>
 #include <vector>
 
-#define NOMINMAX
-
 class QString;
 class QWidget;
 
+void StreamStartHandler(void *arg, calldata_t *);
 void StreamStopHandler(void *arg, calldata_t *data);
-void StreamDeactivateHandler(void *arg, calldata_t *data);
 
 void RecordingStartHandler(void *arg, calldata_t *data);
-void RecordingStopHandler(void *arg, calldata_t *data);
-void RecordingDeactivateHandler(void *arg, calldata_t *data);
-
-bool MultitrackVideoDeveloperModeEnabled();
+void RecordingStopHandler(void *arg, calldata_t *);
 
 struct MultitrackVideoOutput {
 public:
@@ -30,12 +25,11 @@ public:
 			      const char *audio_encoder_id, std::optional<uint32_t> maximum_aggregate_bitrate,
 			      std::optional<uint32_t> maximum_video_tracks, std::optional<std::string> custom_config,
 			      obs_data_t *dump_stream_to_file_config, size_t main_audio_mixer,
-			      std::optional<size_t> vod_track_mixer, std::optional<bool> use_rtmps);
+			      std::optional<size_t> vod_track_mixer, std::optional<bool> use_rtmps,
+			      std::optional<QString> extra_canvas);
 	signal_handler_t *StreamingSignalHandler();
 	void StartedStreaming();
 	void StopStreaming();
-	bool HandleIncompatibleSettings(QWidget *parent, config_t *config, obs_service_t *service, bool &useDelay,
-					bool &enableNewSocketLoop, bool &enableDynBitrate);
 
 	OBSOutputAutoRelease StreamingOutput()
 	{
@@ -43,13 +37,16 @@ public:
 		return current ? obs_output_get_ref(current->output_) : nullptr;
 	}
 
+	bool RestartOnError() { return restart_on_error; }
+
 private:
 	struct OBSOutputObjects {
 		OBSOutputAutoRelease output_;
 		std::shared_ptr<obs_encoder_group_t> video_encoder_group_;
 		std::vector<OBSEncoderAutoRelease> audio_encoders_;
 		OBSServiceAutoRelease multitrack_video_service_;
-		OBSSignal start_signal, stop_signal, deactivate_signal;
+		OBSSignal start_signal, stop_signal;
+		std::vector<OBSCanvasAutoRelease> canvases;
 	};
 
 	std::optional<OBSOutputObjects> take_current();
@@ -63,9 +60,11 @@ private:
 	std::mutex current_stream_dump_mutex;
 	std::optional<OBSOutputObjects> current_stream_dump;
 
+	bool restart_on_error = false;
+	uint8_t reconnect_attempts = 0;
+
+	friend void StreamStartHandler(void *arg, calldata_t *data);
 	friend void StreamStopHandler(void *arg, calldata_t *data);
-	friend void StreamDeactivateHandler(void *arg, calldata_t *data);
 	friend void RecordingStartHandler(void *arg, calldata_t *data);
-	friend void RecordingStopHandler(void *arg, calldata_t *data);
-	friend void RecordingDeactivateHandler(void *arg, calldata_t *data);
+	friend void RecordingStopHandler(void *arg, calldata_t *);
 };

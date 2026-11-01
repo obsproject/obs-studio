@@ -84,6 +84,7 @@ gs_sampler_state::gs_sampler_state(gs_device_t *device, const gs_sampler_info *i
 	memcpy(sd.BorderColor, v4.ptr, sizeof(v4));
 
 	hr = device->device->CreateSamplerState(&sd, state.Assign());
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create sampler state", hr);
+	}
 }

@@ -96,6 +96,7 @@ static const char *source_signals[] = {
 	"void audio_balance(ptr source, in out float balance)",
 	"void audio_mixers(ptr source, in out int mixers)",
 	"void audio_monitoring(ptr source, int type)",
+	"void monitor(ptr source, bool monitor)",
 	"void audio_activate(ptr source)",
 	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
@@ -130,6 +131,46 @@ const char *obs_source_get_display_name(const char *id)
 	return (info != NULL) ? info->get_name(info->type_data) : NULL;
 }
 
+obs_module_t *obs_source_get_module(const char *id)
+{
+	obs_module_t *module = obs->first_module;
+	while (module) {
+		for (size_t i = 0; i < module->sources.num; i++) {
+			if (strcmp(module->sources.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	module = obs->first_disabled_module;
+	while (module) {
+		for (size_t i = 0; i < module->sources.num; i++) {
+			if (strcmp(module->sources.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	return NULL;
+}
+
+enum obs_module_load_state obs_source_load_state(const char *id)
+{
+	if (!id)
+		return OBS_MODULE_INVALID;
+
+	if (obs_source_type_is_scene(id) || obs_source_type_is_group(id))
+		return OBS_MODULE_ENABLED;
+
+	obs_module_t *module = obs_source_get_module(id);
+	if (!module) {
+		return OBS_MODULE_MISSING;
+	}
+	return module->load_state;
+}
+
 static void allocate_audio_output_buffer(struct obs_source *source)
 {
 	size_t size = sizeof(float) * AUDIO_OUTPUT_FRAMES * MAX_AUDIO_CHANNELS * MAX_AUDIO_MIXES;
@@ -162,6 +203,11 @@ static inline bool is_audio_source(const struct obs_source *source)
 static inline bool is_composite_source(const struct obs_source *source)
 {
 	return source->info.output_flags & OBS_SOURCE_COMPOSITE;
+}
+
+static inline bool requires_canvas(const struct obs_source *source)
+{
+	return source->info.output_flags & OBS_SOURCE_REQUIRES_CANVAS;
 }
 
 extern char *find_libobs_data_file(const char *file);
@@ -218,7 +264,7 @@ static bool obs_source_init(struct obs_source *source)
 	return true;
 }
 
-static void obs_source_init_finalize(struct obs_source *source)
+static void obs_source_init_finalize(struct obs_source *source, obs_canvas_t *canvas)
 {
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&obs->data.audio_sources_mutex);
@@ -233,7 +279,12 @@ static void obs_source_init_finalize(struct obs_source *source)
 	}
 
 	if (!source->context.private) {
-		obs_context_data_insert_name(&source->context, &obs->data.sources_mutex, &obs->data.public_sources);
+		if (requires_canvas(source)) {
+			obs_canvas_insert_source(canvas, source);
+		} else {
+			obs_context_data_insert_name(&source->context, &obs->data.sources_mutex,
+						     &obs->data.public_sources);
+		}
 	}
 	obs_context_data_insert_uuid(&source->context, &obs->data.sources_mutex, &obs->data.sources);
 }
@@ -298,10 +349,40 @@ static void obs_source_hotkey_push_to_talk(void *data, obs_hotkey_id id, obs_hot
 	source->user_push_to_talk_pressed = pressed;
 }
 
+static bool obs_source_hotkey_monitor_on(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, true);
+	return true;
+}
+
+static bool obs_source_hotkey_monitor_off(void *data, obs_hotkey_pair_id id, obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || !obs_source_get_monitoring_enabled(source))
+		return false;
+
+	obs_source_set_monitoring_enabled(source, false);
+	return true;
+}
+
 static void obs_source_init_audio_hotkeys(struct obs_source *source)
 {
 	if (!(source->info.output_flags & OBS_SOURCE_AUDIO) || source->info.type != OBS_SOURCE_TYPE_INPUT) {
-		source->mute_unmute_key = OBS_INVALID_HOTKEY_ID;
+		source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
+		source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 		source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 		return;
 	}
@@ -311,6 +392,10 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 								  obs_source_hotkey_mute, obs_source_hotkey_unmute,
 								  source, source);
 
+	source->monitor_on_off_key = obs_hotkey_pair_register_source(
+		source, "libobs.monitor-on", obs->hotkeys.monitor_on, "libobs.monitor-off", obs->hotkeys.monitor_off,
+		obs_source_hotkey_monitor_on, obs_source_hotkey_monitor_off, source, source);
+
 	source->push_to_mute_key = obs_hotkey_register_source(source, "libobs.push-to-mute", obs->hotkeys.push_to_mute,
 							      obs_source_hotkey_push_to_mute, source);
 
@@ -318,9 +403,74 @@ static void obs_source_init_audio_hotkeys(struct obs_source *source)
 							      obs_source_hotkey_push_to_talk, source);
 }
 
+void obs_source_audio_output_capture_device_activated(void *vptr, calldata_t *cd)
+{
+	UNUSED_PARAMETER(vptr);
+	obs_source_t *src = calldata_ptr(cd, "source");
+	if (!src)
+		return;
+
+	obs_data_t *settings = obs_source_get_settings(src);
+	const char *device_id = obs_data_get_string(settings, "device_id");
+	obs_source_audio_output_capture_device_changed(src, device_id);
+	obs_data_release(settings);
+}
+
+extern bool devices_match(const char *id1, const char *id2);
+void obs_source_audio_output_capture_device_changed(obs_source_t *src, const char *device_id)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (!audio->monitoring_device_name)
+		return;
+
+	if (!(src->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR))
+		return;
+
+	const char *mon_id = audio->monitoring_device_id;
+	bool id_match = false;
+
+#ifdef __APPLE__
+	extern void get_desktop_default_id(char **p_id);
+	if (device_id && strcmp(device_id, "default") == 0) {
+		char *def_id = NULL;
+		get_desktop_default_id(&def_id);
+		id_match = devices_match(def_id, mon_id);
+		if (def_id)
+			bfree(def_id);
+	} else {
+		id_match = devices_match(device_id, mon_id);
+	}
+#else
+	id_match = devices_match(device_id, mon_id);
+#endif
+	struct calldata cd;
+	uint8_t stack[128];
+	calldata_init_fixed(&cd, stack, sizeof(stack));
+
+	if (id_match) {
+		calldata_set_ptr(&cd, "source", src);
+		signal_handler_signal(obs->signals, "deduplication_changed", &cd);
+		signal_handler_connect(src->context.signals, "activate",
+				       obs_source_audio_output_capture_device_activated, NULL);
+		blog(LOG_INFO,
+		     "Device for 'Audio Output Capture' source %s is also used for audio monitoring."
+		     "\nDeduplication logic is being applied to all monitored sources.",
+		     src->context.name);
+	} else {
+		if (src == audio->monitoring_duplicating_source) {
+			calldata_set_ptr(&cd, "source", NULL);
+			signal_handler_disconnect(src->context.signals, "activate",
+						  obs_source_audio_output_capture_device_activated, NULL);
+			signal_handler_signal(obs->signals, "deduplication_changed", &cd);
+			blog(LOG_INFO, "Deduplication logic stopped.");
+		}
+	}
+}
+
 static obs_source_t *obs_source_create_internal(const char *id, const char *name, const char *uuid,
 						obs_data_t *settings, obs_data_t *hotkey_data, bool private,
-						uint32_t last_obs_ver)
+						uint32_t last_obs_ver, obs_canvas_t *canvas)
 {
 	struct obs_source *source = bzalloc(sizeof(struct obs_source));
 
@@ -339,10 +489,11 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 		 *
 		 * XXX: Fix design flaws with filters */
 		if (info->type == OBS_SOURCE_TYPE_FILTER)
-		private = true;
+			private = true;
 	}
 
 	source->mute_unmute_key = OBS_INVALID_HOTKEY_PAIR_ID;
+	source->monitor_on_off_key = OBS_INVALID_HOTKEY_PAIR_ID;
 	source->push_to_mute_key = OBS_INVALID_HOTKEY_ID;
 	source->push_to_talk_key = OBS_INVALID_HOTKEY_ID;
 	source->last_obs_ver = last_obs_ver;
@@ -362,6 +513,12 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	if (!obs_source_init(source))
 		goto fail;
 
+	/* Scenes need canvases, fall back to using default canvas if none provided here. */
+	if (requires_canvas(source) && !canvas) {
+		blog(LOG_WARNING, "Attempted to add Scene without specifying a canvas! Using default canvas instead.");
+		canvas = obs->data.main_canvas;
+	}
+
 	if (!private)
 		obs_source_init_audio_hotkeys(source);
 
@@ -377,9 +534,15 @@ static obs_source_t *obs_source_create_internal(const char *id, const char *name
 	source->flags = source->default_flags;
 	source->enabled = true;
 
-	obs_source_init_finalize(source);
+	/* audio deduplication initialization */
+	source->audio_is_duplicated = false;
+
+	obs_source_init_finalize(source, canvas);
 	if (!private) {
-		obs_source_dosignal(source, "source_create", NULL);
+		if (canvas)
+			obs_source_dosignal_canvas(source, canvas, "source_create_canvas", NULL);
+		if (!canvas || canvas == obs->data.main_canvas)
+			obs_source_dosignal(source, "source_create", NULL);
 	}
 
 	return source;
@@ -392,18 +555,25 @@ fail:
 
 obs_source_t *obs_source_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 {
-	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER);
+	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER, NULL);
 }
 
 obs_source_t *obs_source_create_private(const char *id, const char *name, obs_data_t *settings)
 {
-	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER);
+	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER, NULL);
 }
 
-obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name, const char *uuid, obs_data_t *settings,
-					     obs_data_t *hotkey_data, uint32_t last_obs_ver, bool is_private)
+obs_source_t *obs_source_create_canvas(obs_canvas_t *canvas, const char *id, const char *name, obs_data_t *settings,
+				       obs_data_t *hotkey_data)
 {
-	return obs_source_create_internal(id, name, uuid, settings, hotkey_data, is_private, last_obs_ver);
+	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER, canvas);
+}
+
+obs_source_t *obs_source_create_set_last_ver(obs_canvas_t *canvas, const char *id, const char *name, const char *uuid,
+					     obs_data_t *settings, obs_data_t *hotkey_data, uint32_t last_obs_ver,
+					     bool is_private)
+{
+	return obs_source_create_internal(id, name, uuid, settings, hotkey_data, is_private, last_obs_ver, canvas);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
@@ -612,9 +782,15 @@ void obs_source_destroy(struct obs_source *source)
 	while (source->filters.num)
 		obs_source_filter_remove(source, source->filters.array[0]);
 
-	obs_context_data_remove_uuid(&source->context, &obs->data.sources);
-	if (!source->context.private)
-		obs_context_data_remove_name(&source->context, &obs->data.public_sources);
+	obs_context_data_remove_uuid(&source->context, &obs->data.sources_mutex, &obs->data.sources);
+	if (!source->context.private) {
+		if (requires_canvas(source)) {
+			obs_canvas_remove_source(source);
+		} else {
+			obs_context_data_remove_name(&source->context, &obs->data.sources_mutex,
+						     &obs->data.public_sources);
+		}
+	}
 
 	source_profiler_remove_source(source);
 
@@ -644,6 +820,7 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	obs_hotkey_unregister(source->push_to_talk_key);
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
+	obs_hotkey_pair_unregister(source->monitor_on_off_key);
 
 	for (i = 0; i < source->async_cache.num; i++)
 		obs_source_frame_decref(source->async_cache.array[i].frame);
@@ -794,6 +971,10 @@ void obs_source_remove(obs_source_t *source)
 		if (s) {
 			s->removed = true;
 			obs_source_dosignal(s, "source_remove", "remove");
+			/* Remove from canvas if there is one. */
+			if (source->canvas)
+				obs_canvas_remove_source(s);
+
 			obs_source_release(s);
 		}
 	}
@@ -4108,24 +4289,28 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 		return;
 
 	if (!name || !*name || !source->context.name || strcmp(name, source->context.name) != 0) {
-		struct calldata data;
-		char *prev_name = bstrdup(source->context.name);
-
-		if (!source->context.private) {
-			obs_context_data_setname_ht(&source->context, name, &obs->data.public_sources);
+		if (requires_canvas(source)) {
+			obs_canvas_rename_source(source, name);
 		} else {
-			obs_context_data_setname(&source->context, name);
-		}
+			struct calldata data;
+			char *prev_name = bstrdup(source->context.name);
 
-		calldata_init(&data);
-		calldata_set_ptr(&data, "source", source);
-		calldata_set_string(&data, "new_name", source->context.name);
-		calldata_set_string(&data, "prev_name", prev_name);
-		if (!source->context.private)
-			signal_handler_signal(obs->signals, "source_rename", &data);
-		signal_handler_signal(source->context.signals, "rename", &data);
-		calldata_free(&data);
-		bfree(prev_name);
+			if (!source->context.private) {
+				obs_context_data_setname_ht(&source->context, name, &obs->data.public_sources);
+			} else {
+				obs_context_data_setname(&source->context, name);
+			}
+
+			calldata_init(&data);
+			calldata_set_ptr(&data, "source", source);
+			calldata_set_string(&data, "new_name", source->context.name);
+			calldata_set_string(&data, "prev_name", prev_name);
+			if (!source->context.private)
+				signal_handler_signal(obs->signals, "source_rename", &data);
+			signal_handler_signal(source->context.signals, "rename", &data);
+			calldata_free(&data);
+			bfree(prev_name);
+		}
 	}
 }
 
@@ -5337,6 +5522,9 @@ bool obs_source_audio_pending(const obs_source_t *source)
 	if (!obs_source_valid(source, "obs_source_audio_pending"))
 		return true;
 
+	if (obs_source_removed(source))
+		return true;
+
 	return (is_composite_source(source) || is_audio_source(source)) ? source->audio_pending : true;
 }
 
@@ -5405,28 +5593,39 @@ void obs_source_remove_audio_capture_callback(obs_source_t *source, obs_source_a
 	pthread_mutex_unlock(&source->audio_cb_mutex);
 }
 
-void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
+void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled)
 {
 	struct calldata data;
+	struct calldata compat_data;
 	uint8_t stack[128];
+	enum obs_monitoring_type compat_type;
 	bool was_on;
-	bool now_on;
 
-	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+	if (!obs_source_valid(source, "obs_source_set_monitoring_enabled"))
 		return;
-	if (source->monitoring_type == type)
+
+	if (source->monitoring_enabled == enabled)
 		return;
+
+	compat_type = enabled ? OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT : OBS_MONITORING_TYPE_NONE;
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "source", source);
-	calldata_set_int(&data, "type", type);
+	calldata_set_bool(&data, "monitor", enabled);
 
-	signal_handler_signal(source->context.signals, "audio_monitoring", &data);
+	signal_handler_signal(source->context.signals, "monitor", &data);
 
-	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
-	now_on = type != OBS_MONITORING_TYPE_NONE;
+	calldata_init_fixed(&compat_data, stack, sizeof(stack));
+	calldata_set_ptr(&compat_data, "source", source);
+	calldata_set_int(&compat_data, "type", compat_type);
 
-	if (was_on != now_on) {
+	signal_handler_signal(source->context.signals, "audio_monitoring", &compat_data);
+
+	was_on = source->monitoring_enabled;
+	source->monitoring_enabled = enabled;
+	source->monitoring_type = compat_type;
+
+	if (was_on != enabled) {
 		if (!was_on) {
 			source->monitor = audio_monitor_create(source);
 		} else {
@@ -5434,12 +5633,29 @@ void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_ty
 			source->monitor = NULL;
 		}
 	}
+}
 
-	source->monitoring_type = type;
+bool obs_source_get_monitoring_enabled(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_get_monitoring_enabled") ? source->monitoring_enabled : false;
+}
+
+void obs_source_set_monitoring_type(obs_source_t *source, enum obs_monitoring_type type)
+{
+	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
+		return;
+
+	blog(LOG_WARNING,
+	     "obs_source_set_monitoring_type is deprecated. Use obs_source_set_monitoring_enabled instead.");
+
+	obs_source_set_monitoring_enabled(source, type != OBS_MONITORING_TYPE_NONE);
 }
 
 enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *source)
 {
+	blog(LOG_WARNING,
+	     "obs_source_get_monitoring_type is deprecated. Use obs_source_get_monitoring_enabled instead.");
+
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ? source->monitoring_type
 									  : OBS_MONITORING_TYPE_NONE;
 }
@@ -5555,6 +5771,24 @@ enum obs_icon_type obs_source_get_icon_type(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
 	return (info) ? info->icon_type : OBS_ICON_TYPE_UNKNOWN;
+}
+
+const char *obs_source_get_dark_icon(const char *id)
+{
+	if (obs_source_get_icon_type(id) != OBS_ICON_TYPE_CUSTOM)
+		return NULL;
+
+	const struct obs_source_info *info = get_source_info(id);
+	return (info && info->get_dark_icon) ? info->get_dark_icon(info->type_data) : NULL;
+}
+
+const char *obs_source_get_light_icon(const char *id)
+{
+	if (obs_source_get_icon_type(id) != OBS_ICON_TYPE_CUSTOM)
+		return NULL;
+
+	const struct obs_source_info *info = get_source_info(id);
+	return (info && info->get_light_icon) ? info->get_light_icon(info->type_data) : NULL;
 }
 
 void obs_source_media_play_pause(obs_source_t *source, bool pause)
@@ -5828,4 +6062,9 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 uint64_t obs_source_get_last_async_ts(const obs_source_t *source)
 {
 	return source->async_last_rendered_ts;
+}
+
+obs_canvas_t *obs_source_get_canvas(const obs_source_t *source)
+{
+	return obs_weak_canvas_get_canvas(source->canvas);
 }

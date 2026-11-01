@@ -420,13 +420,33 @@ Draw Functions
 .. function:: void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height)
 
    Draws a 2D sprite.  Sets the "image" parameter of the current effect
-   to the texture and renders a quad.
+   to the texture and renders a quad. Can be omitted if drawing without
+   a texture.
 
    If width or height is 0, the width or height of the texture will be
    used.  The flip value specifies whether the texture should be flipped
    on the U or V axis with GS_FLIP_U and GS_FLIP_V.
 
-   :param tex:    Texture to draw
+   :param tex:    Texture to draw (can be NULL if drawing without a
+                  texture)
+   :param flip:   Can be 0 or a bitwise-OR combination of one of the
+                  following values:
+
+                  - GS_FLIP_U - Flips the texture horizontally
+                  - GS_FLIP_V - Flips the texture vertically
+
+   :param width:  Width
+   :param height: Height
+
+---------------------
+
+.. function:: void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height)
+
+   Same as :c:func:`gs_draw_sprite()`, but with floating point width/height
+   values instead of integer width/height values.
+
+   :param tex:    Texture to draw (can be NULL if drawing without a
+                  texture)
    :param flip:   Can be 0 or a bitwise-OR combination of one of the
                   following values:
 
@@ -1082,6 +1102,91 @@ Texture Functions
 
 ---------------------
 
+.. function:: bool gs_query_sync_capabilities(void)
+
+   **only Linux, FreeBSD, DragonFly:** Checks if the use of synchronization objects is supported
+
+   :rtype:  bool
+   :return: *true* if supported, *false* otherwise
+
+---------------------
+
+.. function:: gs_sync_t *gs_sync_create(void)
+
+   **only Linux, FreeBSD, DragonFly:** Creates a synchronization object
+
+   Inserts a fence command into the command stream of the bound context and
+   creates a synchronization object that is signalled when all the commands
+   preceding the inserted fence are executed.
+
+   :rtype: gs_sync_t*
+
+---------------------
+
+.. function:: gs_sync_t *gs_sync_create_from_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Creates a synchronization object
+
+   Creates a synchronization object that is signalled when the specified
+   timeline point of the given DRM syncobj is signalled.
+
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                gs_sync_t*
+
+---------------------
+
+.. function:: void gs_sync_destroy(gs_sync_t *sync)
+
+   **only Linux, FreeBSD, DragonFly:** Destroys a synchronization object
+
+   If the given synchronization object is in use, it will be marked for
+   destruction and will be destroyed later when it is no longer referenced.
+
+   :param sync: Synchronization object
+
+---------------------
+
+.. function:: bool gs_sync_export_syncobj_timeline_point(gs_sync_t *sync, int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Exports a synchronization object to a DRM syncobj timeline point
+
+   Creates a DRM syncobj timeline point that is signalled when the given
+   synchronization object is signalled.
+
+   :param sync:           Synchronization object
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                bool
+   :return:               *true* if the synchronization object is exported successfully, *false* otherwise
+
+---------------------
+
+.. function:: bool gs_sync_signal_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point)
+
+   **only Linux, FreeBSD, DragonFly:** Signals a DRM syncobj timeline point
+
+   :param syncobj_fd:     A file descriptor that is referencing a DRM syncobj
+   :param timeline_point: Timeline point of the DRM syncobj
+   :rtype:                bool
+   :return:               *true* if the timeline point is signalled successfully, *false* otherwise
+
+---------------------
+
+.. function:: bool gs_sync_wait(gs_sync_t *sync)
+
+   **only Linux, FreeBSD, DragonFly:** Wait for a synchronization object to be signalled
+
+   Blocks the execution of the commands that would be inserted into the command
+   stream of the bound context until the given synchronization object is
+   signalled.
+
+   :param sync: Synchronization object
+   :rtype:      bool
+   :return:     *true* if successful, *false* otherwise
+
+---------------------
+
 .. function:: gs_texture_t *gs_texture_create_from_iosurface(void *iosurf)
 
    **macOS only:** Creates a texture from an IOSurface.
@@ -1586,4 +1691,5 @@ Graphics Types
 .. type:: struct gs_shader           gs_shader_t
 .. type:: struct gs_shader_param     gs_sparam_t
 .. type:: struct gs_device           gs_device_t
+.. type:: void                       gs_sync_t
 .. type:: struct graphics_subsystem  graphics_t

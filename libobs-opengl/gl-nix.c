@@ -170,3 +170,39 @@ struct gs_texture *device_texture_create_from_pixmap(gs_device_t *device, uint32
 {
 	return gl_vtable->device_texture_create_from_pixmap(device, width, height, color_format, target, pixmap);
 }
+
+bool device_query_sync_capabilities(gs_device_t *device)
+{
+	return gl_vtable->device_query_sync_capabilities(device);
+}
+
+gs_sync_t *device_sync_create(gs_device_t *device)
+{
+	return gl_vtable->device_sync_create(device);
+}
+
+gs_sync_t *device_sync_create_from_syncobj_timeline_point(gs_device_t *device, int syncobj_fd, uint64_t timeline_point)
+{
+	return gl_vtable->device_sync_create_from_syncobj_timeline_point(device, syncobj_fd, timeline_point);
+}
+
+void device_sync_destroy(gs_device_t *device, gs_sync_t *sync)
+{
+	return gl_vtable->device_sync_destroy(device, sync);
+}
+
+bool device_sync_export_syncobj_timeline_point(gs_device_t *device, gs_sync_t *sync, int syncobj_fd,
+					       uint64_t timeline_point)
+{
+	return gl_vtable->device_sync_export_syncobj_timeline_point(device, sync, syncobj_fd, timeline_point);
+}
+
+bool device_sync_signal_syncobj_timeline_point(gs_device_t *device, int syncobj_fd, uint64_t timeline_point)
+{
+	return gl_vtable->device_sync_signal_syncobj_timeline_point(device, syncobj_fd, timeline_point);
+}
+
+bool device_sync_wait(gs_device_t *device, gs_sync_t *sync)
+{
+	return gl_vtable->device_sync_wait(device, sync);
+}

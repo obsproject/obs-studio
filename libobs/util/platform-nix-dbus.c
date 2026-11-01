@@ -25,7 +25,7 @@ enum service_type {
 	FREEDESKTOP_SS, /* freedesktop screensaver (KDE >= 4, GNOME >= 3.10) */
 	FREEDESKTOP_PM, /* freedesktop power management (KDE, gnome <= 2.26) */
 	MATE_SM,        /* MATE (>= 1.0) session manager */
-	GNOME_SM,       /* GNOME 2.26 - 3.4 sessopm mamager */
+	GNOME_SM,       /* GNOME 2.26 - 3.4 session manager */
 };
 
 struct service_info {

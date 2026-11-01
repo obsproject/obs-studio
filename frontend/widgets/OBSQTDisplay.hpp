@@ -14,6 +14,7 @@ class OBSQTDisplay : public QWidget {
 	OBSDisplay display;
 	bool destroying = false;
 
+protected:
 	virtual void paintEvent(QPaintEvent *event) override;
 	virtual void moveEvent(QMoveEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;

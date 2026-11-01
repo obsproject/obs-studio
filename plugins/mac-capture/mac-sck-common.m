@@ -83,6 +83,10 @@ bool build_display_list(struct screen_capture *sc, obs_properties_t *props)
     obs_property_t *display_list = obs_properties_get(props, "display_uuid");
     obs_property_list_clear(display_list);
 
+    // Add null entry to the top of the content list, to avoid inadvertent capture of the first enumerated display
+    // when opening the source's properties window
+    obs_property_list_add_string(display_list, " ", NULL);
+
     for (SCDisplay *display in sc->shareable_content.displays) {
         NSScreen *display_screen = nil;
         for (NSScreen *screen in NSScreen.screens) {
@@ -126,6 +130,10 @@ bool build_window_list(struct screen_capture *sc, obs_properties_t *props)
 
     obs_property_t *window_list = obs_properties_get(props, "window");
     obs_property_list_clear(window_list);
+
+    // Add null entry to the top of the content list, to avoid inadvertent capture of the first enumerated window
+    // when opening the source's properties window
+    obs_property_list_add_int(window_list, " ", kCGNullWindowID);
 
     NSPredicate *filteredWindowPredicate =
         [NSPredicate predicateWithBlock:^BOOL(SCWindow *window, NSDictionary *bindings __unused) {
@@ -172,6 +180,10 @@ bool build_application_list(struct screen_capture *sc, obs_properties_t *props)
 
     obs_property_t *application_list = obs_properties_get(props, "application");
     obs_property_list_clear(application_list);
+
+    // Add null entry to the top of the content list, to avoid inadvertent capture of the first enumerated application
+    // when opening the source's properties window
+    obs_property_list_add_string(application_list, " ", 0);
 
     NSArray<SCRunningApplication *> *filteredApplications;
     filteredApplications = [sc->shareable_content.applications
@@ -263,10 +275,13 @@ API_AVAILABLE(macos(12.5)) void screen_stream_video_update(struct screen_capture
                     needs_to_update_properties = true;
                 }
             } else {
-                size_t width = CVPixelBufferGetWidth(image_buffer);
-                size_t height = CVPixelBufferGetHeight(image_buffer);
+                int width = CVPixelBufferGetWidth(image_buffer);
+                int height = CVPixelBufferGetHeight(image_buffer);
 
-                if ((sc->frame.size.width != width) || (sc->frame.size.height != height)) {
+                int frameWidth = (int) sc->frame.size.width;
+                int frameHeight = (int) sc->frame.size.height;
+
+                if ((frameWidth != width) || (frameHeight != height)) {
                     sc->frame.size.width = width;
                     sc->frame.size.height = height;
                     needs_to_update_properties = true;

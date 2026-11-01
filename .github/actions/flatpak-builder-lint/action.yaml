@@ -32,7 +32,7 @@ runs:
         : Run flatpak-builder-lint
 
         return=0
-        result="$(flatpak-builder-lint --exceptions ${{ inputs.artifact }} ${{ inputs.path }})" || return=$?
+        result="$(flatpak-builder-lint --exceptions --user-exceptions ${GITHUB_ACTION_PATH}/exceptions.json ${{ inputs.artifact }} ${{ inputs.path }})" || return=$?
 
         if [[ ${return} != 0 && -z "${result}" ]]; then
           echo "::error::Error while running flatpak-builder-lint"

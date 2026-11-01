@@ -22,11 +22,15 @@ function(set_target_properties_obs target)
 
   if(target_type STREQUAL EXECUTABLE)
     if(target STREQUAL obs-browser-helper)
-      set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}")
+      set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}/obs-browser")
     elseif(target STREQUAL inject-helper OR target STREQUAL get-graphics-offsets)
-      set(OBS_EXECUTABLE_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
+      set(OBS_EXECUTABLE_DESTINATION "${OBS_PLUGIN_DESTINATION}/win-capture/data")
 
       _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION} x64)
+      endif()
     endif()
 
     _target_install_obs(${target} DESTINATION ${OBS_EXECUTABLE_DESTINATION})
@@ -62,17 +66,25 @@ function(set_target_properties_obs target)
     elseif(target STREQUAL "obspython" OR target STREQUAL "obslua")
       set(target_destination "${OBS_SCRIPT_PLUGIN_DESTINATION}")
     elseif(target STREQUAL graphics-hook)
-      set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/win-capture")
+      set(target_destination "${OBS_PLUGIN_DESTINATION}/win-capture/data")
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json" "${target_destination}")
       target_add_resource(graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json" "${target_destination}")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     elseif(target STREQUAL obs-virtualcam-module)
-      set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/win-dshow")
+      set(target_destination "${OBS_PLUGIN_DESTINATION}/win-dshow/data")
 
       _target_install_obs(${target} DESTINATION ${target_destination} x86)
+
+      if(CMAKE_VS_PLATFORM_NAME STREQUAL ARM64)
+        _target_install_obs(${target} DESTINATION ${target_destination} x64)
+      endif()
     else()
-      set(target_destination "${OBS_PLUGIN_DESTINATION}")
+      set(target_destination "${OBS_PLUGIN_DESTINATION}/${target}")
     endif()
 
     _target_install_obs(${target} DESTINATION ${target_destination})
@@ -109,8 +121,8 @@ function(set_target_properties_obs target)
             COMMAND "${CMAKE_COMMAND}" -E make_directory "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${imported_location}" "${cef_location}/chrome_elf.dll"
-              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/snapshot_blob.bin"
-              "${cef_location}/v8_context_snapshot.bin" "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
+              "${cef_location}/libEGL.dll" "${cef_location}/libGLESv2.dll" "${cef_location}/v8_context_snapshot.bin"
+              "${OBS_OUTPUT_DIR}/$<CONFIG>/${target_destination}"
             COMMAND
               "${CMAKE_COMMAND}" -E copy_if_different "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak" "${cef_root_location}/Resources/icudtl.dat"
@@ -127,7 +139,6 @@ function(set_target_properties_obs target)
               "${cef_location}/chrome_elf.dll"
               "${cef_location}/libEGL.dll"
               "${cef_location}/libGLESv2.dll"
-              "${cef_location}/snapshot_blob.bin"
               "${cef_location}/v8_context_snapshot.bin"
               "${cef_root_location}/Resources/chrome_100_percent.pak"
               "${cef_root_location}/Resources/chrome_200_percent.pak"
@@ -146,8 +157,6 @@ function(set_target_properties_obs target)
         endif()
       endif()
     endif()
-
-    set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
   endif()
 
   target_link_options(${target} PRIVATE "/PDBALTPATH:$<TARGET_PDB_FILE_NAME:${target}>")
@@ -207,13 +216,13 @@ function(_target_install_obs target)
 
     cmake_path(RELATIVE_PATH CMAKE_CURRENT_SOURCE_DIR BASE_DIRECTORY "${OBS_SOURCE_DIR}" OUTPUT_VARIABLE project_path)
 
-    set(32bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
-    set(target_file "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}")
-    set(target_pdb_file "${32bit_project_path}/$<CONFIG>/${target}64.pdb")
+    set(64bit_project_path "${OBS_SOURCE_DIR}/build_x64/${project_path}")
+    set(target_file "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}")
+    set(target_pdb_file "${64bit_project_path}/$<CONFIG>/${target}64.pdb")
     set(comment "Copy ${target} (x64) to destination")
 
     install(
-      FILES "${32bit_project_path}/$<CONFIG>/${target}64.${suffix}"
+      FILES "${64bit_project_path}/$<CONFIG>/${target}64.${suffix}"
       DESTINATION "${_TIO_DESTINATION}"
       COMPONENT Runtime
       OPTIONAL
@@ -294,8 +303,7 @@ function(target_install_resources target)
     file(GLOB_RECURSE data_files "${CMAKE_CURRENT_SOURCE_DIR}/data/*")
     foreach(data_file IN LISTS data_files)
       cmake_path(
-        RELATIVE_PATH
-        data_file
+        RELATIVE_PATH data_file
         BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
         OUTPUT_VARIABLE relative_path
       )
@@ -304,9 +312,9 @@ function(target_install_resources target)
       source_group("Resources/${relative_path}" FILES "${data_file}")
     endforeach()
 
-    get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
-    if(target IN_LIST obs_module_list)
-      set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")
+    get_target_property(target_type ${target} TYPE)
+    if(target_type STREQUAL MODULE_LIBRARY)
+      set(target_destination "${OBS_PLUGIN_DESTINATION}/${target}/data")
     elseif(target STREQUAL obs-studio)
       set(target_destination "${OBS_DATA_DESTINATION}/obs-studio")
     else()
@@ -336,11 +344,11 @@ endfunction()
 
 # Helper function to add a specific resource to a bundle
 function(target_add_resource target resource)
-  get_property(obs_module_list GLOBAL PROPERTY OBS_MODULES_ENABLED)
+  get_target_property(target_type ${target} TYPE)
   if(ARGN)
     set(target_destination "${ARGN}")
-  elseif(${target} IN_LIST obs_module_list)
-    set(target_destination "${OBS_DATA_DESTINATION}/obs-plugins/${target}")
+  elseif(target_type STREQUAL MODULE_LIBRARY)
+    set(target_destination "${OBS_PLUGIN_DESTINATION}/${target}/data")
   elseif(target STREQUAL obs-studio)
     set(target_destination "${OBS_DATA_DESTINATION}/obs-studio")
   else()
@@ -387,7 +395,7 @@ function(_bundle_dependencies target)
   set(plugins_list)
 
   foreach(library IN LISTS found_dependencies)
-    # CEF needs to be placed in obs-plugins directory on Windows, which is handled already
+    # CEF needs to be placed in core directory on Windows, which is handled already
     if(${library} STREQUAL CEF::Library)
       continue()
     endif()
@@ -470,6 +478,7 @@ function(_bundle_dependencies target)
     COMPONENT Runtime
   )
 
+  set(debug_dll_exceptions qdirect2d qcertonlybackend qopensslbackend qschannelbackend)
   list(REMOVE_DUPLICATES plugins_list)
   foreach(plugin IN LISTS plugins_list)
     message(TRACE "Adding Qt plugin ${plugin}...")
@@ -479,12 +488,13 @@ function(_bundle_dependencies target)
 
     list(APPEND plugin_stems ${plugin_stem})
 
-    if(plugin MATCHES ".+d\\.dll$")
+    if(plugin MATCHES "(.+d)\\.dll$" AND CMAKE_MATCH_COUNT EQUAL 1 AND NOT CMAKE_MATCH_1 IN_LIST debug_dll_exceptions)
       list(APPEND plugin_${plugin_stem}_debug ${plugin})
     else()
       list(APPEND plugin_${plugin_stem} ${plugin})
     endif()
   endforeach()
+  unset(debug_exceptions)
 
   list(REMOVE_DUPLICATES plugin_stems)
   foreach(stem IN LISTS plugin_stems)

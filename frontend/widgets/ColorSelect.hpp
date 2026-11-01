@@ -22,6 +22,7 @@
 #include <QWidget>
 
 class ColorSelect : public QWidget {
+	Q_OBJECT
 
 public:
 	explicit ColorSelect(QWidget *parent = 0);

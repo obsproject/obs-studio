@@ -64,8 +64,7 @@ if(PC_LibVLC_VERSION VERSION_GREATER 0)
   set(LibVLC_VERSION ${PC_LibVLC_VERSION})
 elseif(EXISTS "${LibVLC_INCLUDE_DIR}/libvlc_version.h")
   file(
-    STRINGS
-    "${LibVLC_INCLUDE_DIR}/libvlc_version.h"
+    STRINGS "${LibVLC_INCLUDE_DIR}/libvlc_version.h"
     _VERSION_STRING
     REGEX "^.*LIBVLC_VERSION_(MAJOR|MINOR|PATCH)[ \t]+[0-9]+[ \t]*$"
   )

@@ -25,8 +25,8 @@ static void color_source_update(void *data, obs_data_t *settings)
 
 	vec4_from_rgba(&context->color, color);
 	vec4_from_rgba_srgb(&context->color_srgb, color);
-	context->width = width;
-	context->height = height;
+	context->width = width > 0 ? width : 1;
+	context->height = height > 0 ? height : 1;
 }
 
 static void *color_source_create(obs_data_t *settings, obs_source_t *source)
@@ -52,9 +52,9 @@ static obs_properties_t *color_source_properties(void *unused)
 
 	obs_properties_add_color_alpha(props, "color", obs_module_text("ColorSource.Color"));
 
-	obs_properties_add_int(props, "width", obs_module_text("ColorSource.Width"), 0, 4096, 1);
+	obs_properties_add_int(props, "width", obs_module_text("ColorSource.Width"), 1, 4096, 1);
 
-	obs_properties_add_int(props, "height", obs_module_text("ColorSource.Height"), 0, 4096, 1);
+	obs_properties_add_int(props, "height", obs_module_text("ColorSource.Height"), 1, 4096, 1);
 
 	return props;
 }

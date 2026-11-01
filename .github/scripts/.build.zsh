@@ -40,15 +40,9 @@ build() {
   if (( ! ${+SCRIPT_HOME} )) typeset -g SCRIPT_HOME=${ZSH_ARGZERO:A:h}
   local host_os=${${(s:-:)ZSH_ARGZERO:t:r}[2]}
   local project_root=${SCRIPT_HOME:A:h:h}
-  local buildspec_file=${project_root}/buildspec.json
 
   fpath=(${SCRIPT_HOME}/utils.zsh ${fpath})
-  autoload -Uz log_group log_error log_output check_${host_os} setup_ccache
-
-  if [[ ! -r ${buildspec_file} ]] {
-    log_error 'Missing buildspec.json in project checkout.'
-    return 2
-  }
+  autoload -Uz log_group log_error log_output check_${host_os}
 
   local -i debug=0
 
@@ -104,14 +98,14 @@ build() {
   set -- ${(@)args}
 
   check_${host_os}
-  setup_ccache
 
   if [[ ${host_os} == ubuntu ]] {
-    autoload -Uz setup_ubuntu && setup_ubuntu
+    autoload -Uz setup_ubuntu setup_ccache
+    setup_ccache
+    setup_ubuntu
   }
 
-  local product_name
-  read -r product_name <<< "$(jq -r '.name' ${buildspec_file})"
+  local product_name='obs-studio'
 
   pushd ${project_root}
 
@@ -123,7 +117,14 @@ build() {
 
   case ${target} {
     macos-*)
-      cmake_args+=(--preset 'macos-ci' -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-})
+      cmake_args+=(
+        --preset 'macos-ci'
+        -DCMAKE_OSX_ARCHITECTURES:STRING=${target##*-}
+      )
+
+      if (( debug )) {
+        cmake_args+=(CMAKE_XCODE_ATTRIBUTE_COMPILATION_CACHE_ENABLE_DIAGNOSTIC_REMARKS:STRING=YES)
+      }
 
       typeset -gx NSUnbufferedIO=YES
 

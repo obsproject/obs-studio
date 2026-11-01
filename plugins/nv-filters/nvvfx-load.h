@@ -37,13 +37,11 @@ extern "C" {
 #endif           // _WIN32 or linux
 #endif           //NvCV_API
 
-#define CUDARTAPI
-
 #ifdef LIBNVVFX_ENABLED
 static HMODULE nv_videofx = NULL;
 static HMODULE nv_cvimage = NULL;
-static HMODULE nv_cudart = NULL;
-static HMODULE nv_cuda = NULL;
+static HMODULE nv_greenscreen = NULL;
+static HMODULE nv_blur = NULL;
 
 //! Status codes returned from APIs.
 typedef enum NvCV_Status {
@@ -226,33 +224,20 @@ typedef enum NvCVImage_ComponentType {
 #define NVCV_CPU_PINNED 2 //!< The buffer is stored in pinned CPU memory.
 #define NVCV_CUDA_ARRAY 3 //!< A CUDA array is used for storage.
 
-/** Parameter selectors */
-#define NVVFX_INPUT_IMAGE_0 "SrcImage0"
-#define NVVFX_INPUT_IMAGE NVVFX_INPUT_IMAGE_0
-#define NVVFX_INPUT_IMAGE_1 "SrcImage1"
-#define NVVFX_OUTPUT_IMAGE_0 "DstImage0"
-#define NVVFX_OUTPUT_IMAGE NVVFX_OUTPUT_IMAGE_0
-#define NVVFX_MODEL_DIRECTORY "ModelDir"
-#define NVVFX_CUDA_STREAM "CudaStream"         //!< The CUDA stream to use
-#define NVVFX_CUDA_GRAPH "CudaGraph"           //!< Enable CUDA graph to use
-#define NVVFX_INFO "Info"                      //!< Get info about the effects
-#define NVVFX_SCALE "Scale"                    //!< Scale factor
-#define NVVFX_STRENGTH "Strength"              //!< Strength for different filters
-#define NVVFX_STRENGTH_LEVELS "StrengthLevels" //!< Number of strength levels
-#define NVVFX_MODE "Mode"                      //!< Mode for different filters
-#define NVVFX_TEMPORAL "Temporal"              //!< Temporal mode: 0=image, 1=video
-#define NVVFX_GPU "GPU"                        //!< Preferred GPU (optional)
-#define NVVFX_BATCH_SIZE "BatchSize"           //!< Batch Size (default 1)
-#define NVVFX_MODEL_BATCH "ModelBatch"
-#define NVVFX_STATE "State"          //!< State variable
-#define NVVFX_STATE_SIZE "StateSize" //!< Number of bytes needed to store state
+/** Logging support **/
+enum {
+	NVCV_LOG_FATAL,   //!< Message to be printed right before aborting due to an unrecoverable error.
+	NVCV_LOG_ERROR,   //!< An operation has failed, but it is not fatal.
+	NVCV_LOG_WARNING, //!< Something was not quite right, but we fixed it up, perhaps at a loss in performance.
+	NVCV_LOG_INFO     //!< Nothing is wrong, but this information might be of interest.
+};
 
 //! Image descriptor.
 typedef struct
 #ifdef _MSC_VER
 	__declspec(dllexport)
 #endif // _MSC_VER
-		NvCVImage {
+	NvCVImage {
 	unsigned int width;                    //!< The number of pixels horizontally in the image.
 	unsigned int height;                   //!< The number of pixels  vertically  in the image.
 	signed int pitch;                      //!< The byte stride between pixels vertically.
@@ -334,11 +319,14 @@ typedef NvCV_Status NvVFX_API (*NvVFX_Load_t)(NvVFX_Handle effect);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamCreate_t)(CUstream *stream);
 typedef NvCV_Status NvVFX_API (*NvVFX_CudaStreamDestroy_t)(CUstream stream);
 
-/* requires sdk version >= 0.7.0 */
+/* requires SDK version >= 0.7.0 */
 typedef NvCV_Status NvVFX_API (*NvVFX_AllocateState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle *handle);
 typedef NvCV_Status NvVFX_API (*NvVFX_DeallocateState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle handle);
 typedef NvCV_Status NvVFX_API (*NvVFX_ResetState_t)(NvVFX_Handle effect, NvVFX_StateObjectHandle handle);
 
+/* requires SDK version >= 0.7.5 */
+typedef NvCV_Status NvVFX_API (*NvVFX_ConfigureLogger_t)(int verbosity, const char *file,
+							 void (*cb)(void *, const char *), void *cb_data);
 /* NvCVImage functions */
 typedef NvCV_Status NvCV_API (*NvCVImage_Init_t)(NvCVImage *im, unsigned width, unsigned height, int pitch,
 						 void *pixels, NvCVImage_PixelFormat format,
@@ -401,143 +389,8 @@ typedef NvCV_Status NvCV_API (*NvCVImage_FromD3DColorSpace_t)(DXGI_COLOR_SPACE_T
 							      unsigned char *pNvcvColorSpace);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3D11Texture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
 typedef NvCV_Status NvCV_API (*NvCVImage_InitFromD3DTexture_t)(NvCVImage *im, struct ID3D11Texture2D *tx);
-/* cuda runtime */
-typedef enum cudaError {
-	cudaSuccess = 0,
-	cudaErrorInvalidValue = 1,
-	cudaErrorMemoryAllocation = 2,
-	cudaErrorInitializationError = 3,
-	cudaErrorCudartUnloading = 4,
-	cudaErrorProfilerDisabled = 5,
-	cudaErrorProfilerNotInitialized = 6,
-	cudaErrorProfilerAlreadyStarted = 7,
-	cudaErrorProfilerAlreadyStopped = 8,
-	cudaErrorInvalidConfiguration = 9,
-	cudaErrorInvalidPitchValue = 12,
-	cudaErrorInvalidSymbol = 13,
-	cudaErrorInvalidHostPointer = 16,
-	cudaErrorInvalidDevicePointer = 17,
-	cudaErrorInvalidTexture = 18,
-	cudaErrorInvalidTextureBinding = 19,
-	cudaErrorInvalidChannelDescriptor = 20,
-	cudaErrorInvalidMemcpyDirection = 21,
-	cudaErrorAddressOfConstant = 22,
-	cudaErrorTextureFetchFailed = 23,
-	cudaErrorTextureNotBound = 24,
-	cudaErrorSynchronizationError = 25,
-	cudaErrorInvalidFilterSetting = 26,
-	cudaErrorInvalidNormSetting = 27,
-	cudaErrorMixedDeviceExecution = 28,
-	cudaErrorNotYetImplemented = 31,
-	cudaErrorMemoryValueTooLarge = 32,
-	cudaErrorStubLibrary = 34,
-	cudaErrorInsufficientDriver = 35,
-	cudaErrorCallRequiresNewerDriver = 36,
-	cudaErrorInvalidSurface = 37,
-	cudaErrorDuplicateVariableName = 43,
-	cudaErrorDuplicateTextureName = 44,
-	cudaErrorDuplicateSurfaceName = 45,
-	cudaErrorDevicesUnavailable = 46,
-	cudaErrorIncompatibleDriverContext = 49,
-	cudaErrorMissingConfiguration = 52,
-	cudaErrorPriorLaunchFailure = 53,
-	cudaErrorLaunchMaxDepthExceeded = 65,
-	cudaErrorLaunchFileScopedTex = 66,
-	cudaErrorLaunchFileScopedSurf = 67,
-	cudaErrorSyncDepthExceeded = 68,
-	cudaErrorLaunchPendingCountExceeded = 69,
-	cudaErrorInvalidDeviceFunction = 98,
-	cudaErrorNoDevice = 100,
-	cudaErrorInvalidDevice = 101,
-	cudaErrorDeviceNotLicensed = 102,
-	cudaErrorSoftwareValidityNotEstablished = 103,
-	cudaErrorStartupFailure = 127,
-	cudaErrorInvalidKernelImage = 200,
-	cudaErrorDeviceUninitialized = 201,
-	cudaErrorMapBufferObjectFailed = 205,
-	cudaErrorUnmapBufferObjectFailed = 206,
-	cudaErrorArrayIsMapped = 207,
-	cudaErrorAlreadyMapped = 208,
-	cudaErrorNoKernelImageForDevice = 209,
-	cudaErrorAlreadyAcquired = 210,
-	cudaErrorNotMapped = 211,
-	cudaErrorNotMappedAsArray = 212,
-	cudaErrorNotMappedAsPointer = 213,
-	cudaErrorECCUncorrectable = 214,
-	cudaErrorUnsupportedLimit = 215,
-	cudaErrorDeviceAlreadyInUse = 216,
-	cudaErrorPeerAccessUnsupported = 217,
-	cudaErrorInvalidPtx = 218,
-	cudaErrorInvalidGraphicsContext = 219,
-	cudaErrorNvlinkUncorrectable = 220,
-	cudaErrorJitCompilerNotFound = 221,
-	cudaErrorUnsupportedPtxVersion = 222,
-	cudaErrorJitCompilationDisabled = 223,
-	cudaErrorInvalidSource = 300,
-	cudaErrorFileNotFound = 301,
-	cudaErrorSharedObjectSymbolNotFound = 302,
-	cudaErrorSharedObjectInitFailed = 303,
-	cudaErrorOperatingSystem = 304,
-	cudaErrorInvalidResourceHandle = 400,
-	cudaErrorIllegalState = 401,
-	cudaErrorSymbolNotFound = 500,
-	cudaErrorNotReady = 600,
-	cudaErrorIllegalAddress = 700,
-	cudaErrorLaunchOutOfResources = 701,
-	cudaErrorLaunchTimeout = 702,
-	cudaErrorLaunchIncompatibleTexturing = 703,
-	cudaErrorPeerAccessAlreadyEnabled = 704,
-	cudaErrorPeerAccessNotEnabled = 705,
-	cudaErrorSetOnActiveProcess = 708,
-	cudaErrorContextIsDestroyed = 709,
-	cudaErrorAssert = 710,
-	cudaErrorTooManyPeers = 711,
-	cudaErrorHostMemoryAlreadyRegistered = 712,
-	cudaErrorHostMemoryNotRegistered = 713,
-	cudaErrorHardwareStackError = 714,
-	cudaErrorIllegalInstruction = 715,
-	cudaErrorMisalignedAddress = 716,
-	cudaErrorInvalidAddressSpace = 717,
-	cudaErrorInvalidPc = 718,
-	cudaErrorLaunchFailure = 719,
-	cudaErrorCooperativeLaunchTooLarge = 720,
-	cudaErrorNotPermitted = 800,
-	cudaErrorNotSupported = 801,
-	cudaErrorSystemNotReady = 802,
-	cudaErrorSystemDriverMismatch = 803,
-	cudaErrorCompatNotSupportedOnDevice = 804,
-	cudaErrorStreamCaptureUnsupported = 900,
-	cudaErrorStreamCaptureInvalidated = 901,
-	cudaErrorStreamCaptureMerge = 902,
-	cudaErrorStreamCaptureUnmatched = 903,
-	cudaErrorStreamCaptureUnjoined = 904,
-	cudaErrorStreamCaptureIsolation = 905,
-	cudaErrorStreamCaptureImplicit = 906,
-	cudaErrorCapturedEvent = 907,
-	cudaErrorStreamCaptureWrongThread = 908,
-	cudaErrorTimeout = 909,
-	cudaErrorGraphExecUpdateFailure = 910,
-	cudaErrorUnknown = 999,
-	cudaErrorApiFailureBase = 10000
-} cudaError;
 
-typedef enum cudaMemcpyKind {
-	cudaMemcpyHostToHost = 0,     /**< Host   -> Host */
-	cudaMemcpyHostToDevice = 1,   /**< Host   -> Device */
-	cudaMemcpyDeviceToHost = 2,   /**< Device -> Host */
-	cudaMemcpyDeviceToDevice = 3, /**< Device -> Device */
-	cudaMemcpyDefault = 4
-} cudaMemcpyKind;
-
-typedef enum cudaError cudaError_t;
-
-typedef cudaError_t CUDARTAPI (*cudaMalloc_t)(void **devPtr, size_t size);
-typedef cudaError_t CUDARTAPI (*cudaStreamSynchronize_t)(CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaFree_t)(void *devPtr);
-typedef cudaError_t CUDARTAPI (*cudaMemsetAsync_t)(void *devPtr, int value, size_t count, CUstream stream);
-typedef cudaError_t CUDARTAPI (*cudaMemcpy_t)(void *dst, const void *src, size_t count, enum cudaMemcpyKind kind);
-
-/* nvvfx */
+/* NVVFX */
 static NvVFX_GetVersion_t NvVFX_GetVersion = NULL;
 static NvVFX_CreateEffect_t NvVFX_CreateEffect = NULL;
 static NvVFX_DestroyEffect_t NvVFX_DestroyEffect = NULL;
@@ -564,49 +417,31 @@ static NvVFX_Load_t NvVFX_Load = NULL;
 static NvVFX_CudaStreamCreate_t NvVFX_CudaStreamCreate = NULL;
 static NvVFX_CudaStreamDestroy_t NvVFX_CudaStreamDestroy = NULL;
 
-/* nvvfx sdk >= 0.7.0 */
+/* NVVFX SDK >= 0.7.0 */
 static NvVFX_SetStateObjectHandleArray_t NvVFX_SetStateObjectHandleArray = NULL;
 static NvVFX_AllocateState_t NvVFX_AllocateState = NULL;
 static NvVFX_DeallocateState_t NvVFX_DeallocateState = NULL;
 static NvVFX_ResetState_t NvVFX_ResetState = NULL;
+
+/* NVVFX SDK >= 0.7.5 */
+static NvVFX_ConfigureLogger_t NvVFX_ConfigureLogger = NULL;
 
 /*nvcvimage */
 static NvCVImage_Init_t NvCVImage_Init = NULL;
 static NvCVImage_InitView_t NvCVImage_InitView = NULL;
 static NvCVImage_Alloc_t NvCVImage_Alloc = NULL;
 static NvCVImage_Realloc_t NvCVImage_Realloc = NULL;
-static NvCVImage_Dealloc_t NvCVImage_Dealloc = NULL;
 static NvCVImage_Create_t NvCVImage_Create = NULL;
 static NvCVImage_Destroy_t NvCVImage_Destroy = NULL;
-static NvCVImage_ComponentOffsets_t NvCVImage_ComponentOffsets = NULL;
 static NvCVImage_Transfer_t NvCVImage_Transfer = NULL;
-static NvCVImage_TransferRect_t NvCVImage_TransferRect = NULL;
-static NvCVImage_TransferFromYUV_t NvCVImage_TransferFromYUV = NULL;
-static NvCVImage_TransferToYUV_t NvCVImage_TransferToYUV = NULL;
 static NvCVImage_MapResource_t NvCVImage_MapResource = NULL;
 static NvCVImage_UnmapResource_t NvCVImage_UnmapResource = NULL;
-static NvCVImage_Composite_t NvCVImage_Composite = NULL;
-static NvCVImage_CompositeRect_t NvCVImage_CompositeRect = NULL;
-static NvCVImage_CompositeOverConstant_t NvCVImage_CompositeOverConstant = NULL;
-static NvCVImage_FlipY_t NvCVImage_FlipY = NULL;
-static NvCVImage_GetYUVPointers_t NvCVImage_GetYUVPointers = NULL;
 /* nvcvimage  D3D*/
-static NvCVImage_ToD3DFormat_t NvCVImage_ToD3DFormat = NULL;
-static NvCVImage_FromD3DFormat_t NvCVImage_FromD3DFormat = NULL;
-static NvCVImage_ToD3DColorSpace_t NvCVImage_ToD3DColorSpace = NULL;
-static NvCVImage_FromD3DColorSpace_t NvCVImage_FromD3DColorSpace = NULL;
 static NvCVImage_InitFromD3D11Texture_t NvCVImage_InitFromD3D11Texture = NULL;
 /* error codes */
 static NvCV_GetErrorStringFromCode_t NvCV_GetErrorStringFromCode = NULL;
 
-/* cuda runtime */
-static cudaMalloc_t cudaMalloc = NULL;
-static cudaStreamSynchronize_t cudaStreamSynchronize = NULL;
-static cudaFree_t cudaFree = NULL;
-static cudaMemcpy_t cudaMemcpy = NULL;
-static cudaMemsetAsync_t cudaMemsetAsync = NULL;
-
-static inline void release_nv_vfx()
+static inline void release_vfx_lib(void)
 {
 	NvVFX_CreateEffect = NULL;
 	NvVFX_CudaStreamCreate = NULL;
@@ -638,73 +473,89 @@ static inline void release_nv_vfx()
 	NvVFX_AllocateState = NULL;
 	NvVFX_DeallocateState = NULL;
 	NvVFX_ResetState = NULL;
+	NvVFX_ConfigureLogger = NULL;
 	if (nv_videofx) {
 		FreeLibrary(nv_videofx);
 		nv_videofx = NULL;
 	}
 	NvCVImage_Alloc = NULL;
-	NvCVImage_ComponentOffsets = NULL;
-	NvCVImage_Composite = NULL;
-	NvCVImage_CompositeRect = NULL;
-	NvCVImage_CompositeOverConstant = NULL;
 	NvCVImage_Create = NULL;
-	NvCVImage_Dealloc = NULL;
 	NvCVImage_Destroy = NULL;
 	NvCVImage_Init = NULL;
 	NvCVImage_InitView = NULL;
 	NvCVImage_Realloc = NULL;
 	NvCVImage_Transfer = NULL;
-	NvCVImage_TransferRect = NULL;
-	NvCVImage_TransferFromYUV = NULL;
-	NvCVImage_TransferToYUV = NULL;
 	NvCVImage_MapResource = NULL;
 	NvCVImage_UnmapResource = NULL;
 	NvCVImage_InitFromD3D11Texture = NULL;
-	NvCVImage_FlipY = NULL;
-	NvCVImage_GetYUVPointers = NULL;
-	NvCVImage_ToD3DFormat = NULL;
-	NvCVImage_FromD3DFormat = NULL;
-	NvCVImage_ToD3DColorSpace = NULL;
-	NvCVImage_FromD3DColorSpace = NULL;
 	if (nv_cvimage) {
 		FreeLibrary(nv_cvimage);
 		nv_cvimage = NULL;
 	}
-	cudaMalloc = NULL;
-	cudaStreamSynchronize = NULL;
-	cudaFree = NULL;
-	cudaMemcpy = NULL;
-	cudaMemsetAsync = NULL;
-	if (nv_cudart) {
-		FreeLibrary(nv_cudart);
-		nv_cudart = NULL;
+	if (nv_greenscreen) {
+		FreeLibrary(nv_greenscreen);
+		nv_greenscreen = NULL;
+	}
+	if (nv_blur) {
+		FreeLibrary(nv_blur);
+		nv_blur = NULL;
 	}
 }
 
-static inline void nvvfx_get_sdk_path(char *buffer, const size_t len)
+static inline bool nvvfx_get_sdk_path(char *buffer, const size_t len)
 {
 	DWORD ret = GetEnvironmentVariableA("NV_VIDEO_EFFECTS_PATH", buffer, (DWORD)len);
 
 	if (!ret || ret >= len - 1) {
 		char path[MAX_PATH];
-		GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH);
+		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
+			buffer[0] = 0;
+			return false;
+		}
 
-		size_t max_len = sizeof(path) / sizeof(char);
-		snprintf(buffer, max_len, "%s\\NVIDIA Corporation\\NVIDIA Video Effects", path);
+		if (_snprintf_s(buffer, len, _TRUNCATE, "%s\\NVIDIA Corporation\\NVIDIA Video Effects", path) > 0) {
+			return true;
+		}
+
+		return false;
 	}
+
+	return true;
 }
 
-static inline bool load_nv_vfx_libs()
+static inline bool load_vfx_module(HMODULE *module, const char *sdk_path, const char *filename)
 {
-	char fullPath[MAX_PATH];
-	nvvfx_get_sdk_path(fullPath, MAX_PATH);
-	SetDllDirectoryA(fullPath);
+	char path[MAX_PATH];
 
-	nv_videofx = LoadLibrary(L"NVVideoEffects.dll");
-	nv_cvimage = LoadLibrary(L"NVCVImage.dll");
-	nv_cudart = LoadLibrary(L"cudart64_110.dll");
-	SetDllDirectoryA(NULL);
-	return !!nv_videofx && !!nv_cvimage && !!nv_cudart;
+	if (_snprintf_s(path, _countof(path), _TRUNCATE, "%s\\%s", sdk_path, filename) == -1)
+		return false;
+
+	*module = LoadLibraryExA(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	return *module != NULL;
+}
+
+static inline bool load_nv_vfx_libs(unsigned int version)
+{
+	char sdk_path[MAX_PATH];
+
+	if (!nvvfx_get_sdk_path(sdk_path, MAX_PATH))
+		return false;
+
+	if (!load_vfx_module(&nv_cvimage, sdk_path, "NVCVImage.dll") ||
+	    !load_vfx_module(&nv_videofx, sdk_path, "NVVideoEffects.dll")) {
+		release_vfx_lib();
+		return false;
+	}
+
+	if (version < MIN_ARM_VFX_SDK_VERSION)
+		return true;
+
+	if (!load_vfx_module(&nv_greenscreen, sdk_path, "nvVFXGreenScreen.dll") ||
+	    !load_vfx_module(&nv_blur, sdk_path, "nvVFXBackgroundBlur.dll")) {
+		release_vfx_lib();
+		return false;
+	}
+	return true;
 }
 
 static unsigned int get_lib_version(void)
@@ -717,16 +568,21 @@ static unsigned int get_lib_version(void)
 
 	version_checked = true;
 
-	char path[MAX_PATH];
-	nvvfx_get_sdk_path(path, sizeof(path));
+	char sdkPath[MAX_PATH];
+	wchar_t dllPath[MAX_PATH];
 
-	SetDllDirectoryA(path);
+	if (!nvvfx_get_sdk_path(sdkPath, MAX_PATH)) {
+		return version;
+	}
+
+	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%S\\NVVideoEffects.dll", sdkPath) == -1) {
+		return version;
+	}
 
 	struct win_version_info nto_ver = {0};
-	if (get_dll_ver(L"NVVideoEffects.dll", &nto_ver))
+	if (get_dll_ver(dllPath, &nto_ver))
 		version = nto_ver.major << 24 | nto_ver.minor << 16 | nto_ver.build << 8 | nto_ver.revis << 0;
 
-	SetDllDirectoryA(NULL);
 	return version;
 }
 #endif

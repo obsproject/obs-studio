@@ -299,6 +299,7 @@ typedef struct gs_effect_technique gs_technique_t;
 typedef struct gs_effect_pass gs_epass_t;
 typedef struct gs_effect_param gs_eparam_t;
 typedef struct gs_device gs_device_t;
+typedef void gs_sync_t;
 typedef struct graphics_subsystem graphics_t;
 
 /* ---------------------------------------------------
@@ -499,8 +500,13 @@ struct gs_init_data {
 
 #define GS_DEVICE_OPENGL 1
 #define GS_DEVICE_DIRECT3D_11 2
+#define GS_DEVICE_METAL 3
 
 EXPORT const char *gs_get_device_name(void);
+EXPORT const char *gs_get_driver_version(void);
+EXPORT const char *gs_get_renderer(void);
+EXPORT uint64_t gs_get_gpu_dmem(void);
+EXPORT uint64_t gs_get_gpu_smem(void);
 EXPORT int gs_get_device_type(void);
 EXPORT uint32_t gs_get_adapter_count(void);
 EXPORT void gs_enum_adapters(bool (*callback)(void *param, const char *name, uint32_t id), void *param);
@@ -576,6 +582,7 @@ EXPORT uint8_t *gs_create_texture_file_data3(const char *file, enum gs_image_alp
  * axis with GS_FLIP_U and GS_FLIP_V.
  */
 EXPORT void gs_draw_sprite(gs_texture_t *tex, uint32_t flip, uint32_t width, uint32_t height);
+EXPORT void gs_draw_quadf(gs_texture_t *tex, uint32_t flip, float width, float height);
 
 EXPORT void gs_draw_sprite_subregion(gs_texture_t *tex, uint32_t flip, uint32_t x, uint32_t y, uint32_t cx,
 				     uint32_t cy);
@@ -899,6 +906,19 @@ EXPORT bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t *
 EXPORT gs_texture_t *gs_texture_create_from_pixmap(uint32_t width, uint32_t height, enum gs_color_format color_format,
 						   uint32_t target, void *pixmap);
 
+EXPORT bool gs_query_sync_capabilities(void);
+
+EXPORT gs_sync_t *gs_sync_create(void);
+
+EXPORT gs_sync_t *gs_sync_create_from_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point);
+
+EXPORT void gs_sync_destroy(gs_sync_t *sync);
+
+EXPORT bool gs_sync_export_syncobj_timeline_point(gs_sync_t *sync, int syncobj_fd, uint64_t timeline_point);
+
+EXPORT bool gs_sync_signal_syncobj_timeline_point(int syncobj_fd, uint64_t timeline_point);
+
+EXPORT bool gs_sync_wait(gs_sync_t *sync);
 #endif
 
 /* inline functions used by modules */

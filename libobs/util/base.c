@@ -19,6 +19,7 @@
 
 #include "c99defs.h"
 #include "base.h"
+#include "threading.h"
 
 static int crashing = 0;
 static void *log_param = NULL;
@@ -83,6 +84,13 @@ void base_set_log_handler(log_handler_t handler, void *param)
 
 void base_set_crash_handler(void (*handler)(const char *, va_list, void *), void *param)
 {
+	static bool non_default_handler_set = false;
+
+	if (os_atomic_exchange_bool(&non_default_handler_set, true)) {
+		blog(LOG_WARNING, "Tried to set a crash handler when one already exists.");
+		return;
+	}
+
 	crash_param = param;
 	crash_handler = handler;
 }

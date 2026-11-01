@@ -178,6 +178,17 @@ Video Handler
 
 ---------------------
 
+.. function:: bool video_output_disconnect2(video_t *video, void (*callback)(void *param, struct video_data *frame), void *param)
+
+   Disconnects a raw video callback from the video output handler.
+
+   :param video:    Video output handler object
+   :param callback: Callback
+   :param param:    Private data
+   :return:         *true* if callback was removed, *false* otherwise (e.g., already removed)
+
+---------------------
+
 .. function:: const struct video_output_info *video_output_get_info(const video_t *video)
 
    Gets the full video information of the video output handler.

@@ -59,23 +59,29 @@ static void d3d9_free()
 	capture_free();
 
 	if (data.using_shtex) {
-		if (data.d3d11_tex)
+		if (data.d3d11_tex) {
 			data.d3d11_tex->Release();
-		if (data.d3d11_context)
+		}
+		if (data.d3d11_context) {
 			data.d3d11_context->Release();
-		if (data.d3d11_device)
+		}
+		if (data.d3d11_device) {
 			data.d3d11_device->Release();
-		if (data.d3d9_copytex)
+		}
+		if (data.d3d9_copytex) {
 			data.d3d9_copytex->Release();
+		}
 	} else {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.copy_surfaces[i]) {
-				if (data.texture_mapped[i])
+				if (data.texture_mapped[i]) {
 					data.copy_surfaces[i]->UnlockRect();
+				}
 				data.copy_surfaces[i]->Release();
 			}
-			if (data.queries[i])
+			if (data.queries[i]) {
 				data.queries[i]->Release();
+			}
 		}
 	}
 
@@ -448,8 +454,9 @@ static void d3d9_init(IDirect3DDevice9 *device)
 		success = d3d9_shtex_init(window);
 	}
 
-	if (!success)
+	if (!success) {
 		d3d9_free();
+	}
 }
 
 static inline HRESULT get_backbuffer(IDirect3DDevice9 *device, IDirect3DSurface9 **surface)
@@ -458,8 +465,9 @@ static inline HRESULT get_backbuffer(IDirect3DDevice9 *device, IDirect3DSurface9
 	static bool checked_exceptions = false;
 
 	if (!checked_exceptions) {
-		if (_strcmpi(get_process_name(), "hotd_ng.exe") == 0)
+		if (_strcmpi(get_process_name(), "hotd_ng.exe") == 0) {
 			use_backbuffer = true;
+		}
 		checked_exceptions = true;
 	}
 
@@ -475,8 +483,9 @@ static inline void d3d9_shtex_capture(IDirect3DSurface9 *backbuffer)
 	HRESULT hr;
 
 	hr = data.device->StretchRect(backbuffer, nullptr, data.d3d9_copytex, nullptr, D3DTEXF_NONE);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		hlog_hr("d3d9_shtex_capture: StretchRect failed", hr);
+	}
 }
 
 static void d3d9_shmem_capture_copy(int i)
@@ -549,10 +558,11 @@ static void d3d9_capture(IDirect3DDevice9 *device, IDirect3DSurface9 *backbuffer
 			return;
 		}
 
-		if (data.using_shtex)
+		if (data.using_shtex) {
 			d3d9_shtex_capture(backbuffer);
-		else
+		} else {
 			d3d9_shmem_capture(backbuffer);
+		}
 	}
 }
 
@@ -585,12 +595,14 @@ static inline void present_end(IDirect3DDevice9 *device, IDirect3DSurface9 *back
 
 	if (!present_recurse) {
 		if (global_hook_info->capture_overlay) {
-			if (!present_recurse)
+			if (!present_recurse) {
 				d3d9_capture(device, backbuffer);
+			}
 		}
 
-		if (backbuffer)
+		if (backbuffer) {
 			backbuffer->Release();
+		}
 	}
 }
 
@@ -602,8 +614,9 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice9 *device, CONST RE
 {
 	IDirect3DSurface9 *backbuffer = nullptr;
 
-	if (!hooked_reset)
+	if (!hooked_reset) {
 		setup_reset_hooks(device);
+	}
 
 	present_begin(device, backbuffer);
 
@@ -619,8 +632,9 @@ static HRESULT STDMETHODCALLTYPE hook_present_ex(IDirect3DDevice9Ex *device, CON
 {
 	IDirect3DSurface9 *backbuffer = nullptr;
 
-	if (!hooked_reset)
+	if (!hooked_reset) {
 		setup_reset_hooks(device);
+	}
 
 	present_begin(device, backbuffer);
 
@@ -646,8 +660,9 @@ static HRESULT STDMETHODCALLTYPE hook_present_swap(IDirect3DSwapChain9 *swap, CO
 	}
 
 	if (device) {
-		if (!hooked_reset)
+		if (!hooked_reset) {
 			setup_reset_hooks(device);
+		}
 
 		present_begin(device, backbuffer);
 	}
@@ -664,8 +679,9 @@ static HRESULT STDMETHODCALLTYPE hook_present_swap(IDirect3DSwapChain9 *swap, CO
 
 static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice9 *device, D3DPRESENT_PARAMETERS *params)
 {
-	if (capture_active())
+	if (capture_active()) {
 		d3d9_free();
+	}
 
 	return RealReset(device, params);
 }
@@ -673,8 +689,9 @@ static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice9 *device, D3DPRESENT
 static HRESULT STDMETHODCALLTYPE hook_reset_ex(IDirect3DDevice9 *device, D3DPRESENT_PARAMETERS *params,
 					       D3DDISPLAYMODEEX *dmex)
 {
-	if (capture_active())
+	if (capture_active()) {
 		d3d9_free();
+	}
 
 	return RealResetEx(device, params, dmex);
 }
@@ -702,8 +719,9 @@ static void setup_reset_hooks(IDirect3DDevice9 *device)
 	const bool success = error == NO_ERROR;
 	if (success) {
 		hlog("Hooked IDirect3DDevice9::Reset");
-		if (RealResetEx)
+		if (RealResetEx) {
 			hlog("Hooked IDirect3DDevice9Ex::ResetEx");
+		}
 		hooked_reset = true;
 	} else {
 		RealReset = nullptr;
@@ -827,12 +845,15 @@ bool hook_d3d9(void)
 	const LONG error = DetourTransactionCommit();
 	const bool success = error == NO_ERROR;
 	if (success) {
-		if (RealPresentSwap)
+		if (RealPresentSwap) {
 			hlog("Hooked IDirect3DSwapChain9::Present");
-		if (RealPresentEx)
+		}
+		if (RealPresentEx) {
 			hlog("Hooked IDirect3DDevice9Ex::PresentEx");
-		if (RealPresent)
+		}
+		if (RealPresent) {
 			hlog("Hooked IDirect3DDevice9::Present");
+		}
 		hlog("Hooked D3D9");
 	} else {
 		RealPresentSwap = nullptr;

@@ -14,8 +14,9 @@ public:
 	inline CustomHandle(T in) : handle(in) {}
 	inline ~CustomHandle()
 	{
-		if (handle)
+		if (handle) {
 			freefunc(handle);
+		}
 	}
 
 	inline T *operator&() { return &handle; }
@@ -24,8 +25,9 @@ public:
 
 	inline CustomHandle<T, freefunc> &operator=(T in)
 	{
-		if (handle)
+		if (handle) {
 			freefunc(handle);
+		}
 		handle = in;
 		return *this;
 	}

@@ -22,6 +22,13 @@
 
 struct mp4_mux;
 
+/* Flavor for target compatibility */
+enum mp4_flavor {
+	FLAVOR_MP4,  /* ISO/IEC 14496-12 */
+	FLAVOR_MOV,  /* Apple QuickTime */
+	FLAVOR_CMAF, /* ISO/IEC 23000-19 (not yet implemented) */
+};
+
 enum mp4_mux_flags {
 	/* Uses mdta key/value list for metadata instead of QuickTime keys */
 	MP4_USE_MDTA_KEY_VALUE = 1 << 0,
@@ -33,7 +40,8 @@ enum mp4_mux_flags {
 	MP4_USE_NEGATIVE_CTS = 1 << 3,
 };
 
-struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags);
+struct mp4_mux *mp4_mux_create(obs_output_t *output, struct serializer *serializer, enum mp4_mux_flags flags,
+			       enum mp4_flavor flavor);
 void mp4_mux_destroy(struct mp4_mux *mux);
 bool mp4_mux_submit_packet(struct mp4_mux *mux, struct encoder_packet *pkt);
 bool mp4_mux_add_chapter(struct mp4_mux *mux, int64_t dts_usec, const char *name);

@@ -2,8 +2,6 @@
 
 include_guard(GLOBAL)
 
-# Set minimum CMake version specific to host operating system, add OS-specific module directory to default search paths,
-# and set helper variables for OS detection in other CMake list files.
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
   set(CMAKE_C_EXTENSIONS FALSE)
   set(CMAKE_CXX_EXTENSIONS FALSE)
@@ -19,4 +17,13 @@ elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
   list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/linux")
   string(TOUPPER "${CMAKE_HOST_SYSTEM_NAME}" _SYSTEM_NAME_U)
   set(OS_${_SYSTEM_NAME_U} TRUE)
+
+  option(ENABLE_FLATPAK "Enable Flatpak-specific implementations." OFF)
+  mark_as_advanced(ENABLE_FLATPAK)
+
+  if(OS_LINUX AND ENABLE_FLATPAK)
+    set(OS_FLATPAK TRUE)
+  else()
+    set(OS_FLATPAK FALSE)
+  endif()
 endif()

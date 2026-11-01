@@ -29,6 +29,8 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent), ui(new Ui::OBSLog
 	}
 
 	InitLog();
+
+	connect(App(), &OBSApp::logLineAdded, this, &OBSLogViewer::AddLine);
 }
 
 OBSLogViewer::~OBSLogViewer()
@@ -40,8 +42,6 @@ void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
 	config_set_bool(App()->GetUserConfig(), "LogViewer", "ShowLogStartup", checked);
 }
-
-extern QPointer<OBSLogViewer> obsLogViewer;
 
 void OBSLogViewer::InitLog()
 {
@@ -74,8 +74,6 @@ void OBSLogViewer::InitLog()
 	}
 	QScrollBar *scroll = ui->textArea->verticalScrollBar();
 	scroll->setValue(scroll->maximum());
-
-	obsLogViewer = this;
 }
 
 void OBSLogViewer::AddLine(int type, const QString &str)
@@ -97,8 +95,9 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 	QScrollBar *scroll = ui->textArea->verticalScrollBar();
 	bool bottomScrolled = scroll->value() >= scroll->maximum() - 10;
 
-	if (bottomScrolled)
+	if (bottomScrolled) {
 		scroll->setValue(scroll->maximum());
+	}
 
 	QTextDocument *doc = ui->textArea->document();
 	QTextCursor cursor(doc);
@@ -108,15 +107,17 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 	cursor.insertBlock();
 	cursor.endEditBlock();
 
-	if (bottomScrolled)
+	if (bottomScrolled) {
 		scroll->setValue(scroll->maximum());
+	}
 }
 
 void OBSLogViewer::on_openButton_clicked()
 {
 	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0) {
 		return;
+	}
 
 	const char *log = App()->GetCurrentLog();
 

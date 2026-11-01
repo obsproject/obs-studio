@@ -46,8 +46,9 @@ struct surface_info {
 
 mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllocResponse *response)
 {
-	if (request->Type & (MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET))
+	if (request->Type & (MFX_MEMTYPE_SYSTEM_MEMORY | MFX_MEMTYPE_VIDEO_MEMORY_PROCESSOR_TARGET)) {
 		return MFX_ERR_UNSUPPORTED;
+	}
 
 	response->mids = (mfxMemId *)nullptr;
 	response->NumFrameActual = 0;
@@ -116,8 +117,9 @@ mfxStatus simple_alloc(mfxHDL pthis, mfxFrameAllocRequest *request, mfxFrameAllo
 
 		VADRMPRIMESurfaceDescriptor surfDesc = {0};
 		if (vaExportSurfaceHandle(display, surfaces[i].id, VA_SURFACE_ATTRIB_MEM_TYPE_DRM_PRIME_2,
-					  VA_EXPORT_SURFACE_READ_WRITE, &surfDesc) != VA_STATUS_SUCCESS)
+					  VA_EXPORT_SURFACE_READ_WRITE, &surfDesc) != VA_STATUS_SUCCESS) {
 			return MFX_ERR_MEMORY_ALLOC;
+		}
 
 		obs_enter_graphics();
 		// TODO: P010 format support
@@ -173,8 +175,9 @@ mfxStatus simple_unlock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 mfxStatus simple_gethdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 {
 	UNUSED_PARAMETER(pthis);
-	if (NULL == handle)
+	if (NULL == handle) {
 		return MFX_ERR_INVALID_HANDLE;
+	}
 
 	// Seemingly undocumented, but Pair format defined by
 	// oneVPL-intel-gpu-intel-onevpl-23.1.0/_studio/mfx_lib/encode_hw/av1/linux/base/av1ehw_base_va_packer_lin.cpp
@@ -191,11 +194,13 @@ mfxStatus simple_gethdl(mfxHDL pthis, mfxMemId mid, mfxHDL *handle)
 
 mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 {
-	if (response == nullptr)
+	if (response == nullptr) {
 		return MFX_ERR_NULL_PTR;
+	}
 
-	if (response->mids == nullptr || response->NumFrameActual == 0)
+	if (response->mids == nullptr || response->NumFrameActual == 0) {
 		return MFX_ERR_NONE;
+	}
 
 	mfxSession *session = (mfxSession *)pthis;
 	VADisplay display;
@@ -214,8 +219,9 @@ mfxStatus simple_free(mfxHDL pthis, mfxFrameAllocResponse *response)
 
 	bfree(surfs);
 	bfree(response->mids);
-	if (vaDestroySurfaces(display, temp_surfaces, response->NumFrameActual) != VA_STATUS_SUCCESS)
+	if (vaDestroySurfaces(display, temp_surfaces, response->NumFrameActual) != VA_STATUS_SUCCESS) {
 		return MFX_ERR_MEMORY_ALLOC;
+	}
 
 	return MFX_ERR_NONE;
 }
@@ -295,12 +301,13 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 		gs_enum_adapters(get_drm_device, &params);
 		obs_leave_graphics();
 	} else {
-		if (codec == QSV_CODEC_AVC && default_h264_device)
+		if (codec == QSV_CODEC_AVC && default_h264_device) {
 			device_path = default_h264_device;
-		else if (codec == QSV_CODEC_HEVC && default_hevc_device)
+		} else if (codec == QSV_CODEC_HEVC && default_hevc_device) {
 			device_path = default_hevc_device;
-		else if (codec == QSV_CODEC_AV1 && default_av1_device)
+		} else if (codec == QSV_CODEC_AV1 && default_av1_device) {
 			device_path = default_av1_device;
+		}
 	}
 	fd = open(device_path, O_RDWR);
 	if (fd < 0) {
@@ -481,8 +488,9 @@ bool check_adapter(void *param, const char *node, uint32_t idx)
 	struct adapter_info *adapters = (struct adapter_info *)param;
 
 	vaapi_open(node, &device);
-	if (!device.display)
+	if (!device.display) {
 		return true;
+	}
 
 	struct adapter_info *adapter = &adapters[idx];
 	adapter->is_intel = strstr(device.driver, "Intel") != nullptr;
@@ -491,14 +499,17 @@ bool check_adapter(void *param, const char *node, uint32_t idx)
 	adapter->supports_av1 = vaapi_supports_av1(device.display);
 	adapter->supports_hevc = vaapi_supports_hevc(device.display);
 
-	if (adapter->is_intel && default_h264_device == nullptr)
+	if (adapter->is_intel && default_h264_device == nullptr) {
 		default_h264_device = strdup(node);
+	}
 
-	if (adapter->is_intel && adapter->supports_av1 && default_av1_device == nullptr)
+	if (adapter->is_intel && adapter->supports_av1 && default_av1_device == nullptr) {
 		default_av1_device = strdup(node);
+	}
 
-	if (adapter->is_intel && adapter->supports_hevc && default_hevc_device == nullptr)
+	if (adapter->is_intel && adapter->supports_hevc && default_hevc_device == nullptr) {
 		default_hevc_device = strdup(node);
+	}
 
 	vaapi_close(&device);
 	return true;

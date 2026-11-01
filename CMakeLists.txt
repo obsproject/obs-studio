@@ -15,7 +15,7 @@ include(compilerconfig)
 include(defaults)
 include(helpers)
 
-option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
+option(ENABLE_FRONTEND "Enable building with UI (requires Qt)" ON)
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(ENABLE_HEVC "Enable HEVC encoders" ON)
 
@@ -25,6 +25,9 @@ if(OS_WINDOWS)
   add_subdirectory(libobs-winrt)
 endif()
 add_subdirectory(libobs-opengl)
+if(OS_MACOS)
+  add_subdirectory(libobs-metal)
+endif()
 add_subdirectory(plugins)
 
 add_subdirectory(test/test-input)

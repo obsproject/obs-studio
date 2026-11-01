@@ -153,7 +153,7 @@ static const char *capture_type_to_string(enum obs_portal_capture_type capture_t
 
 static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, void *user_data)
 {
-	struct obs_pipwire_connect_stream_info connect_info;
+	struct obs_pipewire_connect_stream_info connect_info;
 	struct screencast_portal_capture *capture;
 	g_autoptr(GUnixFDList) fd_list = NULL;
 	g_autoptr(GVariant) result = NULL;
@@ -183,7 +183,7 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, voi
 	if (!capture->obs_pw)
 		return;
 
-	connect_info = (struct obs_pipwire_connect_stream_info){
+	connect_info = (struct obs_pipewire_connect_stream_info){
 		.stream_name = "OBS Studio",
 		.stream_properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Video", PW_KEY_MEDIA_CATEGORY, "Capture",
 						       PW_KEY_MEDIA_ROLE, "Screen", NULL),
@@ -692,7 +692,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_desktop_capture_info = {
 		.id = "pipewire-desktop-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_desktop_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -714,7 +714,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_window_capture_info = {
 		.id = "pipewire-window-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_window_capture_get_name,
 		.create = screencast_portal_window_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -736,7 +736,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_capture_info = {
 		.id = "pipewire-screen-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_capture_create,
 		.destroy = screencast_portal_capture_destroy,

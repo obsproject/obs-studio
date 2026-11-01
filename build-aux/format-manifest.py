@@ -39,41 +39,12 @@ def main() -> int:
             manifest_string = manifest.read()
             manifest_data = json.loads(manifest_string)
 
-            module_list = manifest_data.get("modules", [])
-
-            obs_object = module_list[-1]
-
-            if type(obs_object) != dict:
-                logger.error(
-                    f"❌ Last element in modules list is not the obs-studio object"
-                )
-                return 2
-
-            new_module_list = []
-
-            for module in module_list:
-                if type(module) == str:
-                    if not os.path.isfile(os.path.join(manifest_path, module)):
-                        logger.warning(
-                            f"⚠️ Specified module {os.path.basename(module)} not found."
-                        )
-                        continue
-
-                    new_module_list.append(module)
-
-            new_module_list.sort()
-            new_module_list.append(obs_object)
-            manifest_data["modules"] = new_module_list
-
             new_manifest_string = (
                 f"{json.dumps(manifest_data, indent=4, ensure_ascii=False)}\n"
             )
 
             if arguments.check:
-                if new_module_list != module_list:
-                    logger.error(f"❌ Module list failed order validation")
-                    return 2
-                elif new_manifest_string != manifest_string:
+                if new_manifest_string != manifest_string:
                     logger.error(f"❌ Manifest file is not correctly formatted")
                     return 2
                 else:

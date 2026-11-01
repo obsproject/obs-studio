@@ -72,6 +72,77 @@ static AMFTrace *amf_trace = nullptr;
 static HMODULE amf_module = nullptr;
 static uint64_t amf_version = 0;
 
+/* ================================================================================================================= */
+/* The structure and tables below are used to determine the appropriate minimum encoding level for the codecs. AMF
+ * defaults to the highest level for each codec (AVC, HEVC, AV1), and some client devices will reject playback if the
+ * codec level is higher than its decode abilities.
+ */
+
+struct codec_level_entry {
+	const char *level_str;
+	uint64_t max_luma_sample_rate;
+	uint64_t max_luma_picture_size;
+	amf_int64 amf_level;
+};
+
+// Ensure the table entries are ordered from lowest to highest
+static std::vector<codec_level_entry> avc_levels = {{"1", (uint64_t)1485 * 256, 99 * 256, AMF_H264_LEVEL__1},
+						    {"1.1", (uint64_t)3000 * 256, 396 * 256, AMF_H264_LEVEL__1_1},
+						    {"1.2", (uint64_t)6000 * 256, 396 * 256, AMF_H264_LEVEL__1_2},
+						    {"1.3", (uint64_t)11880 * 256, 396 * 256, AMF_H264_LEVEL__1_3},
+						    {"2", (uint64_t)11880 * 256, 396 * 256, AMF_H264_LEVEL__2},
+						    {"2.1", (uint64_t)19800 * 256, 792 * 256, AMF_H264_LEVEL__2_1},
+						    {"2.2", (uint64_t)20250 * 256, 1620 * 256, AMF_H264_LEVEL__2_2},
+						    {"3", (uint64_t)40500 * 256, 1620 * 256, AMF_H264_LEVEL__3},
+						    {"3.1", (uint64_t)108000 * 256, 3600 * 256, AMF_H264_LEVEL__3_1},
+						    {"3.2", (uint64_t)216000 * 256, 5120 * 256, AMF_H264_LEVEL__3_2},
+						    {"4", (uint64_t)245760 * 256, 8192 * 256, AMF_H264_LEVEL__4},
+						    {"4.1", (uint64_t)245760 * 256, 8192 * 256, AMF_H264_LEVEL__4_1},
+						    {"4.2", (uint64_t)522240 * 256, 8704 * 256, AMF_H264_LEVEL__4_2},
+						    {"5", (uint64_t)589824 * 256, 22080 * 256, AMF_H264_LEVEL__5},
+						    {"5.1", (uint64_t)983040 * 256, 36864 * 256, AMF_H264_LEVEL__5_1},
+						    {"5.2", (uint64_t)2073600 * 256, 36864 * 256, AMF_H264_LEVEL__5_2},
+						    {"6", (uint64_t)4177920 * 256, 139264 * 256, AMF_H264_LEVEL__6},
+						    {"6.1", (uint64_t)8355840 * 256, 139264 * 256, AMF_H264_LEVEL__6_1},
+						    {"6.2", (uint64_t)16711680 * 256, 139264 * 256,
+						     AMF_H264_LEVEL__6_2}};
+
+// Ensure the table entries are ordered from lowest to highest
+static std::vector<codec_level_entry> hevc_levels = {
+	{"1", 552960, 36864, AMF_LEVEL_1},           {"2", 3686400, 122880, AMF_LEVEL_2},
+	{"2.1", 7372800, 245760, AMF_LEVEL_2_1},     {"3", 16588800, 552960, AMF_LEVEL_3},
+	{"3.1", 33177600, 983040, AMF_LEVEL_3_1},    {"4", 66846720, 2228224, AMF_LEVEL_4},
+	{"4.1", 133693440, 2228224, AMF_LEVEL_4_1},  {"5", 267386880, 8912896, AMF_LEVEL_5},
+	{"5.1", 534773760, 8912896, AMF_LEVEL_5_1},  {"5.2", 1069547520, 8912896, AMF_LEVEL_5_2},
+	{"6", 1069547520, 35651584, AMF_LEVEL_6},    {"6.1", 2139095040, 35651584, AMF_LEVEL_6_1},
+	{"6.2", 4278190080, 35651584, AMF_LEVEL_6_2}};
+
+/* Ensure the table entries are ordered from lowest to highest.
+ *
+ * The AV1 specification currently defines 14 levels, even though more are available (reserved) such as 4.3 and 7.0.
+ *
+ * AV1 defines MaxDisplayRate and MaxDecodeRate, which correspond to TotalDisplayLumaSampleRate and
+ * TotalDecodedLumaSampleRate, respectively, defined in the specification. For the table below, MaxDecodeRate is being
+ * used because it corresponds to all frames with show_existing_frame=0.
+ *
+ * Refer to the following for more information: https://github.com/AOMediaCodec/av1-spec/blob/master/annex.a.levels.md
+ */
+static std::vector<codec_level_entry> av1_levels = {
+	{"2.0", (uint64_t)5529600, 147456, AMF_VIDEO_ENCODER_AV1_LEVEL_2_0},
+	{"2.1", (uint64_t)10454400, 278784, AMF_VIDEO_ENCODER_AV1_LEVEL_2_1},
+	{"3.0", (uint64_t)24969600, 665856, AMF_VIDEO_ENCODER_AV1_LEVEL_3_0},
+	{"3.1", (uint64_t)39938400, 1065024, AMF_VIDEO_ENCODER_AV1_LEVEL_3_1},
+	{"4.0", (uint64_t)77856768, 2359296, AMF_VIDEO_ENCODER_AV1_LEVEL_4_0},
+	{"4.1", (uint64_t)155713536, 2359296, AMF_VIDEO_ENCODER_AV1_LEVEL_4_1},
+	{"5.0", (uint64_t)273715200, 8912896, AMF_VIDEO_ENCODER_AV1_LEVEL_5_0},
+	{"5.1", (uint64_t)547430400, 8912896, AMF_VIDEO_ENCODER_AV1_LEVEL_5_1},
+	{"5.2", (uint64_t)1094860800, 8912896, AMF_VIDEO_ENCODER_AV1_LEVEL_5_2},
+	{"5.3", (uint64_t)1176502272, 8912896, AMF_VIDEO_ENCODER_AV1_LEVEL_5_3},
+	{"6.0", (uint64_t)1176502272, 35651584, AMF_VIDEO_ENCODER_AV1_LEVEL_6_0},
+	{"6.1", (uint64_t)2189721600, 35651584, AMF_VIDEO_ENCODER_AV1_LEVEL_6_1},
+	{"6.2", (uint64_t)4379443200, 35651584, AMF_VIDEO_ENCODER_AV1_LEVEL_6_2},
+	{"6.3", (uint64_t)4706009088, 35651584, AMF_VIDEO_ENCODER_AV1_LEVEL_6_3}};
+
 /* ========================================================================= */
 /* Main Implementation                                                       */
 
@@ -115,6 +186,7 @@ struct amf_base {
 	bool bframes_supported = false;
 	bool first_update = true;
 	bool roi_supported = false;
+	bool force_idr;
 
 	inline amf_base(bool fallback) : fallback(fallback) {}
 	virtual ~amf_base() = default;
@@ -141,8 +213,9 @@ struct amf_texencode : amf_base, public AMFSurfaceObserver {
 
 	void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface *surf) override
 	{
-		if (os_atomic_load_bool(&destroying))
+		if (os_atomic_load_bool(&destroying)) {
 			return;
+		}
 
 		std::scoped_lock lock(textures_mutex);
 
@@ -156,8 +229,9 @@ struct amf_texencode : amf_base, public AMFSurfaceObserver {
 	void init() override
 	{
 		AMF_RESULT res = amf_context->InitDX11(device, AMF_DX11_1);
-		if (res != AMF_OK)
+		if (res != AMF_OK) {
 			throw amf_error("InitDX11 failed", res);
+		}
 	}
 };
 
@@ -173,8 +247,9 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 
 	void AMF_STD_CALL OnSurfaceDataRelease(amf::AMFSurface *surf) override
 	{
-		if (os_atomic_load_bool(&destroying))
+		if (os_atomic_load_bool(&destroying)) {
 			return;
+		}
 
 		std::scoped_lock lock(buffers_mutex);
 
@@ -188,8 +263,9 @@ struct amf_fallback : amf_base, public AMFSurfaceObserver {
 	void init() override
 	{
 		AMF_RESULT res = amf_context->InitDX11(nullptr, AMF_DX11_1);
-		if (res != AMF_OK)
+		if (res != AMF_OK) {
 			throw amf_error("InitDX11 failed", res);
+		}
 	}
 };
 
@@ -205,8 +281,9 @@ template<typename T> static bool get_amf_property(amf_base *enc, const wchar_t *
 template<typename T> static void set_amf_property(amf_base *enc, const wchar_t *name, const T &value)
 {
 	AMF_RESULT res = enc->amf_encoder->SetProperty(name, value);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		error("Failed to set property '%ls': %ls", name, amf_trace->GetResultText(res));
+	}
 }
 
 #define set_avc_property(enc, name, value) set_amf_property(enc, AMF_VIDEO_ENCODER_##name, value)
@@ -237,8 +314,9 @@ template<typename T> static void set_amf_property(amf_base *enc, const wchar_t *
 static HMODULE get_lib(const char *lib)
 {
 	HMODULE mod = GetModuleHandleA(lib);
-	if (mod)
+	if (mod) {
 		return mod;
+	}
 
 	return LoadLibraryA(lib);
 }
@@ -260,36 +338,42 @@ try {
 	DXGI_ADAPTER_DESC desc;
 	HRESULT hr;
 
-	if (!dxgi || !d3d11)
+	if (!dxgi || !d3d11) {
 		throw "Couldn't get D3D11/DXGI libraries? "
 		      "That definitely shouldn't be possible.";
+	}
 
 	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(dxgi, "CreateDXGIFactory1");
 	create_device = (PFN_D3D11_CREATE_DEVICE)GetProcAddress(d3d11, "D3D11CreateDevice");
 
-	if (!create_dxgi || !create_device)
+	if (!create_dxgi || !create_device) {
 		throw "Failed to load D3D11/DXGI procedures";
+	}
 
 	hr = create_dxgi(__uuidof(IDXGIFactory2), (void **)&factory);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("CreateDXGIFactory1 failed", hr);
+	}
 
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
 	hr = factory->EnumAdapters(ovi.adapter, &adapter);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("EnumAdapters failed", hr);
+	}
 
 	adapter->GetDesc(&desc);
-	if (desc.VendorId != AMD_VENDOR_ID)
+	if (desc.VendorId != AMD_VENDOR_ID) {
 		throw "Seems somehow AMF is trying to initialize "
 		      "on a non-AMD adapter";
+	}
 
 	hr = create_device(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0, nullptr, 0, D3D11_SDK_VERSION, &device,
 			   nullptr, &context);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("D3D11CreateDevice failed", hr);
+	}
 
 	enc->device = device;
 	enc->context = context;
@@ -315,8 +399,9 @@ static void add_output_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_t
 	desc.MiscFlags = 0;
 
 	hr = device->CreateTexture2D(&desc, nullptr, &output_tex);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("Failed to create texture", hr);
+	}
 }
 
 static inline bool get_available_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex)
@@ -333,8 +418,9 @@ static inline bool get_available_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D>
 
 static inline void get_output_tex(amf_texencode *enc, ComPtr<ID3D11Texture2D> &output_tex, ID3D11Texture2D *from)
 {
-	if (!get_available_tex(enc, output_tex))
+	if (!get_available_tex(enc, output_tex)) {
 		add_output_tex(enc, output_tex, from);
+	}
 }
 
 static void get_tex_from_handle(amf_texencode *enc, uint32_t handle, IDXGIKeyedMutex **km_out,
@@ -354,12 +440,14 @@ static void get_tex_from_handle(amf_texencode *enc, uint32_t handle, IDXGIKeyedM
 	}
 
 	hr = device->OpenSharedResource((HANDLE)(uintptr_t)handle, __uuidof(ID3D11Resource), (void **)&tex);
-	if (FAILED(hr))
+	if (FAILED(hr)) {
 		throw HRError("OpenSharedResource failed", hr);
+	}
 
 	ComQIPtr<IDXGIKeyedMutex> km(tex);
-	if (!km)
+	if (!km) {
 		throw "QueryInterface(IDXGIKeyedMutex) failed";
+	}
 
 	tex->SetEvictionPriority(DXGI_RESOURCE_PRIORITY_MAXIMUM);
 
@@ -389,16 +477,19 @@ static inline int get_av1_preset(amf_base *enc, const char *preset);
 
 static inline int get_preset(amf_base *enc, const char *preset)
 {
-	if (enc->codec == amf_codec_type::AVC)
+	if (enc->codec == amf_codec_type::AVC) {
 		return get_avc_preset(enc, preset);
+	}
 
 #if ENABLE_HEVC
-	else if (enc->codec == amf_codec_type::HEVC)
+	else if (enc->codec == amf_codec_type::HEVC) {
 		return get_hevc_preset(enc, preset);
+	}
 
 #endif
-	else if (enc->codec == amf_codec_type::AV1)
+	else if (enc->codec == amf_codec_type::AV1) {
 		return get_av1_preset(enc, preset);
+	}
 
 	return 0;
 }
@@ -422,6 +513,7 @@ static inline void check_preset_compatibility(amf_base *enc, const char *&preset
 	 * encoder properties. If the throughput is lower than the max
 	 * throughput, switch to a lower preset. */
 
+	refresh_throughput_caps(enc, preset);
 	if (astrcmpi(preset, "highQuality") == 0) {
 		if (!enc->max_throughput) {
 			preset = "quality";
@@ -447,9 +539,14 @@ static inline void check_preset_compatibility(amf_base *enc, const char *&preset
 	}
 
 	if (astrcmpi(preset, "balanced") == 0) {
-		if (enc->max_throughput && enc->max_throughput - enc->requested_throughput < enc->throughput) {
+		if (!enc->max_throughput) {
 			preset = "speed";
-			refresh_throughput_caps(enc, preset);
+			set_opt(QUALITY_PRESET, get_preset(enc, preset));
+		} else {
+			if (enc->max_throughput - enc->requested_throughput < enc->throughput) {
+				preset = "speed";
+				refresh_throughput_caps(enc, preset);
+			}
 		}
 	}
 }
@@ -468,8 +565,9 @@ static inline int64_t convert_to_obs_ts(amf_base *enc, int64_t ts)
 
 static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_packet *packet)
 {
-	if (!data)
+	if (!data) {
 		return;
+	}
 
 	enc->packet_data = AMFBufferPtr(data);
 	data->GetProperty(L"PTS", &packet->pts);
@@ -489,10 +587,11 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_p
 
 	uint64_t type = 0;
 	AMF_RESULT res = data->GetProperty(get_output_type, &type);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("Failed to GetProperty(): encoder output "
 				"data type",
 				res);
+	}
 
 	if (enc->codec == amf_codec_type::AVC || enc->codec == amf_codec_type::HEVC) {
 		switch (type) {
@@ -500,10 +599,8 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_p
 			packet->priority = OBS_NAL_PRIORITY_HIGHEST;
 			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_I:
-			packet->priority = OBS_NAL_PRIORITY_HIGH;
-			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_P:
-			packet->priority = OBS_NAL_PRIORITY_LOW;
+			packet->priority = OBS_NAL_PRIORITY_HIGH;
 			break;
 		case AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_B:
 			packet->priority = OBS_NAL_PRIORITY_DISPOSABLE;
@@ -535,8 +632,9 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data, encoder_p
 	packet->dts = convert_to_obs_ts(enc, data->GetPts());
 	packet->keyframe = type == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 
-	if (enc->dts_offset && enc->codec != amf_codec_type::AV1)
+	if (enc->dts_offset && enc->codec != amf_codec_type::AV1) {
 		packet->dts -= enc->dts_offset;
+	}
 }
 
 #ifndef SEC_TO_NSEC
@@ -556,8 +654,9 @@ static void roi_cb(void *param, obs_encoder_roi *roi)
 	const roi_params *rp = static_cast<roi_params *>(param);
 
 	/* AMF does not support negative priority */
-	if (roi->priority < 0)
+	if (roi->priority < 0) {
 		return;
+	}
 
 	const uint32_t mb_size = rp->h264 ? 16 : 64;
 	const uint32_t roi_left = roi->left / mb_size;
@@ -568,12 +667,14 @@ static void roi_cb(void *param, obs_encoder_roi *roi)
 	const amf_uint32 priority = (amf_uint32)(10.0f * roi->priority);
 
 	for (uint32_t mb_y = 0; mb_y < rp->mb_height; mb_y++) {
-		if (mb_y < roi_top || mb_y > roi_bottom)
+		if (mb_y < roi_top || mb_y > roi_bottom) {
 			continue;
+		}
 
 		for (uint32_t mb_x = 0; mb_x < rp->mb_width; mb_x++) {
-			if (mb_x < roi_left || mb_x > roi_right)
+			if (mb_x < roi_left || mb_x > roi_right) {
 				continue;
+			}
 
 			rp->buf[mb_y * rp->pitch / sizeof(amf_uint32) + mb_x] = priority;
 		}
@@ -583,8 +684,9 @@ static void roi_cb(void *param, obs_encoder_roi *roi)
 static void create_roi(amf_base *enc, AMFSurface *amf_surf)
 {
 	uint32_t mb_size = 16; /* H.264 is always 16x16 */
-	if (enc->codec == amf_codec_type::HEVC || enc->codec == amf_codec_type::AV1)
+	if (enc->codec == amf_codec_type::HEVC || enc->codec == amf_codec_type::AV1) {
 		mb_size = 64; /* AMF HEVC & AV1 use 64x64 blocks */
+	}
 
 	const uint32_t mb_width = (enc->cx + mb_size - 1) / mb_size;
 	const uint32_t mb_height = (enc->cy + mb_size - 1) / mb_size;
@@ -618,15 +720,17 @@ static void add_roi(amf_base *enc, AMFSurface *amf_surf)
 {
 	const uint32_t increment = obs_encoder_get_roi_increment(enc->encoder);
 
-	if (increment != enc->roi_increment || !enc->roi_increment)
+	if (increment != enc->roi_increment || !enc->roi_increment) {
 		create_roi(enc, amf_surf);
+	}
 
-	if (enc->codec == amf_codec_type::AVC)
+	if (enc->codec == amf_codec_type::AVC) {
 		amf_surf->SetProperty(AMF_VIDEO_ENCODER_ROI_DATA, enc->roi_map);
-	else if (enc->codec == amf_codec_type::HEVC)
+	} else if (enc->codec == amf_codec_type::HEVC) {
 		amf_surf->SetProperty(AMF_VIDEO_ENCODER_HEVC_ROI_DATA, enc->roi_map);
-	else if (enc->codec == amf_codec_type::AV1)
+	} else if (enc->codec == amf_codec_type::AV1) {
 		amf_surf->SetProperty(AMF_VIDEO_ENCODER_AV1_ROI_DATA, enc->roi_map);
+	}
 }
 
 static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet *packet, bool *received_packet)
@@ -637,12 +741,33 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet 
 
 	*received_packet = false;
 
+	/* -------------------------------------- */
+	/* Force an IDR or Key frame if signalled */
+
+	if (enc->force_idr) {
+		enc->force_idr = false;
+		switch (enc->codec) {
+		case amf_codec_type::AVC:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_FORCE_PICTURE_TYPE, AMF_VIDEO_ENCODER_PICTURE_TYPE_IDR);
+			break;
+		case amf_codec_type::HEVC:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_HEVC_FORCE_PICTURE_TYPE,
+					      AMF_VIDEO_ENCODER_HEVC_PICTURE_TYPE_IDR);
+			break;
+		case amf_codec_type::AV1:
+			amf_surf->SetProperty(AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE,
+					      AMF_VIDEO_ENCODER_AV1_FORCE_FRAME_TYPE_KEY);
+			break;
+		}
+	}
+
 	bool waiting = true;
 	while (waiting) {
 		/* ----------------------------------- */
 		/* add ROI data (if any)               */
-		if (enc->roi_supported && obs_encoder_has_roi(enc->encoder))
+		if (enc->roi_supported && obs_encoder_has_roi(enc->encoder)) {
 			add_roi(enc, amf_surf);
+		}
 
 		/* ----------------------------------- */
 		/* submit frame                        */
@@ -671,8 +796,9 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet 
 		AMFDataPtr new_packet;
 		do {
 			res = enc->amf_encoder->QueryOutput(&new_packet);
-			if (new_packet)
+			if (new_packet) {
 				queued_packets.push_back(new_packet);
+			}
 
 			if (res != AMF_REPEAT && res != AMF_OK) {
 				throw amf_error("QueryOutput failed", res);
@@ -732,8 +858,9 @@ try {
 	/* map output tex to amf surface        */
 
 	res = enc->amf_context->CreateSurfaceFromDX11Native(output_tex, &amf_surf, enc);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("CreateSurfaceFromDX11Native failed", res);
+	}
 
 	int64_t last_ts = convert_to_amf_ts(enc, pts - 1);
 	int64_t cur_ts = convert_to_amf_ts(enc, pts);
@@ -826,8 +953,9 @@ try {
 	AMF_RESULT res;
 	buf_t buf;
 
-	if (!enc->linesize)
+	if (!enc->linesize) {
 		enc->linesize = frame->linesize[0];
+	}
 
 	buf = get_buf(enc);
 
@@ -835,8 +963,9 @@ try {
 
 	res = enc->amf_context->CreateSurfaceFromHostNative(enc->amf_format, enc->cx, enc->cy, enc->linesize, 0,
 							    &buf[0], &amf_surf, enc);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("CreateSurfaceFromHostNative failed", res);
+	}
 
 	int64_t last_ts = convert_to_amf_ts(enc, frame->pts - 1);
 	int64_t cur_ts = convert_to_amf_ts(enc, frame->pts);
@@ -870,8 +999,9 @@ try {
 static bool amf_extra_data(void *data, uint8_t **header, size_t *size)
 {
 	amf_base *enc = (amf_base *)data;
-	if (!enc->header)
+	if (!enc->header) {
 		return false;
+	}
 
 	*header = (uint8_t *)enc->header->GetNative();
 	*size = enc->header->GetSize();
@@ -941,12 +1071,13 @@ try {
 	info.range = voi->range;
 
 	if (enc->fallback) {
-		if (enc->codec == amf_codec_type::AVC)
+		if (enc->codec == amf_codec_type::AVC) {
 			h264_video_info_fallback(NULL, &info);
-		else if (enc->codec == amf_codec_type::HEVC)
+		} else if (enc->codec == amf_codec_type::HEVC) {
 			h265_video_info_fallback(NULL, &info);
-		else
+		} else {
 			av1_video_info_fallback(NULL, &info);
+		}
 	}
 
 	enc->cx = obs_encoder_get_width(enc->encoder);
@@ -1006,8 +1137,9 @@ try {
 	/* create encoder                       */
 
 	res = amf_factory->CreateContext(&enc->amf_context);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("CreateContext failed", res);
+	}
 
 	enc->init();
 
@@ -1026,8 +1158,9 @@ try {
 		codec = AMFVideoEncoder_HEVC;
 	}
 	res = amf_factory->CreateComponent(enc->amf_context, codec, &enc->amf_encoder);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("CreateComponent failed", res);
+	}
 
 	calc_throughput(enc);
 	return true;
@@ -1051,13 +1184,16 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 	bool hevc = amf_codec_type::HEVC == codec;
 	bool av1 = amf_codec_type::AV1 == codec;
 
-	if (obs_encoder_scaling_enabled(encoder) && !obs_encoder_gpu_scaling_enabled(encoder))
+	if (obs_encoder_scaling_enabled(encoder) && !obs_encoder_gpu_scaling_enabled(encoder)) {
 		throw "Encoder scaling is active";
+	}
 
 	if (hevc || av1) {
-		if (!obs_nv12_tex_active() && !obs_p010_tex_active())
+		if (!obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12) &&
+		    !obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_P010)) {
 			throw "NV12/P010 textures aren't active";
-	} else if (!obs_nv12_tex_active()) {
+		}
+	} else if (!obs_encoder_video_tex_active(encoder, VIDEO_FORMAT_NV12)) {
 		throw "NV12 textures aren't active";
 	}
 
@@ -1076,20 +1212,23 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, amf_codec_ty
 	}
 
 	if ((avc && !caps[ovi.adapter].supports_avc) || (hevc && !caps[ovi.adapter].supports_hevc) ||
-	    (av1 && !caps[ovi.adapter].supports_av1))
+	    (av1 && !caps[ovi.adapter].supports_av1)) {
 		throw "Wrong adapter";
+	}
 }
 
 #include "texture-amf-opts.hpp"
 
-static void amf_defaults(obs_data_t *settings)
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
+static void amf_avc_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
-	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_int(settings, "bitrate", 6000);
+	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
-	obs_data_set_default_int(settings, "bf", 3);
+	obs_data_set_default_int(settings, "bf", 2);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p, obs_data_t *settings)
@@ -1148,15 +1287,20 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 					    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
-		if (amf_codec_type::AVC == codec)
+		if (amf_codec_type::AVC == codec) {
 			add_profile("high");
+		}
 		add_profile("main");
-		if (amf_codec_type::AVC == codec)
+		if (amf_codec_type::AVC == codec) {
 			add_profile("baseline");
+		}
 #undef add_profile
 	}
 
-	if (amf_codec_type::AVC == codec) {
+	p = obs_properties_add_bool(props, "pre_analysis", obs_module_text("AMF.PreAnalysis"));
+	obs_property_set_long_description(p, obs_module_text("AMF.PreAnalysis.ToolTip"));
+
+	if (amf_codec_type::AVC == codec || amf_codec_type::AV1 == codec) {
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"), 0, 5, 1);
 	}
 
@@ -1194,30 +1338,32 @@ static const char *amf_avc_get_name(void *)
 
 static inline int get_avc_preset(amf_base *enc, const char *preset)
 {
-	if (astrcmpi(preset, "quality") == 0)
+	if (astrcmpi(preset, "quality") == 0) {
 		return AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY;
-	else if (astrcmpi(preset, "speed") == 0)
+	} else if (astrcmpi(preset, "speed") == 0) {
 		return AMF_VIDEO_ENCODER_QUALITY_PRESET_SPEED;
+	}
 
 	return AMF_VIDEO_ENCODER_QUALITY_PRESET_BALANCED;
 }
 
 static inline int get_avc_rate_control(const char *rc_str)
 {
-	if (astrcmpi(rc_str, "cqp") == 0)
+	if (astrcmpi(rc_str, "cqp") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP;
-	else if (astrcmpi(rc_str, "cbr") == 0)
+	} else if (astrcmpi(rc_str, "cbr") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
-	else if (astrcmpi(rc_str, "vbr") == 0)
+	} else if (astrcmpi(rc_str, "vbr") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+	} else if (astrcmpi(rc_str, "vbr_lat") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "qvbr") == 0)
+	} else if (astrcmpi(rc_str, "qvbr") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqvbr") == 0)
+	} else if (astrcmpi(rc_str, "hqvbr") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqcbr") == 0)
+	} else if (astrcmpi(rc_str, "hqcbr") == 0) {
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
+	}
 
 	return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
 }
@@ -1226,20 +1372,27 @@ static inline int get_avc_profile(obs_data_t *settings)
 {
 	const char *profile = obs_data_get_string(settings, "profile");
 
-	if (astrcmpi(profile, "baseline") == 0)
+	if (astrcmpi(profile, "baseline") == 0) {
 		return AMF_VIDEO_ENCODER_PROFILE_BASELINE;
-	else if (astrcmpi(profile, "main") == 0)
+	} else if (astrcmpi(profile, "main") == 0) {
 		return AMF_VIDEO_ENCODER_PROFILE_MAIN;
-	else if (astrcmpi(profile, "constrained_baseline") == 0)
+	} else if (astrcmpi(profile, "constrained_baseline") == 0) {
 		return AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_BASELINE;
-	else if (astrcmpi(profile, "constrained_high") == 0)
+	} else if (astrcmpi(profile, "constrained_high") == 0) {
 		return AMF_VIDEO_ENCODER_PROFILE_CONSTRAINED_HIGH;
+	}
 
 	return AMF_VIDEO_ENCODER_PROFILE_HIGH;
 }
 
-static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
+static bool amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_avc_property(enc, TARGET_BITRATE, bitrate);
@@ -1248,6 +1401,14 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_avc_property(enc, FILLER_DATA_ENABLE, true);
+			pipeline_flush = false;
+		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+			   rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
+			set_avc_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_avc_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_avc_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		set_avc_property(enc, QP_I, qp);
@@ -1255,6 +1416,7 @@ static void amf_avc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 		set_avc_property(enc, QP_B, qp);
 		set_avc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_avc_update(void *data, obs_data_t *settings)
@@ -1272,15 +1434,21 @@ try {
 	int rc = get_avc_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
+	if (amf_avc_update_data(enc, rc, bitrate * 1000, qp)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::Flush failed", res);
+		}
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::ReInit failed", res);
+		}
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
@@ -1290,9 +1458,110 @@ try {
 	return false;
 }
 
+static inline void adjust_recommended_avc_defaults(amf_base *enc, obs_data_t *settings)
+{
+	int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 6000);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "rate_control", "CBR");
+		obs_data_set_default_string(settings, "preset", "quality");
+		obs_data_set_default_string(settings, "profile", "high");
+		obs_data_set_default_int(settings, "bf", 0);
+		info("Original base default settings were used according to resolution and framerate.");
+	}
+}
+
+static void amf_set_codec_level(amf_base *enc)
+{
+	uint64_t luma_pic_size = enc->cx * enc->cy;
+	uint64_t luma_sample_rate = luma_pic_size * (enc->fps_num / enc->fps_den);
+	std::vector<codec_level_entry> *levels;
+
+	if (enc->codec == amf_codec_type::AVC) {
+		levels = &avc_levels;
+	} else if (enc->codec == amf_codec_type::HEVC) {
+		levels = &hevc_levels;
+	} else if (enc->codec == amf_codec_type::AV1) {
+		levels = &av1_levels;
+	} else {
+		blog(LOG_ERROR, "%s: Unknown amf_codec_type", __FUNCTION__);
+		return;
+	}
+
+	std::vector<codec_level_entry>::const_iterator level_it = levels->begin();
+
+	// First check if the requested sample rate and/or picture size is too large for the maximum level.
+	if ((luma_sample_rate > levels->back().max_luma_sample_rate) ||
+	    (luma_pic_size > levels->back().max_luma_picture_size)) {
+		/* If the calculated sample rate is greater than the highest value supported by the codec, clamp to the
+		 * upper limit and log an error.
+		 */
+		level_it = --(levels->end());
+		blog(LOG_ERROR,
+		     "%s: Luma sample rate %u or luma pic size %u is greater than maximum "
+		     "allowed. Setting to level %s.",
+		     __FUNCTION__, luma_sample_rate, luma_pic_size, level_it->level_str);
+	} else {
+		// Walk the table and find the lowest codec level value suitable for the given luma sample rate.
+		while (level_it != levels->end()) {
+			if ((luma_sample_rate <= level_it->max_luma_sample_rate) &&
+			    (luma_pic_size <= level_it->max_luma_picture_size)) {
+				break;
+			}
+			++level_it;
+		}
+	}
+
+	// Set the level for the encoder
+	if (enc->codec == amf_codec_type::AVC) {
+		set_avc_property(enc, PROFILE_LEVEL, level_it->amf_level);
+	} else if (enc->codec == amf_codec_type::HEVC) {
+		set_hevc_property(enc, PROFILE_LEVEL, level_it->amf_level);
+	} else if (enc->codec == amf_codec_type::AV1) {
+		set_av1_property(enc, LEVEL, level_it->amf_level);
+	}
+}
+
+static bool amf_get_level_str(amf_base *enc, amf_int64 level, char const **level_str)
+{
+	bool found = false;
+	std::vector<codec_level_entry> *levels;
+
+	if (enc->codec == amf_codec_type::AVC) {
+		levels = &avc_levels;
+	} else if (enc->codec == amf_codec_type::HEVC) {
+		levels = &hevc_levels;
+	} else if (enc->codec == amf_codec_type::AV1) {
+		levels = &av1_levels;
+	} else {
+		blog(LOG_ERROR, "%s: Unknown amf_codec_type", __FUNCTION__);
+		return false;
+	}
+
+	for (auto level_it = levels->begin(); level_it != levels->end(); ++level_it) {
+		if (level == level_it->amf_level) {
+			found = true;
+			*level_str = level_it->level_str;
+			break;
+		}
+	}
+
+	if (!found) {
+		*level_str = "unknown";
+	}
+
+	return found;
+}
+
 static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
+
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_avc_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
@@ -1300,6 +1569,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int64_t bf = obs_data_get_int(settings, "bf");
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+
+	if (pa_enabled) {
+		set_avc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
 
 	if (enc->bframes_supported) {
 		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
@@ -1309,7 +1583,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		 * as those with high motion. This only takes effect if
 		 * Pre-Analysis is enabled.
 		 */
-		if (bf > 0) {
+		if (bf > 0 && pa_enabled == true) {
 			set_avc_property(enc, ADAPTIVE_MINIGOP, true);
 		}
 
@@ -1323,8 +1597,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	int rc = get_avc_rate_control(rc_str);
 
 	set_avc_property(enc, RATE_CONTROL_METHOD, rc);
-	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP)
+	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 		set_avc_property(enc, ENABLE_VBAQ, true);
+	}
 
 	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -1337,10 +1614,14 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	set_avc_property(enc, IDR_PERIOD, gop_size);
 
 	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
-	if (repeat_headers)
+	if (repeat_headers) {
 		set_avc_property(enc, HEADER_INSERTION_SPACING, gop_size);
+	}
 
 	set_avc_property(enc, DE_BLOCKING_FILTER, true);
+
+	// Determine and set the appropriate AVC level
+	amf_set_codec_level(enc);
 
 	check_preset_compatibility(enc, preset);
 
@@ -1353,8 +1634,20 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		obs_free_options(opts);
 	}
 
-	if (!ffmpeg_opts || !*ffmpeg_opts)
+	if (!ffmpeg_opts || !*ffmpeg_opts) {
 		ffmpeg_opts = "(none)";
+	}
+
+	/* The ffmpeg_opts just above may have explicitly set the AVC level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final AVC level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_avc_property(enc, PROFILE_LEVEL, &final_level);
+	const char *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("AVC level string not found. Level %d may be incorrect.", final_level);
+	}
 
 	info("settings:\n"
 	     "\trate_control: %s\n"
@@ -1363,11 +1656,14 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tlevel:        %s\n"
 	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
+	     "\tpre-analysis: %s\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy,
+	     pa_enabled ? "true" : "false", ffmpeg_opts);
 
 	return true;
 }
@@ -1379,8 +1675,9 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 
 	enc->codec = amf_codec_type::AVC;
 
-	if (!amf_create_encoder(enc))
+	if (!amf_create_encoder(enc)) {
 		throw "Failed to create encoder";
+	}
 
 	AMFCapsPtr caps;
 	res = enc->amf_encoder->GetCaps(&caps);
@@ -1409,22 +1706,25 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	amf_avc_init(enc, settings);
 
 	res = enc->amf_encoder->Init(enc->amf_format, enc->cx, enc->cy);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("AMFComponent::Init failed", res);
+	}
 
 	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_EXTRADATA, &p);
-	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
+	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE) {
 		enc->header = AMFBufferPtr(p.pInterface);
+	}
 
 	if (enc->bframes_supported) {
 		amf_int64 b_frames = 0;
 		amf_int64 b_max = 0;
 
 		if (get_avc_property(enc, B_PIC_PATTERN, &b_frames) &&
-		    get_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max))
-			enc->dts_offset = b_frames + 1;
-		else
+		    get_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max) && b_frames > 0) {
+			enc->dts_offset = std::min(b_frames, b_max) + 1;
+		} else {
 			enc->dts_offset = 0;
+		}
 	}
 }
 
@@ -1436,8 +1736,9 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h264";
 
-	if (!amf_init_d3d11(enc.get()))
+	if (!amf_init_d3d11(enc.get())) {
 		throw "Failed to create D3D11";
+	}
 
 	amf_avc_create_internal(enc.get(), settings);
 	return enc.release();
@@ -1506,15 +1807,17 @@ static void register_avc()
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_avc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
-	amf_encoder_info.get_defaults = amf_defaults;
+	amf_encoder_info.get_defaults = amf_avc_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h264_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_avc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -1535,36 +1838,44 @@ static const char *amf_hevc_get_name(void *)
 
 static inline int get_hevc_preset(amf_base *enc, const char *preset)
 {
-	if (astrcmpi(preset, "balanced") == 0)
+	if (astrcmpi(preset, "balanced") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED;
-	else if (astrcmpi(preset, "speed") == 0)
+	} else if (astrcmpi(preset, "speed") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED;
+	}
 
 	return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_QUALITY;
 }
 
 static inline int get_hevc_rate_control(const char *rc_str)
 {
-	if (astrcmpi(rc_str, "cqp") == 0)
+	if (astrcmpi(rc_str, "cqp") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP;
-	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+	} else if (astrcmpi(rc_str, "vbr_lat") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "vbr") == 0)
+	} else if (astrcmpi(rc_str, "vbr") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "cbr") == 0)
+	} else if (astrcmpi(rc_str, "cbr") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
-	else if (astrcmpi(rc_str, "qvbr") == 0)
+	} else if (astrcmpi(rc_str, "qvbr") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqvbr") == 0)
+	} else if (astrcmpi(rc_str, "hqvbr") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqcbr") == 0)
+	} else if (astrcmpi(rc_str, "hqcbr") == 0) {
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
+	}
 
 	return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
 }
 
-static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
+static bool amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t qp)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_hevc_property(enc, TARGET_BITRATE, bitrate);
@@ -1573,12 +1884,21 @@ static void amf_hevc_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t
 
 		if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR) {
 			set_hevc_property(enc, FILLER_DATA_ENABLE, true);
+			pipeline_flush = false;
+		} else if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
+			   rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
+			set_hevc_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_hevc_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_hevc_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		set_hevc_property(enc, QP_I, qp);
 		set_hevc_property(enc, QP_P, qp);
 		set_hevc_property(enc, QVBR_QUALITY_LEVEL, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_hevc_update(void *data, obs_data_t *settings)
@@ -1596,15 +1916,21 @@ try {
 	int rc = get_hevc_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
+	if (amf_hevc_update_data(enc, rc, bitrate * 1000, qp)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::Flush failed", res);
+		}
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::ReInit failed", res);
+		}
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
@@ -1614,9 +1940,26 @@ try {
 	return false;
 }
 
+static inline void adjust_recommended_hevc_defaults(amf_base *enc, obs_data_t *settings)
+{
+	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
+	const int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 6000);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "preset", "quality");
+		info("Original base default settings were used according to resolution and framerate.");
+	}
+}
+
 static bool amf_hevc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
+
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_hevc_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
@@ -1624,10 +1967,18 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+
+	if (pa_enabled) {
+		set_hevc_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
 
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
-	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP)
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
 		set_hevc_property(enc, ENABLE_VBAQ, true);
+	}
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -1638,6 +1989,9 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den : 250;
 
 	set_hevc_property(enc, GOP_SIZE, gop_size);
+
+	// Determine and set the appropriate HEVC level
+	amf_set_codec_level(enc);
 
 	check_preset_compatibility(enc, preset);
 
@@ -1650,8 +2004,20 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 		obs_free_options(opts);
 	}
 
-	if (!ffmpeg_opts || !*ffmpeg_opts)
+	if (!ffmpeg_opts || !*ffmpeg_opts) {
 		ffmpeg_opts = "(none)";
+	}
+
+	/* The ffmpeg_opts just above may have explicitly set the HEVC level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final HEVC level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_hevc_property(enc, PROFILE_LEVEL, &final_level);
+	char const *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("HEVC level string not found. Level %d may be incorrect.", final_level);
+	}
 
 	info("settings:\n"
 	     "\trate_control: %s\n"
@@ -1660,10 +2026,13 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tlevel:        %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
+	     "\tpre-analysis: %s\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, enc->cx, enc->cy, pa_enabled ? "true" : "false",
+	     ffmpeg_opts);
 
 	return true;
 }
@@ -1697,8 +2066,9 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 
 	enc->codec = amf_codec_type::HEVC;
 
-	if (!amf_create_encoder(enc))
+	if (!amf_create_encoder(enc)) {
 		throw "Failed to create encoder";
+	}
 
 	AMFCapsPtr caps;
 	res = enc->amf_encoder->GetCaps(&caps);
@@ -1713,6 +2083,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	const bool hlg = is_hlg(enc);
 	const bool is_hdr = pq || hlg;
 	const char *preset = obs_data_get_string(settings, "preset");
+	obs_data_set_string(settings, "profile", is10bit ? "main10" : "main");
 
 	set_hevc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
@@ -1751,12 +2122,14 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	amf_hevc_init(enc, settings);
 
 	res = enc->amf_encoder->Init(enc->amf_format, enc->cx, enc->cy);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("AMFComponent::Init failed", res);
+	}
 
 	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_HEVC_EXTRADATA, &p);
-	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
+	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE) {
 		enc->header = AMFBufferPtr(p.pInterface);
+	}
 }
 
 static void *amf_hevc_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
@@ -1767,8 +2140,9 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h265";
 
-	if (!amf_init_d3d11(enc.get()))
+	if (!amf_init_d3d11(enc.get())) {
 		throw "Failed to create D3D11";
+	}
 
 	amf_hevc_create_internal(enc.get(), settings);
 	return enc.release();
@@ -1823,6 +2197,16 @@ try {
 	return nullptr;
 }
 
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
+static void amf_hevc_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_int(settings, "bitrate", 6000);
+	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_string(settings, "preset", "quality");
+}
+
 static void register_hevc()
 {
 	struct obs_encoder_info amf_encoder_info = {};
@@ -1834,15 +2218,17 @@ static void register_hevc()
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_hevc_update;
 	amf_encoder_info.encode_texture = amf_encode_tex;
-	amf_encoder_info.get_defaults = amf_defaults;
+	amf_encoder_info.get_defaults = amf_hevc_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h265_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_hevc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -1863,34 +2249,36 @@ static const char *amf_av1_get_name(void *)
 
 static inline int get_av1_preset(amf_base *enc, const char *preset)
 {
-	if (astrcmpi(preset, "highquality") == 0)
+	if (astrcmpi(preset, "highquality") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_HIGH_QUALITY;
-	else if (astrcmpi(preset, "quality") == 0)
+	} else if (astrcmpi(preset, "quality") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_QUALITY;
-	else if (astrcmpi(preset, "balanced") == 0)
+	} else if (astrcmpi(preset, "balanced") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_BALANCED;
-	else if (astrcmpi(preset, "speed") == 0)
+	} else if (astrcmpi(preset, "speed") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_SPEED;
+	}
 
 	return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_BALANCED;
 }
 
 static inline int get_av1_rate_control(const char *rc_str)
 {
-	if (astrcmpi(rc_str, "cqp") == 0)
+	if (astrcmpi(rc_str, "cqp") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP;
-	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+	} else if (astrcmpi(rc_str, "vbr_lat") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "vbr") == 0)
+	} else if (astrcmpi(rc_str, "vbr") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
-	else if (astrcmpi(rc_str, "cbr") == 0)
+	} else if (astrcmpi(rc_str, "cbr") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CBR;
-	else if (astrcmpi(rc_str, "qvbr") == 0)
+	} else if (astrcmpi(rc_str, "qvbr") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqvbr") == 0)
+	} else if (astrcmpi(rc_str, "hqvbr") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
-	else if (astrcmpi(rc_str, "hqcbr") == 0)
+	} else if (astrcmpi(rc_str, "hqcbr") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
+	}
 
 	return AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CBR;
 }
@@ -1899,14 +2287,21 @@ static inline int get_av1_profile(obs_data_t *settings)
 {
 	const char *profile = obs_data_get_string(settings, "profile");
 
-	if (astrcmpi(profile, "main") == 0)
+	if (astrcmpi(profile, "main") == 0) {
 		return AMF_VIDEO_ENCODER_AV1_PROFILE_MAIN;
+	}
 
 	return AMF_VIDEO_ENCODER_AV1_PROFILE_MAIN;
 }
 
-static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t cq_value)
+static bool amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t cq_value)
 {
+	/* Return a flag indicating if a pipeline flush is needed. Changing the bitrate (or any other dynamic property)
+	 * is updated with the next SubmitInput() call. For CBR mode, flushing the pipeline is not needed and could
+	 * cause unaligned IDRs in an encoder group.
+	 */
+	bool pipeline_flush = true;
+
 	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
 	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_QUALITY_VBR) {
 		set_av1_property(enc, TARGET_BITRATE, bitrate);
@@ -1915,16 +2310,23 @@ static void amf_av1_update_data(amf_base *enc, int rc, int64_t bitrate, int64_t 
 
 		if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR) {
 			set_av1_property(enc, FILLER_DATA, true);
+			pipeline_flush = false;
 		} else if (rc == AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR ||
 			   rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR) {
 			set_av1_property(enc, PEAK_BITRATE, bitrate * 1.5);
+			set_av1_property(enc, VBV_BUFFER_SIZE, bitrate * 1.5);
+		} else if (rc == AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR) {
+			int64_t framerate = enc->fps_num / enc->fps_den;
+			set_av1_property(enc, VBV_BUFFER_SIZE, (bitrate / framerate) * 1.1);
 		}
 	} else {
 		int64_t qp = cq_value * 4;
 		set_av1_property(enc, QVBR_QUALITY_LEVEL, qp / 4);
 		set_av1_property(enc, Q_INDEX_INTRA, qp);
 		set_av1_property(enc, Q_INDEX_INTER, qp);
+		set_av1_property(enc, Q_INDEX_INTER_B, qp);
 	}
+	return pipeline_flush;
 }
 
 static bool amf_av1_update(void *data, obs_data_t *settings)
@@ -1942,15 +2344,21 @@ try {
 	int rc = get_av1_rate_control(rc_str);
 	AMF_RESULT res = AMF_OK;
 
-	amf_av1_update_data(enc, rc, bitrate * 1000, cq_level);
+	if (amf_av1_update_data(enc, rc, bitrate * 1000, cq_level)) {
+		// Flush the pipeline only when needed
+		res = enc->amf_encoder->Flush();
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::Flush failed", res);
+		}
 
-	res = enc->amf_encoder->Flush();
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::Flush failed", res);
-
-	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
-	if (res != AMF_OK)
-		throw amf_error("AMFComponent::ReInit failed", res);
+		res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
+		if (res != AMF_OK) {
+			throw amf_error("AMFComponent::ReInit failed", res);
+		}
+	} else {
+		// A pipeline flush was not requested, however force an IDR frame to align with the bitrate change.
+		enc->force_idr = true;
+	}
 
 	return true;
 
@@ -1960,22 +2368,74 @@ try {
 	return false;
 }
 
+static inline void adjust_recommended_av1_defaults(amf_base *enc, obs_data_t *settings)
+{
+	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
+	const int64_t framerate = enc->fps_num / enc->fps_den;
+	if ((enc->cx * enc->cy > 1920 * 1088) || is10bit || (framerate > 60)) {
+		// Recommended base defaults
+		obs_data_set_default_int(settings, "bitrate", 6000);
+		obs_data_set_default_int(settings, "cqp", 20);
+		obs_data_set_default_string(settings, "preset", "balanced");
+		obs_data_set_default_string(settings, "profile", "main");
+		obs_data_set_default_int(settings, "bf", 0);
+		info("Original base default settings were used according to resolution and framerate.");
+	}
+}
+
 static bool amf_av1_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
+
+	// Initial high perceptual quality settings are set in the UI.
+	// Adjust during init based on resolution and framerate.
+	adjust_recommended_av1_defaults(enc, settings);
 
 	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
+	const bool pa_enabled = obs_data_get_bool(settings, "pre_analysis");
+	const bool screen_content_tools_enabled = obs_data_get_bool(settings, "screen_content_tools");
+	const bool palette_mode_enabled = obs_data_get_bool(settings, "palette_mode");
+	int64_t bf = obs_data_get_int(settings, "bf");
+
+	if (pa_enabled) {
+		set_av1_property(enc, PRE_ANALYSIS_ENABLE, pa_enabled);
+	}
+
+	if (enc->bframes_supported) {
+		set_av1_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
+		set_av1_property(enc, B_PIC_PATTERN, bf);
+
+		/* AdaptiveMiniGOP is suggested for some types of content such
+		 * as those with high motion. This only takes effect if
+		 * Pre-Analysis is enabled.
+		 */
+		if (bf > 0 && pa_enabled == true) {
+			set_av1_property(enc, ADAPTIVE_MINIGOP, true);
+		}
+
+	} else if (bf != 0) {
+		warn("B-Frames set to %lld but b-frames are not supported by this device", bf);
+		bf = 0;
+	}
 
 	int rc = get_av1_rate_control(rc_str);
 	set_av1_property(enc, RATE_CONTROL_METHOD, rc);
+	if (rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_CONSTANT_QP &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR &&
+	    rc != AMF_VIDEO_ENCODER_AV1_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR) {
+		set_av1_property(enc, AQ_MODE, 1);
+	}
 
 	amf_av1_update_data(enc, rc, bitrate * 1000, qp);
 
 	set_av1_property(enc, ENFORCE_HRD, true);
+
+	// Determine and set the appropriate AV1 level
+	amf_set_codec_level(enc);
 
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	int gop_size = (keyint_sec) ? keyint_sec * enc->fps_num / enc->fps_den : 250;
@@ -1992,20 +2452,39 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 
 	check_preset_compatibility(enc, preset);
 
-	if (!ffmpeg_opts || !*ffmpeg_opts)
+	if (!ffmpeg_opts || !*ffmpeg_opts) {
 		ffmpeg_opts = "(none)";
+	}
+
+	/* The ffmpeg_opts just above may have explicitly set the AV1 level to a value different than what was
+	 * determined by amf_set_codec_level(). Query the final AV1 level then lookup the matching string. Warn if not
+	 * found, because ffmpeg_opts is free-form and may have set something bogus.
+	 */
+	amf_int64 final_level;
+	get_av1_property(enc, LEVEL, &final_level);
+	char const *level_str = nullptr;
+	if (!amf_get_level_str(enc, final_level, &level_str)) {
+		warn("AV1 level string not found. Level %d may be incorrect.", final_level);
+	}
 
 	info("settings:\n"
-	     "\trate_control: %s\n"
-	     "\tbitrate:      %d\n"
-	     "\tcqp:          %d\n"
-	     "\tkeyint:       %d\n"
-	     "\tpreset:       %s\n"
-	     "\tprofile:      %s\n"
-	     "\twidth:        %d\n"
-	     "\theight:       %d\n"
-	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy, ffmpeg_opts);
+	     "\trate_control:         %s\n"
+	     "\tbitrate:              %d\n"
+	     "\tcqp:                  %d\n"
+	     "\tkeyint:               %d\n"
+	     "\tpreset:               %s\n"
+	     "\tprofile:              %s\n"
+	     "\tlevel:                %s\n"
+	     "\tb-frames:             %d\n"
+	     "\twidth:                %d\n"
+	     "\theight:               %d\n"
+	     "\tscreen content tools: %s\n"
+	     "\tpalette mode:         %s\n"
+	     "\tpre-analysis:         %s\n"
+	     "\tparams:               %s",
+	     rc_str, bitrate, qp, gop_size, preset, profile, level_str, bf, enc->cx, enc->cy,
+	     screen_content_tools_enabled ? "true" : "false", palette_mode_enabled ? "true" : "false",
+	     pa_enabled ? "true" : "false", ffmpeg_opts);
 
 	return true;
 }
@@ -2014,12 +2493,14 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 {
 	enc->codec = amf_codec_type::AV1;
 
-	if (!amf_create_encoder(enc))
+	if (!amf_create_encoder(enc)) {
 		throw "Failed to create encoder";
+	}
 
 	AMFCapsPtr caps;
 	AMF_RESULT res = enc->amf_encoder->GetCaps(&caps);
 	if (res == AMF_OK) {
+		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_BFRAMES, &enc->bframes_supported);
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_MAX_THROUGHPUT, &enc->max_throughput);
 		caps->GetProperty(AMF_VIDEO_ENCODER_AV1_CAP_REQUESTED_THROUGHPUT, &enc->requested_throughput);
 		/* For some reason there's no specific CAP for AV1, but should always be supported */
@@ -2028,6 +2509,11 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
 	const char *preset = obs_data_get_string(settings, "preset");
+	const bool enable_screen_content_tools = true;
+	const bool enable_palette_mode = true;
+	obs_data_set_string(settings, "profile", "main");
+	obs_data_set_bool(settings, "screen_content_tools", enable_screen_content_tools);
+	obs_data_set_bool(settings, "palette_mode", enable_palette_mode);
 
 	set_av1_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_av1_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
@@ -2040,18 +2526,23 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	set_av1_property(enc, OUTPUT_COLOR_PROFILE, enc->amf_color_profile);
 	set_av1_property(enc, OUTPUT_TRANSFER_CHARACTERISTIC, enc->amf_characteristic);
 	set_av1_property(enc, OUTPUT_COLOR_PRIMARIES, enc->amf_primaries);
+	set_av1_property(enc, NOMINAL_RANGE, enc->full_range);
 	set_av1_property(enc, FRAMERATE, enc->amf_frame_rate);
+	set_av1_property(enc, SCREEN_CONTENT_TOOLS, true);
+	set_av1_property(enc, PALETTE_MODE, true);
 
 	amf_av1_init(enc, settings);
 
 	res = enc->amf_encoder->Init(enc->amf_format, enc->cx, enc->cy);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("AMFComponent::Init failed", res);
+	}
 
 	AMFVariant p;
 	res = enc->amf_encoder->GetProperty(AMF_VIDEO_ENCODER_AV1_EXTRA_DATA, &p);
-	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE)
+	if (res == AMF_OK && p.type == AMF_VARIANT_INTERFACE) {
 		enc->header = AMFBufferPtr(p.pInterface);
+	}
 }
 
 static void *amf_av1_create_texencode(obs_data_t *settings, obs_encoder_t *encoder)
@@ -2062,8 +2553,9 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-av1";
 
-	if (!amf_init_d3d11(enc.get()))
+	if (!amf_init_d3d11(enc.get())) {
 		throw "Failed to create D3D11";
+	}
 
 	amf_av1_create_internal(enc.get(), settings);
 	return enc.release();
@@ -2119,13 +2611,15 @@ try {
 	return nullptr;
 }
 
+/* These are initial recommended settings that may be lowered later once we know more info such as the resolution and
+ * frame rate. */
 static void amf_av1_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "bitrate", 6000);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "quality");
-	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_string(settings, "preset", "highQuality");
+	obs_data_set_default_int(settings, "bf", 2);
 }
 
 static void register_av1()
@@ -2142,12 +2636,14 @@ static void register_av1()
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
-	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "av1_fallback_amf";
-	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
 	amf_encoder_info.encode_texture = nullptr;
 	amf_encoder_info.create = amf_av1_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
@@ -2175,8 +2671,9 @@ try {
 	/* Check if the DLL is present before running the more expensive */
 	/* obs-amf-test.exe, but load it as data so it can't crash us    */
 	amf_module_test = LoadLibraryExW(AMF_DLL_NAME, nullptr, LOAD_LIBRARY_AS_DATAFILE);
-	if (!amf_module_test)
+	if (!amf_module_test) {
 		throw "No AMF library";
+	}
 	FreeLibrary(amf_module_test);
 
 	/* ----------------------------------- */
@@ -2192,32 +2689,37 @@ try {
 	enum_graphics_device_luids(enum_luids, &cmd);
 
 	os_process_pipe_t *pp = os_process_pipe_create(cmd.str().c_str(), "r");
-	if (!pp)
+	if (!pp) {
 		throw "Failed to launch the AMF test process I guess";
+	}
 
 	for (;;) {
 		char data[2048];
 		size_t len = os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
-		if (!len)
+		if (!len) {
 			break;
+		}
 
 		caps_str.append(data, len);
 	}
 
 	os_process_pipe_destroy(pp);
 
-	if (caps_str.empty())
+	if (caps_str.empty()) {
 		throw "Seems the AMF test subprocess crashed. "
 		      "Better there than here I guess. "
 		      "Let's just skip loading AMF then I suppose.";
+	}
 
 	ConfigFile config;
-	if (config.OpenString(caps_str.c_str()) != 0)
+	if (config.OpenString(caps_str.c_str()) != 0) {
 		throw "Failed to open config string";
+	}
 
 	const char *error = config_get_string(config, "error", "string");
-	if (error)
+	if (error) {
 		throw std::string(error);
+	}
 
 	uint32_t adapter_count = (uint32_t)config_num_sections(config);
 	bool avc_supported = false;
@@ -2238,35 +2740,42 @@ try {
 		av1_supported |= info.supports_av1;
 	}
 
-	if (!avc_supported && !hevc_supported && !av1_supported)
+	if (!avc_supported && !hevc_supported && !av1_supported) {
 		throw "Neither AVC, HEVC, nor AV1 are supported by any devices";
+	}
 
 	/* ----------------------------------- */
 	/* Init AMF                            */
 
 	amf_module = LoadLibraryW(AMF_DLL_NAME);
-	if (!amf_module)
+	if (!amf_module) {
 		throw "AMF library failed to load";
+	}
 
 	AMFInit_Fn init = (AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
-	if (!init)
+	if (!init) {
 		throw "Failed to get AMFInit address";
+	}
 
 	res = init(AMF_FULL_VERSION, &amf_factory);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("AMFInit failed", res);
+	}
 
 	res = amf_factory->GetTrace(&amf_trace);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("GetTrace failed", res);
+	}
 
 	AMFQueryVersion_Fn get_ver = (AMFQueryVersion_Fn)GetProcAddress(amf_module, AMF_QUERY_VERSION_FUNCTION_NAME);
-	if (!get_ver)
+	if (!get_ver) {
 		throw "Failed to get AMFQueryVersion address";
+	}
 
 	res = get_ver(&amf_version);
-	if (res != AMF_OK)
+	if (res != AMF_OK) {
 		throw amf_error("AMFQueryVersion failed", res);
+	}
 
 #ifndef DEBUG_AMF_STUFF
 	amf_trace->EnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, false);
@@ -2276,14 +2785,17 @@ try {
 	/* ----------------------------------- */
 	/* Register encoders                   */
 
-	if (avc_supported)
+	if (avc_supported) {
 		register_avc();
+	}
 #if ENABLE_HEVC
-	if (hevc_supported)
+	if (hevc_supported) {
 		register_hevc();
+	}
 #endif
-	if (av1_supported)
+	if (av1_supported) {
 		register_av1();
+	}
 
 } catch (const std::string &str) {
 	/* doing debug here because string exceptions indicate the user is

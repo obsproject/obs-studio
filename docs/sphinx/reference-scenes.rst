@@ -320,19 +320,6 @@ Scene Item Functions
 
 ---------------------
 
-.. function:: obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene, obs_source_t *source)
-
-   This will add a reference to the sceneitem.
-
-   :return: The sceneitem associated with a source in a scene. Returns NULL if not found.
-
-   .. deprecated:: 31.0
-      This function is problematic because there can be multiple items of the same source in a scene.
-      In that case, which of those this function will return is undefined.
-      If this is the behavior you need, manually use :c:func:`obs_scene_enum_items` instead.
-
----------------------
-
 .. function:: void obs_sceneitem_set_id(obs_sceneitem_t *item);
 
    Sets the unique numeric identifier of the sceneitem. This is dangerous function and should not
@@ -454,13 +441,6 @@ Scene Item Functions
               void obs_sceneitem_get_bounds(const obs_sceneitem_t *item, struct vec2 *bounds)
 
    Sets/gets the bounding box width/height of the scene item.
-
----------------------
-
-.. function:: void obs_sceneitem_set_info(obs_sceneitem_t *item, const struct obs_transform_info *info)
-              void obs_sceneitem_get_info(const obs_sceneitem_t *item, struct obs_transform_info *info)
-
-   Sets/gets the transform information of the scene item.
 
 ---------------------
 

@@ -20,6 +20,7 @@
 #include "ImporterModel.hpp"
 
 #include <importers/importers.hpp>
+#include <models/SceneCollection.hpp>
 #include <widgets/OBSBasic.hpp>
 
 #include <qt-wrappers.hpp>
@@ -42,6 +43,7 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	ui->tableView->setModel(optionsModel);
 	ui->tableView->setItemDelegateForColumn(ImporterColumn::Path, new ImporterEntryPathItemDelegate());
 	ui->tableView->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeMode::ResizeToContents);
+	ui->tableView->horizontalHeader()->setSectionResizeMode(ImporterColumn::Name, QHeaderView::ResizeMode::Stretch);
 	ui->tableView->horizontalHeader()->setSectionResizeMode(ImporterColumn::Path, QHeaderView::ResizeMode::Stretch);
 
 	connect(optionsModel, &ImporterModel::dataChanged, this, &OBSImporter::dataChanged);
@@ -49,12 +51,11 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	ui->tableView->setEditTriggers(QAbstractItemView::EditTrigger::CurrentChanged);
 
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setText(QTStr("Import"));
-	ui->buttonBox->button(QDialogButtonBox::Open)->setText(QTStr("Add"));
 
 	connect(ui->buttonBox->button(QDialogButtonBox::Ok), &QPushButton::clicked, this,
 		&OBSImporter::importCollections);
-	connect(ui->buttonBox->button(QDialogButtonBox::Open), &QPushButton::clicked, this, &OBSImporter::browseImport);
-	connect(ui->buttonBox->button(QDialogButtonBox::Close), &QPushButton::clicked, this, &OBSImporter::close);
+	connect(ui->importerSelectFiles, &QPushButton::clicked, this, &OBSImporter::browseImport);
+	connect(ui->buttonBox->button(QDialogButtonBox::Cancel), &QPushButton::clicked, this, &OBSImporter::close);
 
 	ImportersInit();
 
@@ -76,8 +77,9 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	bool autoSearch = config_get_bool(App()->GetUserConfig(), "General", "AutomaticCollectionSearch");
 
 	OBSImporterFiles f;
-	if (autoSearch)
+	if (autoSearch) {
 		f = ImportersFindFiles();
+	}
 
 	for (size_t i = 0; i < f.size(); i++) {
 		QString path = f[i].c_str();
@@ -90,8 +92,7 @@ OBSImporter::OBSImporter(QWidget *parent) : QDialog(parent), optionsModel(new Im
 	ui->tableView->resizeColumnsToContents();
 
 	QModelIndex index = optionsModel->createIndex(optionsModel->rowCount() - 1, 2);
-	QMetaObject::invokeMethod(ui->tableView, "setCurrentIndex", Qt::QueuedConnection,
-				  Q_ARG(const QModelIndex &, index));
+	QMetaObject::invokeMethod(ui->tableView, &QTableView::setCurrentIndex, Qt::QueuedConnection, index);
 }
 
 void OBSImporter::addImportOption(QString path, bool automatic)
@@ -124,8 +125,9 @@ void OBSImporter::dropEvent(QDropEvent *ev)
 
 void OBSImporter::dragEnterEvent(QDragEnterEvent *ev)
 {
-	if (ev->mimeData()->hasUrls())
+	if (ev->mimeData()->hasUrls()) {
 		ev->accept();
+	}
 }
 
 void OBSImporter::browseImport()
@@ -144,7 +146,7 @@ void OBSImporter::browseImport()
 
 bool GetUnusedName(std::string &name)
 {
-	OBSBasic *basic = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	OBSBasic *basic = OBSBasic::Get();
 
 	if (!basic->GetSceneCollectionByName(name)) {
 		return false;
@@ -174,8 +176,9 @@ void OBSImporter::importCollections()
 	for (int i = 0; i < optionsModel->rowCount() - 1; i++) {
 		int selected = optionsModel->index(i, ImporterColumn::Selected).data(Qt::CheckStateRole).value<int>();
 
-		if (selected == Qt::Unchecked)
+		if (selected == Qt::Unchecked) {
 			continue;
+		}
 
 		std::string pathStr = optionsModel->index(i, ImporterColumn::Path)
 					      .data(Qt::DisplayRole)
@@ -229,4 +232,16 @@ void OBSImporter::importCollections()
 void OBSImporter::dataChanged()
 {
 	ui->tableView->resizeColumnToContents(ImporterColumn::Name);
+
+	bool enableImportButton = false;
+
+	for (int i = 0; i < optionsModel->rowCount() - 1; i++) {
+		int selected = optionsModel->index(i, ImporterColumn::Selected).data(Qt::CheckStateRole).value<int>();
+		if (selected == Qt::Checked) {
+			enableImportButton = true;
+			break;
+		}
+	}
+
+	ui->buttonBox->button(QDialogButtonBox::Ok)->setEnabled(enableImportButton);
 }

@@ -14,14 +14,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "obsconfig.h"
-
-#if !defined(__APPLE__)
-#define _GNU_SOURCE
-#include <link.h>
-#include <stdlib.h>
-#endif
-
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -36,6 +28,8 @@
 #include <time.h>
 #include <signal.h>
 #include <uuid/uuid.h>
+
+#include "obsconfig.h"
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
@@ -82,7 +76,7 @@ void *os_dlopen(const char *path)
 		dstr_cat(&dylib_name, ".so");
 
 #ifdef __APPLE__
-	int dlopen_flags = RTLD_LAZY | RTLD_FIRST;
+	int dlopen_flags = RTLD_NOW | RTLD_FIRST;
 	if (dstr_find(&dylib_name, "Python")) {
 		dlopen_flags = dlopen_flags | RTLD_GLOBAL;
 	} else {
@@ -90,7 +84,7 @@ void *os_dlopen(const char *path)
 	}
 	void *res = dlopen(dylib_name.array, dlopen_flags);
 #else
-	void *res = dlopen(dylib_name.array, RTLD_LAZY);
+	void *res = dlopen(dylib_name.array, RTLD_NOW);
 #endif
 	if (!res)
 		blog(LOG_ERROR, "os_dlopen(%s->%s): %s\n", path, dylib_name.array, dlerror());
@@ -110,50 +104,9 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
-#if !defined(__APPLE__)
-int module_has_qt5_check(const char *path)
-{
-	void *mod = os_dlopen(path);
-	if (mod == NULL) {
-		return 1;
-	}
-
-	struct link_map *list = NULL;
-	if (dlinfo(mod, RTLD_DI_LINKMAP, &list) == 0) {
-		for (struct link_map *ptr = list; ptr; ptr = ptr->l_next) {
-			if (strstr(ptr->l_name, "libQt5") != NULL) {
-				return 0;
-			}
-		}
-	}
-
-	return 1;
-}
-
-bool has_qt5_dependency(const char *path)
-{
-	pid_t pid = fork();
-	if (pid == 0) {
-		_exit(module_has_qt5_check(path));
-	}
-	if (pid < 0) {
-		return false;
-	}
-	int status;
-	if (waitpid(pid, &status, 0) < 0) {
-		return false;
-	}
-	return WIFEXITED(status) && WEXITSTATUS(status) == 0;
-}
-#endif
-
-void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
+void get_plugin_info(const char *path, bool *is_obs_plugin)
 {
 	*is_obs_plugin = true;
-	*can_load = true;
-#if !defined(__APPLE__)
-	*can_load = !has_qt5_dependency(path);
-#endif
 	UNUSED_PARAMETER(path);
 }
 
@@ -842,6 +795,11 @@ void os_breakpoint()
 	raise(SIGTRAP);
 }
 
+void os_oom()
+{
+	raise(SIGTRAP);
+}
+
 #ifndef __APPLE__
 static int physical_cores = 0;
 static int logical_cores = 0;
@@ -1032,11 +990,6 @@ uint64_t os_get_proc_virtual_size(void)
 	return (uint64_t)kinfo.ki_size;
 }
 #else
-uint64_t os_get_sys_free_size(void)
-{
-	return 0;
-}
-
 typedef struct {
 	unsigned long virtual_size;
 	unsigned long resident_size;
@@ -1091,6 +1044,20 @@ uint64_t os_get_proc_virtual_size(void)
 		return 0;
 	return (uint64_t)statm.virtual_size;
 }
+
+uint64_t os_get_sys_free_size(void)
+{
+	uint64_t free_memory = 0;
+#ifndef __OpenBSD__
+	struct sysinfo info;
+	if (sysinfo(&info) < 0)
+		return 0;
+
+	free_memory = ((uint64_t)info.freeram + (uint64_t)info.bufferram) * info.mem_unit;
+#endif
+
+	return free_memory;
+}
 #endif
 
 static uint64_t total_memory = 0;
@@ -1116,6 +1083,7 @@ uint64_t os_get_sys_total_size(void)
 
 	return total_memory;
 }
+
 #endif
 
 #ifndef __APPLE__

@@ -1,12 +1,13 @@
-/* Intentionnally left blank */
-/* Themes are created using Qt CSS, you can visit */
-/* http://doc.qt.io/qt-5/stylesheet-reference.html and */
-/* http://doc.qt.io/qt-5/stylesheet-examples.html for examples. */
-
-/* OBS will use the theme filename for the settings. */
-/* You can ship images using relative paths in qss. */
-/* Dark Theme is a good place to start if you need */
-/* a template. */
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * This is a special theme that is not normally selectable by the user. It
+ * exists only for certain accessibility scenarios but is otherwise unused.
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
 
 @OBSThemeMeta {
     name: 'System';
@@ -84,22 +85,6 @@
     qproperty-icon: url(:res/images/revert.svg);
 }
 
-.indicator-mute {
-    outline: none;
-}
-
-.indicator-mute::indicator:checked {
-    image: url(:/res/images/mute.svg);
-}
-
-.indicator-mute::indicator:indeterminate {
-    image: url(:/res/images/unassigned.svg);
-}
-
-.indicator-mute::indicator:unchecked {
-    image: url(:/settings/images/settings/audio.svg);
-}
-
 .indicator-expand {
     background: transparent;
     outline: none;
@@ -130,13 +115,6 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0, 0, 0);
     qproperty-majorTickColor: rgb(0, 0, 0);
     qproperty-minorTickColor: rgb(50, 50, 50);
-    qproperty-meterThickness: 3;
-
-    /* The meter scale numbers normally use your QWidget font, with size    */
-    /* multiplied by meterFontScaling to get a proportionally smaller font. */
-    /* To use a unique font for the numbers, specify font-family and/or     */
-    /* font-size here, and set meterFontScaling to 1.0.                     */
-    qproperty-meterFontScaling: 0.7;
 }
 
 
@@ -378,4 +356,122 @@ QCalendarWidget #qt_calendar_nextmonth {
 /* Status Bar */
 StatusBarWidget > QFrame {
     padding: 0px 12px 8px;
+}
+
+idian--ToggleSwitch {
+    qproperty-handle: rgb(255, 255, 255);
+    qproperty-backgroundActive: #284cb8;
+    qproperty-backgroundInactive: #3c404b;
+}
+
+idian--Group {
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+idian--Group > QLabel.title {
+    font-weight: bold;
+}
+
+idian--Group > QLabel.subtitle {
+    color: palette(button-text);
+}
+
+idian--PropertiesList {
+    background: palette(base);
+    border-radius: 4px;
+    border-width: 0px;
+    padding: 0px;
+    margin: 0px;
+}
+
+idian--GenericRow {
+    margin: 0;
+    padding: 0;
+    border-left: 3px solid transparent;
+    min-height: 48px;
+    background: transparent;
+}
+
+idian--GenericRow:hover {
+    background: palette(highlight);
+    border-left: 0;
+}
+
+idian--GenericRow[last="true"]:hover {
+    border-bottom-left-radius: 4px;
+    border-bottom-right-radius: 4px;
+}
+
+idian--GenericRow[first="true"]:hover {
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+}
+
+idian--GenericRow > QLabel {
+    font-weight: 500;
+}
+
+idian--GenericRow > QLabel.subtitle {
+    font-size: 9pt;
+    color: palette(button-text);
+}
+
+idian--GenericRow QComboBox,
+idian--GenericRow QPushButton {
+    margin: 0;
+}
+
+idian--GenericRow QComboBox,
+idian--GenericRow QComboBox:hover,
+idian--GenericRow QComboBox:selected,
+idian--GenericRow QComboBox::on {
+    background: transparent;
+}
+
+idian--GenericRow QComboBox::drop-down {
+    border: none;
+}
+
+idian--GenericRow QComboBox::down-arrow {
+    image: url(./Light/collapse.svg);
+}
+
+idian--PropertiesListSpacer {
+    max-height: 1px;
+    min-height: 1px;
+    background-color: palette(midlight);
+}
+
+idian--CollapsibleRow {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+idian--CollapsibleRow idian--PropertiesList {
+    border-radius: 0;
+    background: palette(mid);
+}
+
+IdianPlayground QVBoxLayout {
+    background: palette(midlight);
+    border-radius: 4px;
+    padding-top: 32px;
+    padding-bottom: 8px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+/* Primary Control Button Checked Coloring */
+#streamButton:!hover:!pressed.state-active,
+#recordButton:!hover:!pressed.state-active,
+#pauseRecordButton:!hover:!pressed.state-active,
+#replayBufferButton:!hover:!pressed.state-active,
+#virtualCamButton:!hover:!pressed.state-active,
+#modeSwitch:!hover:!pressed.state-active,
+#broadcastButton:!hover:!pressed.state-active {
+    background: rgb(203, 226, 248);
+    border: 1px solid palette(highlight);
+    margin: 1px;
 }

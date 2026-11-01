@@ -6,6 +6,8 @@
 class QPersistentModelIndex;
 
 class EditWidget : public QLineEdit {
+	Q_OBJECT
+
 public:
 	inline EditWidget(QWidget *parent, QModelIndex index_) : QLineEdit(parent), index(index_) {}
 

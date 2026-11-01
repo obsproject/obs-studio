@@ -50,7 +50,10 @@ Contributing
 
 - If you wish to contribute code to the project, please make sure to
   read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
+  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.md
+  
+- Code for the project follows the code style guidelines, located
+  here: https://github.com/obsproject/obs-studio/blob/master/CODESTYLE.md
 
 - Developer/API documentation can be found here:
   https://obsproject.com/docs
@@ -58,6 +61,10 @@ Contributing
 - If you wish to contribute translations, do not submit pull requests.
   Instead, please use Crowdin.  For more information read this page:
   https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
+
+- Contributors to OBS Studio and related repositories are expected to
+  follow our Code of Conduct, which can be read here:
+  https://github.com/obsproject/obs-studio/blob/master/COC.rst
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics

@@ -16,7 +16,12 @@ static void render_metrics_time(struct metrics_time *m_time)
 static bool update_metrics(obs_output_t *output, const struct encoder_packet *pkt,
 			   const struct encoder_packet_time *ept, struct metrics_data *m_track)
 {
-	if (!output || !pkt || !ept || !m_track) {
+	if (!pkt) {
+		blog(LOG_DEBUG, "%s: Null encoder_packet pointer", __FUNCTION__);
+		return false;
+	}
+
+	if (!output || !ept || !m_track) {
 		blog(LOG_DEBUG, "%s: Null arguments for track %lu", __FUNCTION__, pkt->track_idx);
 		return false;
 	}
@@ -426,11 +431,11 @@ static bool process_metrics(obs_output_t *output, struct encoder_packet *out, st
 					 * nuh_temporal_id_plus1    u(3)
 					 * }
 					 */
-					const uint8_t prefix_sei_nal_type = 39;
+					const uint8_t suffix_sei_nal_type = 40;
 					/* The first bit is always 0, so we just need to
 					 * save the last bit off the original header and
 					 * add the SEI NAL type. */
-					uint8_t first_byte = (prefix_sei_nal_type << 1) | (0x01 & hevc_nal_header[0]);
+					uint8_t first_byte = (suffix_sei_nal_type << 1) | (0x01 & hevc_nal_header[0]);
 					hevc_nal_header[0] = first_byte;
 					/* The HEVC NAL unit header is 2 byte instead of
 					 * one, otherwise everything else is the

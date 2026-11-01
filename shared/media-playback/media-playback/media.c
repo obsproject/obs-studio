@@ -348,7 +348,6 @@ void mp_media_next_audio(mp_media_t *m)
 	struct mp_decode *d = &m->a;
 	struct obs_source_audio audio = {0};
 	AVFrame *f = d->frame;
-	int channels = f->ch_layout.nb_channels;
 
 	if (!mp_media_can_play_frame(m, d))
 		return;
@@ -361,7 +360,7 @@ void mp_media_next_audio(mp_media_t *m)
 		audio.data[i] = f->data[i];
 
 	audio.samples_per_sec = f->sample_rate * m->speed / 100;
-	audio.speakers = convert_speaker_layout(channels);
+	audio.speakers = convert_speaker_layout(f->ch_layout.nb_channels);
 	audio.format = convert_sample_format(f->format);
 	audio.frames = f->nb_samples;
 	audio.timestamp = m->full_decode ? d->frame_pts
@@ -391,6 +390,12 @@ void mp_media_next_video(mp_media_t *m, bool preload)
 		if (!m->v_cb)
 			return;
 	} else if (!d->frame_ready) {
+		return;
+	}
+
+	if (!f->width || !f->height) {
+		blog(LOG_ERROR, "MP: media frame width or height are zero ('%s': %" PRIu32 "x%" PRIu32 ")", m->path,
+		     f->width, f->height);
 		return;
 	}
 

@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.28...3.30)
 
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
-find_package(MbedTLS REQUIRED)
-set(CMAKE_FIND_PACKAGE_PREFER_CONFIG FALSE)
+find_package(MbedTLS 3...<4 REQUIRED)
 find_package(ZLIB REQUIRED)
+find_package(jansson REQUIRED)
 
 if(NOT TARGET happy-eyeballs)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/happy-eyeballs" "${CMAKE_BINARY_DIR}/shared/happy-eyeballs")
@@ -11,6 +10,10 @@ endif()
 
 if(NOT TARGET OBS::opts-parser)
   add_subdirectory("${CMAKE_SOURCE_DIR}/shared/opts-parser" "${CMAKE_BINARY_DIR}/shared/opts-parser")
+endif()
+
+if(NOT TARGET OBS::bpm)
+  add_subdirectory("${CMAKE_SOURCE_DIR}/shared/bpm" bpm)
 endif()
 
 add_library(obs-outputs MODULE)
@@ -73,8 +76,10 @@ target_link_libraries(
     OBS::libobs
     OBS::happy-eyeballs
     OBS::opts-parser
+    OBS::bpm
     MbedTLS::mbedtls
     ZLIB::ZLIB
+    jansson::jansson
     $<$<PLATFORM_ID:Windows>:OBS::w32-pthreads>
     $<$<PLATFORM_ID:Windows>:crypt32>
     $<$<PLATFORM_ID:Windows>:iphlpapi>

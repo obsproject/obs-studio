@@ -21,23 +21,6 @@
 
 #include <qt-wrappers.hpp>
 
-void assignDockToggle(QDockWidget *dock, QAction *action)
-{
-	auto handleWindowToggle = [action](bool vis) {
-		action->blockSignals(true);
-		action->setChecked(vis);
-		action->blockSignals(false);
-	};
-	auto handleMenuToggle = [dock](bool check) {
-		dock->blockSignals(true);
-		dock->setVisible(check);
-		dock->blockSignals(false);
-	};
-
-	dock->connect(dock->toggleViewAction(), &QAction::toggled, handleWindowToggle);
-	dock->connect(action, &QAction::toggled, handleMenuToggle);
-}
-
 void setupDockAction(QDockWidget *dock)
 {
 	QAction *action = dock->toggleViewAction();
@@ -54,44 +37,25 @@ void setupDockAction(QDockWidget *dock)
 
 	// Replace the slot connected by default
 	QObject::disconnect(action, &QAction::triggered, nullptr, 0);
-	dock->connect(action, &QAction::triggered, newToggleView);
+	QObject::connect(action, &QAction::triggered, dock, newToggleView);
 
 	// Make the action unable to be disabled
-	action->connect(action, &QAction::enabledChanged, neverDisable);
+	QObject::connect(action, &QAction::enabledChanged, action, neverDisable);
 }
 
 void OBSBasic::on_resetDocks_triggered(bool force)
 {
-	/* prune deleted extra docks */
-	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
-		if (!oldExtraDocks[i]) {
-			oldExtraDocks.removeAt(i);
-			oldExtraDockNames.removeAt(i);
-		}
-	}
-
 #ifdef BROWSER_AVAILABLE
-	if ((oldExtraDocks.size() || extraDocks.size() || extraCustomDocks.size() || extraBrowserDocks.size()) &&
-	    !force)
+	if ((extraDocks.size() || extraCustomDocks.size() || extraBrowserDocks.size()) && !force)
 #else
-	if ((oldExtraDocks.size() || extraDocks.size() || extraCustomDocks.size()) && !force)
+	if ((extraDocks.size() || extraCustomDocks.size()) && !force)
 #endif
 	{
 		QMessageBox::StandardButton button =
 			OBSMessageBox::question(this, QTStr("ResetUIWarning.Title"), QTStr("ResetUIWarning.Text"));
 
-		if (button == QMessageBox::No)
+		if (button == QMessageBox::No) {
 			return;
-	}
-
-	/* undock/hide/center extra docks */
-	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
-		if (oldExtraDocks[i]) {
-			oldExtraDocks[i]->setVisible(true);
-			oldExtraDocks[i]->setFloating(true);
-			oldExtraDocks[i]->move(frameGeometry().topLeft() + rect().center() -
-					       oldExtraDocks[i]->rect().center());
-			oldExtraDocks[i]->setVisible(false);
 		}
 	}
 
@@ -111,21 +75,12 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 #undef RESET_DOCKLIST
 
 	restoreState(startingDockLayout);
+	ui->sideDocks->setChecked(true);
 
 	int cx = width();
-	int cy = height();
+	int bottomDocksHeight = height();
 
-	int cx22_5 = cx * 225 / 1000;
-	int cx5 = cx * 5 / 100;
-	int cx21 = cx * 21 / 100;
-
-	cy = cy * 225 / 1000;
-
-	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
-
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock, ui->mixerDock, ui->transitionsDock, controlsDock};
-
-	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
+	bottomDocksHeight = bottomDocksHeight * 225 / 1000;
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
@@ -135,8 +90,13 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 
-	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
-	resizeDocks(docks, sizes, Qt::Horizontal);
+	QList<QDockWidget *> bottomDocks{ui->mixerDock, ui->transitionsDock, controlsDock};
+
+	resizeDocks(bottomDocks, {bottomDocksHeight, bottomDocksHeight, bottomDocksHeight}, Qt::Vertical);
+	resizeDocks(bottomDocks, {cx * 45 / 100, cx * 14 / 100, cx * 16 / 100}, Qt::Horizontal);
+
+	int sideDockWidth = std::min(width() * 30 / 100, 280);
+	resizeDocks({ui->scenesDock, ui->sourcesDock}, {sideDockWidth, sideDockWidth}, Qt::Horizontal);
 
 	activateWindow();
 }
@@ -158,101 +118,33 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
 
-	for (int i = extraDocks.size() - 1; i >= 0; i--)
+	for (int i = extraDocks.size() - 1; i >= 0; i--) {
 		extraDocks[i]->setFeatures(features);
+	}
 
-	for (int i = extraCustomDocks.size() - 1; i >= 0; i--)
+	for (int i = extraCustomDocks.size() - 1; i >= 0; i--) {
 		extraCustomDocks[i]->setFeatures(features);
+	}
 
 #ifdef BROWSER_AVAILABLE
-	for (int i = extraBrowserDocks.size() - 1; i >= 0; i--)
+	for (int i = extraBrowserDocks.size() - 1; i >= 0; i--) {
 		extraBrowserDocks[i]->setFeatures(features);
-#endif
-
-	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
-		if (!oldExtraDocks[i]) {
-			oldExtraDocks.removeAt(i);
-			oldExtraDockNames.removeAt(i);
-		} else {
-			oldExtraDocks[i]->setFeatures(features);
-		}
 	}
+#endif
 }
 
 void OBSBasic::on_sideDocks_toggled(bool side)
 {
-	if (side) {
-		setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
-		setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-		setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
-		setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
-	} else {
-		setCorner(Qt::TopLeftCorner, Qt::TopDockWidgetArea);
-		setCorner(Qt::TopRightCorner, Qt::TopDockWidgetArea);
-		setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
-		setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
-	}
-}
+	config_set_bool(App()->GetUserConfig(), "BasicWindow", "SideDocks", side);
 
-QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
-{
-	// Prevent the object name from being changed
-	connect(dock, &QObject::objectNameChanged, this, &OBSBasic::RepairOldExtraDockName);
-
-#ifdef BROWSER_AVAILABLE
-	QAction *action = new QAction(dock->windowTitle(), ui->menuDocks);
-
-	if (!extraBrowserMenuDocksSeparator.isNull())
-		ui->menuDocks->insertAction(extraBrowserMenuDocksSeparator, action);
-	else
-		ui->menuDocks->addAction(action);
-#else
-	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
-#endif
-	action->setCheckable(true);
-	assignDockToggle(dock, action);
-	oldExtraDocks.push_back(dock);
-	oldExtraDockNames.push_back(dock->objectName());
-
-	bool lock = ui->lockDocks->isChecked();
-	QDockWidget::DockWidgetFeatures features =
-		lock ? QDockWidget::NoDockWidgetFeatures
-		     : (QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable |
-			QDockWidget::DockWidgetFloatable);
-
-	dock->setFeatures(features);
-
-	/* prune deleted docks */
-	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
-		if (!oldExtraDocks[i]) {
-			oldExtraDocks.removeAt(i);
-			oldExtraDockNames.removeAt(i);
-		}
-	}
-
-	return action;
-}
-
-void OBSBasic::RepairOldExtraDockName()
-{
-	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
-	int idx = oldExtraDocks.indexOf(dock);
-	QSignalBlocker block(dock);
-
-	if (idx == -1) {
-		blog(LOG_WARNING, "A dock got its object name changed");
-		return;
-	}
-
-	blog(LOG_WARNING, "The dock '%s' got its object name restored", QT_TO_UTF8(oldExtraDockNames[idx]));
-
-	dock->setObjectName(oldExtraDockNames[idx]);
+	setDockCornersVertical(side);
 }
 
 void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool extraBrowser)
 {
-	if (dock->objectName().isEmpty())
+	if (dock->objectName().isEmpty()) {
 		return;
+	}
 
 	bool lock = ui->lockDocks->isChecked();
 	QDockWidget::DockWidgetFeatures features =
@@ -265,16 +157,19 @@ void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area, bool ex
 	addDockWidget(area, dock);
 
 #ifdef BROWSER_AVAILABLE
-	if (extraBrowser && extraBrowserMenuDocksSeparator.isNull())
+	if (extraBrowser && extraBrowserMenuDocksSeparator.isNull()) {
 		extraBrowserMenuDocksSeparator = ui->menuDocks->addSeparator();
+	}
 
-	if (!extraBrowser && !extraBrowserMenuDocksSeparator.isNull())
+	if (!extraBrowser && !extraBrowserMenuDocksSeparator.isNull()) {
 		ui->menuDocks->insertAction(extraBrowserMenuDocksSeparator, dock->toggleViewAction());
-	else
+	} else {
 		ui->menuDocks->addAction(dock->toggleViewAction());
+	}
 
-	if (extraBrowser)
+	if (extraBrowser) {
 		return;
+	}
 #else
 	UNUSED_PARAMETER(extraBrowser);
 
@@ -309,7 +204,6 @@ bool OBSBasic::IsDockObjectNameUsed(const QString &name)
 	     << "transitionsDock"
 	     << "controlsDock"
 	     << "statsDock";
-	list << oldExtraDockNames;
 	list << extraDockNames;
 	list << extraCustomDockNames;
 
@@ -332,6 +226,21 @@ void OBSBasic::AddCustomDockWidget(QDockWidget *dock)
 
 	extraCustomDockNames.push_back(dock->objectName());
 	extraCustomDocks.push_back(dock);
+}
+
+void OBSBasic::setDockCornersVertical(bool vertical)
+{
+	if (vertical) {
+		setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+		setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+		setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+		setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+	} else {
+		setCorner(Qt::TopLeftCorner, Qt::TopDockWidgetArea);
+		setCorner(Qt::TopRightCorner, Qt::TopDockWidgetArea);
+		setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+		setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
+	}
 }
 
 void OBSBasic::RepairCustomExtraDockName()

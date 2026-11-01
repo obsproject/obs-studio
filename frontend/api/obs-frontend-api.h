@@ -62,6 +62,11 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED,
 	OBS_FRONTEND_EVENT_THEME_CHANGED,
 	OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN,
+
+	OBS_FRONTEND_EVENT_CANVAS_ADDED,
+	OBS_FRONTEND_EVENT_CANVAS_REMOVED,
+
+	OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -75,9 +80,24 @@ struct obs_frontend_source_list {
 static inline void obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 {
 	size_t num = source_list->sources.num;
-	for (size_t i = 0; i < num; i++)
+	for (size_t i = 0; i < num; i++) {
 		obs_source_release(source_list->sources.array[i]);
+	}
 	da_free(source_list->sources);
+}
+
+struct obs_frontend_canvas_list {
+	DARRAY(obs_canvas_t *) canvases;
+};
+
+static inline void obs_frontend_canvas_list_free(struct obs_frontend_canvas_list *canvas_list)
+{
+	size_t num = canvas_list->canvases.num;
+	for (size_t i = 0; i < num; i++) {
+		obs_canvas_release(canvas_list->canvases.array[i]);
+	}
+
+	da_free(canvas_list->canvases);
 }
 
 #endif //!SWIG
@@ -132,10 +152,6 @@ typedef void (*obs_frontend_cb)(void *private_data);
 
 EXPORT void *obs_frontend_add_tools_menu_qaction(const char *name);
 EXPORT void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data);
-
-/* takes QDockWidget and returns QAction */
-OBS_DEPRECATED
-EXPORT void *obs_frontend_add_dock(void *dock);
 
 /* takes QWidget for widget */
 EXPORT bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget);
@@ -237,6 +253,16 @@ EXPORT char *obs_frontend_get_last_replay(void);
 typedef void (*undo_redo_cb)(const char *data);
 EXPORT void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo, const undo_redo_cb redo,
 					      const char *undo_data, const char *redo_data, bool repeatable);
+
+EXPORT void obs_frontend_get_canvases(struct obs_frontend_canvas_list *canvas_list);
+EXPORT obs_canvas_t *obs_frontend_add_canvas(const char *name, struct obs_video_info *ovi, int flags);
+EXPORT bool obs_frontend_remove_canvas(obs_canvas_t *canvas);
+
+EXPORT void obs_frontend_copy_sceneitem(obs_sceneitem_t *item);
+EXPORT bool obs_frontend_can_paste_sceneitem(bool duplicate);
+EXPORT void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate);
+
+EXPORT bool obs_frontend_is_safe_mode_enabled(void);
 
 /* ------------------------------------------------------------------------- */
 

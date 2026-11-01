@@ -44,6 +44,40 @@ const char *obs_encoder_get_display_name(const char *id)
 	return ei ? ei->get_name(ei->type_data) : NULL;
 }
 
+obs_module_t *obs_encoder_get_module(const char *id)
+{
+	obs_module_t *module = obs->first_module;
+	while (module) {
+		for (size_t i = 0; i < module->encoders.num; i++) {
+			if (strcmp(module->encoders.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	module = obs->first_disabled_module;
+	while (module) {
+		for (size_t i = 0; i < module->encoders.num; i++) {
+			if (strcmp(module->encoders.array[i], id) == 0) {
+				return module;
+			}
+		}
+		module = module->next;
+	}
+
+	return NULL;
+}
+
+enum obs_module_load_state obs_encoder_load_state(const char *id)
+{
+	obs_module_t *module = obs_encoder_get_module(id);
+	if (!module) {
+		return OBS_MODULE_MISSING;
+	}
+	return module->load_state;
+}
+
 static bool init_encoder(struct obs_encoder *encoder, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 {
 	pthread_mutex_init_value(&encoder->init_mutex);
@@ -203,21 +237,34 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	bool create_mix = true;
 	struct obs_video_info ovi;
 	const struct video_output_info *info;
+	uint32_t width;
+	uint32_t height;
+	enum video_format format;
+	enum video_colorspace space;
+	enum video_range_type range;
 
 	if (!encoder->media)
 		return;
-
-	info = video_output_get_info(encoder->media);
-
 	if (encoder->gpu_scale_type == OBS_SCALE_DISABLE)
 		return;
-
-	if (!encoder->scaled_height && !encoder->scaled_width)
+	if (!encoder->scaled_height && !encoder->scaled_width && encoder->preferred_format == VIDEO_FORMAT_NONE &&
+	    encoder->preferred_space == VIDEO_CS_DEFAULT && encoder->preferred_range == VIDEO_RANGE_DEFAULT)
 		return;
+
+	info = video_output_get_info(encoder->media);
+	width = encoder->scaled_width ? encoder->scaled_width : info->width;
+	height = encoder->scaled_height ? encoder->scaled_height : info->height;
+	format = encoder->preferred_format != VIDEO_FORMAT_NONE ? encoder->preferred_format : info->format;
+	space = encoder->preferred_space != VIDEO_CS_DEFAULT ? encoder->preferred_space : info->colorspace;
+	range = encoder->preferred_range != VIDEO_RANGE_DEFAULT ? encoder->preferred_range : info->range;
 
 	current_mix = get_mix_for_video(encoder->media);
 	if (!current_mix)
 		return;
+
+	/* Store original video_t so it can be restored if scaling is disabled. */
+	if (!current_mix->encoder_only_mix)
+		encoder->original_video = encoder->media;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0; i < obs->video.mixes.num; i++) {
@@ -226,10 +273,13 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		if (current_mix->view != current->view)
 			continue;
 
-		if (voi->width != encoder->scaled_width || voi->height != encoder->scaled_height)
+		if (current->ovi.scale_type != encoder->gpu_scale_type)
 			continue;
 
-		if (voi->format != info->format || voi->colorspace != info->colorspace || voi->range != info->range)
+		if (voi->width != width || voi->height != height)
+			continue;
+
+		if (voi->format != format || voi->colorspace != space || voi->range != range)
 			continue;
 
 		current->encoder_refs += 1;
@@ -245,12 +295,12 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 
 	ovi = current_mix->ovi;
 
-	ovi.output_format = info->format;
-	ovi.colorspace = info->colorspace;
-	ovi.range = info->range;
+	ovi.output_format = format;
+	ovi.colorspace = space;
+	ovi.range = range;
 
-	ovi.output_height = encoder->scaled_height;
-	ovi.output_width = encoder->scaled_width;
+	ovi.output_height = height;
+	ovi.output_width = width;
 	ovi.scale_type = encoder->gpu_scale_type;
 
 	ovi.gpu_conversion = true;
@@ -272,10 +322,13 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 		if (current->view != current_mix->view)
 			continue;
 
-		if (voi->width != encoder->scaled_width || voi->height != encoder->scaled_height)
+		if (current->ovi.scale_type != encoder->gpu_scale_type)
 			continue;
 
-		if (voi->format != info->format || voi->colorspace != info->colorspace || voi->range != info->range)
+		if (voi->width != width || voi->height != height)
+			continue;
+
+		if (voi->format != format || voi->colorspace != space || voi->range != range)
 			continue;
 
 		obs_encoder_set_video(encoder, current->video);
@@ -291,6 +344,26 @@ static void maybe_set_up_gpu_rescale(struct obs_encoder *encoder)
 	}
 
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
+}
+
+static int gcd(int a, int b)
+{
+	if (a < b) {
+		int temp = a;
+		a = b;
+		b = temp;
+	}
+
+	int remainder = a % b;
+	if (!remainder)
+		return b;
+
+	return gcd(b, remainder);
+}
+
+static int lcm(int a, int b)
+{
+	return (a / gcd(a, b)) * b;
 }
 
 static void add_connection(struct obs_encoder *encoder)
@@ -313,6 +386,19 @@ static void add_connection(struct obs_encoder *encoder)
 
 	if (encoder->encoder_group) {
 		pthread_mutex_lock(&encoder->encoder_group->mutex);
+		if (encoder->encoder_group->frame_rate_divisors_lcm == 0)
+			encoder->encoder_group->frame_rate_divisors_lcm = 1;
+
+		/* The Least Common Multiple (LCM) of all frame rate divisors determines the alignment boundary
+		 * for group reconfiguration. When DBR triggers a bitrate change via obs_encoder_update, all
+		 * encoders in the group must reconfigure on the same frame to produce synchronized keyframes.
+		 * The LCM gives the next PTS where all encoders will have a frame simultaneously (e.g., if one
+		 * encoder runs at 60fps and another at 30fps, reconfiguration can only occur on every 2nd frame
+		 * of the 60fps encoder).
+		 */
+		encoder->encoder_group->frame_rate_divisors_lcm =
+			lcm(encoder->encoder_group->frame_rate_divisors_lcm, encoder->frame_rate_divisor);
+
 		encoder->encoder_group->num_encoders_started += 1;
 		bool ready = encoder->encoder_group->num_encoders_started >= encoder->encoder_group->encoders.num;
 		pthread_mutex_unlock(&encoder->encoder_group->mutex);
@@ -337,10 +423,19 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 	}
 
 	if (encoder->encoder_group) {
-		pthread_mutex_lock(&encoder->encoder_group->mutex);
-		if (--encoder->encoder_group->num_encoders_started == 0)
-			encoder->encoder_group->start_timestamp = 0;
-		pthread_mutex_unlock(&encoder->encoder_group->mutex);
+		struct obs_encoder_group *group = encoder->encoder_group;
+		pthread_mutex_lock(&group->mutex);
+		if (--group->num_encoders_started == 0) {
+			group->start_timestamp = 0;
+			group->frame_rate_divisors_lcm = 1;
+
+			group->reconfigure_request = 0;
+			group->next_pts = 0;
+			group->encoders_reconfigured = 0;
+			group->encoders_updated_next_pts = 0;
+			group->reconfigure_again = false;
+		}
+		pthread_mutex_unlock(&group->mutex);
 	}
 
 	/* obs_encoder_shutdown locks init_mutex, so don't call it on encode
@@ -485,6 +580,8 @@ obs_properties_t *obs_encoder_properties(const obs_encoder_t *encoder)
 	return NULL;
 }
 
+static void encoder_group_new_reconfigure_request(struct obs_encoder_group *group);
+
 void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_update"))
@@ -500,15 +597,33 @@ void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 	if (!encoder->info.update)
 		return;
 
-	// If the encoder is active we defer the update as it may not be
-	// reentrant. Setting reconfigure_requested to true makes the changes
-	// apply at the next possible moment in the encoder / GPU encoder
-	// thread.
-	if (encoder_active(encoder)) {
-		encoder->reconfigure_requested = true;
-	} else {
+	if (!encoder_active(encoder)) {
 		encoder->info.update(encoder->context.data, encoder->context.settings);
+		return;
 	}
+
+	/* If the encoder is active we defer the update as it may not be reentrant. Setting reconfigure_requested to
+	 * true makes the changes apply at the next possible moment in the encoder / GPU encoder thread.
+	 */
+	if (!encoder->encoder_group) {
+		encoder->reconfigure_requested = true;
+		return;
+	}
+
+	/* Encoder groups need slightly more special handling since encoders generally start new GOPs/insert IDR frames
+	 * when reconfigured, so we need to reconfigure them all on the same frame.
+	 */
+	struct obs_encoder_group *group = encoder->encoder_group;
+	pthread_mutex_lock(&group->mutex);
+	bool first_reconfigure_request = group->reconfigure_request == 0;
+	bool all_encoders_reconfigured = group->encoders_reconfigured == group->encoders.num;
+	bool current_encoder_reconfigured = encoder->last_handled_reconfigure_request == group->reconfigure_request;
+	if (first_reconfigure_request || all_encoders_reconfigured) {
+		encoder_group_new_reconfigure_request(group);
+	} else if (current_encoder_reconfigured) {
+		group->reconfigure_again = true;
+	}
+	pthread_mutex_unlock(&group->mutex);
 }
 
 bool obs_encoder_get_extra_data(const obs_encoder_t *encoder, uint8_t **extra_data, size_t *size)
@@ -638,7 +753,7 @@ static void maybe_clear_encoder_core_video_mix(obs_encoder_t *encoder)
 		if (!mix->encoder_only_mix)
 			break;
 
-		encoder_set_video(encoder, obs_get_video());
+		encoder_set_video(encoder, encoder->original_video);
 		mix->encoder_refs -= 1;
 		if (mix->encoder_refs == 0) {
 			da_erase(obs->video.mixes, i);
@@ -1421,6 +1536,52 @@ bool video_pause_check(struct pause_data *pause, uint64_t timestamp)
 	return ignore_frame;
 }
 
+static void encoder_group_new_reconfigure_request(struct obs_encoder_group *group)
+{
+	group->reconfigure_request += 1;
+	group->encoders_updated_next_pts = 0;
+	group->encoders_reconfigured = 0;
+	group->reconfigure_again = false;
+}
+
+void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder)
+{
+	if (!encoder->encoder_group)
+		return;
+
+	struct obs_encoder_group *group = encoder->encoder_group;
+	pthread_mutex_lock(&group->mutex);
+	bool new_reconfigure_request = encoder->last_reconfigure_request != group->reconfigure_request;
+	if (!new_reconfigure_request && group->encoders_updated_next_pts == group->num_encoders_started &&
+	    encoder->cur_pts == group->next_pts &&
+	    encoder->last_handled_reconfigure_request != encoder->last_reconfigure_request) {
+		group->encoders_reconfigured += 1;
+
+		encoder->last_handled_reconfigure_request = encoder->last_reconfigure_request;
+		encoder->reconfigure_requested = true;
+
+		if (group->encoders_reconfigured == group->encoders.num && group->reconfigure_again)
+			encoder_group_new_reconfigure_request(group);
+
+	} else if (new_reconfigure_request || encoder->cur_pts == group->next_pts) {
+		encoder->last_reconfigure_request = group->reconfigure_request;
+
+		int64_t overall_timestep = encoder->timebase_num * group->frame_rate_divisors_lcm;
+
+		int64_t next_pts = encoder->cur_pts + encoder->timebase_num * encoder->frame_rate_divisor;
+
+		if (next_pts % overall_timestep != 0)
+			next_pts = (next_pts / overall_timestep + 1) * overall_timestep;
+
+		if (next_pts > group->next_pts)
+			group->next_pts = next_pts;
+
+		if (new_reconfigure_request)
+			group->encoders_updated_next_pts += 1;
+	}
+	pthread_mutex_unlock(&group->mutex);
+}
+
 static const char *receive_video_name = "receive_video";
 static void receive_video(void *param, struct video_data *frame)
 {
@@ -1456,6 +1617,8 @@ static void receive_video(void *param, struct video_data *frame)
 
 	if (video_pause_check(&encoder->pause, frame->timestamp))
 		goto wait_for_audio;
+
+	handle_encoder_group_reconfigure_request(encoder);
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
@@ -1776,6 +1939,38 @@ enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *en
 	return encoder->preferred_format;
 }
 
+void obs_encoder_set_preferred_color_space(obs_encoder_t *encoder, enum video_colorspace colorspace)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	encoder->preferred_space = colorspace;
+}
+
+enum video_colorspace obs_encoder_get_preferred_color_space(const obs_encoder_t *encoder)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return VIDEO_CS_DEFAULT;
+
+	return encoder->preferred_space;
+}
+
+void obs_encoder_set_preferred_range(obs_encoder_t *encoder, enum video_range_type range)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return;
+
+	encoder->preferred_range = range;
+}
+
+enum video_range_type obs_encoder_get_preferred_range(const obs_encoder_t *encoder)
+{
+	if (!encoder || encoder->info.type != OBS_ENCODER_VIDEO)
+		return VIDEO_RANGE_DEFAULT;
+
+	return encoder->preferred_range;
+}
+
 void obs_encoder_release(obs_encoder_t *encoder)
 {
 	if (!encoder)
@@ -2067,4 +2262,25 @@ void obs_encoder_group_destroy(obs_encoder_group_t *group)
 	}
 
 	obs_encoder_group_actually_destroy(group);
+}
+
+bool obs_encoder_video_tex_active(const obs_encoder_t *encoder, enum video_format format)
+{
+	struct obs_core_video_mix *mix = get_mix_for_video(encoder->media);
+
+	if (format == VIDEO_FORMAT_NV12)
+		return mix->using_nv12_tex;
+	if (format == VIDEO_FORMAT_P010)
+		return mix->using_p010_tex;
+
+	return false;
+}
+
+uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder)
+{
+	if (encoder->info.get_priming_samples) {
+		return encoder->info.get_priming_samples(encoder->context.data);
+	}
+
+	return 0;
 }

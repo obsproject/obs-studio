@@ -167,6 +167,12 @@ Encoder Definition Structure (obs_encoder_info)
    - **OBS_ENCODER_CAP_SCALING** - Encoder implements its own scaling logic,
                                    desiring to receive unscaled frames
 
+.. member:: size_t (*get_priming_samples)(void *data)
+
+   Returns the number of priming samples that must be skipped for correct playback for audio produced by this encoder.
+   Only required for lossy codecs such as AAC or Opus.
+
+   :return: Number of samples
 
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
@@ -590,6 +596,16 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder)
+
+   Gets the number of samples that shall be skipped when playing back the encoded audio.
+   Commonly referred to as "encoder delay" or "priming samples" in AAC/Opus.
+
+   :return: Number of priming samples
+
+   .. versionadded:: 32.1
+
+---------------------
 
 Functions used by encoders
 --------------------------

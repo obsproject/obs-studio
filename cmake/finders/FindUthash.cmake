@@ -37,8 +37,7 @@ find_path(Uthash_INCLUDE_DIR NAMES uthash.h PATHS /usr/include /usr/local/includ
 
 if(EXISTS "${Uthash_INCLUDE_DIR}/uthash.h")
   file(
-    STRINGS
-    "${Uthash_INCLUDE_DIR}/uthash.h"
+    STRINGS "${Uthash_INCLUDE_DIR}/uthash.h"
     _version_string
     REGEX "#define[ \t]+UTHASH_VERSION[ \t]+[0-9]+\\.[0-9]+\\.[0-9]+"
   )

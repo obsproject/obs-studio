@@ -1,3 +1,21 @@
+/* ------------------------------------------------------------------------- *
+ *                                                                           *
+ *                                 IMPORTANT                                 *
+ *                                                                           *
+ * ------------------------------------------------------------------------- *
+ *                                                                           *
+ * This is a Variant Theme (Style) for Yami named Classic. Variant themes
+ * override variable values and append additional style rules to the end of
+ * the final composed stylesheet.
+ *
+ * If you are developing a custom theme it is HIGHLY RECOMMENDED that you
+ * use Yami as a Base and apply your changes in a Variant Theme (.ovt).
+ *
+ * You can learn more about OBS Studio's theme system on our GitHub wiki:
+ * https://github.com/obsproject/obs-studio/wiki/OBS-Studio-Theme-System
+ *                                                                           *
+ * ------------------------------------------------------------------------- */
+
 @OBSThemeMeta {
     name: 'Classic';
     id: 'com.obsproject.Yami.Classic';
@@ -22,31 +40,24 @@
 
     --primary: rgb(25,52,76);
     --primary_light: rgb(33,71,109);
+    --primary_dark: rgb(19, 40, 58);
 
     /* Layout */
-    --font_base_value: 9;
-    --spacing_base_value: 2;
-    --padding_base_value: 0.25;
+    --padding_large: min(max(0px, calc(1px * var(--padding_base_value))), 5px);
 
-    /* OS Fixes */
-    --os_mac_font_base_value: 11;
+    --padding_container: max(2px, var(--padding_base));
 
-    --font_small: calc(0.75pt * var(--font_base_value));
-
-    --icon_base: calc(6px + var(--font_base_value));
-
-    --padding_xlarge: calc(2px + calc(0.5px * var(--padding_base_value)));
-
-    --padding_wide: calc(18px + calc(0.25 * var(--padding_base_value)));
-    --padding_menu: calc(8px + calc(1 * var(--padding_base_value)));
-
-    --input_height_base: calc(1px + calc(var(--input_font_scale) + var(--input_font_padding)));
+    /* Inputs / Controls */
 
     --border_color: var(--grey6);
 
     --border_radius: 2px;
     --border_radius_small: 1px;
     --border_radius_large: 2px;
+
+    --input_height_base: max(calc(var(--input_font_scale) + var(--input_font_padding)), 20);
+    --input_padding: calc(0px + var(--padding_base));
+    --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
 
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey1);
@@ -80,7 +91,7 @@
     --tab_border_focus: var(--grey1);
     --tab_border_selected: var(--primary);
 
-    --scrollbar: var(--grey4);
+    --scrollbar_handle: var(--grey4);
     --scrollbar_hover: var(--grey3);
     --scrollbar_down: var(--grey8);
     --scrollbar_border: var(--grey2);
@@ -91,13 +102,20 @@
     --padding_menu_y: calc(3px + calc(1 * var(--padding_base_value)));
 }
 
+/* --------------------- */
+/* General Styling Hints */
+
+.dialog-frame {
+    background: var(--bg_window);
+}
+
 QStatusBar {
     background-color: var(--bg_window);
 }
 
 OBSDock > QWidget {
-  border-top: 1px solid var(--border_color);
-  padding-top: var(--spacing_large);
+    border-top: 1px solid var(--border_color);
+    padding-top: var(--spacing_large);
 }
 
 QDockWidget {
@@ -116,11 +134,6 @@ QDockWidget > QWidget {
 
 #transitionsFrame {
     padding: var(--padding_xlarge);
-}
-
-SceneTree::item,
-SourceTreeItem {
-    border-width: 0px;
 }
 
 QMenu::item {
@@ -214,7 +227,7 @@ OBSBasicSettings QListWidget::item {
 }
 
 QPushButton:checked {
-  border-color: var(--primary);
+    border-color: var(--primary);
 }
 
 QToolButton,
@@ -227,82 +240,28 @@ QPushButton[toolButton="true"] {
   background: var(--bg_base);
 }
 
-#stackedMixerArea QPushButton {
-    min-width: var(--icon_base);
-    padding: var(--padding_large) var(--padding_large);
-    icon-size: var(--icon_base);
-}
-
-#stackedMixerArea QPushButton:!hover {
-    background-color: var(--bg_base);
-    border: none;
-}
-
-#stackedMixerArea QPushButton:hover {
-    background-color: var(--bg_base);
-    border: none;
-}
-
-#hMixerScrollArea VolControl {
-    padding: 0px 2px;
+#hVolumeWidgets VolumeControl {
     margin-bottom: 1px;
 }
 
-#hMixerScrollArea QLabel {
-  margin: var(--padding_xlarge) 0px;
+#hVolumeWidgets VolumeControl #volMeterFrame {
+    margin-top: var(--spacing_large);
 }
 
-#hMixerScrollArea #volMeterFrame {
-  margin-top: var(--spacing_large);
-}
-
-#vMixerScrollArea VolControl {
-    padding: 0px var(--padding_xlarge) var(--spacing_large);
+#vVolumeWidgets VolumeControl {
     border-right: 1px solid var(--bg_window);
 }
 
-#vMixerScrollArea QLabel {
-  font-size: var(--font_small);
-  margin: var(--padding_xlarge) 0px;
+#vVolumeWidgets VolumeControl QLabel {
+    font-size: var(--font_small);
 }
 
-#vMixerScrollArea #volLabel {
-  font-size: var(--font_base);
-}
-
-.indicator-mute::indicator,
-.indicator-mute::indicator:unchecked {
-    background-color: var(--bg_base);
-    border: none;
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    icon-size: var(--icon_base_mixer);
-}
-
-.indicator-mute::indicator:checked {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:checked:hover,
-.indicator-mute::indicator:unchecked:hover {
-    background-color: var(--bg_base);
-}
-
-.indicator-mute::indicator:hover,
-.indicator-mute::indicator:unchecked:hover {
-    icon-size: var(--icon_base_mixer);
-    border: none;
+#vVolumeWidgets VolumeControl #volLabel {
+    font-size: var(--font_base);
 }
 
 #contextContainer {
   background-color: var(--bg_window);
-}
-
-#stackedMixerArea QPushButton,
-#stackedMixerArea QPushButton:!hover {
-    width: var(--icon_base_mixer);
-    height: var(--icon_base_mixer);
-    padding: var(--spacing_base);
 }
 
 VolumeMeter {
@@ -315,9 +274,13 @@ VolumeMeter {
     qproperty-magnitudeColor: rgb(0,0,0);
     qproperty-majorTickColor: var(--text);
     qproperty-minorTickColor: rgb(122,121,122); /* light */
-    qproperty-meterThickness: 3;
 }
 
 OBSBasicStats {
     background: var(--bg_window);
+}
+
+/* Add Source Dialog */
+SourceSelectButton QPushButton {
+    background-color: var(--grey7);
 }

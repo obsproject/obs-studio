@@ -25,7 +25,7 @@ struct luma_wipe_info {
 	gs_eparam_t *ep_invert;
 	gs_eparam_t *ep_softness;
 
-	gs_image_file_t luma_image;
+	gs_image_file_ex_t luma_image;
 	bool invert_luma;
 	float softness;
 	obs_data_t *wipes_list;
@@ -53,13 +53,13 @@ static void luma_wipe_update(void *data, obs_data_t *settings)
 	char *file = obs_module_file(path.array);
 
 	obs_enter_graphics();
-	gs_image_file_free(&lwipe->luma_image);
+	gs_image_file_ex_free(&lwipe->luma_image);
 	obs_leave_graphics();
 
-	gs_image_file_init(&lwipe->luma_image, file);
+	gs_image_file_ex_init(&lwipe->luma_image, file, GS_IMAGE_ALPHA_STRAIGHT);
 
 	obs_enter_graphics();
-	gs_image_file_init_texture(&lwipe->luma_image);
+	gs_image_file_ex_init_texture(&lwipe->luma_image);
 	obs_leave_graphics();
 
 	bfree(file);
@@ -117,7 +117,7 @@ static void luma_wipe_destroy(void *data)
 	struct luma_wipe_info *lwipe = data;
 
 	obs_enter_graphics();
-	gs_image_file_free(&lwipe->luma_image);
+	gs_image_file_ex_free(&lwipe->luma_image);
 	obs_leave_graphics();
 
 	obs_data_release(lwipe->wipes_list);

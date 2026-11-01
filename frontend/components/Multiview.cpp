@@ -14,8 +14,9 @@ Multiview::~Multiview()
 {
 	for (OBSWeakSource &weakSrc : multiviewScenes) {
 		OBSSource src = OBSGetStrongRef(weakSrc);
-		if (src)
+		if (src) {
 			obs_source_dec_showing(src);
+		}
 	}
 
 	obs_enter_graphics();
@@ -70,9 +71,6 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 	this->drawLabel = drawLabel;
 	this->drawSafeArea = drawSafeArea;
 
-	multiviewScenes.clear();
-	multiviewLabels.clear();
-
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
@@ -84,9 +82,6 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 
 	struct obs_frontend_source_list scenes = {};
 	obs_frontend_get_scenes(&scenes);
-
-	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Preview"), h / 2));
-	multiviewLabels.emplace_back(CreateLabel(Str("StudioMode.Program"), h / 2));
 
 	switch (multiviewLayout) {
 	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
@@ -155,26 +150,39 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel, bool dra
 	siScaleX = (scenesCX - thicknessx2) / fw;
 	siScaleY = (scenesCY - thicknessx2) / fh;
 
-	numSrcs = 0;
+	std::vector<OBSWeakSource> updatedScenes;
+	std::vector<OBSSource> updatedLabels;
+
+	updatedLabels.emplace_back(CreateLabel(Str("StudioMode.Preview"), h / 2));
+	updatedLabels.emplace_back(CreateLabel(Str("StudioMode.Program"), h / 2));
+
 	size_t i = 0;
-	while (i < scenes.sources.num && numSrcs < maxSrcs) {
+	while (i < scenes.sources.num && updatedScenes.size() < maxSrcs) {
 		obs_source_t *src = scenes.sources.array[i++];
 		OBSDataAutoRelease data = obs_source_get_private_settings(src);
 
 		obs_data_set_default_bool(data, "show_in_multiview", true);
-		if (!obs_data_get_bool(data, "show_in_multiview"))
+		if (!obs_data_get_bool(data, "show_in_multiview")) {
 			continue;
+		}
 
-		// We have a displayable source.
-		numSrcs++;
-
-		multiviewScenes.emplace_back(OBSGetWeakRef(src));
+		updatedScenes.emplace_back(OBSGetWeakRef(src));
 		obs_source_inc_showing(src);
 
-		multiviewLabels.emplace_back(CreateLabel(obs_source_get_name(src), h / 3));
+		updatedLabels.emplace_back(CreateLabel(obs_source_get_name(src), h / 3));
 	}
 
 	obs_frontend_source_list_free(&scenes);
+
+	for (OBSWeakSource &weakSrc : multiviewScenes) {
+		OBSSource src = OBSGetStrongRef(weakSrc);
+		if (src) {
+			obs_source_dec_showing(src);
+		}
+	}
+
+	multiviewScenes = std::move(updatedScenes);
+	multiviewLabels = std::move(updatedLabels);
 }
 
 static inline uint32_t labelOffset(MultiviewLayout multiviewLayout, obs_source_t *label, uint32_t cx)
@@ -229,8 +237,9 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		gs_eparam_t *color = gs_effect_get_param_by_name(solid, "color");
 
 		gs_effect_set_color(color, colorVal);
-		while (gs_effect_loop(solid, "Solid"))
+		while (gs_effect_loop(solid, "Solid")) {
 			gs_draw_sprite(nullptr, 0, (uint32_t)cx, (uint32_t)cy);
+		}
 	};
 
 	auto setRegion = [&](float bx, float by, float cx, float cy) {
@@ -260,14 +269,16 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		case MultiviewLayout::VERTICAL_LEFT_8_SCENES:
 			sourceX = pvwprgCX;
 			sourceY = (i / 2) * scenesCY;
-			if (i % 2 != 0)
+			if (i % 2 != 0) {
 				sourceX += scenesCX;
+			}
 			break;
 		case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 			sourceX = 0;
 			sourceY = (i / 2) * scenesCY;
-			if (i % 2 != 0)
+			if (i % 2 != 0) {
 				sourceX = scenesCX;
+			}
 			break;
 		case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 			if (i < 4) {
@@ -388,7 +399,7 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		// Handle all the offsets
 		calcBaseSource(i);
 
-		if (i >= numSrcs) {
+		if (i >= multiviewScenes.size()) {
 			// Just paint the background and continue
 			paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY, outerColor);
 			paintAreaWithColor(siX, siY, siCX, siCY, backgroundColor);
@@ -399,10 +410,11 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 
 		// We have a source. Now chose the proper highlight color
 		uint32_t colorVal = outerColor;
-		if (src == programSrc)
+		if (src == programSrc) {
 			colorVal = programColor;
-		else if (src == previewSrc)
+		} else if (src == previewSrc) {
 			colorVal = studioMode ? previewColor : programColor;
+		}
 
 		// Paint the background
 		paintAreaWithColor(sourceX, sourceY, scenesCX, scenesCY, colorVal);
@@ -422,12 +434,14 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 		/* ----------- */
 
 		// Render the label
-		if (!drawLabel)
+		if (!drawLabel) {
 			continue;
+		}
 
 		obs_source *label = multiviewLabels[i + 2];
-		if (!label)
+		if (!label) {
 			continue;
+		}
 
 		offset = labelOffset(multiviewLayout, label, scenesCX);
 
@@ -465,10 +479,11 @@ void Multiview::Render(uint32_t cx, uint32_t cy)
 	gs_matrix_translate3f(sourceX, sourceY, 0.0f);
 	gs_matrix_scale3f(ppiScaleX, ppiScaleY, 1.0f);
 	setRegion(sourceX, sourceY, ppiCX, ppiCY);
-	if (studioMode)
+	if (studioMode) {
 		obs_source_video_render(previewSrc);
-	else
+	} else {
 		obs_render_main_texture();
+	}
 
 	if (drawSafeArea) {
 		RenderSafeAreas(actionSafeMargin, targetCX, targetCY);
@@ -545,8 +560,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 {
 	int pos = -1;
 	QWidget *rec = QApplication::activeWindow();
-	if (!rec)
+	if (!rec) {
 		return nullptr;
+	}
 	int cx = rec->width();
 	int cy = rec->height();
 	int minX = 0;
@@ -566,8 +582,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 		}
 		minY = cy / 2;
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 6);
 		pos += ((y - minY) / ((maxY - minY) / 3)) * 6;
@@ -585,8 +602,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			minY = (cy / 2) - (validY / 6);
 		}
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 6);
 		pos += ((y - minY) / ((maxY - minY) / 4)) * 6;
@@ -604,12 +622,14 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 
 		minX = cx / 2;
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = 2 * ((y - minY) / ((maxY - minY) / 4));
-		if (x > minX + ((maxX - minX) / 2))
+		if (x > minX + ((maxX - minX) / 2)) {
 			pos++;
+		}
 		break;
 	case MultiviewLayout::VERTICAL_RIGHT_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
@@ -623,12 +643,14 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 
 		maxX = (cx / 2);
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = 2 * ((y - minY) / ((maxY - minY) / 4));
-		if (x > minX + ((maxX - minX) / 2))
+		if (x > minX + ((maxX - minX) / 2)) {
 			pos++;
+		}
 		break;
 	case MultiviewLayout::HORIZONTAL_BOTTOM_8_SCENES:
 		if (float(cx) / float(cy) > ratio) {
@@ -642,12 +664,14 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 
 		maxY = (cy / 2);
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 4);
-		if (y > minY + ((maxY - minY) / 2))
+		if (y > minY + ((maxY - minY) / 2)) {
 			pos += 4;
+		}
 		break;
 	case MultiviewLayout::SCENES_ONLY_4_SCENES:
 		if (float(cx) / float(cy) > ratio) {
@@ -660,8 +684,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			minY = (cy / 2) - (validY / 2);
 		}
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 2);
 		pos += ((y - minY) / ((maxY - minY) / 2)) * 2;
@@ -678,8 +703,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			minY = (cy / 2) - (validY / 2);
 		}
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 3);
 		pos += ((y - minY) / ((maxY - minY) / 3)) * 3;
@@ -696,8 +722,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			minY = (cy / 2) - (validY / 2);
 		}
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 4);
 		pos += ((y - minY) / ((maxY - minY) / 4)) * 4;
@@ -714,8 +741,9 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 			minY = (cy / 2) - (validY / 2);
 		}
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 5);
 		pos += ((y - minY) / ((maxY - minY) / 5)) * 5;
@@ -733,15 +761,19 @@ OBSSource Multiview::GetSourceByPosition(int x, int y)
 
 		minY = (cy / 2);
 
-		if (x < minX || x > maxX || y < minY || y > maxY)
+		if (x < minX || x > maxX || y < minY || y > maxY) {
 			break;
+		}
 
 		pos = (x - minX) / ((maxX - minX) / 4);
-		if (y > minY + ((maxY - minY) / 2))
+		if (y > minY + ((maxY - minY) / 2)) {
 			pos += 4;
+		}
 	}
 
-	if (pos < 0 || pos >= (int)numSrcs)
+	if (pos < 0 || pos >= (int)multiviewScenes.size()) {
 		return nullptr;
+	}
+
 	return OBSGetStrongRef(multiviewScenes[pos]);
 }

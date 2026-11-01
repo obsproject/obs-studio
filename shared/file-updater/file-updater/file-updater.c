@@ -67,20 +67,23 @@ void update_info_destroy(struct update_info *info)
 	bfree(info);
 }
 
-static size_t http_write(uint8_t *ptr, size_t size, size_t nmemb, struct update_info *info)
+static size_t http_write(char *ptr, size_t size, size_t nmemb, void *info_param)
 {
 	size_t total = size * nmemb;
-	if (total)
+	if (total) {
+		struct update_info *info = info_param;
 		da_push_back_array(info->file_data, ptr, total);
+	}
 
 	return total;
 }
 
-static size_t http_header(char *buffer, size_t size, size_t nitems, struct update_info *info)
+static size_t http_header(char *buffer, size_t size, size_t nitems, void *info_param)
 {
 	if (!strncmp(buffer, "ETag: ", 6)) {
 		char *etag = buffer + 6;
 		if (*etag) {
+			struct update_info *info = info_param;
 			char *etag_clean, *p;
 
 			etag_clean = bstrdup(etag);
@@ -110,8 +113,8 @@ static bool do_http_request(struct update_info *info, const char *url, long *res
 	curl_easy_setopt(info->curl, CURLOPT_ERRORBUFFER, info->error);
 	curl_easy_setopt(info->curl, CURLOPT_WRITEFUNCTION, http_write);
 	curl_easy_setopt(info->curl, CURLOPT_WRITEDATA, info);
-	curl_easy_setopt(info->curl, CURLOPT_FAILONERROR, true);
-	curl_easy_setopt(info->curl, CURLOPT_NOSIGNAL, 1);
+	curl_easy_setopt(info->curl, CURLOPT_FAILONERROR, 1L);
+	curl_easy_setopt(info->curl, CURLOPT_NOSIGNAL, 1L);
 	curl_easy_setopt(info->curl, CURLOPT_ACCEPT_ENCODING, "");
 	curl_obs_set_revoke_setting(info->curl);
 

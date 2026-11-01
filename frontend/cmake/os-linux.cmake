@@ -1,9 +1,19 @@
-target_sources(obs-studio PRIVATE utility/platform-x11.cpp utility/system-info-posix.cpp)
+target_sources(
+  obs-studio
+  PRIVATE
+    utility/CrashHandler_Linux.cpp
+    utility/NativeEventFilter.cpp
+    utility/platform-x11.cpp
+    utility/system-info-posix.cpp
+)
 target_compile_definitions(
   obs-studio
   PRIVATE OBS_INSTALL_PREFIX="${OBS_INSTALL_PREFIX}" $<$<BOOL:${ENABLE_PORTABLE_CONFIG}>:ENABLE_PORTABLE_CONFIG>
 )
-target_link_libraries(obs-studio PRIVATE Qt::GuiPrivate Qt::DBus)
+target_link_libraries(obs-studio PRIVATE Qt::DBus)
+
+find_package(Libpci REQUIRED)
+target_link_libraries(obs-studio PRIVATE Libpci::pci)
 
 if(TARGET OBS::python)
   find_package(Python REQUIRED COMPONENTS Interpreter Development)

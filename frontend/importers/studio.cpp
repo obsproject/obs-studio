@@ -151,14 +151,17 @@ static string CheckPath(const string &path, const string &rootDir)
 	*absPath = 0;
 	size_t len = os_get_abs_path((rootDir + path).c_str(), absPath, sizeof(absPath));
 
-	if (len == 0)
+	if (len == 0) {
 		return path;
+	}
 
-	if (strstr(absPath, root) != absPath)
+	if (strstr(absPath, root) != absPath) {
 		return path;
+	}
 
-	if (*(absPath + rootLen) != QDir::separator().toLatin1())
+	if (*(absPath + rootLen) != QDir::separator().toLatin1()) {
 		return path;
+	}
 
 	return absPath;
 }
@@ -172,8 +175,9 @@ void TranslatePaths(Json &res, const string &rootDir)
 			Json val = it->second;
 
 			if (val.is_string()) {
-				if (val.string_value().rfind("./", 0) != 0)
+				if (val.string_value().rfind("./", 0) != 0) {
 					continue;
+				}
 
 				out[it->first] = CheckPath(val.string_value(), rootDir);
 			} else if (val.is_array() || val.is_object()) {
@@ -190,8 +194,9 @@ void TranslatePaths(Json &res, const string &rootDir)
 			Json val = out[i];
 
 			if (val.is_string()) {
-				if (val.string_value().rfind("./", 0) != 0)
+				if (val.string_value().rfind("./", 0) != 0) {
 					continue;
+				}
 
 				out[i] = CheckPath(val.string_value(), rootDir);
 			} else if (val.is_array() || val.is_object()) {
@@ -210,20 +215,25 @@ bool StudioImporter::Check(const string &path)
 	string err;
 	Json collection = Json::parse(file_data, err);
 
-	if (err != "")
+	if (err != "") {
 		return false;
+	}
 
-	if (collection.is_null())
+	if (collection.is_null()) {
 		return false;
+	}
 
-	if (collection["sources"].is_null())
+	if (collection["sources"].is_null()) {
 		return false;
+	}
 
-	if (collection["name"].is_null())
+	if (collection["name"].is_null()) {
 		return false;
+	}
 
-	if (collection["current_scene"].is_null())
+	if (collection["current_scene"].is_null()) {
 		return false;
+	}
 
 	return true;
 }
@@ -242,18 +252,21 @@ string StudioImporter::Name(const string &path)
 
 int StudioImporter::ImportScenes(const string &path, string &name, Json &res)
 {
-	if (!os_file_exists(path.c_str()))
+	if (!os_file_exists(path.c_str())) {
 		return IMPORTER_FILE_NOT_FOUND;
+	}
 
-	if (!Check(path.c_str()))
+	if (!Check(path.c_str())) {
 		return IMPORTER_FILE_NOT_RECOGNISED;
+	}
 
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 	string err;
 	Json d = Json::parse(file_data, err);
 
-	if (err != "")
+	if (err != "") {
 		return IMPORTER_ERROR_DURING_CONVERSION;
+	}
 
 	QDir dir(path.c_str());
 
@@ -262,10 +275,11 @@ int StudioImporter::ImportScenes(const string &path, string &name, Json &res)
 
 	Json::object obj = d.object_items();
 
-	if (name != "")
+	if (name != "") {
 		obj["name"] = name;
-	else
+	} else {
 		obj["name"] = "OBS Studio Import";
+	}
 
 	res = obj;
 

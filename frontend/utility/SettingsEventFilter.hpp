@@ -25,6 +25,8 @@
 #include <QObject>
 
 class SettingsEventFilter : public QObject {
+	Q_OBJECT
+
 	QScopedPointer<OBSEventFilter> shortcutFilter;
 
 public:

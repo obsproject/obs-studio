@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.28...3.30)
 
 option(ENABLE_FFMPEG_MUX_DEBUG "Enable FFmpeg-mux debugging" OFF)
 
-find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
+find_package(FFmpeg 8.0 REQUIRED COMPONENTS avcodec avutil avformat)
 
 add_executable(obs-ffmpeg-mux)
 add_executable(OBS::ffmpeg-mux ALIAS obs-ffmpeg-mux)

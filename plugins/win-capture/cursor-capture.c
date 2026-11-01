@@ -7,6 +7,9 @@ static uint8_t *get_bitmap_data(HBITMAP hbmp, BITMAP *bmp)
 	if (GetObject(hbmp, sizeof(*bmp), bmp) != 0) {
 		uint8_t *output;
 		unsigned int size = bmp->bmHeight * bmp->bmWidthBytes;
+		if (!size) {
+			return NULL;
+		}
 
 		output = bmalloc(size);
 		GetBitmapBits(hbmp, size, output);
@@ -99,6 +102,9 @@ static inline uint8_t *copy_from_mask(ICONINFO *ii, uint32_t *width, uint32_t *h
 	bmp.bmHeight /= 2;
 
 	pixels = bmp.bmHeight * bmp.bmWidth;
+	if (!pixels) {
+		return NULL;
+	}
 	output = bzalloc(pixels * 4);
 
 	bottom = bmp.bmWidthBytes * bmp.bmHeight;

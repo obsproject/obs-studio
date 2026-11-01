@@ -31,6 +31,17 @@ enum class ItemHandle : uint32_t {
 	Rot = ITEM_ROT
 };
 
+struct SnapGuide {
+	vec2 start;
+	vec2 end;
+
+	explicit SnapGuide(vec2 start, vec2 end)
+	{
+		this->start = start;
+		this->end = end;
+	}
+};
+
 class OBSBasicPreview : public OBSQTDisplay {
 	Q_OBJECT
 
@@ -55,6 +66,8 @@ private:
 	gs_texture_t *overflow = nullptr;
 	gs_vertbuffer_t *rectFill = nullptr;
 	gs_vertbuffer_t *circleFill = nullptr;
+	gs_effect_t *solidEffect = nullptr;
+	gs_effect_t *stripedLineEffect = nullptr;
 
 	vec2 startPos;
 	vec2 mousePos;
@@ -78,6 +91,7 @@ private:
 	bool updatingXScrollBar = false;
 	bool updatingYScrollBar = false;
 
+	std::vector<SnapGuide> snapGuides;
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
 	std::mutex selectMutex;
@@ -113,12 +127,10 @@ private:
 
 	void ProcessClick(const vec2 &pos);
 
+	void DrawStripedLine(float x1, float y1, float x2, float y2, float thickness, vec2 scale);
+
 	OBSDataAutoRelease wrapper = nullptr;
 	bool changed;
-
-private slots:
-	void XScrollBarMoved(int value);
-	void YScrollBarMoved(int value);
 
 public:
 	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = Qt::WindowFlags());
@@ -147,8 +159,9 @@ public:
 
 	inline void SetFixedScaling(bool newFixedScalingVal)
 	{
-		if (fixedScaling == newFixedScalingVal)
+		if (fixedScaling == newFixedScalingVal) {
 			return;
+		}
 
 		fixedScaling = newFixedScalingVal;
 		emit fixedScalingChanged(fixedScaling);
@@ -158,6 +171,9 @@ public:
 	void SetScalingLevel(int32_t newScalingLevelVal);
 	void SetScalingAmount(float newScalingAmountVal);
 	void SetScalingLevelAndAmount(int32_t newScalingLevelVal, float newScalingAmountVal);
+	void increaseScalingLevel();
+	void decreaseScalingLevel();
+	void resetScalingLevel();
 	inline int32_t GetScalingLevel() const { return scalingLevel; }
 	inline float GetScalingAmount() const { return scalingAmount; }
 
@@ -165,6 +181,9 @@ public:
 	inline void SetScrollingOffset(float x, float y) { vec2_set(&scrollingOffset, x, y); }
 	inline float GetScrollX() const { return scrollingOffset.x; }
 	inline float GetScrollY() const { return scrollingOffset.y; }
+
+	void xScrollBarChanged(int value);
+	void yScrollBarChanged(int value);
 
 	inline void SetOverflowHidden(bool hidden) { overflowHidden = hidden; }
 	inline void SetOverflowSelectionHidden(bool hidden) { overflowSelectionHidden = hidden; }
@@ -183,6 +202,8 @@ public:
 	OBSSourceAutoRelease spacerLabel[4];
 	int spacerPx[4] = {0};
 
+	void addSnapGuide(SnapGuide guide);
+	void DrawSnapGuides();
 	void DrawSpacingHelpers();
 	void ClampScrollingOffsets();
 	void UpdateXScrollBar(float cx);

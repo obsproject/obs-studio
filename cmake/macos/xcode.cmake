@@ -4,20 +4,6 @@ include_guard(GLOBAL)
 
 set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
 
-# Use a compiler wrapper to enable ccache in Xcode projects
-if(ENABLE_CCACHE AND CCACHE_PROGRAM)
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-c.in" ccache-launcher-c)
-  configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/macos/resources/ccache-launcher-cxx.in" ccache-launcher-cxx)
-
-  execute_process(
-    COMMAND chmod a+rx "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c" "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx"
-  )
-  set(CMAKE_XCODE_ATTRIBUTE_CC "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-c")
-  set(CMAKE_XCODE_ATTRIBUTE_CXX "${CMAKE_CURRENT_BINARY_DIR}/ccache-launcher-cxx")
-  set(CMAKE_XCODE_ATTRIBUTE_LD "${CMAKE_C_COMPILER}")
-  set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_CXX_COMPILER}")
-endif()
-
 # Set project variables
 set(CMAKE_XCODE_ATTRIBUTE_CURRENT_PROJECT_VERSION ${OBS_BUILD_NUMBER})
 set(CMAKE_XCODE_ATTRIBUTE_DYLIB_COMPATIBILITY_VERSION 1.0.0)
@@ -83,7 +69,7 @@ set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=RelWithDebInfo] dwarf
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Release] dwarf-with-dsym)
 set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=MinSizeRel] dwarf-with-dsym)
 
-# Make all symbols hidden by default (currently overriden by CMake's compiler flags)
+# Make all symbols hidden by default (currently overridden by CMake's compiler flags)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_SYMBOLS_PRIVATE_EXTERN YES)
 set(CMAKE_XCODE_ATTRIBUTE_GCC_INLINES_ARE_PRIVATE_EXTERN YES)
 

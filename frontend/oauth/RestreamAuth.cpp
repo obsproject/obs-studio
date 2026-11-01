@@ -32,8 +32,9 @@ RestreamAuth::RestreamAuth(const Def &d) : OAuthStreamKey(d) {}
 
 RestreamAuth::~RestreamAuth()
 {
-	if (!uiLoaded)
+	if (!uiLoaded) {
 		return;
+	}
 
 	OBSBasic *main = OBSBasic::Get();
 
@@ -49,11 +50,12 @@ try {
 	std::string client_id = RESTREAM_CLIENTID;
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
-	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION))
+	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION)) {
 		return events;
-
-	if (token.empty())
+	}
+	if (token.empty()) {
 		return events;
+	}
 
 	std::string auth;
 	auth += "Authorization: Bearer ";
@@ -70,22 +72,25 @@ try {
 
 	auto func = [&]() {
 		auto url = QString("%1/events/upcoming?source=2&sort=scheduled").arg(RESTREAM_API_URL);
-		success = GetRemoteFile(url.toUtf8(), output, error, nullptr, "application/json", "", nullptr, headers,
-					nullptr, 5);
+		success = GetRemoteFile(url.toUtf8().constData(), output, error, nullptr, "application/json", "",
+					nullptr, headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(func, QTStr("Auth.LoadingChannel.Title"),
 				    QTStr("Auth.LoadingChannel.Text").arg(service()));
-	if (!success || output.empty())
+	if (!success || output.empty()) {
 		throw ErrorInfo("Failed to get upcoming events info from remote", error);
+	}
 
 	json = Json::parse(output, error);
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo("Failed to parse json", error);
+	}
 
 	error = json["error"].string_value();
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	auto items = json.array_items();
 	if (!items.size()) {
@@ -123,11 +128,13 @@ try {
 	std::string client_id = RESTREAM_CLIENTID;
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
-	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION))
+	if (!GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION)) {
 		return "";
+	}
 
-	if (token.empty())
+	if (token.empty()) {
 		return "";
+	}
 
 	std::string auth;
 	auth += "Authorization: Bearer ";
@@ -147,22 +154,25 @@ try {
 	bool success;
 
 	auto func = [&, url]() {
-		success = GetRemoteFile(url.toUtf8(), output, error, nullptr, "application/json", "", nullptr, headers,
-					nullptr, 5);
+		success = GetRemoteFile(url.toUtf8().constData(), output, error, nullptr, "application/json", "",
+					nullptr, headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(func, QTStr("Auth.LoadingChannel.Title"),
 				    QTStr("Auth.LoadingChannel.Text").arg(service()));
-	if (!success || output.empty())
+	if (!success || output.empty()) {
 		throw ErrorInfo("Failed to get the stream key from remote", error);
+	}
 
 	json = Json::parse(output, error);
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo("Failed to parse json", error);
+	}
 
 	error = json["error"].string_value();
-	if (!error.empty())
+	if (!error.empty()) {
 		throw ErrorInfo(error, json["error_description"].string_value());
+	}
 
 	return json["streamKey"].string_value();
 } catch (ErrorInfo info) {
@@ -253,8 +263,9 @@ bool RestreamAuth::LoadInternal()
 
 void RestreamAuth::LoadUI()
 {
-	if (uiLoaded)
+	if (uiLoaded) {
 		return;
+	}
 
 	// Select the previous event
 	if (key_.empty()) {
@@ -280,8 +291,9 @@ void RestreamAuth::LoadUI()
 	}
 
 #ifdef BROWSER_AVAILABLE
-	if (!cef)
+	if (!cef) {
 		return;
+	}
 
 	OBSBasic::InitBrowserPanelSafeBlock();
 	OBSBasic *main = OBSBasic::Get();
@@ -350,9 +362,7 @@ void RestreamAuth::LoadUI()
 	} else {
 		const char *dockStateStr = config_get_string(main->Config(), service(), "DockState");
 		QByteArray dockState = QByteArray::fromBase64(QByteArray(dockStateStr));
-
-		if (main->isVisible() || !main->isMaximized())
-			main->restoreState(dockState);
+		main->restoreState(dockState);
 	}
 #endif
 
@@ -380,16 +390,19 @@ std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent, const std::string &)
 	OAuthLogin login(parent, RESTREAM_AUTH_URL, false);
 	cef->add_popup_whitelist_url("about:blank", &login);
 
-	if (login.exec() == QDialog::Rejected)
+	if (login.exec() == QDialog::Rejected) {
 		return nullptr;
+	}
 
 	std::shared_ptr<RestreamAuth> restreamAuth = std::make_shared<RestreamAuth>(restreamDef);
 
 	std::string client_id = RESTREAM_CLIENTID;
 	deobfuscate_str(&client_id[0], RESTREAM_HASH);
 
-	if (!restreamAuth->GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION, QT_TO_UTF8(login.GetCode())))
+	if (!restreamAuth->GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION,
+				    QT_TO_UTF8(login.GetCode()))) {
 		return nullptr;
+	}
 
 	return restreamAuth;
 }
@@ -409,8 +422,9 @@ static void DeleteCookies()
 void RegisterRestreamAuth()
 {
 #if !defined(__APPLE__) && !defined(_WIN32)
-	if (QApplication::platformName().contains("wayland"))
+	if (QApplication::platformName().contains("wayland")) {
 		return;
+	}
 #endif
 
 	OAuth::RegisterOAuth(restreamDef, CreateRestreamAuth, RestreamAuth::Login, DeleteCookies);

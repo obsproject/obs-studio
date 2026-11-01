@@ -9,8 +9,6 @@ function(_check_dependencies_macos)
   set(arch universal)
   set(platform macos-${arch})
 
-  file(READ "${CMAKE_CURRENT_SOURCE_DIR}/buildspec.json" buildspec)
-
   set(dependencies_dir "${CMAKE_CURRENT_SOURCE_DIR}/.deps")
   set(prebuilt_filename "macos-deps-VERSION-ARCH-REVISION.tar.xz")
   set(prebuilt_destination "obs-deps-VERSION-ARCH")
@@ -20,7 +18,7 @@ function(_check_dependencies_macos)
   set(cef_destination "cef_binary_VERSION_macos_ARCH")
   set(dependencies_list prebuilt qt6 cef)
 
-  _check_dependencies()
+  _check_dependencies(${dependencies_list})
 
   execute_process(
     COMMAND "xattr" -r -d com.apple.quarantine "${dependencies_dir}/${destination}"

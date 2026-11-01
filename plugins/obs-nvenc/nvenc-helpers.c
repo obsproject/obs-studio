@@ -101,7 +101,9 @@ bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err, const ch
 
 bool load_nvenc_lib(void)
 {
-#ifdef _WIN32
+#if defined(_M_ARM64)
+	nvenc_lib = os_dlopen("nvEncodeAPI.dll");
+#elif defined(_WIN32)
 	nvenc_lib = os_dlopen("nvEncodeAPI64.dll");
 #else
 	nvenc_lib = os_dlopen("libnvidia-encode.so.1");
@@ -281,6 +283,8 @@ static void read_codec_caps(config_t *config, enum codec_type codec, const char 
 	caps->temporal_aq = config_get_bool(config, section, "temporal_aq");
 	caps->ten_bit = config_get_bool(config, section, "10bit");
 	caps->four_four_four = config_get_bool(config, section, "yuv_444");
+	caps->four_two_two = config_get_bool(config, section, "yuv_422");
+	caps->uhq = config_get_bool(config, section, "uhq");
 }
 
 static bool nvenc_check(void)

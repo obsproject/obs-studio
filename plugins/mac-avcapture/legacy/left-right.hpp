@@ -19,14 +19,16 @@ template<typename T> struct left_right {
 		auto cur = current.load();
 		auto next = (cur + 1) & 1;
 
-		while (readers[next] != 0)
+		while (readers[next] != 0) {
 			std::this_thread::yield();
+		}
 
 		f(data[next]);
 		current = (std::uint_fast8_t)next;
 
-		while (readers[cur] != 0)
+		while (readers[cur] != 0) {
 			std::this_thread::yield();
+		}
 
 		f(data[cur]);
 	}
@@ -38,8 +40,9 @@ template<typename T> struct left_right {
 			readers[cur] += 1;
 
 			auto cur_ = current.load();
-			if (cur_ == cur)
+			if (cur_ == cur) {
 				break;
+			}
 
 			readers[cur] -= 1;
 			cur = cur_;

@@ -60,15 +60,16 @@ template<typename OBSRef> struct SignalContainer {
 };
 } // namespace
 
-void OBSBasic::ReceivedIntroJson(const QString &text)
+void OBSBasic::ReceivedIntroJson(const std::string &text)
 {
 #ifdef WHATSNEW_ENABLED
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	WhatsNewList items;
 	try {
-		nlohmann::json json = nlohmann::json::parse(text.toStdString());
+		nlohmann::json json = nlohmann::json::parse(text);
 		items = json.get<WhatsNewList>();
 	} catch (nlohmann::json::exception &e) {
 		blog(LOG_WARNING, "Parsing whatsnew data failed: %s", e.what());
@@ -83,14 +84,17 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		if (item.os) {
 			WhatsNewPlatforms platforms = *item.os;
 #ifdef _WIN32
-			if (!platforms.windows)
+			if (!platforms.windows) {
 				continue;
+			}
 #elif defined(__APPLE__)
-			if (!platforms.macos)
+			if (!platforms.macos) {
 				continue;
+			}
 #else
-			if (!platforms.linux)
+			if (!platforms.linux) {
 				continue;
+			}
 #endif
 		}
 
@@ -153,8 +157,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
 #ifdef BROWSER_AVAILABLE
-	if (closing)
+	if (isClosing()) {
 		return;
+	}
 
 	if (obsWhatsNew) {
 		obsWhatsNew->close();
@@ -168,10 +173,12 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 
 void OBSBasic::TimedCheckForUpdates()
 {
-	if (App()->IsUpdaterDisabled())
+	if (App()->IsUpdaterDisabled()) {
 		return;
-	if (!config_get_bool(App()->GetAppConfig(), "General", "EnableAutoUpdates"))
+	}
+	if (!config_get_bool(App()->GetAppConfig(), "General", "EnableAutoUpdates")) {
 		return;
+	}
 
 #if defined(ENABLE_SPARKLE_UPDATER)
 	CheckForUpdates(false);
@@ -187,8 +194,9 @@ void OBSBasic::TimedCheckForUpdates()
 	long long t = (long long)time(nullptr);
 	long long secs = t - lastUpdate;
 
-	if (secs > UPDATE_CHECK_INTERVAL)
+	if (secs > UPDATE_CHECK_INTERVAL) {
 		CheckForUpdates(false);
+	}
 #endif
 }
 
@@ -198,15 +206,17 @@ void OBSBasic::CheckForUpdates(bool manualUpdate)
 	ui->actionCheckForUpdates->setEnabled(false);
 	ui->actionRepair->setEnabled(false);
 
-	if (updateCheckThread && updateCheckThread->isRunning())
+	if (updateCheckThread && updateCheckThread->isRunning()) {
 		return;
+	}
 	updateCheckThread.reset(new AutoUpdateThread(manualUpdate));
 	updateCheckThread->start();
 #elif defined(ENABLE_SPARKLE_UPDATER)
 	ui->actionCheckForUpdates->setEnabled(false);
 
-	if (updateCheckThread && updateCheckThread->isRunning())
+	if (updateCheckThread && updateCheckThread->isRunning()) {
 		return;
+	}
 
 	MacUpdateThread *mut = new MacUpdateThread(manualUpdate);
 	connect(mut, &MacUpdateThread::Result, this, &OBSBasic::MacBranchesFetched, Qt::QueuedConnection);

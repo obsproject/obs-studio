@@ -182,7 +182,7 @@ bool parse_decl_string(struct decl_info *decl, const char *decl_string)
 	struct strref ret_type;
 	struct decl_param ret_param = {0};
 	int code;
-	bool success;
+	bool success = false;
 
 	decl->decl_string = decl_string;
 	ret_param.flags = CALL_PARAM_OUT;
@@ -210,9 +210,11 @@ bool parse_decl_string(struct decl_info *decl, const char *decl_string)
 		goto fail;
 
 	parse_params(&cfp, decl);
+	success = true;
 
 fail:
-	success = !error_data_has_errors(&cfp.error_list);
+	if (error_data_has_errors(&cfp.error_list))
+		success = false;
 
 	if (success && ret_param.type != CALL_PARAM_TYPE_VOID) {
 		ret_param.name = bstrdup("return");

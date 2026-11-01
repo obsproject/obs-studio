@@ -64,7 +64,7 @@ void pulse_wait();
 /**
  * Wait for accept signal from calling thread
  *
- * This function tells the pulseaudio mainloop wheter the data provided to
+ * This function tells the pulseaudio mainloop whether the data provided to
  * the callback should be retained until the calling thread executes
  * pulse_accept()
  *

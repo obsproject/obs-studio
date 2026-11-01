@@ -468,6 +468,7 @@ static int window_rating(HWND window, enum window_priority priority, const char 
 
 static const char *generic_class_substrings[] = {
 	"Chrome",
+	"SDL_app",
 	NULL,
 };
 
@@ -478,7 +479,7 @@ static bool is_generic_class(const char *current_class)
 		if (astrstri(current_class, *class) != NULL) {
 			return true;
 		}
-		class ++;
+		class++;
 	}
 
 	return false;

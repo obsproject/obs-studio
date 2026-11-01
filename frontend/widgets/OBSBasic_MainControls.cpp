@@ -20,14 +20,17 @@
 #include "OBSBasic.hpp"
 #include "OBSBasicStats.hpp"
 
+#include <dialogs/LogUploadDialog.hpp>
 #include <dialogs/OBSAbout.hpp>
 #include <dialogs/OBSBasicAdvAudio.hpp>
 #include <dialogs/OBSBasicFilters.hpp>
 #include <dialogs/OBSBasicInteraction.hpp>
 #include <dialogs/OBSBasicProperties.hpp>
 #include <dialogs/OBSBasicTransform.hpp>
+#ifdef ENABLE_IDIAN_PLAYGROUND
+#include <dialogs/OBSIdianPlayground.hpp>
+#endif
 #include <dialogs/OBSLogViewer.hpp>
-#include <dialogs/OBSLogReply.hpp>
 #ifdef __APPLE__
 #include <dialogs/OBSPermissions.hpp>
 #endif
@@ -44,11 +47,10 @@
 
 #include <qt-wrappers.hpp>
 
+#include <nlohmann/json.hpp>
 #include <QDesktopServices>
 
-#ifdef _WIN32
 #include <sstream>
-#endif
 
 extern bool restart;
 extern bool restart_safe;
@@ -62,15 +64,19 @@ extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
 using namespace std;
+using LogUploadDialog = OBS::LogUploadDialog;
+using LogUploadType = OBS::LogFileType;
 
 void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (interaction)
+	if (interaction) {
 		closed = interaction->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	interaction = new OBSBasicInteraction(this, source);
 	interaction->Init();
@@ -80,11 +86,13 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (properties)
+	if (properties) {
 		closed = properties->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	properties = new OBSBasicProperties(this, source);
 	properties->Init();
@@ -94,11 +102,13 @@ void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (filters)
+	if (filters) {
 		closed = filters->close();
+	}
 
-	if (!closed)
+	if (!closed) {
 		return;
+	}
 
 	filters = new OBSBasicFilters(this, source);
 	filters->Init();
@@ -115,10 +125,11 @@ void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(App()->GetUserConfig(), "BasicWindow", "StudioPortraitLayout");
 
-	if (studioPortraitLayout)
+	if (studioPortraitLayout) {
 		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
-	else
+	} else {
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+	}
 
 	UpdatePreviewProgramIndicators();
 }
@@ -132,10 +143,12 @@ void OBSBasic::CloseDialogs()
 		}
 	}
 
-	if (!stats.isNull())
+	if (!stats.isNull()) {
 		stats->close(); //call close to save Stats geometry
-	if (!remux.isNull())
+	}
+	if (!remux.isNull()) {
 		remux->close();
+	}
 }
 
 void OBSBasic::EnumDialogs()
@@ -147,17 +160,20 @@ void OBSBasic::EnumDialogs()
 	/* fill list of Visible dialogs and Modal dialogs */
 	QList<QDialog *> dialogs = findChildren<QDialog *>();
 	for (QDialog *dialog : dialogs) {
-		if (dialog->isVisible())
+		if (dialog->isVisible()) {
 			visDialogs.append(dialog);
-		if (dialog->isModal())
+		}
+		if (dialog->isModal()) {
 			modalDialogs.append(dialog);
+		}
 	}
 
 	/* fill list of Visible message boxes */
 	QList<QMessageBox *> msgBoxes = findChildren<QMessageBox *>();
 	for (QMessageBox *msgbox : msgBoxes) {
-		if (msgbox->isVisible())
+		if (msgbox->isVisible()) {
 			visMsgBoxes.append(msgbox);
+		}
 	}
 }
 
@@ -208,10 +224,11 @@ void OBSBasic::on_action_Settings_triggered()
 		QMessageBox::StandardButton button =
 			OBSMessageBox::question(this, QTStr("Restart"), QTStr("NeedsRestart"));
 
-		if (button == QMessageBox::Yes)
+		if (button == QMessageBox::Yes) {
 			close();
-		else
+		} else {
 			restart = false;
+		}
 	}
 }
 
@@ -219,7 +236,7 @@ void OBSBasic::on_actionShowMacPermissions_triggered()
 {
 #ifdef __APPLE__
 	OBSPermissions check(this, CheckPermission(kScreenCapture), CheckPermission(kVideoDeviceAccess),
-			     CheckPermission(kAudioDeviceAccess), CheckPermission(kAccessibility));
+			     CheckPermission(kAudioDeviceAccess), CheckPermission(kInputMonitoring));
 	check.exec();
 #endif
 }
@@ -242,37 +259,37 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)
 {
 	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), subdir) <= 0) {
 		return nullptr;
+	}
 
 	string path = logDir;
 	path += "/";
 	path += log;
 
 	BPtr<char> file = os_quick_read_utf8_file(path.c_str());
-	if (!file)
+	if (!file) {
 		blog(LOG_WARNING, "Failed to read log file %s", path.c_str());
+	}
 
 	return file;
 }
 
-void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
+void OBSBasic::UploadLog(const char *subdir, const char *file, const LogUploadType uploadType)
 {
 	BPtr<char> fileString{ReadLogFile(subdir, file)};
 
-	if (!fileString)
+	if (!fileString || !*fileString) {
+		OBSApp *app = App();
+		emit app->logUploadFailed(uploadType, QTStr("LogUploadDialog.Errors.NoLogFile"));
 		return;
-
-	if (!*fileString)
-		return;
+	}
 
 	ui->menuLogFiles->setEnabled(false);
-#if defined(_WIN32)
-	ui->menuCrashLogs->setEnabled(false);
-#endif
 
 	stringstream ss;
-	ss << "OBS " << App()->GetVersionString(false) << " log file uploaded at " << CurrentDateTimeString() << "\n\n"
+	ss << "OBS " << App()->GetVersionString(false) << " log file uploaded at " << CurrentDateTimeString()
+	   << ((uploadType == OBS::LogFileType::CurrentAppLog) ? " (Active Log)" : " (Complete Log)") << "\n\n"
 	   << fileString;
 
 	if (logUploadThread) {
@@ -282,19 +299,21 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 	RemoteTextThread *thread = new RemoteTextThread("https://obsproject.com/logs/upload", "text/plain", ss.str());
 
 	logUploadThread.reset(thread);
-	if (crash) {
-		connect(thread, &RemoteTextThread::Result, this, &OBSBasic::crashUploadFinished);
-	} else {
-		connect(thread, &RemoteTextThread::Result, this, &OBSBasic::logUploadFinished);
-	}
+
+	connect(thread, &RemoteTextThread::Result, this,
+		[this, uploadType](const std::string &text, const std::string &error) {
+			logUploadFinished(text, error, uploadType);
+		});
+
 	logUploadThread->start();
 }
 
 void OBSBasic::on_actionShowLogs_triggered()
 {
 	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)
+	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0) {
 		return;
+	}
 
 	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
 	QDesktopServices::openUrl(url);
@@ -302,18 +321,31 @@ void OBSBasic::on_actionShowLogs_triggered()
 
 void OBSBasic::on_actionUploadCurrentLog_triggered()
 {
-	UploadLog("obs-studio/logs", App()->GetCurrentLog(), false);
+	ui->menuLogFiles->setEnabled(false);
+
+	LogUploadDialog uploadDialog{this, LogUploadType::CurrentAppLog};
+
+	uploadDialog.exec();
+
+	ui->menuLogFiles->setEnabled(true);
 }
 
 void OBSBasic::on_actionUploadLastLog_triggered()
 {
-	UploadLog("obs-studio/logs", App()->GetLastLog(), false);
+	ui->menuLogFiles->setEnabled(false);
+
+	LogUploadDialog uploadDialog{this, LogUploadType::LastAppLog};
+
+	uploadDialog.exec();
+
+	ui->menuLogFiles->setEnabled(true);
 }
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
-	if (!logView)
+	if (!logView) {
 		logView = new OBSLogViewer();
+	}
 
 	logView->show();
 	logView->setWindowState((logView->windowState() & ~Qt::WindowMinimized) | Qt::WindowActive);
@@ -323,17 +355,18 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 
 void OBSBasic::on_actionShowCrashLogs_triggered()
 {
-	char logDir[512];
-	if (GetAppConfigPath(logDir, sizeof(logDir), "obs-studio/crashes") <= 0)
-		return;
-
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
-	QDesktopServices::openUrl(url);
+	App()->openCrashLogDirectory();
 }
 
 void OBSBasic::on_actionUploadLastCrashLog_triggered()
 {
-	UploadLog("obs-studio/crashes", App()->GetLastCrashLog(), true);
+	ui->menuCrashLogs->setEnabled(false);
+
+	LogUploadDialog uploadDialog{this, LogUploadType::CrashLog};
+
+	uploadDialog.exec();
+
+	ui->menuCrashLogs->setEnabled(true);
 }
 
 void OBSBasic::on_actionCheckForUpdates_triggered()
@@ -347,8 +380,9 @@ void OBSBasic::on_actionRepair_triggered()
 	ui->actionCheckForUpdates->setEnabled(false);
 	ui->actionRepair->setEnabled(false);
 
-	if (updateCheckThread && updateCheckThread->isRunning())
+	if (updateCheckThread && updateCheckThread->isRunning()) {
 		return;
+	}
 
 	updateCheckThread.reset(new AutoUpdateThread(false, true));
 	updateCheckThread->start();
@@ -367,43 +401,18 @@ void OBSBasic::on_actionRestartSafe_triggered()
 	}
 }
 
-void OBSBasic::logUploadFinished(const QString &text, const QString &error)
+void OBSBasic::logUploadFinished(const std::string &text, const std::string &error, LogUploadType uploadType)
 {
-	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32)
-	ui->menuCrashLogs->setEnabled(true);
-#endif
+	OBSApp *app = App();
 
-	if (text.isEmpty()) {
-		OBSMessageBox::critical(this, QTStr("LogReturnDialog.ErrorUploadingLog"), error);
-		return;
+	if (text.empty()) {
+		emit app->logUploadFailed(uploadType, QString::fromStdString(error));
+	} else {
+		nlohmann::json parsed = nlohmann::json::parse(text);
+		std::string logURL = parsed["url"];
+
+		emit app->logUploadFinished(uploadType, QString::fromStdString(logURL));
 	}
-	openLogDialog(text, false);
-}
-
-void OBSBasic::crashUploadFinished(const QString &text, const QString &error)
-{
-	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32)
-	ui->menuCrashLogs->setEnabled(true);
-#endif
-
-	if (text.isEmpty()) {
-		OBSMessageBox::critical(this, QTStr("LogReturnDialog.ErrorUploadingLog"), error);
-		return;
-	}
-	openLogDialog(text, true);
-}
-
-void OBSBasic::openLogDialog(const QString &text, const bool crash)
-{
-
-	OBSDataAutoRelease returnData = obs_data_create_from_json(QT_TO_UTF8(text));
-	string resURL = obs_data_get_string(returnData, "url");
-	QString logURL = resURL.c_str();
-
-	OBSLogReply logDialog(this, logURL, crash);
-	logDialog.exec();
 }
 
 void OBSBasic::on_actionHelpPortal_triggered()
@@ -427,10 +436,12 @@ void OBSBasic::on_actionDiscord_triggered()
 void OBSBasic::on_actionShowWhatsNew_triggered()
 {
 #ifdef WHATSNEW_ENABLED
-	if (introCheckThread && introCheckThread->isRunning())
+	if (introCheckThread && introCheckThread->isRunning()) {
 		return;
-	if (!cef)
+	}
+	if (!cef) {
 		return;
+	}
 
 	config_set_int(App()->GetAppConfig(), "General", "InfoIncrement", -1);
 
@@ -479,7 +490,7 @@ void OBSBasic::on_actionAlwaysOnTop_triggered()
 	CloseDialogs();
 #endif
 
-	QMetaObject::invokeMethod(this, "ToggleAlwaysOnTop", Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, &OBSBasic::ToggleAlwaysOnTop, Qt::QueuedConnection);
 }
 
 void OBSBasic::ToggleAlwaysOnTop()
@@ -494,25 +505,28 @@ void OBSBasic::ToggleAlwaysOnTop()
 
 void OBSBasic::CreateEditTransformWindow(obs_sceneitem_t *item)
 {
-	if (transformWindow)
+	if (transformWindow) {
 		transformWindow->close();
+	}
 	transformWindow = new OBSBasicTransform(item, this);
-	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::OnSceneChanged);
+	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow, &OBSBasicTransform::onSceneChanged);
 	transformWindow->show();
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
 void OBSBasic::on_actionFullscreenInterface_triggered()
 {
-	if (!isFullScreen())
+	if (!isFullScreen()) {
 		showFullScreen();
-	else
+	} else {
 		showNormal();
+	}
 }
 
 void OBSBasic::on_resetUI_triggered()
 {
 	on_resetDocks_triggered();
+	setPreviewScalingWindow();
 
 	ui->toggleListboxToolbars->setChecked(true);
 	ui->toggleContextBar->setChecked(true);
@@ -528,9 +542,9 @@ void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
 {
 	ui->sourcesToolbar->setVisible(visible);
 	ui->scenesToolbar->setVisible(visible);
-	ui->mixerToolbar->setVisible(visible);
 
 	config_set_bool(App()->GetUserConfig(), "BasicWindow", "ShowListboxToolbars", visible);
+	emit userSettingChanged("BasicWindow", "ShowListboxToolbars");
 }
 
 void OBSBasic::on_toggleStatusBar_toggled(bool visible)
@@ -555,24 +569,28 @@ void OBSBasic::SetShowing(bool showing)
 			}
 		}
 
-		if (showHide)
+		if (showHide) {
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
+		}
 		QTimer::singleShot(0, this, &OBSBasic::hide);
 
-		if (previewEnabled)
+		if (previewEnabled) {
 			EnablePreviewDisplay(false);
+		}
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(false);
 #endif
 
 	} else if (showing && !isVisible()) {
-		if (showHide)
+		if (showHide) {
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
+		}
 		QTimer::singleShot(0, this, &OBSBasic::show);
 
-		if (previewEnabled)
+		if (previewEnabled) {
 			EnablePreviewDisplay(true);
+		}
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(true);
@@ -608,8 +626,9 @@ void OBSBasic::ToggleShowHide()
 	if (showing) {
 		/* check for modal dialogs */
 		EnumDialogs();
-		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty())
+		if (!modalDialogs.isEmpty() || !visMsgBoxes.isEmpty()) {
 			return;
+		}
 	}
 	SetShowing(!showing);
 }
@@ -646,10 +665,22 @@ void OBSBasic::on_stats_triggered()
 	stats = statsDlg;
 }
 
+void OBSBasic::on_idianPlayground_triggered()
+{
+#ifdef ENABLE_IDIAN_PLAYGROUND
+	if (!playground) {
+		playground = new OBSIdianPlayground(this);
+		playground->setAttribute(Qt::WA_DeleteOnClose);
+		playground->show();
+	}
+#endif
+}
+
 void OBSBasic::on_actionShowAbout_triggered()
 {
-	if (about)
+	if (about) {
 		about->close();
+	}
 
 	about = new OBSAbout(this);
 	about->show();
@@ -673,8 +704,6 @@ void OBSBasic::on_OBSBasic_customContextMenuRequested(const QPoint &pos)
 			ui->scenes->customContextMenuRequested(globalPos);
 		} else if (objName.compare("sourcesDock") == 0) {
 			ui->sources->customContextMenuRequested(globalPos);
-		} else if (objName.compare("mixerDock") == 0) {
-			StackedMixerAreaContextMenuRequested();
 		}
 	} else if (!className) {
 		ui->menuDocks->exec(globalPos);

@@ -278,6 +278,8 @@ static void audio_monitor_free_for_reconnect(struct audio_monitor *monitor)
 
 static void on_audio_playback(void *param, obs_source_t *source, const struct audio_data *audio_data, bool muted)
 {
+	UNUSED_PARAMETER(muted);
+
 	struct audio_monitor *monitor = param;
 	uint8_t *resample_data[MAX_AV_PLANES];
 	float vol = source->user_volume;
@@ -325,19 +327,17 @@ static void on_audio_playback(void *param, obs_source_t *source, const struct au
 		goto free_for_reconnect;
 	}
 
-	if (!muted) {
-		/* apply volume */
-		if (!close_float(vol, 1.0f, EPSILON)) {
-			register float *cur = (float *)resample_data[0];
-			register float *end = cur + resample_frames * monitor->channels;
+	/* apply volume */
+	if (!close_float(vol, 1.0f, EPSILON)) {
+		register float *cur = (float *)resample_data[0];
+		register float *end = cur + resample_frames * monitor->channels;
 
-			while (cur < end)
-				*(cur++) *= vol;
-		}
-		memcpy(output, resample_data[0], resample_frames * monitor->channels * sizeof(float));
+		while (cur < end)
+			*(cur++) *= vol;
 	}
+	memcpy(output, resample_data[0], resample_frames * monitor->channels * sizeof(float));
 
-	hr = render->lpVtbl->ReleaseBuffer(render, resample_frames, muted ? AUDCLNT_BUFFERFLAGS_SILENT : 0);
+	hr = render->lpVtbl->ReleaseBuffer(render, resample_frames, 0);
 	if (FAILED(hr)) {
 		goto free_for_reconnect;
 	}

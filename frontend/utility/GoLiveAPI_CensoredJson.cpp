@@ -25,9 +25,8 @@ void censorRecurse(obs_data_t *data)
 			censorRecurse(child_data);
 			obs_data_release(child_data);
 		} else if (typ == OBS_DATA_ARRAY) {
-			obs_data_array_t *child_array = obs_data_item_get_array(item);
+			OBSDataArrayAutoRelease child_array = obs_data_item_get_array(item);
 			censorRecurseArray(child_array);
-			obs_data_array_release(child_array);
 		}
 	}
 }
@@ -68,8 +67,9 @@ using json = nlohmann::json;
 
 void censorRecurse(json &data)
 {
-	if (!data.is_structured())
+	if (!data.is_structured()) {
 		return;
+	}
 
 	auto it = data.find("authentication");
 	if (it != data.end() && it->is_string()) {

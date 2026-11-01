@@ -10,7 +10,7 @@ env:
 task:
   install_script:
   - pkg install -y
-    cmake ninja binutils pkgconf curl
+    cmake ninja binutils pkgconf curl kf6-extra-cmake-modules
     ffmpeg qt6-base qt6-svg jansson libsysinfo e2fsprogs-libuuid pulseaudio
     alsa-lib pipewire v4l_compat libpci librist srt nlohmann-json uthash
     qr-code-generator websocketpp asio vlc swig luajit jackit sndio fdk-aac

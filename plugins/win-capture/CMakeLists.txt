@@ -76,6 +76,9 @@ target_link_libraries(
 # Remove once jansson has been fixed on obs-deps
 target_link_options(win-capture PRIVATE /IGNORE:4098)
 
+configure_file(cmake/windows/obs-module.rc.in win-capture.rc)
+target_sources(win-capture PRIVATE win-capture.rc)
+
 set_target_properties_obs(win-capture PROPERTIES FOLDER plugins/win-capture PREFIX "")
 
 add_subdirectory(graphics-hook)

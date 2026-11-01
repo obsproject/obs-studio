@@ -290,6 +290,17 @@ static size_t libfdk_frame_size(void *data)
 	return enc->info.frameLength;
 }
 
+static uint32_t libfdk_encoder_delay(void *data)
+{
+	libfdk_encoder_t *enc = data;
+
+#if (AACENCODER_LIB_VL0 >= 4)
+	return enc->info.nDelay;
+#else
+	return enc->info.encoderDelay;
+#endif
+}
+
 struct obs_encoder_info obs_libfdk_encoder = {
 	.id = "libfdk_aac",
 	.type = OBS_ENCODER_AUDIO,
@@ -303,6 +314,7 @@ struct obs_encoder_info obs_libfdk_encoder = {
 	.get_properties = libfdk_properties,
 	.get_extra_data = libfdk_extra_data,
 	.get_audio_info = libfdk_audio_info,
+	.get_priming_samples = libfdk_encoder_delay,
 };
 
 bool obs_module_load(void)

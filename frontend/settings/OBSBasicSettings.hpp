@@ -225,6 +225,8 @@ private:
 
 	/* Appearance */
 	void InitAppearancePage();
+	void enableAppearanceFontControls(bool enable);
+	void enableAppearanceDensityControls(bool enable);
 
 	bool IsCustomServer();
 
@@ -346,6 +348,7 @@ private:
 private slots:
 	void on_theme_activated(int idx);
 	void on_themeVariant_activated(int idx);
+	void updateAppearanceControls();
 
 	void on_listWidget_itemSelectionChanged();
 	void on_buttonBox_clicked(QAbstractButton *button);
@@ -385,11 +388,7 @@ private slots:
 
 	void GeneralChanged();
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	void HideOBSWindowWarning(Qt::CheckState state);
-#else
-	void HideOBSWindowWarning(int state);
-#endif
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();

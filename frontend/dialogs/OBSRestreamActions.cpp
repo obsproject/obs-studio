@@ -7,6 +7,7 @@
 #include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QUrl>
 #include <QFileInfo>
 #include <QStandardPaths>
 #include <QImageReader>
@@ -173,5 +174,5 @@ void OBSRestreamActions::BroadcastSelectAndStartAction()
 
 void OBSRestreamActions::OpenRestreamDashboard()
 {
-	QDesktopServices::openUrl(QString("https://app.restream.io/"));
+	QDesktopServices::openUrl(QUrl("https://app.restream.io/"));
 }

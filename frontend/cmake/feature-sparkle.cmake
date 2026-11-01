@@ -11,7 +11,7 @@ if(SPARKLE_APPCAST_URL AND SPARKLE_PUBLIC_KEY)
       utility/OBSUpdateDelegate.h
       utility/OBSUpdateDelegate.mm
   )
-  set_source_files_properties(utility/OBSSparkle.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
+  set_source_files_properties(utility/OBSSparkle.mm PROPERTIES COMPILE_OPTIONS -fobjc-arc)
 
   target_link_libraries(obs-studio PRIVATE "$<LINK_LIBRARY:FRAMEWORK,${SPARKLE}>")
 

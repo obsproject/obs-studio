@@ -333,8 +333,11 @@ bool buffered_file_serializer_init(struct serializer *s, const char *path, size_
 	dstr_init_copy(&out->filename, path);
 
 	out->io.output_file = os_fopen(path, "wb");
-	if (!out->io.output_file)
+	if (!out->io.output_file) {
+		dstr_free(&out->filename);
+		bfree(out);
 		return false;
+	}
 
 	out->io.buffer_size = max_bufsize ? max_bufsize : DEFAULT_BUF_SIZE;
 	out->io.chunk_size = chunk_size ? chunk_size : DEFAULT_CHUNK_SIZE;

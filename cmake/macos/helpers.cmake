@@ -68,6 +68,7 @@ function(set_target_properties_obs target)
                    INFOPLIST_KEY_NSHumanReadableCopyright "(c) 2012-${CURRENT_YEAR} Lain Bailey"
                    INFOPLIST_KEY_NSCameraUsageDescription "OBS needs to access the camera to enable camera sources to work."
                    INFOPLIST_KEY_NSMicrophoneUsageDescription "OBS needs to access the microphone to enable audio input."
+                   INFOPLIST_KEY_NSAppleEventsUsageDescription "OBS needs to access background events to enable hotkeys while not in focus."
       )
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
@@ -168,6 +169,11 @@ function(set_target_properties_obs target)
             "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources"
           COMMENT "Add OBS::python import module"
         )
+        set_property(TARGET ${target} APPEND PROPERTY XCODE_EMBED_PLUGINS obspython)
+      endif()
+
+      if(TARGET obslua)
+        set_property(TARGET ${target} APPEND PROPERTY XCODE_EMBED_PLUGINS obslua)
       endif()
 
       if(
@@ -302,7 +308,6 @@ function(set_target_properties_obs target)
       endif()
     endif()
 
-    set_property(GLOBAL APPEND PROPERTY OBS_MODULES_ENABLED ${target})
     set_property(GLOBAL APPEND PROPERTY _OBS_DEPENDENCIES ${target})
   endif()
 
@@ -356,8 +361,7 @@ function(target_install_resources target)
     list(FILTER data_files EXCLUDE REGEX "\\.DS_Store$")
     foreach(data_file IN LISTS data_files)
       cmake_path(
-        RELATIVE_PATH
-        data_file
+        RELATIVE_PATH data_file
         BASE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/data/"
         OUTPUT_VARIABLE relative_path
       )

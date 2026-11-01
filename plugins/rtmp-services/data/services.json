@@ -11,188 +11,56 @@
             "multitrack_video_learn_more_link": "https://help.twitch.tv/s/article/multiple-encodes",
             "servers": [
                 {
-                    "name": "Asia: Hong Kong",
-                    "url": "rtmp://live-hkg.twitch.tv/app"
+                    "name": "Asia Pacific (Mumbai)",
+                    "url": "rtmp://aps30.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Seoul, South Korea",
-                    "url": "rtmp://live-sel.twitch.tv/app"
+                    "name": "Asia Pacific (Seoul)",
+                    "url": "rtmp://apn20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Singapore",
-                    "url": "rtmp://live-sin.twitch.tv/app"
+                    "name": "Asia Pacific (Singapore)",
+                    "url": "rtmp://aps10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Taipei, Taiwan",
-                    "url": "rtmp://live-tpe.twitch.tv/app"
+                    "name": "Asia Pacific (Sydney)",
+                    "url": "rtmp://aps20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Tokyo, Japan",
-                    "url": "rtmp://live-tyo.twitch.tv/app"
+                    "name": "Asia Pacific (Tokyo)",
+                    "url": "rtmp://apn10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Australia: Sydney",
-                    "url": "rtmp://live-syd.twitch.tv/app"
+                    "name": "Europe (Frankfurt)",
+                    "url": "rtmp://euc10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: Amsterdam, NL",
-                    "url": "rtmp://live-ams.twitch.tv/app"
+                    "name": "Europe (Ireland)",
+                    "url": "rtmp://euw10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: Berlin, DE",
-                    "url": "rtmp://live-ber.twitch.tv/app"
+                    "name": "Europe (Paris)",
+                    "url": "rtmp://euw30.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: Copenhagen, DK",
-                    "url": "rtmp://live-cph.twitch.tv/app"
+                    "name": "Europe (Stockholm)",
+                    "url": "rtmp://eun10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: Frankfurt, DE",
-                    "url": "rtmp://live-fra.twitch.tv/app"
+                    "name": "South America (S\u00e3o Paulo)",
+                    "url": "rtmp://sae10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: Helsinki, FI",
-                    "url": "rtmp://live-hel.twitch.tv/app"
+                    "name": "US East (N. Virginia)",
+                    "url": "rtmp://use10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: Lisbon, Portugal",
-                    "url": "rtmp://live-lis.twitch.tv/app"
+                    "name": "US East (Ohio)",
+                    "url": "rtmp://use20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "EU: London, UK",
-                    "url": "rtmp://live-lhr.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Madrid, Spain",
-                    "url": "rtmp://live-mad.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Marseille, FR",
-                    "url": "rtmp://live-mrs.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Milan, Italy",
-                    "url": "rtmp://live-mil.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Norway, Oslo",
-                    "url": "rtmp://live-osl.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Paris, FR",
-                    "url": "rtmp://live-cdg.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Prague, CZ",
-                    "url": "rtmp://live-prg.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Stockholm, SE",
-                    "url": "rtmp://live-arn.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Vienna, Austria",
-                    "url": "rtmp://live-vie.twitch.tv/app"
-                },
-                {
-                    "name": "EU: Warsaw, Poland",
-                    "url": "rtmp://live-waw.twitch.tv/app"
-                },
-                {
-                    "name": "NA: Mexico City",
-                    "url": "rtmp://live-qro.twitch.tv/app"
-                },
-                {
-                    "name": "NA: Quebec, Canada",
-                    "url": "rtmp://live-ymq.twitch.tv/app"
-                },
-                {
-                    "name": "NA: Toronto, Canada",
-                    "url": "rtmp://live-yto.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Argentina",
-                    "url": "rtmp://live-eze.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Chile",
-                    "url": "rtmp://live-scl.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Lima, Peru",
-                    "url": "rtmp://live-lim.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Medellin, Colombia",
-                    "url": "rtmp://live-mde.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Rio de Janeiro, Brazil",
-                    "url": "rtmp://live-rio.twitch.tv/app"
-                },
-                {
-                    "name": "South America: Sao Paulo, Brazil",
-                    "url": "rtmp://live-sao.twitch.tv/app"
-                },
-                {
-                    "name": "US Central: Dallas, TX",
-                    "url": "rtmp://live-dfw.twitch.tv/app"
-                },
-                {
-                    "name": "US Central: Denver, CO",
-                    "url": "rtmp://live-den.twitch.tv/app"
-                },
-                {
-                    "name": "US Central: Houston, TX",
-                    "url": "rtmp://live-hou.twitch.tv/app"
-                },
-                {
-                    "name": "US Central: Salt Lake City, UT",
-                    "url": "rtmp://live-slc.twitch.tv/app"
-                },
-                {
-                    "name": "US East: Ashburn, VA",
-                    "url": "rtmp://live-iad.twitch.tv/app"
-                },
-                {
-                    "name": "US East: Atlanta, GA",
-                    "url": "rtmp://live-atl.twitch.tv/app"
-                },
-                {
-                    "name": "US East: Chicago",
-                    "url": "rtmp://live-ord.twitch.tv/app"
-                },
-                {
-                    "name": "US East: Miami, FL",
-                    "url": "rtmp://live-mia.twitch.tv/app"
-                },
-                {
-                    "name": "US East: New York, NY",
-                    "url": "rtmp://live-jfk.twitch.tv/app"
-                },
-                {
-                    "name": "US West: Los Angeles, CA",
-                    "url": "rtmp://live-lax.twitch.tv/app"
-                },
-                {
-                    "name": "US West: Phoenix, AZ",
-                    "url": "rtmp://live-phx.twitch.tv/app"
-                },
-                {
-                    "name": "US West: Portland, Oregon",
-                    "url": "rtmp://live-pdx.twitch.tv/app"
-                },
-                {
-                    "name": "US West: San Francisco, CA",
-                    "url": "rtmp://live-sfo.twitch.tv/app"
-                },
-                {
-                    "name": "US West: San Jose, CA",
-                    "url": "rtmp://live-sjc.twitch.tv/app"
-                },
-                {
-                    "name": "US West: Seattle, WA",
-                    "url": "rtmp://live-sea.twitch.tv/app"
+                    "name": "US West (Oregon)",
+                    "url": "rtmp://usw20.contribute.live-video.net/app/"
                 }
             ],
             "recommended": {
@@ -271,43 +139,6 @@
             }
         },
         {
-            "name": "Loola.tv",
-            "common": false,
-            "servers": [
-                {
-                    "name": "US East: Virginia",
-                    "url": "rtmp://rtmp.loola.tv/push"
-                },
-                {
-                    "name": "EU Central: Germany",
-                    "url": "rtmp://rtmp-eu.loola.tv/push"
-                },
-                {
-                    "name": "South America: Brazil",
-                    "url": "rtmp://rtmp-sa.loola.tv/push"
-                },
-                {
-                    "name": "Asia/Pacific: Singapore",
-                    "url": "rtmp://rtmp-sg.loola.tv/push"
-                },
-                {
-                    "name": "Middle East: Bahrain",
-                    "url": "rtmp://rtmp-me.loola.tv/push"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "high",
-                "max video bitrate": 2500,
-                "max audio bitrate": 160,
-                "bframes": 2,
-                "x264opts": "scenecut=0"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "Lovecast",
             "servers": [
                 {
@@ -349,24 +180,6 @@
                 "max audio bitrate": 256,
                 "bframes": 2,
                 "x264opts": "scenecut=0"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
             },
             "supported video codecs": [
                 "h264"
@@ -708,16 +521,56 @@
                     "url": "rtmp://qc.castr.io/static"
                 },
                 {
-                    "name": "SA (Sao Paulo, BR)",
+                    "name": "Mexico",
+                    "url": "rtmp://mexico.castr.io/static"
+                },
+                {
+                    "name": "Sao Paulo, BR",
                     "url": "rtmp://br.castr.io/static"
+                },
+                {
+                    "name": "Colombia",
+                    "url": "rtmp://bogota.castr.io/static"
+                },
+                {
+                    "name": "Santiago, Chile",
+                    "url": "rtmp://santiago.castr.io/static"
+                },
+                {
+                    "name": "Istanbul, TR",
+                    "url": "rtmp://istanbul.castr.io/static"
+                },
+                {
+                    "name": "Tel Aviv, IL",
+                    "url": "rtmp://telaviv.castr.io/static"
                 },
                 {
                     "name": "EU-West (London, UK)",
                     "url": "rtmp://uk.castr.io/static"
                 },
                 {
+                    "name": "EU-West (Paris, FR)",
+                    "url": "rtmp://paris.castr.io/static"
+                },
+                {
+                    "name": "EU-West (Madrid, ES)",
+                    "url": "rtmp://madrid.castr.io/static"
+                },
+                {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://fr.castr.io/static"
+                },
+                {
+                    "name": "EU-Central (Milan, IT)",
+                    "url": "rtmp://milan.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Stockholm, SE)",
+                    "url": "rtmp://stockholm.castr.io/static"
+                },
+                {
+                    "name": "EU-North (Copenhagen, DK)",
+                    "url": "rtmp://copenhagen.castr.io/static"
                 },
                 {
                     "name": "Russia (Moscow)",
@@ -728,12 +581,28 @@
                     "url": "rtmp://sg.castr.io/static"
                 },
                 {
+                    "name": "Asia (Hong Kong, HK)",
+                    "url": "rtmp://hongkong.castr.io/static"
+                },
+                {
                     "name": "Asia (India)",
                     "url": "rtmp://in.castr.io/static"
                 },
                 {
                     "name": "Australia (Sydney)",
                     "url": "rtmp://au.castr.io/static"
+                },
+                {
+                    "name": "UAE (Dubai)",
+                    "url": "rtmp://dubai.castr.io/static"
+                },
+                {
+                    "name": "Africa (Johannesburg, ZA)",
+                    "url": "rtmp://southafrica.castr.io/static"
+                },
+                {
+                    "name": "Africa (Lagos, NG)",
+                    "url": "rtmp://lagos.castr.io/static"
                 },
                 {
                     "name": "US Central",
@@ -784,50 +653,18 @@
             ]
         },
         {
-            "name": "Meridix Live Sports Platform",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://publish.meridix.com/live"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 3500
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "AfreecaTV",
+            "name": "SOOP",
             "alt_names": [
+                "AfreecaTV",
                 "아프리카TV",
-                "Afreeca.TV"
+                "Afreeca.TV",
+                "SOOP Korea",
+                "SOOP Global"
             ],
             "servers": [
                 {
-                    "name": "Asia : Korea",
-                    "url": "rtmp://rtmpmanager-freecat.afreeca.tv/app"
-                },
-                {
-                    "name": "North America : US East",
-                    "url": "rtmp://rtmp-esu.afreecatv.com/app"
-                },
-                {
-                    "name": "North America : US West",
-                    "url": "rtmp://rtmp-wsu.afreecatv.com/app"
-                },
-                {
-                    "name": "South America : Brazil",
-                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
-                },
-                {
-                    "name": "Europe : UK",
-                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
-                },
-                {
-                    "name": "Asia : Singapore",
-                    "url": "rtmp://rtmp-sgp.afreecatv.com/app"
+                    "name": "Default",
+                    "url": "rtmp://stream.soop.live/app/"
                 }
             ],
             "recommended": {
@@ -853,24 +690,6 @@
                 "profile": "baseline",
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "ePlay",
-            "servers": [
-                {
-                    "name": "ePlay Primary",
-                    "url": "rtmp://live.eplay.link/origin"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 7500,
-                "max audio bitrate": 192
             },
             "supported video codecs": [
                 "h264"
@@ -909,18 +728,6 @@
                 "profile": "main",
                 "max video bitrate": 3500
             },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Livestream",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://rtmpin.livestreamingest.com/rtmpin"
-                }
-            ],
             "supported video codecs": [
                 "h264"
             ]
@@ -1450,8 +1257,20 @@
             "name": "Piczel.tv",
             "servers": [
                 {
-                    "name": "Default",
-                    "url": "rtmp://piczel.tv:1935/live"
+                    "name": "US East: 1",
+                    "url": "rtmp://boston.piczel.tv/live"
+                },
+                {
+                    "name": "US East: 2",
+                    "url": "rtmp://boston-2.piczel.tv/live"
+                },
+                {
+                    "name": "France",
+                    "url": "rtmp://france.piczel.tv/live"
+                },
+                {
+                    "name": "Brazil",
+                    "url": "rtmp://brazil.piczel.tv/live"
                 }
             ],
             "recommended": {
@@ -1459,41 +1278,6 @@
                 "max video bitrate": 2500,
                 "max audio bitrate": 256,
                 "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "STAGE TEN",
-            "servers": [
-                {
-                    "name": "STAGE TEN",
-                    "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "baseline",
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "DLive",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.dlive.tv/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
             },
             "supported video codecs": [
                 "h264"
@@ -1563,14 +1347,6 @@
                 {
                     "name": "CloudBeta",
                     "url": "rtmp://cloudbetastreaming.onlyfans.com/live"
-                },
-                {
-                    "name": "Backup (USA)",
-                    "url": "rtmp://route0.onlyfans.com/live"
-                },
-                {
-                    "name": "Backup (Europe)",
-                    "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
             ],
             "recommended": {
@@ -1621,26 +1397,16 @@
             ]
         },
         {
-            "name": "LOCO",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://ivory-ingest.getloconow.com:1935/stream"
-                }
+            "name": "niconico (ニコニコ生放送)",
+            "more_info_link": "https://qa.nicovideo.jp/faq/show/701",
+            "alt_names": [
+                "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+                "niconico, free member (ニコニコ生放送 一般会員)"
             ],
-            "recommended": {
-                "keyint": 2
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
+                    "url": "rtmp://liveorigin.dlive.nicovideo.jp/live/input"
                 }
             ],
             "recommended": {
@@ -1648,25 +1414,6 @@
                 "profile": "high",
                 "max audio bitrate": 192,
                 "max video bitrate": 5808,
-                "x264opts": "tune=zerolatency"
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "niconico, free member (ニコニコ生放送 一般会員)",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://aliveorigin.dmc.nico/named_input"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "high",
-                "max audio bitrate": 96,
-                "max video bitrate": 904,
                 "x264opts": "tune=zerolatency"
             },
             "supported video codecs": [
@@ -1950,24 +1697,6 @@
             ]
         },
         {
-            "name": "OPENREC.tv - Premium member (プレミアム会員)",
-            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://a.station.openrec.tv:1935/live1"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
@@ -2003,10 +1732,6 @@
                 {
                     "name": "bintu-stream Asia South (ASS)",
                     "url": "rtmp://bintu-stream-ass.nanocosmos.de/live"
-                },
-                {
-                    "name": "bintu-stream Australia (AU)",
-                    "url": "rtmp://bintu-stream-au.nanocosmos.de/live"
                 },
                 {
                     "name": "bintu-vtrans Europe (EU)",
@@ -2086,33 +1811,8 @@
                 }
             ],
             "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Volume.com",
-            "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
-            "servers": [
-                {
-                    "name": "Default - Recommended",
-                    "url": "rtmp://live.volume.com/live-origin"
-                },
-                {
-                    "name": "US - West",
-                    "url": "rtmp://live-pdx.volume.com/live-origin"
-                },
-                {
-                    "name": "US - East",
-                    "url": "rtmp://live-ash.volume.com/live-origin"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 20000,
-                "max fps": 60
-            },
-            "supported video codecs": [
-                "h264"
+                "h264",
+                "hevc"
             ]
         },
         {
@@ -2122,18 +1822,6 @@
                 {
                     "name": "BoxCast",
                     "url": "rtmp://rtmp.boxcast.com/live"
-                }
-            ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Disciple Media",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ],
             "supported video codecs": [
@@ -2174,26 +1862,6 @@
                     "url": "rtmp://tx.push.yximgs.com/live/"
                 }
             ],
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Playeur",
-            "alt_names": [
-                "Utreon"
-            ],
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.playeur.com:5222/app"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 5000,
-                "max audio bitrate": 160
-            },
             "supported video codecs": [
                 "h264"
             ]
@@ -2329,13 +1997,20 @@
             "stream_key_link": "https://whowatch.tv/publish",
             "servers": [
                 {
-                    "name": "default",
-                    "url": "rtmp://live.whowatch.tv/live/"
+                    "name": "Global - グローバル (RTMPS, recommended)",
+                    "url": "rtmps://ingest.global-contribute.live-video.net:443/app"
+                },
+                {
+                    "name": "Global - グローバル (RTMP)",
+                    "url": "rtmp://ingest.global-contribute.live-video.net/app"
                 }
             ],
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "recommended": {
+                "profile": "baseline",
                 "keyint": 2,
-                "max video bitrate": 1800,
+                "bframes": 0,
+                "max video bitrate": 6000,
                 "max audio bitrate": 192
             },
             "supported video codecs": [
@@ -2359,8 +2034,12 @@
                     "url": "rtmps://stream.dal.irl.run/ingest"
                 },
                 {
-                    "name": "New York, US",
-                    "url": "rtmps://stream.ewr.irl.run/ingest"
+                    "name": "Chicago, US",
+                    "url": "rtmps://stream.ord.irl.run/ingest"
+                },
+                {
+                    "name": "Ashburn, US",
+                    "url": "rtmps://stream.iad.irl.run/ingest"
                 },
                 {
                     "name": "Miami, US",
@@ -2377,6 +2056,10 @@
                 {
                     "name": "Singapore",
                     "url": "rtmps://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Seoul, SK",
+                    "url": "rtmps://stream.icn.irl.run/ingest"
                 },
                 {
                     "name": "Tokyo, JP",
@@ -2409,24 +2092,6 @@
             ],
             "recommended": {
                 "keyint": 2
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Live Streamer Cafe",
-            "more_info_link": "https://livestreamercafe.com/help.php",
-            "stream_key_link": "https://livestreamercafe.com/profile.php",
-            "servers": [
-                {
-                    "name": "Live Streamer Cafe Server",
-                    "url": "rtmp://tophicles.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 6000
             },
             "supported video codecs": [
                 "h264"
@@ -2511,23 +2176,43 @@
             "name": "MasterStream.iR | مستراستریم | ری استریم و استریم همزمان",
             "common": false,
             "more_info_link": "https://masterstream.ir/webpage/page/docs",
-            "stream_key_link": "https://masterstream.ir/managestreams.php",
+            "stream_key_link": "https://masterstream.ir/control-panel/streaming",
             "servers": [
                 {
                     "name": "Iran Server 1 - Bandwidth Required",
-                    "url": "rtmp://live-vip1.masterstream.ir/live"
+                    "url": "rtmp://live1.masterstream.ir/live"
                 },
                 {
                     "name": "Iran Server 2 - Bandwidth Required",
-                    "url": "rtmp://live-vip2.masterstream.ir/live"
+                    "url": "rtmp://live2.masterstream.ir/live"
                 },
                 {
-                    "name": "Turkey Server 1",
-                    "url": "rtmp://tr-live1.masterstream.ir/live"
+                    "name": "Iran Server 3 - Bandwidth Required",
+                    "url": "rtmp://live3.masterstream.ir/live"
                 },
                 {
-                    "name": "Russia Server 1",
-                    "url": "rtmp://ru-live1.masterstream.ir/live"
+                    "name": "Iran Server 4 - Bandwidth Required",
+                    "url": "rtmp://live4.masterstream.ir/live"
+                },
+                {
+                    "name": "Iran Server 5 - Bandwidth Required",
+                    "url": "rtmp://live5.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 1",
+                    "url": "rtmp://ilive1.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 2",
+                    "url": "rtmp://ilive2.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 3",
+                    "url": "rtmp://ilive3.masterstream.ir/live"
+                },
+                {
+                    "name": "International Server 4",
+                    "url": "rtmp://ilive4.masterstream.ir/live"
                 }
             ],
             "protocol": "RTMP",
@@ -2550,6 +2235,8 @@
         {
             "name": "PandaTV | 팬더티비",
             "common": false,
+            "multitrack_video_name": "시차없는 LIVE+ [화질 최적화]",
+            "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
             "servers": [
                 {
                     "name": "Default",
@@ -2634,7 +2321,7 @@
             "servers": [
                 {
                     "name": "Primary",
-                    "url": "rtmp://injest.streamway.in/LiveApp"
+                    "url": "rtmps://injest.streamway.in:443/live"
                 },
                 {
                     "name": "Backup",
@@ -2659,16 +2346,16 @@
                     "url": "rtmp://stream.shareplay.tv"
                 },
                 {
-                    "name": "Miami, Florida, USA",
-                    "url": "rtmp://live-us-mia-stream.shareplay.tv"
+                    "name": "Atlanta, Georgia, USA",
+                    "url": "rtmp://live-us-atl-stream.shareplay.tv"
                 },
                 {
                     "name": "Chicago, Illinois, USA",
                     "url": "rtmp://live-us-ord-stream.shareplay.tv"
                 },
                 {
-                    "name": "Washington D.C., USA",
-                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
+                    "name": "Dallas, Texas, USA",
+                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
                 },
                 {
                     "name": "Los Angeles, California, USA",
@@ -2679,32 +2366,24 @@
                     "url": "rtmp://live-us-sea-stream.shareplay.tv"
                 },
                 {
-                    "name": "Paris, France",
-                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
-                },
-                {
-                    "name": "Milan, Italy",
-                    "url": "rtmp://live-it-mil-stream.shareplay.tv"
-                },
-                {
-                    "name": "Sydney, Australia",
-                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
+                    "name": "Washington D.C., USA",
+                    "url": "rtmp://live-us-iad-stream.shareplay.tv"
                 },
                 {
                     "name": "Toronto, Canada",
                     "url": "rtmp://live-ca-yyz-stream.shareplay.tv"
                 },
                 {
+                    "name": "Paris, France",
+                    "url": "rtmp://live-fr-par-stream.shareplay.tv"
+                },
+                {
                     "name": "London, UK",
                     "url": "rtmp://live-uk-lhr-stream.shareplay.tv"
                 },
                 {
-                    "name": "Atlanta, Georgia, USA",
-                    "url": "rtmp://live-us-atl-stream.shareplay.tv"
-                },
-                {
-                    "name": "Dallas, Texas, USA",
-                    "url": "rtmp://live-us-dfw-stream.shareplay.tv"
+                    "name": "Sydney, Australia",
+                    "url": "rtmp://live-au-syd-stream.shareplay.tv"
                 }
             ],
             "supported video codecs": [
@@ -2798,620 +2477,108 @@
             ],
             "servers": [
                 {
-                    "name": "Asia: China, Hong Kong (6) (RTMPS)",
-                    "url": "rtmps://hkg06.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Mumbai) (RTMPS)",
+                    "url": "rtmps://aps30.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: India, Bangalore (1) (RTMPS)",
-                    "url": "rtmps://blr01.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Seoul) (RTMPS)",
+                    "url": "rtmps://apn20.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: India, Chennai (RTMPS)",
-                    "url": "rtmps://maa01.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Singapore) (RTMPS)",
+                    "url": "rtmps://aps10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: India, Hyderabad (1) (RTMPS)",
-                    "url": "rtmps://hyd01.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Sydney) (RTMPS)",
+                    "url": "rtmps://aps20.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: India, Mumbai (RTMPS)",
-                    "url": "rtmps://bom01.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Tokyo) (RTMPS)",
+                    "url": "rtmps://apn10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: India, New Delhi (RTMPS)",
-                    "url": "rtmps://del01.contribute.live-video.net/app"
+                    "name": "Europe (Frankfurt) (RTMPS)",
+                    "url": "rtmps://euc10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Indonesia, Cikarang Barat (1) (RTMPS)",
-                    "url": "rtmps://jkt01.contribute.live-video.net/app"
+                    "name": "Europe (Ireland) (RTMPS)",
+                    "url": "rtmps://euw10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Indonesia, Jakarta (2) (RTMPS)",
-                    "url": "rtmps://jkt02.contribute.live-video.net/app"
+                    "name": "Europe (Paris) (RTMPS)",
+                    "url": "rtmps://euw30.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Japan, Osaka (1) (RTMPS)",
-                    "url": "rtmps://osa01.contribute.live-video.net/app"
+                    "name": "Europe (Stockholm) (RTMPS)",
+                    "url": "rtmps://eun10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Japan, Tokyo (3) (RTMPS)",
-                    "url": "rtmps://tyo03.contribute.live-video.net/app"
+                    "name": "South America (S\u00e3o Paulo) (RTMPS)",
+                    "url": "rtmps://sae10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Japan, Tokyo (5) (RTMPS)",
-                    "url": "rtmps://tyo05.contribute.live-video.net/app"
+                    "name": "US East (N. Virginia) (RTMPS)",
+                    "url": "rtmps://use10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Manila, Philippines (1) (RTMPS)",
-                    "url": "rtmps://mnl01.contribute.live-video.net/app"
+                    "name": "US East (Ohio) (RTMPS)",
+                    "url": "rtmps://use20.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Singapore (1) (RTMPS)",
-                    "url": "rtmps://sin01.contribute.live-video.net/app"
+                    "name": "US West (Oregon) (RTMPS)",
+                    "url": "rtmps://usw20.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "Asia: Singapore (4) (RTMPS)",
-                    "url": "rtmps://sin04.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Mumbai) (RTMP)",
+                    "url": "rtmp://aps30.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: South Korea, Seoul (3) (RTMPS)",
-                    "url": "rtmps://sel03.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Seoul) (RTMP)",
+                    "url": "rtmp://apn20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: South Korea, Seoul (4) (RTMPS)",
-                    "url": "rtmps://sel04.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Singapore) (RTMP)",
+                    "url": "rtmp://aps10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Taiwan, Taipei (1) (RTMPS)",
-                    "url": "rtmps://tpe01.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Sydney) (RTMP)",
+                    "url": "rtmp://aps20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Taiwan, Taipei (3) (RTMPS)",
-                    "url": "rtmps://tpe03.contribute.live-video.net/app"
+                    "name": "Asia Pacific (Tokyo) (RTMP)",
+                    "url": "rtmp://apn10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Asia: Thailand, Bangkok (2) (RTMPS)",
-                    "url": "rtmps://bkk02.contribute.live-video.net/app"
+                    "name": "Europe (Frankfurt) (RTMP)",
+                    "url": "rtmp://euc10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: Austria, Vienna (2) (RTMPS)",
-                    "url": "rtmps://vie02.contribute.live-video.net/app"
+                    "name": "Europe (Ireland) (RTMP)",
+                    "url": "rtmp://euw10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: Czech Republic, Prague (RTMPS)",
-                    "url": "rtmps://prg03.contribute.live-video.net/app"
+                    "name": "Europe (Paris) (RTMP)",
+                    "url": "rtmp://euw30.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: Denmark, Copenhagen (RTMPS)",
-                    "url": "rtmps://cph.contribute.live-video.net/app"
+                    "name": "Europe (Stockholm) (RTMP)",
+                    "url": "rtmp://eun10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: Finland, Helsinki (3) (RTMPS)",
-                    "url": "rtmps://hel03.contribute.live-video.net/app"
+                    "name": "South America (S\u00e3o Paulo) (RTMP)",
+                    "url": "rtmp://sae10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: France, Marseille (RTMPS)",
-                    "url": "rtmps://mrs.contribute.live-video.net/app"
+                    "name": "US East (N. Virginia) (RTMP)",
+                    "url": "rtmp://use10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: France, Marseille (2) (RTMPS)",
-                    "url": "rtmps://mrs02.contribute.live-video.net/app"
+                    "name": "US East (Ohio) (RTMP)",
+                    "url": "rtmp://use20.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "Europe: France, Paris (10) (RTMPS)",
-                    "url": "rtmps://cdg10.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: France, Paris (2) (RTMPS)",
-                    "url": "rtmps://cdg02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Berlin (RTMPS)",
-                    "url": "rtmps://ber.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Dusseldorf (1) (RTMPS)",
-                    "url": "rtmps://dus01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (2) (RTMPS)",
-                    "url": "rtmps://fra02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (5) (RTMPS)",
-                    "url": "rtmps://fra05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (6) (RTMPS)",
-                    "url": "rtmps://fra06.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Munich (1) (RTMPS)",
-                    "url": "rtmps://muc01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Italy, Milan (2) (RTMPS)",
-                    "url": "rtmps://mil02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Netherlands, Amsterdam (2) (RTMPS)",
-                    "url": "rtmps://ams02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Netherlands, Amsterdam (3) (RTMPS)",
-                    "url": "rtmps://ams03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Norway, Oslo (RTMPS)",
-                    "url": "rtmps://osl.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Poland, Warsaw (2) (RTMPS)",
-                    "url": "rtmps://waw02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Spain, Madrid (1) (RTMPS)",
-                    "url": "rtmps://mad01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Spain, Madrid (2) (RTMPS)",
-                    "url": "rtmps://mad02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Sweden, Stockholm (3) (RTMPS)",
-                    "url": "rtmps://arn03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Sweden, Stockholm (4) (RTMPS)",
-                    "url": "rtmps://arn04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (3) (RTMPS)",
-                    "url": "rtmps://lhr03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (4) (RTMPS)",
-                    "url": "rtmps://lhr04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (8) (RTMPS)",
-                    "url": "rtmps://lhr08.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Canada, Quebec (RTMPS)",
-                    "url": "rtmps://ymq03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Canada, Toronto (RTMPS)",
-                    "url": "rtmps://yto.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Mexico, Queretaro (3) (RTMPS)",
-                    "url": "rtmps://qro03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Mexico, Queretaro (4) (RTMPS)",
-                    "url": "rtmps://qro04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Oceania: Australia, Sydney (2) (RTMPS)",
-                    "url": "rtmps://syd02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Oceania: Australia, Sydney (3) (RTMPS)",
-                    "url": "rtmps://syd03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Fortaleza (1) (RTMPS)",
-                    "url": "rtmps://for01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Rio de Janeiro (3) (RTMPS)",
-                    "url": "rtmps://rio03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Rio de Janeiro (4) (RTMPS)",
-                    "url": "rtmps://rio04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Sao Paulo (RTMPS)",
-                    "url": "rtmps://sao03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Sao Paulo (5) (RTMPS)",
-                    "url": "rtmps://sao05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Buenos Aires, Argentina (1) (RTMPS)",
-                    "url": "rtmps://bue01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Colombia, Bogota (1) (RTMPS)",
-                    "url": "rtmps://bog01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Dallas, TX (RTMPS)",
-                    "url": "rtmps://dfw.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Dallas, TX (2) (RTMPS)",
-                    "url": "rtmps://dfw02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Denver, CO (52) (RTMPS)",
-                    "url": "rtmps://den52.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Garland, TX (56) (RTMPS)",
-                    "url": "rtmps://dfw56.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Houston, TX (50) (RTMPS)",
-                    "url": "rtmps://iah50.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Ashburn, VA (5) (RTMPS)",
-                    "url": "rtmps://iad05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Atlanta, GA (RTMPS)",
-                    "url": "rtmps://atl.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Chicago, IL (3) (RTMPS)",
-                    "url": "rtmps://ord03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Chicago, IL (56) (RTMPS)",
-                    "url": "rtmps://ord56.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: McAllen, TX (1) (RTMPS)",
-                    "url": "rtmps://mfe01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Miami, FL (5) (RTMPS)",
-                    "url": "rtmps://mia05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: New York, NY (RTMPS)",
-                    "url": "rtmps://jfk.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: New York, NY (50) (RTMPS)",
-                    "url": "rtmps://jfk50.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Los Angeles, CA (RTMPS)",
-                    "url": "rtmps://lax.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Salt Lake City, UT (RTMPS)",
-                    "url": "rtmps://slc.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: San Francisco, CA (RTMPS)",
-                    "url": "rtmps://sfo.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: San Jose, California (6) (RTMPS)",
-                    "url": "rtmps://sjc06.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Seattle, WA (RTMPS)",
-                    "url": "rtmps://sea.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Seattle, WA (2) (RTMPS)",
-                    "url": "rtmps://sea02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: China, Hong Kong (6) (RTMP)",
-                    "url": "rtmp://hkg06.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: India, Bangalore (1) (RTMP)",
-                    "url": "rtmp://blr01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: India, Chennai (RTMP)",
-                    "url": "rtmp://maa01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: India, Hyderabad (1) (RTMP)",
-                    "url": "rtmp://hyd01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: India, Mumbai (RTMP)",
-                    "url": "rtmp://bom01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: India, New Delhi (RTMP)",
-                    "url": "rtmp://del01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Indonesia, Cikarang Barat (1) (RTMP)",
-                    "url": "rtmp://jkt01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Indonesia, Jakarta (2) (RTMP)",
-                    "url": "rtmp://jkt02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Japan, Osaka (1) (RTMP)",
-                    "url": "rtmp://osa01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Japan, Tokyo (3) (RTMP)",
-                    "url": "rtmp://tyo03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Japan, Tokyo (5) (RTMP)",
-                    "url": "rtmp://tyo05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Manila, Philippines (1) (RTMP)",
-                    "url": "rtmp://mnl01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Singapore (1) (RTMP)",
-                    "url": "rtmp://sin01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Singapore (4) (RTMP)",
-                    "url": "rtmp://sin04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: South Korea, Seoul (3) (RTMP)",
-                    "url": "rtmp://sel03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: South Korea, Seoul (4) (RTMP)",
-                    "url": "rtmp://sel04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Taiwan, Taipei (1) (RTMP)",
-                    "url": "rtmp://tpe01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Taiwan, Taipei (3) (RTMP)",
-                    "url": "rtmp://tpe03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Asia: Thailand, Bangkok (2) (RTMP)",
-                    "url": "rtmp://bkk02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Austria, Vienna (2) (RTMP)",
-                    "url": "rtmp://vie02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Czech Republic, Prague (RTMP)",
-                    "url": "rtmp://prg03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Denmark, Copenhagen (RTMP)",
-                    "url": "rtmp://cph.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Finland, Helsinki (3) (RTMP)",
-                    "url": "rtmp://hel03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: France, Marseille (RTMP)",
-                    "url": "rtmp://mrs.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: France, Marseille (2) (RTMP)",
-                    "url": "rtmp://mrs02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: France, Paris (10) (RTMP)",
-                    "url": "rtmp://cdg10.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: France, Paris (2) (RTMP)",
-                    "url": "rtmp://cdg02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Berlin (RTMP)",
-                    "url": "rtmp://ber.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Dusseldorf (1) (RTMP)",
-                    "url": "rtmp://dus01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (2) (RTMP)",
-                    "url": "rtmp://fra02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (5) (RTMP)",
-                    "url": "rtmp://fra05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Frankfurt (6) (RTMP)",
-                    "url": "rtmp://fra06.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Germany, Munich (1) (RTMP)",
-                    "url": "rtmp://muc01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Italy, Milan (2) (RTMP)",
-                    "url": "rtmp://mil02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Netherlands, Amsterdam (2) (RTMP)",
-                    "url": "rtmp://ams02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Netherlands, Amsterdam (3) (RTMP)",
-                    "url": "rtmp://ams03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Norway, Oslo (RTMP)",
-                    "url": "rtmp://osl.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Poland, Warsaw (2) (RTMP)",
-                    "url": "rtmp://waw02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Spain, Madrid (1) (RTMP)",
-                    "url": "rtmp://mad01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Spain, Madrid (2) (RTMP)",
-                    "url": "rtmp://mad02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Sweden, Stockholm (3) (RTMP)",
-                    "url": "rtmp://arn03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: Sweden, Stockholm (4) (RTMP)",
-                    "url": "rtmp://arn04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (3) (RTMP)",
-                    "url": "rtmp://lhr03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (4) (RTMP)",
-                    "url": "rtmp://lhr04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Europe: UK, London (8) (RTMP)",
-                    "url": "rtmp://lhr08.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Canada, Quebec (RTMP)",
-                    "url": "rtmp://ymq03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Canada, Toronto (RTMP)",
-                    "url": "rtmp://yto.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Mexico, Queretaro (3) (RTMP)",
-                    "url": "rtmp://qro03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "NA: Mexico, Queretaro (4) (RTMP)",
-                    "url": "rtmp://qro04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Oceania: Australia, Sydney (2) (RTMP)",
-                    "url": "rtmp://syd02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "Oceania: Australia, Sydney (3) (RTMP)",
-                    "url": "rtmp://syd03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Fortaleza (1) (RTMP)",
-                    "url": "rtmp://for01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Rio de Janeiro (3) (RTMP)",
-                    "url": "rtmp://rio03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Rio de Janeiro (4) (RTMP)",
-                    "url": "rtmp://rio04.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Sao Paulo (RTMP)",
-                    "url": "rtmp://sao03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Brazil, Sao Paulo (5) (RTMP)",
-                    "url": "rtmp://sao05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Buenos Aires, Argentina (1) (RTMP)",
-                    "url": "rtmp://bue01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "South America: Colombia, Bogota (1) (RTMP)",
-                    "url": "rtmp://bog01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Dallas, TX (RTMP)",
-                    "url": "rtmp://dfw.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Dallas, TX (2) (RTMP)",
-                    "url": "rtmp://dfw02.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Denver, CO (52) (RTMP)",
-                    "url": "rtmp://den52.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Garland, TX (56) (RTMP)",
-                    "url": "rtmp://dfw56.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US Central: Houston, TX (50) (RTMP)",
-                    "url": "rtmp://iah50.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Ashburn, VA (5) (RTMP)",
-                    "url": "rtmp://iad05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Atlanta, GA (RTMP)",
-                    "url": "rtmp://atl.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Chicago, IL (3) (RTMP)",
-                    "url": "rtmp://ord03.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Chicago, IL (56) (RTMP)",
-                    "url": "rtmp://ord56.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: McAllen, TX (1) (RTMP)",
-                    "url": "rtmp://mfe01.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: Miami, FL (5) (RTMP)",
-                    "url": "rtmp://mia05.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: New York, NY (RTMP)",
-                    "url": "rtmp://jfk.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US East: New York, NY (50) (RTMP)",
-                    "url": "rtmp://jfk50.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Los Angeles, CA (RTMP)",
-                    "url": "rtmp://lax.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Salt Lake City, UT (RTMP)",
-                    "url": "rtmp://slc.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: San Francisco, CA (RTMP)",
-                    "url": "rtmp://sfo.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: San Jose, California (6) (RTMP)",
-                    "url": "rtmp://sjc06.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Seattle, WA (RTMP)",
-                    "url": "rtmp://sea.contribute.live-video.net/app"
-                },
-                {
-                    "name": "US West: Seattle, WA (2) (RTMP)",
-                    "url": "rtmp://sea02.contribute.live-video.net/app"
+                    "name": "US West (Oregon) (RTMP)",
+                    "url": "rtmp://usw20.contribute.live-video.net/app/"
                 }
             ],
             "multitrack_video_configuration_url": "https://ingest.contribute.live-video.net/api/v3/GetClientConfiguration",
@@ -3421,10 +2588,16 @@
             }
         },
         {
-            "name": "Dolby Millicast",
+            "name": "Dolby OptiView Real-time",
+            "alt_names": [
+                "Dolby Millicast"
+            ],
             "common": false,
-            "more_info_link": "https://docs.dolby.io/streaming-apis/docs/using-obs",
+            "more_info_link": "https://optiview.dolby.com/docs/millicast/using-obs/",
             "stream_key_link": "https://streaming.dolby.io",
+            "multitrack_video_configuration_url": "https://director.millicast.com/api/multitrackvideo/configuration",
+            "multitrack_video_name": "Enhanced Broadcasting",
+            "multitrack_video_learn_more_link": "https://optiview.dolby.com/docs/millicast/obs-enhanced-broadcasting-multitrack-video/",
             "servers": [
                 {
                     "name": "Global (RTMPS)",
@@ -3530,6 +2703,50 @@
             "supported video codecs": [
                 "h264"
             ]
+        },
+        {
+            "name": "VRCDN - Live",
+            "more_info_link": "https://vrcdn.live",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://ingest.vrcdn.live/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 6000
+            }
+        },
+        {
+            "name": "Spoon",
+            "servers": [
+                {
+                    "name": "Korea (RTMPS)",
+                    "url": "rtmps://kr-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Korea (RTMP)",
+                    "url": "rtmp://kr-rtmp.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMPS)",
+                    "url": "rtmps://jp-rtmps.spooncast.net/live"
+                },
+                {
+                    "name": "Japan (RTMP)",
+                    "url": "rtmp://jp-rtmp.spooncast.net/live"
+                }
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
+            "recommended": {
+                "max audio bitrate": 96
+            }
         }
     ]
 }

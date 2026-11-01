@@ -84,7 +84,7 @@ typedef enum {
 	kAudioDeviceAccess = 0,
 	kVideoDeviceAccess = 1,
 	kScreenCapture = 2,
-	kAccessibility = 3
+	kInputMonitoring = 3
 } MacPermissionType;
 
 typedef enum {

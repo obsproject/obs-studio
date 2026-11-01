@@ -67,4 +67,20 @@ struct gl_winsys_vtable {
 								void *pixmap);
 	bool (*device_enum_adapters)(gs_device_t *device, bool (*callback)(void *param, const char *name, uint32_t id),
 				     void *param);
+
+	bool (*device_query_sync_capabilities)(gs_device_t *device);
+
+	gs_sync_t *(*device_sync_create)(gs_device_t *device);
+
+	gs_sync_t *(*device_sync_create_from_syncobj_timeline_point)(gs_device_t *device, int syncobj_fd,
+								     uint64_t timeline_point);
+
+	void (*device_sync_destroy)(gs_device_t *device, gs_sync_t *sync);
+
+	bool (*device_sync_export_syncobj_timeline_point)(gs_device_t *device, gs_sync_t *sync, int syncobj_fd,
+							  uint64_t timeline_point);
+
+	bool (*device_sync_signal_syncobj_timeline_point)(gs_device_t *device, int syncobj_fd, uint64_t timeline_point);
+
+	bool (*device_sync_wait)(gs_device_t *device, gs_sync_t *sync);
 };

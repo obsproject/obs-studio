@@ -19,6 +19,8 @@
 
 #include <obs.hpp>
 
+#include <OBSApp.hpp>
+
 #include <QLineEdit>
 
 class OBSBasicSettings;
@@ -43,25 +45,17 @@ public:
 		  original(original),
 		  settings(settings)
 	{
-#ifdef __APPLE__
-		// disable the input cursor on OSX, focus should be clear
-		// enough with the default focus frame
-		setReadOnly(true);
-#endif
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
+		setStyle(App()->GetInvisibleCursorStyle());
 		InitSignalHandler();
 		ResetKey();
 	}
 	OBSHotkeyEdit(QWidget *parent = nullptr) : QLineEdit(parent), original({}), settings(nullptr)
 	{
-#ifdef __APPLE__
-		// disable the input cursor on OSX, focus should be clear
-		// enough with the default focus frame
-		setReadOnly(true);
-#endif
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
+		setStyle(App()->GetInvisibleCursorStyle());
 		InitSignalHandler();
 		ResetKey();
 	}

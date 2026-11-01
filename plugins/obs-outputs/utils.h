@@ -22,7 +22,11 @@ static inline uint32_t clz32(unsigned long val)
 
 static inline uint32_t ctz32(unsigned long val)
 {
+#if defined(_M_ARM64)
+	return _CountTrailingZeros(val);
+#else
 	return _tzcnt_u32(val);
+#endif
 }
 #else
 static uint32_t popcnt(uint32_t x)

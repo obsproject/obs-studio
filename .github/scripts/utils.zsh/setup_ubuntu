@@ -23,9 +23,13 @@ local deps_label
 local deps_hash
 
 IFS=';' read -r deps_version deps_baseurl deps_label deps_hash deps_revision <<< \
-  "$(jq -r --arg target "${target}" \
-    '.dependencies["cef"] | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]} | join(";")' \
-    ${buildspec_file})"
+  "$(jq -r --arg target "${target}" '
+    .configurePresets[]
+    | select(.name=="dependencies")
+    | .vendor["obsproject.com/obs-studio"].dependencies["cef"]
+    | {version, baseUrl, "label", "hash": .hashes[$target], "revision": .revision[$target]}
+    | join(";")
+  ' ${project_root}/CMakePresets.json)"
 
 if (( ! deps_version )) {
   log_error 'No valid cef spec found in buildspec.json.'
@@ -60,7 +64,7 @@ log_group 'Installing obs-studio build dependencies from apt...'
 
 sudo apt-get install -y --no-install-recommends \
   build-essential libglib2.0-dev \
-  lsb-release dh-cmake \
+  extra-cmake-modules lsb-release dh-cmake \
   libcurl4-openssl-dev \
   libavcodec-dev libavdevice-dev libavfilter-dev libavformat-dev libavutil-dev \
   libswresample-dev libswscale-dev \
@@ -75,6 +79,7 @@ sudo apt-get install -y --no-install-recommends \
   libgl1-mesa-dev \
   libjansson-dev \
   uthash-dev \
+  libsimde-dev \
   libluajit-5.1-dev python3-dev \
   libx11-dev libxcb-randr0-dev libxcb-shm0-dev libxcb-xinerama0-dev \
   libxcb-composite0-dev libxinerama-dev libxcb1-dev libx11-xcb-dev libxcb-xfixes0-dev \

@@ -38,8 +38,9 @@ void OBSBasic::ResetOutputs()
 
 		emit ReplayBufEnabled(outputHandler->replayBuffer);
 
-		if (sysTrayReplayBuffer)
+		if (sysTrayReplayBuffer) {
 			sysTrayReplayBuffer->setEnabled(!!outputHandler->replayBuffer);
+		}
 
 		UpdateIsRecordingPausable();
 	} else {
@@ -49,15 +50,17 @@ void OBSBasic::ResetOutputs()
 
 bool OBSBasic::Active() const
 {
-	if (!outputHandler)
+	if (!outputHandler) {
 		return false;
+	}
 	return outputHandler->Active();
 }
 
 void OBSBasic::ResizeOutputSizeOfSource()
 {
-	if (obs_video_active())
+	if (obs_video_active()) {
 		return;
+	}
 
 	QMessageBox resize_output(this);
 	resize_output.setText(QTStr("ResizeOutputSizeOfSource.Text") + "\n\n" +
@@ -68,13 +71,17 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	resize_output.setWindowTitle(QTStr("ResizeOutputSizeOfSource"));
 	resize_output.exec();
 
-	if (resize_output.clickedButton() != Yes)
+	if (resize_output.clickedButton() != Yes) {
 		return;
+	}
 
 	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
 
 	int width = obs_source_get_width(source);
 	int height = obs_source_get_height(source);
+
+	width = ((width + 3) / 4) * 4;   // Round width up to the nearest multiple of 4
+	height = ((height + 1) / 2) * 2; // Round height up to the nearest multiple of 2
 
 	config_set_uint(activeConfiguration, "Video", "BaseCX", width);
 	config_set_uint(activeConfiguration, "Video", "BaseCY", height);
@@ -121,8 +128,9 @@ bool OBSBasic::IsFFmpegOutputToURL() const
 		const char *advanced_mode = config_get_string(Config(), "AdvOut", "RecType");
 		if (strcmp(advanced_mode, "FFmpeg") == 0) {
 			bool is_local = config_get_bool(Config(), "AdvOut", "FFOutputToFile");
-			if (!is_local)
+			if (!is_local) {
 				return true;
+			}
 		}
 	}
 
@@ -131,8 +139,9 @@ bool OBSBasic::IsFFmpegOutputToURL() const
 
 bool OBSBasic::OutputPathValid()
 {
-	if (IsFFmpegOutputToURL())
+	if (IsFFmpegOutputToURL()) {
 		return true;
+	}
 
 	const char *path = GetCurrentOutputPath();
 	return path && *path && QDir(path).exists();

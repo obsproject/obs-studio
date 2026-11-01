@@ -105,6 +105,7 @@ struct audio_params {
 	int abitrate;
 	int sample_rate;
 	int frame_size;
+	int initial_padding;
 	int channels;
 };
 
@@ -287,6 +288,8 @@ static bool get_audio_params(struct audio_params *audio, int *argc, char ***argv
 	if (!get_opt_int(argc, argv, &audio->sample_rate, "audio sample rate"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->frame_size, "audio frame size"))
+		return false;
+	if (!get_opt_int(argc, argv, &audio->initial_padding, "audio padding"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->channels, "audio channels"))
 		return false;
@@ -554,6 +557,9 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
+	// Set initial padding so that priming samples are skipped
+	context->initial_padding = ffm->audio[idx].initial_padding;
+
 	avcodec_parameters_from_context(stream->codecpar, context);
 
 	ffm->audio_infos[ffm->num_audio_streams].stream = stream;
@@ -811,11 +817,7 @@ static int64_t ffmpeg_mux_seek_av_buffer(void *opaque, int64_t offset, int whenc
 	return 0;
 }
 
-#if LIBAVFORMAT_VERSION_MAJOR >= 61
 static int ffmpeg_mux_write_av_buffer(void *opaque, const uint8_t *buf, int buf_size)
-#else
-static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
-#endif
 {
 	struct ffmpeg_mux *ffm = opaque;
 
@@ -1146,6 +1148,9 @@ int main(int argc, char *argv[])
 	char **argv;
 
 	SetErrorMode(SEM_FAILCRITICALERRORS);
+	SetSearchPathMode(BASE_SEARCH_PATH_ENABLE_SAFE_SEARCHMODE | BASE_SEARCH_PATH_PERMANENT);
+	SetDefaultDllDirectories(LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	SetDllDirectoryW(L"");
 
 	argv = malloc(argc * sizeof(char *));
 	for (int i = 0; i < argc; i++) {

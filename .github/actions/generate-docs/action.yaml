@@ -59,14 +59,14 @@ runs:
         echo "commitHash=${GITHUB_SHA:0:9}" >> $GITHUB_OUTPUT
 
     - name: Install Sphinx 📜
-      uses: totaldebug/sphinx-publish-action@cdbb304b4b8aa1fd36015e3c459c1f122804bd6b
+      uses: totaldebug/sphinx-publish-action@a44364271972de3b13c5b63801c2596dfde82413
       with:
         sphinx_src: ${{ inputs.sourceDirectory }}/docs/sphinx
         build_only: true
         target_branch: master
         target_path: '../home/_build'
 
-    - uses: actions/upload-artifact@v4
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: ${{ steps.setup.outputs.artifactName }} ${{ steps.setup.outputs.commitHash }}
         path: |

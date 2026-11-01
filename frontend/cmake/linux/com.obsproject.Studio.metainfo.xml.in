@@ -32,6 +32,7 @@
   <url type="bugtracker">https://github.com/obsproject/obs-studio/issues</url>
   <url type="donation">https://obsproject.com/contribute</url>
   <url type="translate">https://crowdin.com/project/obs-studio</url>
+  <url type="vcs-browser">https://github.com/obsproject/obs-studio</url>
 
   <recommends>
     <internet>always</internet>

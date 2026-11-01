@@ -17,10 +17,20 @@ void OBSBasicSettings::InitAppearancePage()
 	}
 
 	int idx = ui->theme->findData(currentBaseTheme);
-	if (idx != -1)
+	if (idx != -1) {
 		ui->theme->setCurrentIndex(idx);
+	}
 
 	ui->themeVariant->setPlaceholderText(QTStr("Basic.Settings.Appearance.General.NoVariant"));
+
+	ui->appearanceFontScale->setDisplayTicks(true);
+
+	connect(ui->appearanceFontScale, &QSlider::valueChanged, ui->appearanceFontScaleText,
+		[this](int value) { ui->appearanceFontScaleText->setText(QString::number(value)); });
+	ui->appearanceFontScaleText->setText(QString::number(ui->appearanceFontScale->value()));
+
+	connect(App(), &OBSApp::StyleChanged, this, &OBSBasicSettings::updateAppearanceControls);
+	updateAppearanceControls();
 }
 
 void OBSBasicSettings::LoadThemeList(bool reload)
@@ -32,8 +42,9 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 	/* Nothing to do if current and last base theme were the same */
 	const QString baseThemeId = ui->theme->currentData().toString();
-	if (reload && baseThemeId == currentBaseTheme)
+	if (reload && baseThemeId == currentBaseTheme) {
 		return;
+	}
 
 	ui->themeVariant->blockSignals(true);
 	ui->themeVariant->clear();
@@ -48,20 +59,24 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 	for (const OBSTheme &theme : themes) {
 		/* Skip non-visible themes */
-		if (!theme.isVisible || theme.isHighContrast)
+		if (!theme.isVisible || theme.isHighContrast) {
 			continue;
+		}
 		/* Skip non-child themes */
-		if (theme.isBaseTheme || theme.parent != baseThemeId)
+		if (theme.isBaseTheme || theme.parent != baseThemeId) {
 			continue;
+		}
 
 		ui->themeVariant->addItem(theme.name, theme.id);
-		if (baseTheme && theme.filename == baseTheme->filename)
+		if (baseTheme && theme.filename == baseTheme->filename) {
 			defaultVariant = theme.id;
+		}
 	}
 
 	int idx = ui->themeVariant->findData(currentTheme->id);
-	if (idx != -1)
+	if (idx != -1) {
 		ui->themeVariant->setCurrentIndex(idx);
+	}
 
 	ui->themeVariant->setEnabled(ui->themeVariant->count() > 0);
 	ui->themeVariant->blockSignals(false);
@@ -74,15 +89,30 @@ void OBSBasicSettings::LoadThemeList(bool reload)
 
 void OBSBasicSettings::LoadAppearanceSettings(bool reload)
 {
+	loading = true;
+
 	LoadThemeList(reload);
 
 	if (reload) {
 		QString themeId = ui->theme->currentData().toString();
-		if (ui->themeVariant->currentIndex() != -1)
+		if (ui->themeVariant->currentIndex() != -1) {
 			themeId = ui->themeVariant->currentData().toString();
+		}
 
 		App()->SetTheme(themeId);
 	}
+
+	int fontScale = config_get_int(App()->GetUserConfig(), "Appearance", "FontScale");
+	ui->appearanceFontScale->setValue(fontScale);
+
+	int densityId = config_get_int(App()->GetUserConfig(), "Appearance", "Density");
+	QAbstractButton *densityButton = ui->appearanceDensityButtonGroup->button(densityId);
+	if (densityButton) {
+		densityButton->setChecked(true);
+	}
+	updateAppearanceControls();
+
+	loading = false;
 }
 
 void OBSBasicSettings::SaveAppearanceSettings()
@@ -93,6 +123,13 @@ void OBSBasicSettings::SaveAppearanceSettings()
 	if (savedTheme != currentTheme) {
 		config_set_string(config, "Appearance", "Theme", QT_TO_UTF8(currentTheme->id));
 	}
+
+	config_set_int(config, "Appearance", "FontScale", ui->appearanceFontScale->value());
+
+	int densityId = ui->appearanceDensityButtonGroup->checkedId();
+	config_set_int(config, "Appearance", "Density", densityId);
+
+	App()->SetTheme(currentTheme->id);
 }
 
 void OBSBasicSettings::on_theme_activated(int)
@@ -103,4 +140,31 @@ void OBSBasicSettings::on_theme_activated(int)
 void OBSBasicSettings::on_themeVariant_activated(int)
 {
 	LoadAppearanceSettings(true);
+}
+
+void OBSBasicSettings::updateAppearanceControls()
+{
+	OBSTheme *theme = App()->GetTheme();
+	enableAppearanceFontControls(theme->usesFontScale);
+	enableAppearanceDensityControls(theme->usesDensity);
+	if (!theme->usesFontScale || !theme->usesDensity) {
+		ui->appearanceOptionsWarning->setVisible(true);
+	} else {
+		ui->appearanceOptionsWarning->setVisible(false);
+	}
+	style()->polish(ui->appearanceOptionsWarningLabel);
+}
+
+void OBSBasicSettings::enableAppearanceFontControls(bool enable)
+{
+	ui->appearanceFontScale->setEnabled(enable);
+	ui->appearanceFontScaleText->setEnabled(enable);
+}
+
+void OBSBasicSettings::enableAppearanceDensityControls(bool enable)
+{
+	const QList<QAbstractButton *> buttons = ui->appearanceDensityButtonGroup->buttons();
+	for (QAbstractButton *button : buttons) {
+		button->setEnabled(enable);
+	}
 }

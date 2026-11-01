@@ -37,10 +37,12 @@ void DeckLinkInput::DevicesChanged(void *param, DeckLinkDevice *device, bool add
 		obs_data_release(settings);
 
 		if (device->GetHash().compare(hash) == 0) {
-			if (!decklink->activateRefs)
+			if (!decklink->activateRefs) {
 				return;
-			if (decklink->Activate(device, mode, videoConnection, audioConnection))
+			}
+			if (decklink->Activate(device, mode, videoConnection, audioConnection)) {
 				os_atomic_dec_long(&decklink->activateRefs);
+			}
 		}
 
 	} else if (!added && decklink->instance) {
@@ -60,25 +62,30 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId, BMDVideoC
 	const bool isActive = instance != nullptr;
 
 	if (same) {
-		if (!isActive)
+		if (!isActive) {
 			return false;
+		}
 		if (instance->GetActiveModeId() == modeId && instance->GetVideoConnection() == bmdVideoConnection &&
 		    instance->GetAudioConnection() == bmdAudioConnection &&
 		    instance->GetActivePixelFormat() == pixelFormat && instance->GetActiveColorSpace() == colorSpace &&
 		    instance->GetActiveColorRange() == colorRange &&
-		    instance->GetActiveChannelFormat() == channelFormat && instance->GetActiveSwapState() == swap)
+		    instance->GetActiveChannelFormat() == channelFormat && instance->GetActiveSwapState() == swap) {
 			return false;
+		}
 	}
 
-	if (isActive)
+	if (isActive) {
 		instance->StopCapture();
+	}
 
 	isCapturing = false;
-	if (!same)
+	if (!same) {
 		instance.Set(new DeckLinkDeviceInstance(this, device));
+	}
 
-	if (instance == nullptr)
+	if (instance == nullptr) {
 		return false;
+	}
 
 	if (GetDevice() == nullptr) {
 		LOG(LOG_ERROR, "Tried to activate an input with nullptr device.");
@@ -106,8 +113,9 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId, BMDVideoC
 void DeckLinkInput::Deactivate(void)
 {
 	std::lock_guard<std::recursive_mutex> lock(deviceMutex);
-	if (instance)
+	if (instance) {
 		instance->StopCapture();
+	}
 	isCapturing = false;
 	instance = nullptr;
 
@@ -121,8 +129,9 @@ bool DeckLinkInput::Capturing(void)
 
 void DeckLinkInput::SaveSettings()
 {
-	if (!instance)
+	if (!instance) {
 		return;
+	}
 
 	DeckLinkDevice *device = instance->GetDevice();
 	DeckLinkDeviceMode *mode = instance->GetMode();

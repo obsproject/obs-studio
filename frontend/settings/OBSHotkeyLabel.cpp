@@ -33,8 +33,9 @@ static inline void updateStyle(QWidget *widget)
 
 void OBSHotkeyLabel::highlightPair(bool highlight)
 {
-	if (!pairPartner)
+	if (!pairPartner) {
 		return;
+	}
 
 	pairPartner->setProperty("class", highlight ? "text-bright" : "");
 	updateStyle(pairPartner);
@@ -45,8 +46,9 @@ void OBSHotkeyLabel::highlightPair(bool highlight)
 void OBSHotkeyLabel::enterEvent(QEnterEvent *event)
 {
 
-	if (!pairPartner)
+	if (!pairPartner) {
 		return;
+	}
 
 	event->accept();
 	highlightPair(true);
@@ -54,8 +56,9 @@ void OBSHotkeyLabel::enterEvent(QEnterEvent *event)
 
 void OBSHotkeyLabel::leaveEvent(QEvent *event)
 {
-	if (!pairPartner)
+	if (!pairPartner) {
 		return;
+	}
 
 	event->accept();
 	highlightPair(false);
@@ -64,6 +67,7 @@ void OBSHotkeyLabel::leaveEvent(QEvent *event)
 void OBSHotkeyLabel::setToolTip(const QString &toolTip)
 {
 	QLabel::setToolTip(toolTip);
-	if (widget)
+	if (widget) {
 		widget->setToolTip(toolTip);
+	}
 }

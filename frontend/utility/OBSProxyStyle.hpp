@@ -3,6 +3,8 @@
 #include <QProxyStyle>
 
 class OBSProxyStyle : public QProxyStyle {
+	Q_OBJECT
+
 public:
 	OBSProxyStyle() : QProxyStyle() {}
 
@@ -12,8 +14,11 @@ public:
 		      QStyleHintReturn *returnData) const override;
 };
 
-class OBSContextBarProxyStyle : public OBSProxyStyle {
+class OBSInvisibleCursorProxyStyle : public OBSProxyStyle {
+	Q_OBJECT
+
 public:
-	QPixmap generatedIconPixmap(QIcon::Mode iconMode, const QPixmap &pixmap,
-				    const QStyleOption *option) const override;
+	OBSInvisibleCursorProxyStyle() : OBSProxyStyle() {}
+
+	int pixelMetric(PixelMetric pm, const QStyleOption *option, const QWidget *widget) const override;
 };

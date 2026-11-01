@@ -203,6 +203,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES (1 << 16)
 
+/**
+ * Source requires a canvas to operate
+ */
+#define OBS_SOURCE_REQUIRES_CANVAS (1 << 17)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent, obs_source_t *child, void *param);
@@ -546,6 +551,10 @@ struct obs_source_info {
 	 * @param  source  Source that the filter is being added to
 	 */
 	void (*filter_add)(void *data, obs_source_t *source);
+
+	/** Gets custom icons for dark and light themes */
+	const char *(*get_dark_icon)(void *type_data);
+	const char *(*get_light_icon)(void *type_data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info, size_t size);

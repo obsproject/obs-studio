@@ -26,6 +26,7 @@ target_sources(
     obs-filters.c
     scale-filter.c
     scroll-filter.c
+    sdr-on-hdr-filter.c
     sharpness-filter.c
 )
 
@@ -35,7 +36,6 @@ include(cmake/speexdsp.cmake)
 include(cmake/rnnoise.cmake)
 
 if(OS_WINDOWS)
-  include(cmake/nvidia.cmake)
   configure_file(cmake/windows/obs-module.rc.in obs-filters.rc)
   target_sources(obs-filters PRIVATE obs-filters.rc)
 endif()

@@ -22,7 +22,7 @@ target_sources(
     updater.rc
 )
 
-target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
+target_compile_definitions(updater PRIVATE "PSAPI_VERSION=2")
 
 target_include_directories(updater PRIVATE "${CMAKE_SOURCE_DIR}/libobs" "${CMAKE_SOURCE_DIR}/frontend/utility")
 
@@ -32,7 +32,13 @@ target_link_libraries(
 )
 
 # zstd is hardcoded with /DEFAULTLIB:LIBCMT
-target_link_options(updater PRIVATE $<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>)
+target_link_options(
+  updater
+  PRIVATE
+    $<$<CONFIG:DEBUG>:/NODEFAULTLIB:LIBCMT>
+    "$<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/PDBALTPATH:$<TARGET_PDB_FILE_NAME:updater>>"
+    "$<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>>:/PDBSTRIPPED:$<TARGET_PDB_FILE_NAME:updater>>"
+)
 
 set_target_properties(
   updater

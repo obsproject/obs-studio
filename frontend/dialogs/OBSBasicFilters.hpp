@@ -34,12 +34,7 @@ private:
 	OBSSource source;
 	OBSPropertiesView *view = nullptr;
 
-	OBSSignal addSignal;
-	OBSSignal removeSignal;
-	OBSSignal reorderSignal;
-
-	OBSSignal removeSourceSignal;
-	OBSSignal renameSourceSignal;
+	std::vector<OBSSignal> obsSignals;
 	OBSSignal updatePropertiesSignal;
 
 	inline OBSSource GetFilter(int row, bool async);
@@ -120,8 +115,9 @@ public:
 
 	inline void UpdateSource(obs_source_t *target)
 	{
-		if (source == target)
+		if (source == target) {
 			UpdateFilters();
+		}
 	}
 
 protected:

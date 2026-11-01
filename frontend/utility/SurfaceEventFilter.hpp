@@ -6,6 +6,8 @@
 #include <QPlatformSurfaceEvent>
 
 class SurfaceEventFilter : public QObject {
+	Q_OBJECT
+
 	OBSQTDisplay *display;
 
 public:

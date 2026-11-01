@@ -28,12 +28,7 @@
 
 enum MissingFilesRole { EntryStateRole = Qt::UserRole, NewPathsToProcessRole };
 
-MissingFilesPathItemDelegate::MissingFilesPathItemDelegate(bool isOutput, const QString &defaultPath)
-	: QStyledItemDelegate(),
-	  isOutput(isOutput),
-	  defaultPath(defaultPath)
-{
-}
+MissingFilesPathItemDelegate::MissingFilesPathItemDelegate() : QStyledItemDelegate() {}
 
 QWidget *MissingFilesPathItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem & /* option */,
 						    const QModelIndex &) const
@@ -66,17 +61,17 @@ QWidget *MissingFilesPathItemDelegate::createEditor(QWidget *parent, const QStyl
 	browseButton->setSizePolicy(buttonSizePolicy);
 	layout->addWidget(browseButton);
 
-	container->connect(browseButton, &QToolButton::clicked, browseCallback);
+	connect(browseButton, &QToolButton::clicked, this, browseCallback);
 
-	// The "clear" button is not shown in input cells
-	if (isOutput) {
-		QToolButton *clearButton = new QToolButton();
-		clearButton->setText("X");
-		clearButton->setSizePolicy(buttonSizePolicy);
-		layout->addWidget(clearButton);
+	QToolButton *clearButton = new QToolButton();
+	QIcon icon;
+	icon.addFile(QString::fromUtf8(":/res/images/close.svg"), QSize(), QIcon::Mode::Normal, QIcon::State::Off);
+	clearButton->setIcon(icon);
+	clearButton->setProperty("class", "icon-close");
+	clearButton->setSizePolicy(buttonSizePolicy);
+	layout->addWidget(clearButton);
 
-		container->connect(clearButton, &QToolButton::clicked, clearCallback);
-	}
+	connect(clearButton, &QToolButton::clicked, this, clearCallback);
 
 	container->setLayout(layout);
 	container->setFocusProxy(text);
@@ -105,10 +100,7 @@ void MissingFilesPathItemDelegate::setModelData(QWidget *editor, QAbstractItemMo
 	QVariant pathListProp = editor->property(PATH_LIST_PROP);
 	if (pathListProp.isValid()) {
 		QStringList list = editor->property(PATH_LIST_PROP).toStringList();
-		if (isOutput) {
-			model->setData(index, list);
-		} else
-			model->setData(index, list, MissingFilesRole::NewPathsToProcessRole);
+		model->setData(index, list);
 	} else {
 		QLineEdit *lineEdit = editor->findChild<QLineEdit *>();
 		model->setData(index, lineEdit->text(), 0);
@@ -124,33 +116,40 @@ void MissingFilesPathItemDelegate::paint(QPainter *painter, const QStyleOptionVi
 	QApplication::style()->drawControl(QStyle::CE_ItemViewItem, &localOption, painter);
 }
 
+void MissingFilesPathItemDelegate::initStyleOption(QStyleOptionViewItem *option, const QModelIndex &index) const
+{
+	QStyledItemDelegate::initStyleOption(option, index);
+	option->textElideMode = Qt::ElideMiddle;
+}
+
 void MissingFilesPathItemDelegate::handleBrowse(QWidget *container)
 {
 
 	QLineEdit *text = container->findChild<QLineEdit *>();
 
 	QString currentPath = text->text();
-	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0)
-		currentPath = defaultPath;
-
-	bool isSet = false;
-	if (isOutput) {
-		QString newPath =
-			QFileDialog::getOpenFileName(container, QTStr("MissingFiles.SelectFile"), currentPath, nullptr);
-
-#ifdef __APPLE__
-		// TODO: Revisit when QTBUG-42661 is fixed
-		container->window()->raise();
-#endif
-
-		if (!newPath.isEmpty()) {
-			container->setProperty(PATH_LIST_PROP, QStringList() << newPath);
-			isSet = true;
-		}
+	if (currentPath.isEmpty() || currentPath.compare(QTStr("MissingFiles.Clear")) == 0) {
+		currentPath = "";
 	}
 
-	if (isSet)
+	bool isSet = false;
+
+	QString newPath =
+		QFileDialog::getOpenFileName(container, QTStr("MissingFiles.SelectFile"), currentPath, nullptr);
+
+#ifdef __APPLE__
+	// TODO: Revisit when QTBUG-42661 is fixed
+	container->window()->raise();
+#endif
+
+	if (!newPath.isEmpty()) {
+		container->setProperty(PATH_LIST_PROP, QStringList() << newPath);
+		isSet = true;
+	}
+
+	if (isSet) {
 		emit commitData(container);
+	}
 }
 
 void MissingFilesPathItemDelegate::handleClear(QWidget *container)

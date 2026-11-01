@@ -130,6 +130,9 @@ static bool GetMonitorTarget(LPCWSTR device, DISPLAYCONFIG_TARGET_DEVICE_NAME *t
 
 	UINT32 numPath, numMode;
 	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath, &numMode) == ERROR_SUCCESS) {
+		if (!numPath || !numMode) {
+			return false;
+		}
 		DISPLAYCONFIG_PATH_INFO *paths = bmalloc(numPath * sizeof(DISPLAYCONFIG_PATH_INFO));
 		DISPLAYCONFIG_MODE_INFO *modes = bmalloc(numMode * sizeof(DISPLAYCONFIG_MODE_INFO));
 		if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths, &numMode, modes, NULL) ==
@@ -762,7 +765,7 @@ static void update_settings_visibility(obs_properties_t *props, struct duplicato
 {
 	pthread_mutex_lock(&capture->update_mutex);
 
-	const enum window_capture_method method = capture->method;
+	const enum display_capture_method method = capture->method;
 	const bool dxgi_options = method == METHOD_DXGI;
 	const bool wgc_options = method == METHOD_WGC;
 
@@ -799,9 +802,9 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_property_t *p =
 		obs_properties_add_list(props, "method", TEXT_METHOD, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
-	obs_property_list_add_int(p, TEXT_METHOD_DXGI, METHOD_DXGI);
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
-	obs_property_list_item_disable(p, 2, !wgc_supported);
+	obs_property_list_add_int(p, TEXT_METHOD_DXGI, METHOD_DXGI);
+	obs_property_list_item_disable(p, 1, !wgc_supported);
 	obs_property_set_modified_callback(p, display_capture_method_changed);
 
 	obs_property_t *monitors = obs_properties_add_list(props, "monitor_id", TEXT_MONITOR, OBS_COMBO_TYPE_LIST,

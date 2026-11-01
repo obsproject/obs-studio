@@ -146,8 +146,9 @@ static inline wstring to_wide(const char *utf8)
 
 	size_t len = os_utf8_to_wcs(utf8, 0, nullptr, 0);
 	text.resize(len);
-	if (len)
+	if (len) {
 		os_utf8_to_wcs(utf8, 0, &text[0], len + 1);
+	}
 
 	return text;
 }
@@ -164,8 +165,9 @@ template<typename T, typename T2, BOOL WINAPI deleter(T2)> class GDIObj {
 
 	inline GDIObj &Replace(T obj_)
 	{
-		if (obj)
+		if (obj) {
 			deleter(obj);
+		}
 		obj = obj_;
 		return *this;
 	}
@@ -300,8 +302,9 @@ struct TextSource {
 static time_t get_modified_timestamp(const char *filename)
 {
 	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
+	if (os_stat(filename, &stats) != 0) {
 		return -1;
+	}
 	return stats.st_mtime;
 }
 
@@ -329,61 +332,70 @@ void TextSource::UpdateFont()
 		hfont = CreateFontIndirect(&lf);
 	}
 
-	if (hfont)
+	if (hfont) {
 		font.reset(new Font(hdc, hfont));
+	}
 }
 
 void TextSource::GetStringFormat(StringFormat &format)
 {
 	UINT flags = StringFormatFlagsNoFitBlackBox;
 
-	if (!use_extents || old_extents)
+	if (!use_extents || old_extents) {
 		flags |= StringFormatFlagsMeasureTrailingSpaces;
+	}
 
-	if (vertical)
+	if (vertical) {
 		flags |= StringFormatFlagsDirectionVertical | StringFormatFlagsDirectionRightToLeft;
+	}
 
 	format.SetFormatFlags(flags);
 	format.SetTrimming(StringTrimmingWord);
 
 	switch (align) {
 	case Align::Left:
-		if (vertical)
+		if (vertical) {
 			format.SetLineAlignment(StringAlignmentFar);
-		else
+		} else {
 			format.SetAlignment(StringAlignmentNear);
+		}
 		break;
 	case Align::Center:
-		if (vertical)
+		if (vertical) {
 			format.SetLineAlignment(StringAlignmentCenter);
-		else
+		} else {
 			format.SetAlignment(StringAlignmentCenter);
+		}
 		break;
 	case Align::Right:
-		if (vertical)
+		if (vertical) {
 			format.SetLineAlignment(StringAlignmentNear);
-		else
+		} else {
 			format.SetAlignment(StringAlignmentFar);
+		}
 	}
 
 	switch (valign) {
 	case VAlign::Top:
-		if (vertical)
+		if (vertical) {
 			format.SetAlignment(StringAlignmentNear);
-		else
+		} else {
 			format.SetLineAlignment(StringAlignmentNear);
+		}
 		break;
 	case VAlign::Center:
-		if (vertical)
+		if (vertical) {
 			format.SetAlignment(StringAlignmentCenter);
-		else
+		} else {
 			format.SetLineAlignment(StringAlignmentCenter);
+		}
 		break;
 	case VAlign::Bottom:
-		if (vertical)
+		if (vertical) {
 			format.SetAlignment(StringAlignmentFar);
-		else
+		} else {
 			format.SetLineAlignment(StringAlignmentFar);
+		}
 	}
 }
 
@@ -407,21 +419,25 @@ void TextSource::RemoveNewlinePadding(const StringFormat &format, RectF &box)
 	float offset_cy = after.Height - before.Height;
 
 	if (!vertical) {
-		if (offset_cx >= 1.0f)
+		if (offset_cx >= 1.0f) {
 			offset_cx -= 1.0f;
+		}
 
-		if (valign == VAlign::Center)
+		if (valign == VAlign::Center) {
 			box.Y -= offset_cy * 0.5f;
-		else if (valign == VAlign::Bottom)
+		} else if (valign == VAlign::Bottom) {
 			box.Y -= offset_cy;
+		}
 	} else {
-		if (offset_cy >= 1.0f)
+		if (offset_cy >= 1.0f) {
 			offset_cy -= 1.0f;
+		}
 
-		if (align == Align::Center)
+		if (align == Align::Center) {
 			box.X -= offset_cx * 0.5f;
-		else if (align == Align::Right)
+		} else if (align == Align::Right) {
 			box.X -= offset_cx;
+		}
 	}
 
 	box.Width -= offset_cx;
@@ -519,10 +535,11 @@ void TextSource::CalculateTextSizes(const StringFormat &format, RectF &bounding_
 
 	/* avoid taking up too much VRAM */
 	if (total_size > MAX_AREA) {
-		if (text_size.cx > text_size.cy)
+		if (text_size.cx > text_size.cy) {
 			text_size.cx = (LONG)MAX_AREA / text_size.cy;
-		else
+		} else {
 			text_size.cy = (LONG)MAX_AREA / text_size.cx;
+		}
 	}
 
 	/* the internal text-rendering bounding box for is reset to
@@ -566,8 +583,9 @@ void TextSource::RenderText()
 				  Color(calc_color(color2, opacity2)), gradient_dir, 1);
 	DWORD full_bk_color = bk_color & 0xFFFFFF;
 
-	if (!text.empty() || use_extents)
+	if (!text.empty() || use_extents) {
 		full_bk_color |= get_alpha_val(bk_opacity);
+	}
 
 	if ((size.cx > box.Width || size.cy > box.Height) && !use_extents) {
 		stat = graphics_bitmap.Clear(Color(0));
@@ -606,8 +624,9 @@ void TextSource::RenderText()
 
 	if (!tex || (LONG)cx != size.cx || (LONG)cy != size.cy) {
 		obs_enter_graphics();
-		if (tex)
+		if (tex) {
 			gs_texture_destroy(tex);
+		}
 
 		const uint8_t *data = (uint8_t *)bits.get();
 		tex = gs_texture_create(size.cx, size.cy, GS_BGRA, 1, &data, GS_DYNAMIC);
@@ -626,15 +645,18 @@ void TextSource::RenderText()
 
 const char *TextSource::GetMainString(const char *str)
 {
-	if (!str)
+	if (!str) {
 		return "";
-	if (!chatlog_mode || !chatlog_lines)
+	}
+	if (!chatlog_mode || !chatlog_lines) {
 		return str;
+	}
 
 	int lines = chatlog_lines;
 	size_t len = strlen(str);
-	if (!len)
+	if (!len) {
 		return str;
+	}
 
 	const char *temp = str + len;
 
@@ -642,8 +664,9 @@ const char *TextSource::GetMainString(const char *str)
 		temp--;
 
 		if (temp[0] == '\n' && temp[1] != 0) {
-			if (!--lines)
+			if (!--lines) {
 				break;
+			}
 		}
 	}
 
@@ -655,19 +678,20 @@ void TextSource::LoadFileText()
 	BPtr<char> file_text = os_quick_read_utf8_file(file.c_str());
 	text = to_wide(GetMainString(file_text));
 
-	if (!text.empty() && text.back() != '\n')
+	if (!text.empty() && text.back() != '\n') {
 		text.push_back('\n');
+	}
 }
 
 void TextSource::TransformText()
 {
 	const locale loc = locale(obs_get_locale());
 	const ctype<wchar_t> &f = use_facet<ctype<wchar_t>>(loc);
-	if (text_transform == S_TRANSFORM_UPPERCASE)
+	if (text_transform == S_TRANSFORM_UPPERCASE) {
 		f.toupper(&text[0], &text[0] + text.size());
-	else if (text_transform == S_TRANSFORM_LOWERCASE)
+	} else if (text_transform == S_TRANSFORM_LOWERCASE) {
 		f.tolower(&text[0], &text[0] + text.size());
-	else if (text_transform == S_TRANSFORM_STARTCASE) {
+	} else if (text_transform == S_TRANSFORM_STARTCASE) {
 		bool upper = true;
 		for (wstring::iterator it = text.begin(); it != text.end(); ++it) {
 			const wchar_t upper_char = f.toupper(*it);
@@ -798,8 +822,9 @@ inline void TextSource::Update(obs_data_t *s)
 		/* all text should end with newlines due to the fact that GDI+
 		 * treats strings without newlines differently in terms of
 		 * render size */
-		if (!text.empty())
+		if (!text.empty()) {
 			text.push_back('\n');
+		}
 	}
 	TransformText();
 
@@ -808,19 +833,21 @@ inline void TextSource::Update(obs_data_t *s)
 	outline_opacity = new_o_opacity;
 	outline_size = roundf(float(new_o_size));
 
-	if (strcmp(align_str, S_ALIGN_CENTER) == 0)
+	if (strcmp(align_str, S_ALIGN_CENTER) == 0) {
 		align = Align::Center;
-	else if (strcmp(align_str, S_ALIGN_RIGHT) == 0)
+	} else if (strcmp(align_str, S_ALIGN_RIGHT) == 0) {
 		align = Align::Right;
-	else
+	} else {
 		align = Align::Left;
+	}
 
-	if (strcmp(valign_str, S_VALIGN_CENTER) == 0)
+	if (strcmp(valign_str, S_VALIGN_CENTER) == 0) {
 		valign = VAlign::Center;
-	else if (strcmp(valign_str, S_VALIGN_BOTTOM) == 0)
+	} else if (strcmp(valign_str, S_VALIGN_BOTTOM) == 0) {
 		valign = VAlign::Bottom;
-	else
+	} else {
 		valign = VAlign::Top;
+	}
 
 	RenderText();
 	update_time_elapsed = 0.0f;
@@ -832,8 +859,9 @@ inline void TextSource::Update(obs_data_t *s)
 
 inline void TextSource::Tick(float seconds)
 {
-	if (!read_from_file)
+	if (!read_from_file) {
 		return;
+	}
 
 	update_time_elapsed += seconds;
 
@@ -857,8 +885,9 @@ inline void TextSource::Tick(float seconds)
 
 inline void TextSource::Render()
 {
-	if (!tex)
+	if (!tex) {
 		return;
+	}
 
 	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
@@ -969,8 +998,9 @@ static obs_properties_t *get_properties(void *data)
 		path = s->file;
 		replace(path.begin(), path.end(), '\\', '/');
 		slash = strrchr(path.c_str(), '/');
-		if (slash)
+		if (slash) {
 			path.resize(slash - path.c_str() + 1);
+		}
 	}
 
 	obs_properties_add_text(props, S_TEXT, T_TEXT, OBS_TEXT_MULTILINE);

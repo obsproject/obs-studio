@@ -12,7 +12,6 @@
 !/plugins
 !/shared
 !/test
-!/UI
 !.cirrus.xml
 !.clang-format
 !.editorconfig
@@ -28,7 +27,8 @@
 !CMakePresets.json
 !COC.rst
 !COMMITMENT
-!CONTRIBUTING.rst
+!CONTRIBUTING.md
+!CODESTYLE.md
 !COPYING
 !INSTALL
 !README.rst

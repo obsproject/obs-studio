@@ -9,8 +9,9 @@ QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option, const QMo
 	SourceTree *tree = qobject_cast<SourceTree *>(parent());
 	QWidget *item = tree->indexWidget(index);
 
-	if (!item)
-		return (QSize(0, 0));
+	if (!item) {
+		return QStyledItemDelegate::sizeHint(option, index);
+	}
 
-	return (QSize(option.widget->minimumWidth(), item->height()));
+	return (QSize(item->sizeHint()));
 }

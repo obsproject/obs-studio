@@ -58,8 +58,6 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback,
 						      void *private_data) = 0;
 
-	virtual void *obs_frontend_add_dock(void *dock) = 0;
-
 	virtual bool obs_frontend_add_dock_by_id(const char *id, const char *title, void *widget) = 0;
 	virtual void obs_frontend_remove_dock(const char *id) = 0;
 	virtual bool obs_frontend_add_custom_qdock(const char *id, void *dock) = 0;
@@ -72,7 +70,6 @@ struct obs_frontend_callbacks {
 	virtual obs_output_t *obs_frontend_get_replay_buffer_output(void) = 0;
 
 	virtual config_t *obs_frontend_get_profile_config(void) = 0;
-	OBS_DEPRECATED virtual config_t *obs_frontend_get_global_config(void) = 0;
 
 	virtual config_t *obs_frontend_get_app_config(void) = 0;
 	virtual config_t *obs_frontend_get_user_config(void) = 0;
@@ -137,6 +134,15 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_add_undo_redo_action(const char *name, const undo_redo_cb undo,
 						       const undo_redo_cb redo, const char *undo_data,
 						       const char *redo_data, bool repeatable) = 0;
+
+	virtual obs_canvas_t *obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags) = 0;
+	virtual bool obs_frontend_remove_canvas(obs_canvas_t *canvas) = 0;
+	virtual void obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list) = 0;
+
+	virtual void obs_frontend_copy_sceneitem(obs_sceneitem_t *item) = 0;
+	virtual bool obs_frontend_can_paste_sceneitem(bool duplicate) = 0;
+	virtual void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate) = 0;
+	virtual bool obs_frontend_is_safe_mode_enabled(void) = 0;
 };
 
 EXPORT void obs_frontend_set_callbacks_internal(obs_frontend_callbacks *callbacks);

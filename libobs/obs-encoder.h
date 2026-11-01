@@ -38,6 +38,7 @@ typedef struct obs_encoder obs_encoder_t;
 #define OBS_ENCODER_CAP_INTERNAL (1 << 3)
 #define OBS_ENCODER_CAP_ROI (1 << 4)
 #define OBS_ENCODER_CAP_SCALING (1 << 5)
+#define OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE (1 << 6)
 
 /** Specifies the encoder type */
 enum obs_encoder_type {
@@ -344,6 +345,9 @@ struct obs_encoder_info {
 
 	bool (*encode_texture2)(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key,
 				uint64_t *next_key, struct encoder_packet *packet, bool *received_packet);
+
+	/** Audio encoder only: Returns padding, in samples, that must be skipped at the start of the stream. */
+	uint32_t (*get_priming_samples)(void *data);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info, size_t size);
