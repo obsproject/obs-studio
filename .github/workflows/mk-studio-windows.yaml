@@ -1,0 +1,85 @@
+name: MK VISION Studio - Windows
+run-name: MK VISION Studio Windows build (${{ github.ref_name }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version, MAJOR.MINOR.PATCH (e.g. 1.0.0)'
+        required: true
+        default: '1.0.0'
+  push:
+    branches: [mk-studio]
+    paths-ignore: ['**.md']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mk-studio-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build + installer (x64)
+    runs-on: windows-2025-vs2026
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      MK_VERSION: ${{ inputs.version || '1.0.0' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      # OBS derives its version from `git describe`. A tag on HEAD gives us our own version.
+      - name: Set version tag
+        run: |
+          if ($env:MK_VERSION -notmatch '^\d+\.\d+\.\d+$') { throw "Bad version: $env:MK_VERSION" }
+          git tag -f $env:MK_VERSION
+          git describe --always --tags
+
+      - name: Build
+        uses: ./.github/actions/build-obs
+        with:
+          target: x64
+          config: RelWithDebInfo
+
+      - name: Check install tree
+        run: |
+          $exe = "build_x64/install/bin/64bit/obs64.exe"
+          if (-not (Test-Path $exe)) { Get-ChildItem build_x64/install -Recurse -Depth 3 | Select-Object -First 80 FullName; throw "$exe not found" }
+          Get-ChildItem build_x64/install -Directory | Select-Object Name
+
+      - name: Install Inno Setup if missing
+        run: |
+          $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup 6\ISCC.exe","C:\Program Files\Inno Setup 6\ISCC.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if (-not $iscc) { choco install innosetup -y --no-progress }
+          $iscc = Get-ChildItem "C:\Program Files (x86)\Inno Setup 6\ISCC.exe","C:\Program Files\Inno Setup 6\ISCC.exe" | Select-Object -First 1
+          "ISCC=$($iscc.FullName)" | Out-File -Append -FilePath $env:GITHUB_ENV -Encoding utf8
+
+      - name: Build installer
+        run: |
+          $root = (Get-Location).Path
+          New-Item -ItemType Directory -Force installer-out | Out-Null
+          & $env:ISCC "/DAppVersion=$env:MK_VERSION" "/DSourceDir=$root\build_x64\install" "/DRepoRoot=$root" "/DOutDir=$root\installer-out" "$root\build-aux\windows\mk-vision-studio.iss"
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+          Get-ChildItem installer-out
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK-VISION-Studio-${{ env.MK_VERSION }}-installer
+          path: installer-out/*.exe
+          if-no-files-found: error
+
+      - name: Zip install tree (portable test copy)
+        run: Compress-Archive -Path build_x64/install/* -DestinationPath "MK-VISION-Studio-$env:MK_VERSION-portable-x64.zip"
+
+      - name: Upload portable zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: MK-VISION-Studio-${{ env.MK_VERSION }}-portable
+          path: MK-VISION-Studio-*-portable-x64.zip

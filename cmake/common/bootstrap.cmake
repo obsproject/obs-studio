@@ -41,11 +41,11 @@ if("${CMAKE_CURRENT_BINARY_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 endif()
 
 # Set default global project variables
-set(OBS_COMPANY_NAME "OBS Project")
-set(OBS_PRODUCT_NAME "OBS Studio")
-set(OBS_WEBSITE "https://www.obsproject.com")
-set(OBS_COMMENTS "Free and open source software for video recording and live streaming")
-set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey")
+set(OBS_COMPANY_NAME "MK VISION")
+set(OBS_PRODUCT_NAME "MK VISION Studio")
+set(OBS_WEBSITE "https://github.com/scchoolsystem")
+set(OBS_COMMENTS "MK VISION Studio - broadcast production suite based on OBS Studio (GPL-2.0-or-later)")
+set(OBS_LEGAL_COPYRIGHT "(C) Lain Bailey and OBS Studio contributors; MK VISION Studio modifications")
 set(OBS_CMAKE_VERSION 3.0.0)
 
 # Configure default version strings

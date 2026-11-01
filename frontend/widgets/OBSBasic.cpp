@@ -1982,9 +1982,9 @@ void OBSBasic::UpdateTitleBar()
 	const char *profile = config_get_string(App()->GetUserConfig(), "Basic", "Profile");
 	const char *sceneCollection = config_get_string(App()->GetUserConfig(), "Basic", "SceneCollection");
 
-	name << "OBS ";
+	name << "MK VISION Studio ";
 	if (previewProgramMode) {
-		name << "Studio ";
+		name << "[PVW/PGM] ";
 	}
 
 	name << App()->GetVersionString(false);
