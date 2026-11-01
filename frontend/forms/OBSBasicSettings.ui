@@ -634,6 +634,16 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="systemTrayCloseToTray">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.SystemTrayCloseToTray</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_2">
                      <property name="orientation">
@@ -8849,6 +8859,7 @@
   <tabstop>systemTrayEnabled</tabstop>
   <tabstop>systemTrayWhenStarted</tabstop>
   <tabstop>systemTrayAlways</tabstop>
+  <tabstop>systemTrayCloseToTray</tabstop>
   <tabstop>overflowHide</tabstop>
   <tabstop>overflowAlwaysVisible</tabstop>
   <tabstop>overflowSelectionHide</tabstop>
@@ -9015,6 +9026,12 @@
   <include location="obs.qrc"/>
  </resources>
  <connections>
+  <connection>
+   <sender>systemTrayEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>systemTrayCloseToTray</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
   <connection>
    <sender>listWidget</sender>
    <signal>currentRowChanged(int)</signal>

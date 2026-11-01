@@ -64,6 +64,7 @@ signals:
 	void VirtualCamConfigButtonClicked();
 	void StudioModeButtonClicked();
 	void SettingsButtonClicked();
+	void ExitButtonClicked();
 
 	void StartStreamMenuActionClicked();
 	void StopStreamMenuActionClicked();

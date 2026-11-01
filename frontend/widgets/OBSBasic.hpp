@@ -187,6 +187,9 @@ static inline void ClearProcessPriority()
 
 class OBSBasic : public OBSMainWindow {
 	Q_OBJECT
+
+	bool explicitExit = false;
+
 	Q_PROPERTY(QIcon imageIcon READ GetImageIcon WRITE SetImageIcon DESIGNABLE true)
 	Q_PROPERTY(QIcon colorIcon READ GetColorIcon WRITE SetColorIcon DESIGNABLE true)
 	Q_PROPERTY(QIcon slideshowIcon READ GetSlideshowIcon WRITE SetSlideshowIcon DESIGNABLE true)

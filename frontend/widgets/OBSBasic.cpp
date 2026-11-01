@@ -58,6 +58,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QActionGroup>
+#include <QScopedValueRollback>
 #include <QThread>
 #include <QWidgetAction>
 
@@ -200,6 +201,7 @@ OBSBasic::OBSBasic(QWidget *parent) : OBSMainWindow(parent), undo_s(ui), ui(new 
 	connect(controls, &OBSBasicControls::StudioModeButtonClicked, this, &OBSBasic::TogglePreviewProgramMode);
 
 	connect(controls, &OBSBasicControls::SettingsButtonClicked, this, &OBSBasic::on_action_Settings_triggered);
+	connect(controls, &OBSBasicControls::ExitButtonClicked, this, &OBSBasic::close);
 
 	/* Set up transitions combobox connections */
 	connect(this, &OBSBasic::TransitionAdded, this, [this](const QString &name, const QString &uuid) {
@@ -1563,12 +1565,23 @@ void OBSBasic::close()
 		return;
 	}
 
+	QScopedValueRollback<bool> exiting(explicitExit, true);
 	OBSMainWindow::close();
 }
 
 void OBSBasic::closeEvent(QCloseEvent *event)
 {
 	if (isClosePromptOpen() || isClosing()) {
+		event->ignore();
+		return;
+	}
+
+	if (!explicitExit && config_get_bool(App()->GetUserConfig(), "BasicWindow", "SysTrayCloseToTray") &&
+	    QSystemTrayIcon::isSystemTrayAvailable() && trayIcon && trayIcon->isVisible()) {
+		event->ignore();
+		if (isVisible()) {
+			ToggleShowHide();
+		}
 		return;
 	}
 
