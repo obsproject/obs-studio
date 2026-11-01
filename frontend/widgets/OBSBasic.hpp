@@ -1684,7 +1684,7 @@ private:
 #endif
 
 #ifdef RESTREAM_ENABLED
-	void RestreamActionDialogOk(bool start_now);
+	void RestreamActionDialogOk(bool startNow);
 #endif
 
 	void BroadcastButtonClicked();

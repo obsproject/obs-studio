@@ -370,8 +370,9 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 #ifdef RESTREAM_ENABLED
 	Auth *const auth = GetAuth();
-	if (auth && IsRestreamService(auth->service()))
+	if (auth && IsRestreamService(auth->service())) {
 		broadcastActive = false;
+	}
 #endif
 
 	blog(LOG_INFO, STREAMING_STOP);

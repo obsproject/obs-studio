@@ -1,16 +1,12 @@
 #include "OBSRestreamActions.hpp"
 
 #include <widgets/OBSBasic.hpp>
-#include <utility/OBSEventFilter.hpp>
 
 #include <qt-wrappers.hpp>
-#include <QToolTip>
+
 #include <QDateTime>
 #include <QDesktopServices>
 #include <QUrl>
-#include <QFileInfo>
-#include <QStandardPaths>
-#include <QImageReader>
 
 #include "moc_OBSRestreamActions.cpp"
 
@@ -22,15 +18,13 @@ OBSRestreamActions::OBSRestreamActions(QWidget *parent, Auth *auth, bool broadca
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-	eventFilter = new OBSEventFilter([this](QObject *, QEvent *event) {
-		if (event->type() == QEvent::ApplicationActivate) {
+	// Reload the list when the user comes back from the Restream website
+	connect(App(), &QGuiApplication::applicationStateChanged, this, [this](Qt::ApplicationState state) {
+		if (state == Qt::ApplicationActive) {
 			auto events = this->restreamAuth->GetBroadcastInfo();
 			this->UpdateBroadcastList(events);
 		}
-		return false;
 	});
-
-	App()->installEventFilter(eventFilter);
 
 	ui->setupUi(this);
 	ui->okButton->setEnabled(false);
@@ -44,17 +38,11 @@ OBSRestreamActions::OBSRestreamActions(QWidget *parent, Auth *auth, bool broadca
 		reject();
 	});
 
-	qDeleteAll(ui->scrollAreaWidgetContents->findChildren<QWidget *>(QString(), Qt::FindDirectChildrenOnly));
-
 	auto events = restreamAuth->GetBroadcastInfo();
 	this->UpdateBroadcastList(events);
 }
 
-OBSRestreamActions::~OBSRestreamActions()
-{
-	if (eventFilter)
-		App()->removeEventFilter(eventFilter);
-}
+OBSRestreamActions::~OBSRestreamActions() {}
 
 void OBSRestreamActions::UpdateBroadcastList(QVector<RestreamEventDescription> &events)
 {
@@ -64,12 +52,14 @@ void OBSRestreamActions::UpdateBroadcastList(QVector<RestreamEventDescription> &
 		event.title = "Live with Restream";
 		event.scheduledFor = 0;
 		event.showId = "";
+		event.isInstant = true;
 		events.push_back(event);
 	}
 
 	auto tryToFindShowId = selectedShowId;
-	if (tryToFindShowId.empty())
+	if (tryToFindShowId.empty()) {
 		tryToFindShowId = restreamAuth->GetShowId();
+	}
 
 	selectedEventId = "";
 	selectedShowId = "";
@@ -106,23 +96,23 @@ void OBSRestreamActions::UpdateBroadcastList(QVector<RestreamEventDescription> &
 	for (auto event : events) {
 		ClickableLabel *label = new ClickableLabel();
 		label->setTextFormat(Qt::RichText);
-		label->setAlignment(Qt::AlignHCenter);
 		label->setMargin(4);
 
-		QString scheduledForString;
+		QString details;
 		if (event.scheduledFor > 0) {
 			QDateTime dateTime = QDateTime::fromSecsSinceEpoch(event.scheduledFor);
-			scheduledForString = QLocale().toString(
+			QString scheduledForString = QLocale().toString(
 				dateTime, QString("%1 %2").arg(QLocale().dateFormat(QLocale::LongFormat),
 							       QLocale().timeFormat(QLocale::ShortFormat)));
-
-			label->setText(QString("<big>%1</big><br>%2: %3")
-					       .arg(QString::fromStdString(event.title),
-						    QTStr("Restream.Actions.BroadcastScheduled"), scheduledForString));
+			details =
+				QString("%1: %2").arg(QTStr("Restream.Actions.BroadcastScheduled"), scheduledForString);
+		} else if (event.isInstant) {
+			details = QTStr("Restream.Actions.BroadcastDefault");
 		} else {
-			label->setText(
-				QString("<big>%1</big>%2").arg(QString::fromStdString(event.title), scheduledForString));
+			details = QTStr("Restream.Actions.BroadcastNotScheduled");
 		}
+
+		label->setText(QString("<big>%1</big><br>%2").arg(QString::fromStdString(event.title), details));
 
 		connect(label, &ClickableLabel::clicked, this, [&, label, event]() {
 			for (QWidget *i : ui->scrollAreaWidgetContents->findChildren<QWidget *>(

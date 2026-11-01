@@ -105,6 +105,7 @@ try {
 		event.title = item["title"].string_value();
 		event.scheduledFor = item["scheduledFor"].is_number() ? item["scheduledFor"].int_value() : 0;
 		event.showId = item["showId"].string_value();
+		event.isInstant = item["isInstant"].bool_value();
 		events.push_back(event);
 	}
 

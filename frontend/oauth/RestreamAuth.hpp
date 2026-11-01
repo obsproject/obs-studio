@@ -9,6 +9,8 @@ struct RestreamEventDescription {
 	std::string title;
 	qint64 scheduledFor;
 	std::string showId;
+	// Instant stream event is the one behind the account's default stream key
+	bool isInstant;
 };
 
 class RestreamAuth : public OAuthStreamKey {

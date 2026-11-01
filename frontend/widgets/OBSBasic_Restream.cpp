@@ -25,12 +25,8 @@
 
 #include <qt-wrappers.hpp>
 
-using namespace std;
-
-extern bool cef_js_avail;
-
 #ifdef RESTREAM_ENABLED
-void OBSBasic::RestreamActionDialogOk(bool start_now)
+void OBSBasic::RestreamActionDialogOk(bool startNow)
 {
 	auto *restreamAuth = dynamic_cast<RestreamAuth *>(GetAuth());
 
@@ -40,7 +36,8 @@ void OBSBasic::RestreamActionDialogOk(bool start_now)
 
 	emit BroadcastStreamReady(broadcastReady);
 
-	if (broadcastReady && start_now)
-		QMetaObject::invokeMethod(this, "StartStreaming");
+	if (broadcastReady && startNow) {
+		QMetaObject::invokeMethod(this, &OBSBasic::StartStreaming);
+	}
 }
 #endif
