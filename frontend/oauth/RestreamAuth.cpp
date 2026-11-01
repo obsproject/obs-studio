@@ -284,6 +284,12 @@ void RestreamAuth::LoadUI()
 
 		if (foundShowId.empty() && events.size()) {
 			auto event = events.at(0);
+			for (const auto &candidate : events) {
+				if (candidate.isInstant) {
+					event = candidate;
+					break;
+				}
+			}
 			foundEventId = event.id;
 			foundShowId = event.showId;
 		}
@@ -402,6 +408,11 @@ std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent, const std::string &)
 
 	if (!restreamAuth->GetToken(RESTREAM_TOKEN_URL, client_id, RESTREAM_SCOPE_VERSION,
 				    QT_TO_UTF8(login.GetCode()))) {
+		return nullptr;
+	}
+
+	restreamAuth->key_ = restreamAuth->GetStreamingKey("default");
+	if (restreamAuth->key_.empty()) {
 		return nullptr;
 	}
 

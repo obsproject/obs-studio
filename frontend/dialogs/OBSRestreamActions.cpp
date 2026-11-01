@@ -80,6 +80,12 @@ void OBSRestreamActions::UpdateBroadcastList(QVector<RestreamEventDescription> &
 	if (selectedShowId.empty()) {
 		if (events.size()) {
 			auto event = events.at(0);
+			for (const auto &candidate : events) {
+				if (candidate.isInstant) {
+					event = candidate;
+					break;
+				}
+			}
 			selectedEventId = event.id;
 			selectedShowId = event.showId;
 
