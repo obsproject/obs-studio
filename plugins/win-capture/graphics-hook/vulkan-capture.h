@@ -19,6 +19,8 @@ struct vk_device_funcs {
 	DEF_FUNC(CreateSwapchainKHR);
 	DEF_FUNC(DestroySwapchainKHR);
 	DEF_FUNC(QueuePresentKHR);
+	DEF_FUNC(AcquireNextImageKHR);
+	DEF_FUNC(AcquireNextImage2KHR);
 	DEF_FUNC(AllocateMemory);
 	DEF_FUNC(FreeMemory);
 	DEF_FUNC(BindImageMemory);
@@ -35,11 +37,14 @@ struct vk_device_funcs {
 	DEF_FUNC(CmdPipelineBarrier);
 	DEF_FUNC(GetDeviceQueue);
 	DEF_FUNC(QueueSubmit);
+	DEF_FUNC(QueueWaitIdle);
 	DEF_FUNC(CreateCommandPool);
 	DEF_FUNC(DestroyCommandPool);
 	DEF_FUNC(AllocateCommandBuffers);
 	DEF_FUNC(CreateFence);
 	DEF_FUNC(DestroyFence);
+	DEF_FUNC(CreateSemaphore);
+	DEF_FUNC(DestroySemaphore);
 	DEF_FUNC(WaitForFences);
 	DEF_FUNC(ResetFences);
 	DEF_FUNC(CreateImageView);
