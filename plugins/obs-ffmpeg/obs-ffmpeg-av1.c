@@ -117,15 +117,15 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		if (enc->type == AV1_ENCODER_TYPE_SVT) {
 			av_dict_set_int(&svtav1_opts, "rc", 2, 0);
 			av_dict_set_int(&svtav1_opts, "pred-struct", 1, 0);
-			av_dict_set_int(&svtav1_opts, "bias-pct", 0, 0);
-			av_dict_set_int(&svtav1_opts, "tbr", rate, 0);
 		} else {
 			enc->ffve.context->rc_max_rate = rate;
 		}
 	}
 
 	if (enc->type == AV1_ENCODER_TYPE_SVT) {
-		av_opt_set_dict_val(enc->ffve.context->priv_data, "svtav1_opts", svtav1_opts, 0);
+		int ret = av_opt_set_dict_val(enc->ffve.context->priv_data, "svtav1-params", svtav1_opts, 0);
+		if (ret < 0)
+			warn("Failed to set SVT-AV1 parameters: %s", av_err2str(ret));
 	}
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
