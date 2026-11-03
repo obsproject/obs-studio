@@ -80,3 +80,6 @@ endif()
 
 # Enable default inclusion of targets' source and binary directory
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
+
+# Set a global folder for all generated "autogen" targets
+set_property(GLOBAL PROPERTY AUTOGEN_TARGETS_FOLDER autogen)
