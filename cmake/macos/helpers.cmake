@@ -69,6 +69,7 @@ function(set_target_properties_obs target)
                    INFOPLIST_KEY_NSCameraUsageDescription "OBS needs to access the camera to enable camera sources to work."
                    INFOPLIST_KEY_NSMicrophoneUsageDescription "OBS needs to access the microphone to enable audio input."
                    INFOPLIST_KEY_NSAppleEventsUsageDescription "OBS needs to access background events to enable hotkeys while not in focus."
+                   INFOPLIST_KEY_NSBluetoothAlwaysUsageDescription "A webpage in OBS Studio is trying to access Bluetooth. OBS Studio will never need access. We recommend denying this request."
       )
 
       get_property(obs_dependencies GLOBAL PROPERTY _OBS_DEPENDENCIES)
