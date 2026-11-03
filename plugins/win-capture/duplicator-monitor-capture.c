@@ -195,15 +195,20 @@ static BOOL CALLBACK enum_monitor(HMONITOR handle, HDC hdc, LPRECT rect, LPARAM 
 	if (GetMonitorInfoA(handle, (LPMONITORINFO)&mi)) {
 		DISPLAY_DEVICEA device;
 		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			match = strcmp(monitor->device_id, device.DeviceID) == 0;
-			if (match) {
-				strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
-				strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
-				GetMonitorName(handle, monitor->name, _countof(monitor->name));
-				monitor->rect = *rect;
-				monitor->handle = handle;
+		DWORD dev_num = 0;
+		while (EnumDisplayDevicesA(mi.szDevice, dev_num, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+			if ((device.StateFlags & DISPLAY_DEVICE_ACTIVE) == DISPLAY_DEVICE_ACTIVE) {
+				match = strcmp(monitor->device_id, device.DeviceID) == 0;
+				if (match) {
+					strcpy_s(monitor->id, _countof(monitor->id), device.DeviceID);
+					strcpy_s(monitor->alt_id, _countof(monitor->alt_id), mi.szDevice);
+					GetMonitorName(handle, monitor->name, _countof(monitor->name));
+					monitor->rect = *rect;
+					monitor->handle = handle;
+				}
 			}
+
+			dev_num++;
 		}
 	}
 
@@ -744,9 +749,18 @@ static BOOL CALLBACK enum_monitor_props(HMONITOR handle, HDC hdc, LPRECT rect, L
 
 		DISPLAY_DEVICEA device;
 		device.cb = sizeof(device);
-		if (EnumDisplayDevicesA(mi.szDevice, 0, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
-			obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceID);
-		} else {
+		DWORD dev_num = 0;
+		bool use_fallback = true;
+		while (EnumDisplayDevicesA(mi.szDevice, dev_num, &device, EDD_GET_DEVICE_INTERFACE_NAME)) {
+			if ((device.StateFlags & DISPLAY_DEVICE_ACTIVE) == DISPLAY_DEVICE_ACTIVE) {
+				obs_property_list_add_string(monitor_list, monitor_desc.array, device.DeviceID);
+				use_fallback = false;
+			}
+
+			dev_num++;
+		}
+
+		if (use_fallback) {
 			blog(LOG_WARNING,
 			     "[duplicator-monitor-capture] EnumDisplayDevices failed for monitor (%s), falling back to szDevice",
 			     monitor_name);
