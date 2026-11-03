@@ -9,6 +9,7 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/CoTaskMemPtr.hpp>
+#include <util/windows/device-enum.h>
 #include <util/windows/win-version.h>
 #include <util/windows/window-helpers.h>
 #include <util/threading.h>
@@ -487,6 +488,26 @@ WASAPISource::~WASAPISource()
 
 WASAPISource::UpdateParams WASAPISource::BuildUpdateParams(obs_data_t *settings)
 {
+	const char *deviceId = obs_data_get_string(settings, OPT_DEVICE_ID);
+	const char *stableDeviceId = obs_data_get_string(settings, "device_stable_id");
+
+	char *currentDeviceId = nullptr;
+	char *currentStableDeviceId = nullptr;
+	bool isDeviceAvailable =
+		get_audio_device_ids(deviceId, stableDeviceId, &currentDeviceId, &currentStableDeviceId);
+
+	if (isDeviceAvailable) {
+		obs_data_set_string(settings, OPT_DEVICE_ID, currentDeviceId);
+
+		if (currentStableDeviceId) {
+			obs_data_set_string(settings, "device_stable_id", currentStableDeviceId);
+		} else {
+			obs_data_set_string(settings, "device_stable_id", "");
+		}
+	}
+	bfree(currentStableDeviceId);
+	bfree(currentDeviceId);
+
 	WASAPISource::UpdateParams params;
 	params.device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
 	params.useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
