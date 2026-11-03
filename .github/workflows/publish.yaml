@@ -71,7 +71,8 @@ jobs:
   flatpak-publish:
     name: Flathub 📦
     needs: check-tag
-    if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+    # if: github.repository_owner == 'obsproject' && fromJSON(needs.check-tag.outputs.validTag)
+    if: false # Temporary disable
     runs-on: ubuntu-26.04
     defaults:
       run:
