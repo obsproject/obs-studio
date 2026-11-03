@@ -209,13 +209,9 @@ API_AVAILABLE(macos(12.5)) static bool init_screen_stream(struct screen_capture 
     } else {
         blog(LOG_WARNING, "Unable to retrieve OBS output FPS when initializing macOS Screen Capture");
     }
-    // Use 64RGBAHalf where available, for superior 16-bit float color and alpha depth. On prior macOS versions where
-    // 64RGBAHalf is unavailable, fall back to 32BGRA (8-bit UInt color and alpha).
-    if (@available(macOS 15.0, *)) {
-        [sc->stream_properties setPixelFormat:kCVPixelFormatType_64RGBAHalf];
-    } else {
-        [sc->stream_properties setPixelFormat:kCVPixelFormatType_32BGRA];
-    }
+
+    OSType pixelFormat = sck_get_preferred_pixel_format();
+    [sc->stream_properties setPixelFormat:pixelFormat];
 
     if (@available(macOS 13.0, *)) {
         [sc->stream_properties setCapturesAudio:YES];
