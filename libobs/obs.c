@@ -68,6 +68,18 @@ static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 		video->conversion_techs[1] = "NV12_UV";
 		video->conversion_width_i = 1.f / (float)info->width;
 		break;
+	case VIDEO_FORMAT_NV16:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "NV16_Y";
+		video->conversion_techs[1] = "NV16_UV";
+		video->conversion_width_i = 1.f / (float)info->width;
+		break;
+	case VIDEO_FORMAT_NV24:
+		video->conversion_needed = true;
+		video->conversion_techs[0] = "NV24_Y";
+		video->conversion_techs[1] = "NV24_UV";
+		video->conversion_width_i = 1.f / (float)info->width;
+		break;
 	case VIDEO_FORMAT_I444:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -209,6 +221,22 @@ static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
 		break;
+	case VIDEO_FORMAT_NV16:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width / 2, info->height, GS_R8G8, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	case VIDEO_FORMAT_NV24:
+		video->convert_textures[0] =
+			gs_texture_create(info->width, info->height, GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(info->width, info->height, GS_R8G8, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
 	case VIDEO_FORMAT_I444:
 		video->convert_textures[0] =
 			gs_texture_create(info->width, info->height, GS_R8, 1, NULL, GS_RENDER_TARGET);
@@ -293,6 +321,22 @@ static bool obs_init_gpu_copy_surfaces(struct obs_core_video_mix *video, size_t 
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(info->width / 2, info->height / 2, GS_R8G8);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
+	case VIDEO_FORMAT_NV16:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(info->width, info->height, GS_R8);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(info->width / 2, info->height, GS_R8G8);
+		if (!video->copy_surfaces[i][1])
+			return false;
+		break;
+	case VIDEO_FORMAT_NV24:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(info->width, info->height, GS_R8);
+		if (!video->copy_surfaces[i][0])
+			return false;
+		video->copy_surfaces[i][1] = gs_stagesurface_create(info->width, info->height, GS_R8G8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
