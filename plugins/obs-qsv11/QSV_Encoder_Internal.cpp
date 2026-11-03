@@ -713,7 +713,7 @@ int QSV_Encoder_Internal::GetFreeTaskIndex(Task *pTaskPool, mfxU16 nPoolSize)
 }
 
 mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
-				       uint32_t strideUV, mfxBitstream **pBS)
+				       uint32_t strideUV, mfxBitstream **pBS, bool forceIdr)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
@@ -781,6 +781,8 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 
+	m_ctrl.FrameType = forceIdr ? MFX_FRAMETYPE_IDR : MFX_FRAMETYPE_UNKNOWN;
+
 	for (;;) {
 		// Encode a frame asynchronously (returns immediately)
 		sts = m_pmfxENC->EncodeFrameAsync(&m_ctrl, pSurface, &m_pTaskPool[nTaskIdx].mfxBS,
@@ -806,7 +808,7 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pD
 }
 
 mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key,
-					   mfxBitstream **pBS)
+					   mfxBitstream **pBS, bool forceIdr)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 	*pBS = NULL;
@@ -840,6 +842,8 @@ mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, void *tex, uint64_t lock
 		sts = simple_copytex(m_mfxAllocator.pthis, pSurface->Data.MemId, tex, lock_key, (mfxU64 *)next_key);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
+
+	m_ctrl.FrameType = forceIdr ? MFX_FRAMETYPE_IDR : MFX_FRAMETYPE_UNKNOWN;
 
 	for (;;) {
 		// Encode a frame asynchronously (returns immediately)

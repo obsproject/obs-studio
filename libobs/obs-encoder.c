@@ -1544,6 +1544,18 @@ static void encoder_group_new_reconfigure_request(struct obs_encoder_group *grou
 	group->reconfigure_again = false;
 }
 
+static inline int64_t get_next_encoder_group_pts(obs_encoder_t *encoder)
+{
+	struct obs_encoder_group *group = encoder->encoder_group;
+
+	int64_t overall_timestep = encoder->timebase_num * group->frame_rate_divisors_lcm;
+	int64_t next_pts = encoder->cur_pts + encoder->timebase_num * encoder->frame_rate_divisor;
+	if (next_pts % overall_timestep)
+		next_pts = (next_pts / overall_timestep + 1) * overall_timestep;
+
+	return next_pts;
+}
+
 void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder)
 {
 	if (!encoder->encoder_group)
@@ -1566,19 +1578,65 @@ void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder)
 	} else if (new_reconfigure_request || encoder->cur_pts == group->next_pts) {
 		encoder->last_reconfigure_request = group->reconfigure_request;
 
-		int64_t overall_timestep = encoder->timebase_num * group->frame_rate_divisors_lcm;
-
-		int64_t next_pts = encoder->cur_pts + encoder->timebase_num * encoder->frame_rate_divisor;
-
-		if (next_pts % overall_timestep != 0)
-			next_pts = (next_pts / overall_timestep + 1) * overall_timestep;
-
+		int64_t next_pts = get_next_encoder_group_pts(encoder);
 		if (next_pts > group->next_pts)
 			group->next_pts = next_pts;
 
 		if (new_reconfigure_request)
 			group->encoders_updated_next_pts += 1;
 	}
+	pthread_mutex_unlock(&group->mutex);
+}
+
+static inline size_t popcnt(uint32_t encoders_updated)
+{
+#ifdef _WIN32
+	return __popcnt(encoders_updated);
+#else
+	return __builtin_popcountl(encoders_updated);
+#endif
+}
+
+void handle_encoder_group_idr_request(obs_encoder_t *encoder)
+{
+	if (!encoder->encoder_group)
+		return;
+
+	struct obs_encoder_group *group = encoder->encoder_group;
+	pthread_mutex_lock(&group->mutex);
+
+	if (!group->idr_requested) {
+		pthread_mutex_unlock(&group->mutex);
+		return;
+	}
+
+	const size_t idx = da_find(group->encoders, &encoder, 0);
+	const uint32_t mask = 1 << idx;
+
+	/* If all encoders have agreed on an IDR PTS, and we reached it: Request a keyframe. */
+	if (popcnt(group->encoders_updated_next_idr_pts) == group->num_encoders_started &&
+	    encoder->cur_pts == group->next_idr_pts) {
+		os_atomic_set_bool(&encoder->idr_requested, true);
+
+		group->encoders_idr_requested |= mask;
+
+		/* Reset group IDR request state once IDRs have been requested for all encoders. */
+		if (popcnt(group->encoders_idr_requested) == group->num_encoders_started) {
+			group->idr_requested = false;
+			group->encoders_updated_next_idr_pts = 0;
+			group->encoders_idr_requested = 0;
+			group->next_idr_pts = 0;
+		}
+	}
+	/* If we passed the target PTS, and we haven't computed a next PTS for this encoder yet: Update the target. */
+	else if (encoder->cur_pts >= group->next_idr_pts && (group->encoders_updated_next_idr_pts & mask) == 0) {
+		int64_t next_pts = get_next_encoder_group_pts(encoder);
+		if (next_pts > group->next_idr_pts)
+			group->next_idr_pts = next_pts;
+
+		group->encoders_updated_next_idr_pts |= mask;
+	}
+
 	pthread_mutex_unlock(&group->mutex);
 }
 
@@ -1619,6 +1677,7 @@ static void receive_video(void *param, struct video_data *frame)
 		goto wait_for_audio;
 
 	handle_encoder_group_reconfigure_request(encoder);
+	handle_encoder_group_idr_request(encoder);
 
 	memset(&enc_frame, 0, sizeof(struct encoder_frame));
 
@@ -1632,6 +1691,9 @@ static void receive_video(void *param, struct video_data *frame)
 
 	enc_frame.frames = 1;
 	enc_frame.pts = encoder->cur_pts;
+
+	if (os_atomic_exchange_bool(&encoder->idr_requested, false))
+		enc_frame.flags |= OBS_FRAME_FORCE_IDR;
 
 	if (do_encode(encoder, &enc_frame, &frame->timestamp))
 		encoder->cur_pts += encoder->timebase_num * encoder->frame_rate_divisor;
@@ -2212,6 +2274,11 @@ bool obs_encoder_set_group(obs_encoder_t *encoder, obs_encoder_group_t *group)
 		pthread_mutex_unlock(&group->mutex);
 		return false;
 	}
+
+	const bool idr_request_supported = (encoder->info.caps & OBS_ENCODER_CAP_FORCE_IDR) != 0;
+	group->idr_request_supported = idr_request_supported &&
+				       (group->encoders.num == 0 || group->idr_request_supported);
+
 	da_push_back(group->encoders, &ref);
 	encoder->encoder_group = group;
 
@@ -2283,4 +2350,32 @@ uint32_t obs_encoder_get_priming_samples(const obs_encoder_t *encoder)
 	}
 
 	return 0;
+}
+
+bool obs_encoder_request_idr(obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_request_idr"))
+		return false;
+	if (encoder->info.type != OBS_ENCODER_VIDEO)
+		return false;
+	if ((encoder->info.caps & OBS_ENCODER_CAP_FORCE_IDR) == 0)
+		return false;
+	if (encoder->encoder_group)
+		return obs_encoder_group_request_idr(encoder->encoder_group);
+
+	os_atomic_set_bool(&encoder->idr_requested, true);
+	return true;
+}
+
+bool obs_encoder_group_request_idr(obs_encoder_group_t *group)
+{
+	if (!group)
+		return false;
+	if (!group->idr_request_supported)
+		return false;
+
+	pthread_mutex_lock(&group->mutex);
+	group->idr_requested = true;
+	pthread_mutex_unlock(&group->mutex);
+	return true;
 }

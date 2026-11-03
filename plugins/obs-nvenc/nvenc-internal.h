@@ -161,7 +161,7 @@ struct nv_texture {
 /* Shared functions                                                          */
 
 bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pic, int64_t pts,
-		       struct encoder_packet *packet, bool *received_packet);
+		       struct encoder_packet *packet, bool *received_packet, obs_frame_flags flags);
 
 /* ------------------------------------------------------------------------- */
 /* Backend-specific functions                                                */

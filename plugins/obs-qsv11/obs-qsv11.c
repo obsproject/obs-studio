@@ -1211,13 +1211,15 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame, struct encod
 	if (obs_encoder_has_roi(obsqsv->encoder))
 		obs_qsv_setup_rois(obsqsv);
 
+	const bool force_idr = (frame->flags & OBS_FRAME_FORCE_IDR) != 0;
+
 	// FIXME: remove null check from the top of this function
 	// if we actually do expect null frames to complete output.
 	if (frame)
 		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, frame->data[0], frame->data[1], frame->linesize[0],
-					 frame->linesize[1], &pBS);
+					 frame->linesize[1], &pBS, force_idr);
 	else
-		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, NULL, NULL, 0, 0, &pBS);
+		ret = qsv_encoder_encode(obsqsv->context, qsvPTS, NULL, NULL, 0, 0, &pBS, false);
 
 	if (ret < 0) {
 		warn("encode failed");
@@ -1269,7 +1271,9 @@ static bool obs_qsv_encode_tex(void *data, struct encoder_texture *tex, int64_t 
 	if (obs_encoder_has_roi(obsqsv->encoder))
 		obs_qsv_setup_rois(obsqsv);
 
-	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, (void *)tex, lock_key, next_key, &pBS);
+	const bool force_idr = (tex->flags & OBS_FRAME_FORCE_IDR) != 0;
+
+	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, (void *)tex, lock_key, next_key, &pBS, force_idr);
 
 	if (ret < 0) {
 		warn("encode failed");
@@ -1330,7 +1334,8 @@ struct obs_encoder_info obs_qsv_encoder_tex_v2 = {
 	.get_name = obs_qsv_getname,
 	.create = obs_qsv_create_tex_h264_v2,
 	.destroy = obs_qsv_destroy,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264_v2,
@@ -1354,7 +1359,8 @@ struct obs_encoder_info obs_qsv_encoder_v2 = {
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 };
 
 struct obs_encoder_info obs_qsv_av1_encoder_tex = {
@@ -1364,7 +1370,8 @@ struct obs_encoder_info obs_qsv_av1_encoder_tex = {
 	.get_name = obs_qsv_getname_av1,
 	.create = obs_qsv_create_tex_av1,
 	.destroy = obs_qsv_destroy,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_av1,
@@ -1386,7 +1393,8 @@ struct obs_encoder_info obs_qsv_av1_encoder = {
 	.get_defaults = obs_qsv_defaults_av1,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_video_info = obs_qsv_video_plus_hdr_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 };
 
 struct obs_encoder_info obs_qsv_hevc_encoder_tex = {
@@ -1396,7 +1404,8 @@ struct obs_encoder_info obs_qsv_hevc_encoder_tex = {
 	.get_name = obs_qsv_getname_hevc,
 	.create = obs_qsv_create_tex_hevc,
 	.destroy = obs_qsv_destroy,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 	.encode_texture2 = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_hevc,
@@ -1418,5 +1427,6 @@ struct obs_encoder_info obs_qsv_hevc_encoder = {
 	.get_defaults = obs_qsv_defaults_hevc,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_video_info = obs_qsv_video_plus_hdr_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_ROI |
+		OBS_ENCODER_CAP_FORCE_IDR,
 };
