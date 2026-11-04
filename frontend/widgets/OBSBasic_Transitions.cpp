@@ -122,10 +122,14 @@ void OBSBasic::TriggerQuickTransition(int id)
 	if (qt && previewProgramMode) {
 		OBSScene scene = GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
+		OBSSourceAutoRelease currentTransition = obs_get_output_source(0);
 
-		if (GetCurrentTransition() != qt->source) {
-			OverrideTransition(qt->source);
-			overridingTransition = true;
+		if (currentTransition != qt->source) {
+			swapCurrentTransition(qt->source);
+		}
+
+		if (qt->fadeToBlack) {
+			source = GetProgramSource();
 		}
 
 		TransitionToScene(source, false, true, qt->duration, qt->fadeToBlack);
@@ -242,6 +246,21 @@ obs_source_t *OBSBasic::FindTransition(const char *name)
 	return nullptr;
 }
 
+static bool ValidTBarTransition(OBSSource transition)
+{
+	if (!transition) {
+		return false;
+	}
+
+	QString id = QT_UTF8(obs_source_get_id(transition));
+
+	if (id == "cut_transition" || id == "obs_stinger_transition") {
+		return false;
+	}
+
+	return true;
+}
+
 void OBSBasic::TransitionToScene(OBSScene scene, bool force)
 {
 	obs_source_t *source = obs_scene_get_source(scene);
@@ -271,25 +290,28 @@ void OBSBasic::TransitionStopped()
 	swapScene = nullptr;
 }
 
-void OBSBasic::OverrideTransition(OBSSource transition)
+void OBSBasic::swapCurrentTransition(OBSSource transition)
 {
 	OBSSourceAutoRelease oldTransition = obs_get_output_source(0);
 
-	if (transition != oldTransition) {
-		obs_transition_swap_begin(transition, oldTransition);
-		obs_set_output_source(0, transition);
-		obs_transition_swap_end(transition, oldTransition);
+	if (transition == oldTransition) {
+		return;
 	}
+
+	if (obs_transition_is_active(oldTransition)) {
+		// Force active transition to complete before swapping.
+		OBSSourceAutoRelease target = obs_transition_get_source(oldTransition, OBS_TRANSITION_SOURCE_B);
+		obs_transition_set(oldTransition, target);
+	}
+
+	obs_transition_swap_begin(transition, oldTransition);
+	obs_set_output_source(0, transition);
+	obs_transition_swap_end(transition, oldTransition);
 }
 
 void OBSBasic::TransitionFullyStopped()
 {
 	EnableTransitionWidgets(true);
-
-	if (overridingTransition) {
-		OverrideTransition(GetCurrentTransition());
-		overridingTransition = false;
-	}
 }
 
 void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransition, int quickDuration, bool black,
@@ -302,6 +324,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 	}
 
 	if (usingPreviewProgram) {
+		if (black && prevFTBSource) {
+			// Already faded to black, skip trying another one.
+			return;
+		}
+
 		if (!tBarActive) {
 			lastProgramScene = programScene;
 		}
@@ -327,7 +354,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		source = obs_scene_get_source(scene);
 	}
 
-	OBSSourceAutoRelease transition = obs_get_output_source(0);
+	OBSSourceAutoRelease tmp = obs_get_output_source(0);
+	OBSSource transition = tmp.Get();
 	if (!transition) {
 		if (usingPreviewProgram && sceneDuplicationMode) {
 			obs_scene_release(scene);
@@ -335,8 +363,7 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		return;
 	}
 
-	float t = obs_transition_get_time(transition);
-	bool stillTransitioning = t < 1.0f && t > 0.0f;
+	bool stillTransitioning = obs_transition_is_active(transition);
 
 	// If actively transitioning, block new transitions from starting
 	if (usingPreviewProgram && stillTransitioning) {
@@ -363,6 +390,10 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		}
 	}
 
+	if (!black) {
+		prevFTBSource = nullptr;
+	}
+
 	if (force) {
 		obs_transition_set(transition, source);
 		OnEvent(OBS_FRONTEND_EVENT_SCENE_CHANGED);
@@ -372,21 +403,39 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force, bool quickTransit
 		/* check for scene override */
 		OBSSource trOverride = GetOverrideTransition(source);
 
-		if (trOverride && !overridingTransition && !quickTransition) {
-			transition = std::move(trOverride);
-			duration = GetOverrideTransitionDuration(source);
-			OverrideTransition(transition.Get());
-			overridingTransition = true;
+		// If quickTransition is true, it means the transition was set up already before calling this function.
+		// This is messy and should be cleaned up in the future.
+		if (!quickTransition) {
+			OBSSource defaultTransition = getDefaultTransition();
+
+			if (trOverride) {
+				// Source has an override and it does not match the current transition we are on.
+				if (trOverride != transition) {
+					transition = trOverride;
+				}
+
+				duration = GetOverrideTransitionDuration(source);
+			} else if (!trOverride && transition != defaultTransition) {
+				// Source does not have an override and the current transition is not the default transition.
+				transition = defaultTransition;
+			}
+
+			if (manual) {
+				if (trOverride && !ValidTBarTransition(trOverride)) {
+					transition = defaultTransition;
+				}
+
+				if (!ValidTBarTransition(transition)) {
+					transition = FindTransition(obs_source_get_display_name("fade_transition"));
+				}
+			}
+
+			swapCurrentTransition(transition.Get());
 		}
 
 		if (black && !prevFTBSource) {
 			prevFTBSource = source;
 			source = nullptr;
-		} else if (black && prevFTBSource) {
-			source = prevFTBSource;
-			prevFTBSource = nullptr;
-		} else if (!black) {
-			prevFTBSource = nullptr;
 		}
 
 		if (quickTransition) {
@@ -449,7 +498,7 @@ void OBSBasic::SetTransition(OBSSource transition)
 	OnEvent(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
 }
 
-OBSSource OBSBasic::GetCurrentTransition()
+OBSSource OBSBasic::getDefaultTransition()
 {
 	auto transition = transitions.find(currentTransitionUuid);
 
@@ -634,7 +683,7 @@ void OBSBasic::RenameTransition(OBSSource transition)
 
 void OBSBasic::on_transitionProps_clicked()
 {
-	OBSSource source = GetCurrentTransition();
+	OBSSource source = getDefaultTransition();
 
 	if (!obs_source_configurable(source)) {
 		return;
@@ -779,44 +828,15 @@ void OBSBasic::TBarReleased()
 	tBar->clearFocus();
 }
 
-static bool ValidTBarTransition(OBSSource transition)
-{
-	if (!transition) {
-		return false;
-	}
-
-	QString id = QT_UTF8(obs_source_get_id(transition));
-
-	if (id == "cut_transition" || id == "obs_stinger_transition") {
-		return false;
-	}
-
-	return true;
-}
-
 void OBSBasic::TBarChanged(int value)
 {
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
 
 	if (!tBarActive) {
 		OBSSource sceneSource = GetCurrentSceneSource();
-		OBSSource tBarTr = GetOverrideTransition(sceneSource);
-
-		if (!ValidTBarTransition(tBarTr)) {
-			tBarTr = GetCurrentTransition();
-
-			if (!ValidTBarTransition(tBarTr)) {
-				tBarTr = FindTransition(obs_source_get_display_name("fade_transition"));
-			}
-
-			OverrideTransition(tBarTr);
-			overridingTransition = true;
-
-			transition = std::move(tBarTr);
-		}
 
 		obs_transition_set_manual_torque(transition, 8.0f, 0.05f);
-		TransitionToScene(sceneSource, false, false, false, 0, true);
+		TransitionToScene(sceneSource, false, false, 0, false, true);
 		tBarActive = true;
 	}
 
@@ -1397,7 +1417,7 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 	if (!enable) {
 		ui->transitionProps->setEnabled(false);
 	} else {
-		bool configurable = obs_source_configurable(GetCurrentTransition());
+		bool configurable = obs_source_configurable(getDefaultTransition());
 		ui->transitionProps->setEnabled(configurable);
 	}
 

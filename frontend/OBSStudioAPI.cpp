@@ -88,7 +88,7 @@ void OBSStudioAPI::obs_frontend_get_transitions(struct obs_frontend_source_list 
 
 obs_source_t *OBSStudioAPI::obs_frontend_get_current_transition()
 {
-	OBSSource tr = main->GetCurrentTransition();
+	OBSSource tr = main->getDefaultTransition();
 	return obs_source_get_ref(tr);
 }
 

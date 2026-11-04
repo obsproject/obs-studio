@@ -2006,6 +2006,8 @@ Functions used by transitions
    the ability to seamlessly swap two different transitions without it
    affecting the output.
 
+   Cannot be used on transitions that are actively transitioning.
+
    For example, if a transition is assigned to output channel 0, you'd
    call obs_transition_swap_begin, then you'd call obs_set_output_source
    with the new transition, then call
