@@ -8,6 +8,7 @@ add_library(OBS::idian ALIAS idian)
 target_sources(
   idian
   PRIVATE
+    components/AbstractPopup.cpp
     components/CheckBox.cpp
     components/ComboBox.cpp
     components/ExpandButton.cpp
@@ -16,6 +17,8 @@ target_sources(
     components/RowInfo.cpp
     components/RowSpinBox.cpp
     components/ToggleSwitch.cpp
+    components/Tooltip.cpp
+    include/Idian/AbstractPopup.hpp
     include/Idian/CheckBox.hpp
     include/Idian/CollapsibleGroup.hpp
     include/Idian/ComboBox.hpp
@@ -23,6 +26,8 @@ target_sources(
     include/Idian/Idian.hpp
     include/Idian/InlineButton.hpp
     include/Idian/ListHeader.hpp
+    include/Idian/Idian.hpp
+    include/Idian/PopupContents.hpp
     include/Idian/Row.hpp
     include/Idian/RowDoubleSpinBox.hpp
     include/Idian/RowInfo.hpp
@@ -31,6 +36,7 @@ target_sources(
     include/Idian/StateEventFilter.cpp
     include/Idian/StateEventFilter.hpp
     include/Idian/ToggleSwitch.hpp
+    include/Idian/Tooltip.hpp
     include/Idian/Utils.cpp
     include/Idian/Utils.hpp
     widgets/CollapsibleGroup.cpp
