@@ -49,6 +49,7 @@
 
 #include <nlohmann/json.hpp>
 #include <QDesktopServices>
+#include <QDir>
 
 #include <sstream>
 
@@ -315,7 +316,12 @@ void OBSBasic::on_actionShowLogs_triggered()
 		return;
 	}
 
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(logDir));
+	QDir folderPath{logDir};
+	if (!folderPath.exists()) {
+		return;
+	}
+
+	QUrl url = QUrl::fromLocalFile(folderPath.absolutePath());
 	QDesktopServices::openUrl(url);
 }
 
@@ -465,7 +471,12 @@ void OBSBasic::on_actionShowSettingsFolder_triggered()
 	const std::string userConfigPath = App()->userConfigLocation.u8string() + "/obs-studio";
 	const QString userConfigLocation = QString::fromStdString(userConfigPath);
 
-	QDesktopServices::openUrl(QUrl::fromLocalFile(userConfigLocation));
+	QDir folderPath{userConfigLocation};
+	if (!folderPath.exists()) {
+		return;
+	}
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath.absolutePath()));
 }
 
 void OBSBasic::on_actionShowProfileFolder_triggered()
@@ -474,7 +485,12 @@ void OBSBasic::on_actionShowProfileFolder_triggered()
 		const OBSProfile &currentProfile = GetCurrentProfile();
 		QString currentProfileLocation = QString::fromStdString(currentProfile.path.u8string());
 
-		QDesktopServices::openUrl(QUrl::fromLocalFile(currentProfileLocation));
+		QDir folderPath{currentProfileLocation};
+		if (!folderPath.exists()) {
+			return;
+		}
+
+		QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath.absolutePath()));
 	} catch (const std::invalid_argument &error) {
 		blog(LOG_ERROR, "%s", error.what());
 	}
