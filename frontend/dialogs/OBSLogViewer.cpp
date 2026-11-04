@@ -5,6 +5,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QDesktopServices>
+#include <QDir>
 #include <QFile>
 #include <QScrollBar>
 
@@ -121,10 +122,14 @@ void OBSLogViewer::on_openButton_clicked()
 
 	const char *log = App()->GetCurrentLog();
 
-	std::string path = logDir;
-	path += "/";
-	path += log;
+	QDir logFolder{logDir};
+	QString logFilePath = logFolder.absoluteFilePath(QT_UTF8(log));
 
-	QUrl url = QUrl::fromLocalFile(QT_UTF8(path.c_str()));
+	QFileInfo logFileInfo{logFilePath};
+	if (!logFileInfo.exists()) {
+		return;
+	}
+
+	QUrl url = QUrl::fromLocalFile(logFilePath);
 	QDesktopServices::openUrl(url);
 }
