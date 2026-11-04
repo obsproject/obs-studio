@@ -52,7 +52,7 @@ struct screencast_portal_capture {
 	obs_source_t *source;
 	obs_data_t *settings;
 
-	uint32_t pipewire_node;
+	struct obs_pipewire_stream_target target;
 	bool cursor_visible;
 
 	obs_pipewire *obs_pw;
@@ -194,7 +194,7 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, voi
 	};
 
 	capture->obs_pw_stream =
-		obs_pipewire_connect_stream(capture->obs_pw, capture->source, capture->pipewire_node, &connect_info);
+		obs_pipewire_connect_stream(capture->obs_pw, capture->source, capture->target, &connect_info);
 }
 
 static void open_pipewire_remote(struct screencast_portal_capture *capture)
@@ -250,9 +250,10 @@ static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 		}
 	}
 
-	g_variant_iter_loop(&iter, "(u@a{sv})", &capture->pipewire_node, &stream_properties);
+	g_variant_iter_loop(&iter, "(u@a{sv})", &capture->target.node, &stream_properties);
 
-	if (get_screencast_version() >= 4) {
+	const uint32_t screencast_version = get_screencast_version();
+	if (screencast_version >= 4) {
 		g_autoptr(GVariant) restore_token = NULL;
 
 		g_clear_pointer(&capture->restore_token, bfree);
@@ -262,6 +263,16 @@ static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 			capture->restore_token = bstrdup(g_variant_get_string(restore_token, NULL));
 
 		obs_source_save(capture->source);
+	}
+
+	if (screencast_version >= 6) {
+		g_autoptr(GVariant)
+			serial = g_variant_lookup_value(stream_properties, "pipewire-serial", G_VARIANT_TYPE_UINT64);
+
+		if (serial) {
+			capture->target.has_serial = true;
+			capture->target.serial = g_variant_get_uint64(serial);
+		}
 	}
 
 	blog(LOG_INFO, "[pipewire] source selected, setting up screencast");
