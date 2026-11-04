@@ -13,6 +13,7 @@ class VisibilityItemWidget : public QWidget {
 
 private:
 	OBSSource source;
+	QListWidgetItem *item = nullptr;
 	OBSSourceLabel *label = nullptr;
 	QCheckBox *vis = nullptr;
 
@@ -27,7 +28,7 @@ private slots:
 	void SourceEnabled(bool enabled);
 
 public:
-	VisibilityItemWidget(obs_source_t *source);
+	VisibilityItemWidget(obs_source_t *source, QListWidgetItem *item = nullptr);
 
 	void SetColor(const QColor &color, bool active, bool selected);
 };
