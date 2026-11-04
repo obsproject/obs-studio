@@ -1828,7 +1828,7 @@ static inline obs_source_t *dup_child(obs_scene_item_ptr_array_t *old_items, siz
 		}
 	}
 
-	return obs_source_duplicate(source, private ? obs_source_get_name(source) : NULL, private);
+	return obs_source_duplicate(source, obs_source_get_name(source), private);
 }
 
 static inline obs_source_t *new_ref(obs_source_t *source)
