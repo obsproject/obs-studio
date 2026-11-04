@@ -575,6 +575,8 @@ try {
 	curVertexShader = nullptr;
 	curPixelShader = nullptr;
 	curSwapChain = nullptr;
+	lastVertexBuffer = nullptr;
+	lastVertexShader = nullptr;
 	zstencilStateChanged = true;
 	rasterStateChanged = true;
 	blendStateChanged = true;
