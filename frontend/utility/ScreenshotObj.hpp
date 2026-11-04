@@ -19,6 +19,7 @@
 #pragma once
 
 #include <obs.hpp>
+#include <obs-frontend-internal.hpp>
 
 #include <QImage>
 #include <QObject>
@@ -43,6 +44,8 @@ public:
 	Stage stage() { return stage_; }
 
 private:
+	static void onFrontendEvent(enum obs_frontend_event event, void *ptr);
+
 	static void renderTick(void *param, float seconds);
 	void processStage();
 
@@ -52,6 +55,9 @@ private:
 	void saveToFile();
 	void muxFile();
 	void onFinished();
+
+	bool isDestroyed{false};
+	void destroy();
 
 	OBSWeakSource weakSource;
 

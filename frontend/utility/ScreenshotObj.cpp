@@ -37,18 +37,30 @@ ScreenshotObj::ScreenshotObj(obs_source_t *source, const Options &options)
 	  options(options)
 {
 	obs_add_tick_callback(renderTick, this);
+	obs_frontend_add_event_callback(ScreenshotObj::onFrontendEvent, this);
 }
 
 ScreenshotObj::ScreenshotObj(obs_source_t *source) : ScreenshotObj(source, {}) {}
 
 ScreenshotObj::~ScreenshotObj()
 {
-	obs_enter_graphics();
-	gs_stagesurface_destroy(stagesurf);
-	gs_texrender_destroy(texrender);
-	obs_leave_graphics();
+	if (!isDestroyed) {
+		destroy();
+	}
+}
 
-	obs_remove_tick_callback(renderTick, this);
+void ScreenshotObj::onFrontendEvent(obs_frontend_event event, void *ptr)
+{
+	ScreenshotObj *self = static_cast<ScreenshotObj *>(ptr);
+
+	switch (event) {
+	case OBS_FRONTEND_EVENT_EXIT:
+		obs_frontend_remove_event_callback(onFrontendEvent, self);
+		self->destroy();
+		break;
+	default:
+		break;
+	}
 }
 
 void ScreenshotObj::renderTick(void *param, float)
@@ -79,7 +91,6 @@ void ScreenshotObj::renderScreenshot()
 
 	if (!sourceWidth || !sourceHeight) {
 		blog(LOG_WARNING, "Cannot render source, invalid target size");
-		obs_remove_tick_callback(renderTick, this);
 		deleteLater();
 		return;
 	}
@@ -158,7 +169,6 @@ void ScreenshotObj::processStage()
 	case Stage::Output:
 		copyData();
 		QMetaObject::invokeMethod(this, &ScreenshotObj::handleSave, Qt::QueuedConnection);
-		obs_remove_tick_callback(renderTick, this);
 		stage_ = Stage::Finished;
 		break;
 	case Stage::Finished:
@@ -362,6 +372,23 @@ void ScreenshotObj::onFinished()
 	}
 
 	this->deleteLater();
+}
+
+void ScreenshotObj::destroy()
+{
+	if (isDestroyed) {
+		return;
+	}
+
+	isDestroyed = true;
+	stage_ = Stage::Finished;
+
+	obs_remove_tick_callback(renderTick, this);
+
+	obs_enter_graphics();
+	gs_stagesurface_destroy(stagesurf);
+	gs_texrender_destroy(texrender);
+	obs_leave_graphics();
 }
 
 void ScreenshotObj::handleSave()
