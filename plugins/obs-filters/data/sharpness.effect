@@ -47,7 +47,7 @@ float4 PSDrawBare(VertOut vert_in) : TARGET
 {
 	float4 E  = image.Sample(def_sampler, vert_in.uv);
 
-	float4 color = 8*E;
+	float4 color = 8.0*E;
 	float4 B = image.Sample(def_sampler, vert_in.t1.yw);
 	float4 D = image.Sample(def_sampler, vert_in.t2.xw);
 	float4 F = image.Sample(def_sampler, vert_in.t2.zw);
