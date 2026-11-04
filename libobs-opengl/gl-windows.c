@@ -84,7 +84,7 @@ static inline void init_dummy_pixel_format(PIXELFORMATDESCRIPTOR *pfd)
 	pfd->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
 }
 
-static const char *dummy_window_class = "GLDummyWindow";
+static const wchar_t *dummy_window_class = L"GLDummyWindow";
 static bool registered_dummy_window_class = false;
 
 struct dummy_context {
@@ -96,7 +96,7 @@ struct dummy_context {
 /* Need a dummy window for the dummy context */
 static bool gl_register_dummy_window_class(void)
 {
-	WNDCLASSA wc;
+	WNDCLASSW wc;
 	if (registered_dummy_window_class)
 		return true;
 
@@ -106,7 +106,7 @@ static bool gl_register_dummy_window_class(void)
 	wc.lpfnWndProc = DefWindowProc;
 	wc.lpszClassName = dummy_window_class;
 
-	if (!RegisterClassA(&wc)) {
+	if (!RegisterClassW(&wc)) {
 		blog(LOG_ERROR, "Could not create dummy window class");
 		return false;
 	}
@@ -117,7 +117,7 @@ static bool gl_register_dummy_window_class(void)
 
 static inline HWND gl_create_dummy_window(void)
 {
-	HWND hwnd = CreateWindowExA(0, dummy_window_class, "Dummy GL Window", WS_POPUP, 0, 0, 2, 2, NULL, NULL,
+	HWND hwnd = CreateWindowExW(0, dummy_window_class, L"Dummy GL Window", WS_POPUP, 0, 0, 2, 2, NULL, NULL,
 				    GetModuleHandle(NULL), NULL);
 	if (!hwnd)
 		blog(LOG_ERROR, "Could not create dummy context window");
@@ -344,22 +344,22 @@ static struct gl_windowinfo *gl_windowinfo_bare(const struct gs_init_data *info)
 	return wi;
 }
 
-#define DUMMY_WNDCLASS "Dummy GL Window Class"
+#define DUMMY_WNDCLASS L"Dummy GL Window Class"
 
 static bool register_dummy_class(void)
 {
 	static bool created = false;
 
-	WNDCLASSA wc = {0};
+	WNDCLASSW wc = {0};
 	wc.style = CS_OWNDC;
 	wc.hInstance = GetModuleHandleW(NULL);
-	wc.lpfnWndProc = (WNDPROC)DefWindowProcA;
+	wc.lpfnWndProc = (WNDPROC)DefWindowProcW;
 	wc.lpszClassName = DUMMY_WNDCLASS;
 
 	if (created)
 		return true;
 
-	if (!RegisterClassA(&wc)) {
+	if (!RegisterClassW(&wc)) {
 		blog(LOG_ERROR, "Failed to register dummy GL window class, %lu", GetLastError());
 		return false;
 	}
@@ -370,7 +370,7 @@ static bool register_dummy_class(void)
 
 static bool create_dummy_window(struct gl_platform *plat)
 {
-	plat->window.hwnd = CreateWindowExA(0, DUMMY_WNDCLASS, "OpenGL Dummy Window", WS_POPUP, 0, 0, 1, 1, NULL, NULL,
+	plat->window.hwnd = CreateWindowExW(0, DUMMY_WNDCLASS, L"OpenGL Dummy Window", WS_POPUP, 0, 0, 1, 1, NULL, NULL,
 					    GetModuleHandleW(NULL), NULL);
 	if (!plat->window.hwnd) {
 		blog(LOG_ERROR, "Failed to create dummy GL window, %lu", GetLastError());

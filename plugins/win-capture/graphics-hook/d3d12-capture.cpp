@@ -123,7 +123,7 @@ static bool d3d12_init_11on12(ID3D12Device *device)
 	static bool initialized_func = false;
 
 	if (!initialized_11 && !d3d11) {
-		d3d11 = load_system_library("d3d11.dll");
+		d3d11 = load_system_library(L"d3d11.dll");
 		if (!d3d11) {
 			hlog("d3d12_init_11on12: failed to load d3d11");
 		}
@@ -403,7 +403,7 @@ static bool manually_get_d3d12_addrs(HMODULE d3d12_module, PFN_ExecuteCommandLis
 
 bool hook_d3d12(void)
 {
-	HMODULE d3d12_module = get_system_module("d3d12.dll");
+	HMODULE d3d12_module = get_system_module(L"d3d12.dll");
 	if (!d3d12_module) {
 		hlog_verbose("Failed to find d3d12.dll. Skipping hook attempt.");
 		return false;
