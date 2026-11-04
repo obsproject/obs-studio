@@ -44,6 +44,10 @@ target_sources(
     components/FocusList.hpp
     components/GameCaptureToolbar.cpp
     components/GameCaptureToolbar.hpp
+    components/HealthCheckInfoRow.cpp
+    components/HealthCheckInfoRow.hpp
+    components/HealthCheckStatusLabel.cpp
+    components/HealthCheckStatusLabel.hpp
     components/InfoChip.cpp
     components/InfoChip.hpp
     components/ImageSourceToolbar.cpp
@@ -57,6 +61,10 @@ target_sources(
     components/Multiview.cpp
     components/Multiview.hpp
     components/MuteCheckBox.hpp
+    components/NoticeButton.cpp
+    components/NoticeButton.hpp
+    components/NoticeLabel.cpp
+    components/NoticeLabel.hpp
     components/OBSAdvAudioCtrl.cpp
     components/OBSAdvAudioCtrl.hpp
     components/OBSPreviewScalingComboBox.cpp
