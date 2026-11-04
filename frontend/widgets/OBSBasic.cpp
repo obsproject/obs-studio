@@ -1596,11 +1596,8 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		restart = false;
 
 		if (!isClosePromptOpen()) {
-			bool shouldClose = promptToClose();
-
-			if (shouldClose) {
-				closeWindow();
-			}
+			SetShowing(true);
+			QTimer::singleShot(0, this, &OBSBasic::promptToClose);
 		}
 
 		return;
@@ -1806,22 +1803,26 @@ bool OBSBasic::shouldPromptForClose()
 	return false;
 }
 
-bool OBSBasic::promptToClose()
+void OBSBasic::promptToClose()
 {
+	if (isClosePromptOpen()) {
+		return;
+	}
+
 	isClosePromptOpen_ = true;
 
-	SetShowing(true);
 	QMessageBox::StandardButton button =
 		OBSMessageBox::question(this, QTStr("ConfirmExit.Title"), QTStr("ConfirmExit.Text"),
 					QMessageBox::StandardButtons(QMessageBox::Ok | QMessageBox::Cancel));
 
 	if (button == QMessageBox::Cancel) {
 		isClosePromptOpen_ = false;
-		return false;
+		return;
 	}
 
 	isClosePromptOpen_ = false;
-	return true;
+
+	closeWindow();
 }
 
 void OBSBasic::closeWindow()
