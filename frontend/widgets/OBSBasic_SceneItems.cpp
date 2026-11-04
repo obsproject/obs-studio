@@ -620,6 +620,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		if (IsPreviewProgramMode()) {
 			action->setEnabled(false);
 		}
+		AddPreviewBufferedPresentAction(&popup);
 
 		popup.addAction(ui->actionLockPreview);
 		popup.addMenu(ui->scalingMenu);

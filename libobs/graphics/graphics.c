@@ -1989,6 +1989,65 @@ void gs_present(void)
 	graphics->exports.device_present(graphics->device);
 }
 
+#ifdef _WIN32
+bool gs_swapchain_get_present_stats(gs_swapchain_t *swapchain, struct gs_swapchain_present_stats *stats, bool reset)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_swapchain_get_present_stats") || !swapchain || !stats ||
+	    !graphics->exports.device_swapchain_get_present_stats)
+		return false;
+	return graphics->exports.device_swapchain_get_present_stats(graphics->device, swapchain, stats, reset);
+}
+
+bool gs_swapchain_set_buffered_present(gs_swapchain_t *swapchain, bool enabled)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_swapchain_set_buffered_present") || !swapchain ||
+	    !graphics->exports.device_swapchain_set_buffered_present ||
+	    !graphics->exports.device_swapchain_get_present_wait_handle ||
+	    !graphics->exports.device_swapchain_begin_buffered_frame ||
+	    !graphics->exports.device_swapchain_end_buffered_frame ||
+	    !graphics->exports.device_swapchain_present_buffered_frame)
+		return false;
+	return graphics->exports.device_swapchain_set_buffered_present(graphics->device, swapchain, enabled);
+}
+
+void *gs_swapchain_get_present_wait_handle(gs_swapchain_t *swapchain)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_swapchain_get_present_wait_handle") || !swapchain ||
+	    !graphics->exports.device_swapchain_get_present_wait_handle)
+		return NULL;
+	return graphics->exports.device_swapchain_get_present_wait_handle(graphics->device, swapchain);
+}
+
+bool gs_swapchain_begin_buffered_frame(gs_swapchain_t *swapchain)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_swapchain_begin_buffered_frame") || !swapchain ||
+	    !graphics->exports.device_swapchain_begin_buffered_frame)
+		return false;
+	return graphics->exports.device_swapchain_begin_buffered_frame(graphics->device, swapchain);
+}
+
+void gs_swapchain_end_buffered_frame(gs_swapchain_t *swapchain)
+{
+	graphics_t *graphics = thread_graphics;
+	if (gs_valid("gs_swapchain_end_buffered_frame") && swapchain &&
+	    graphics->exports.device_swapchain_end_buffered_frame)
+		graphics->exports.device_swapchain_end_buffered_frame(graphics->device, swapchain);
+}
+
+int gs_swapchain_present_buffered_frame(gs_swapchain_t *swapchain, uint64_t lock_wait_ns)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_swapchain_present_buffered_frame") || !swapchain ||
+	    !graphics->exports.device_swapchain_present_buffered_frame)
+		return -1;
+	return graphics->exports.device_swapchain_present_buffered_frame(graphics->device, swapchain, lock_wait_ns);
+}
+#endif
+
 void gs_flush(void)
 {
 	graphics_t *graphics = thread_graphics;

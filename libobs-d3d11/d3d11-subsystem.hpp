@@ -812,6 +812,10 @@ struct gs_swap_chain : gs_obj {
 	gs_zstencil_buffer zs;
 	ComPtr<IDXGISwapChain> swap;
 	HANDLE hWaitable = NULL;
+	std::unique_ptr<struct gs_buffered_present> buffered_present;
+
+	void InitWaitable();
+	void ResetBufferedPresent();
 
 	void InitTarget(uint32_t cx, uint32_t cy);
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
@@ -822,6 +826,7 @@ struct gs_swap_chain : gs_obj {
 
 	inline void Release()
 	{
+		ResetBufferedPresent();
 		target.Release();
 		zs.Release();
 		if (hWaitable) {

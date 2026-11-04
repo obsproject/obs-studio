@@ -798,6 +798,7 @@ private slots:
 	 */
 private:
 	bool previewEnabled = true;
+	bool previewBufferedPresent = false;
 	QPointer<QTimer> nudge_timer;
 	bool recent_nudge = false;
 
@@ -879,6 +880,7 @@ private slots:
 
 public:
 	void addSnapGuide(SnapGuide guide);
+	obs_display_t *GetPreviewDisplay() const;
 	inline void GetDisplayRect(int &x, int &y, int &cx, int &cy)
 	{
 		x = previewX;
@@ -1253,6 +1255,7 @@ public:
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction, ColorSelect *select,
 				      obs_sceneitem_t *item);
 	void CreateSourcePopupMenu(int idx, bool preview);
+	void AddPreviewBufferedPresentAction(QMenu *menu);
 
 	void actionOpenSourceFilters();
 	void actionOpenSourceProperties();

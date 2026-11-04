@@ -1029,6 +1029,11 @@ void OBSBasic::OBSInit()
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
 		obs_display_add_draw_callback(window->GetDisplay(), OBSBasic::RenderMain, this);
+#ifdef _WIN32
+		previewBufferedPresent =
+			config_get_bool(App()->GetUserConfig(), "BasicWindow", "PreviewBufferedPresent") &&
+			obs_display_set_buffered_present(window->GetDisplay(), true);
+#endif
 
 		struct obs_video_info ovi;
 		if (obs_get_video_info(&ovi)) {

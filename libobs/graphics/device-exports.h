@@ -101,6 +101,17 @@ EXPORT void device_clear(gs_device_t *device, uint32_t clear_flags, const struct
 EXPORT bool device_is_present_ready(gs_device_t *device);
 EXPORT void device_present(gs_device_t *device);
 EXPORT void device_flush(gs_device_t *device);
+
+#ifdef _WIN32
+EXPORT bool device_swapchain_get_present_stats(gs_device_t *device, gs_swapchain_t *swapchain,
+					       struct gs_swapchain_present_stats *stats, bool reset);
+EXPORT bool device_swapchain_set_buffered_present(gs_device_t *device, gs_swapchain_t *swapchain, bool enabled);
+EXPORT void *device_swapchain_get_present_wait_handle(gs_device_t *device, gs_swapchain_t *swapchain);
+EXPORT bool device_swapchain_begin_buffered_frame(gs_device_t *device, gs_swapchain_t *swapchain);
+EXPORT void device_swapchain_end_buffered_frame(gs_device_t *device, gs_swapchain_t *swapchain);
+EXPORT int device_swapchain_present_buffered_frame(gs_device_t *device, gs_swapchain_t *swapchain,
+						   uint64_t lock_wait_ns);
+#endif
 EXPORT void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode device_get_cull_mode(const gs_device_t *device);
 EXPORT void device_enable_blending(gs_device_t *device, bool enable);

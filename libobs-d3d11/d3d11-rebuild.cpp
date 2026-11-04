@@ -277,6 +277,7 @@ void gs_swap_chain::Rebuild(ID3D11Device *dev)
 	if (FAILED(hr)) {
 		throw HRError("Failed to create swap chain", hr);
 	}
+	InitWaitable();
 	Init();
 }
 

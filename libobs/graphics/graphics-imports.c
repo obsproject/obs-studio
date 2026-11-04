@@ -228,6 +228,12 @@ bool load_graphics_imports(struct gs_exports *exports, void *module, const char 
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_color_space);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_sdr_white_level);
 	GRAPHICS_IMPORT_OPTIONAL(device_can_adapter_fast_clear);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_get_present_stats);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_set_buffered_present);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_get_present_wait_handle);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_begin_buffered_frame);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_end_buffered_frame);
+	GRAPHICS_IMPORT_OPTIONAL(device_swapchain_present_buffered_frame);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);

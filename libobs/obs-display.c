@@ -19,6 +19,180 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#include <inttypes.h>
+
+static void reset_display_stats(struct obs_display *display)
+{
+	display->presentation_stats = (struct gs_swapchain_present_stats){.generation = os_gettime_ns()};
+	display->draw_attempts = 0;
+	display->not_ready = 0;
+	display->last_present_time = 0;
+}
+
+bool obs_display_get_stats(obs_display_t *display, struct obs_display_stats *stats)
+{
+	if (!stats)
+		return false;
+	*stats = (struct obs_display_stats){0};
+	if (!display)
+		return false;
+	obs_enter_graphics();
+	stats->enabled = display->enabled;
+	stats->draw_attempts = display->draw_attempts;
+	stats->not_ready = display->not_ready;
+	stats->presentation = display->presentation_stats;
+	stats->presentation.sample_time = os_gettime_ns();
+#ifdef _WIN32
+	stats->buffered = display->present_thread != NULL;
+	if (stats->buffered && !gs_swapchain_get_present_stats(display->swap, &stats->presentation, false)) {
+		obs_leave_graphics();
+		return false;
+	}
+#endif
+	obs_leave_graphics();
+	return true;
+}
+
+void obs_display_reset_stats(obs_display_t *display)
+{
+	if (!display)
+		return;
+	obs_enter_graphics();
+	reset_display_stats(display);
+#ifdef _WIN32
+	if (display->present_thread) {
+		struct gs_swapchain_present_stats stats;
+		gs_swapchain_get_present_stats(display->swap, &stats, true);
+	}
+#endif
+	obs_leave_graphics();
+}
+
+#ifdef _WIN32
+#include <windows.h>
+
+struct obs_display_present_thread {
+	pthread_t thread;
+	HANDLE stop;
+	struct obs_display *display;
+	bool has_credit;
+};
+
+static void *display_present_thread(void *param)
+{
+	struct obs_display_present_thread *state = param;
+	struct obs_display *display = state->display;
+	os_set_thread_name("obs-preview-present");
+	while (WaitForSingleObject(state->stop, 0) == WAIT_TIMEOUT) {
+		obs_enter_graphics();
+		const bool active = display->enabled && display->cx && display->cy;
+		HANDLE wait_handle = active && !state->has_credit ? gs_swapchain_get_present_wait_handle(display->swap)
+								  : NULL;
+		obs_leave_graphics();
+		if (!active || (!state->has_credit && !wait_handle)) {
+			WaitForSingleObject(state->stop, 50);
+			continue;
+		}
+		if (!state->has_credit) {
+			const HANDLE handles[] = {state->stop, wait_handle};
+			const DWORD result = WaitForMultipleObjects(2, handles, FALSE, 100);
+			CloseHandle(wait_handle);
+			if (result == WAIT_OBJECT_0)
+				break;
+			if (result != WAIT_OBJECT_0 + 1)
+				continue;
+			state->has_credit = true;
+		}
+		const uint64_t lock_start = os_gettime_ns();
+		obs_enter_graphics();
+		const uint64_t lock_wait = os_gettime_ns() - lock_start;
+		int result = 0;
+		if (display->enabled)
+			result = gs_swapchain_present_buffered_frame(display->swap, lock_wait);
+		obs_leave_graphics();
+		if (result != 0)
+			state->has_credit = false;
+		if (result == 0)
+			WaitForSingleObject(state->stop, 1);
+		else if (result != 1)
+			WaitForSingleObject(state->stop, 50);
+	}
+	return NULL;
+}
+#endif
+
+bool obs_display_set_buffered_present(obs_display_t *display, bool enabled)
+{
+#ifdef _WIN32
+	if (!display || !display->swap)
+		return false;
+	if (!enabled) {
+		obs_enter_graphics();
+		struct obs_display_present_thread *state = display->present_thread;
+		if (state)
+			SetEvent(state->stop);
+		obs_leave_graphics();
+		if (!state)
+			return true;
+		pthread_join(state->thread, NULL);
+		obs_enter_graphics();
+		display->present_thread = NULL;
+		display->present_credit = state->has_credit;
+		gs_load_swapchain(display->swap);
+		gs_swapchain_set_buffered_present(display->swap, false);
+		display->render_stats = (struct obs_display_render_stats){0};
+		reset_display_stats(display);
+		obs_leave_graphics();
+		CloseHandle(state->stop);
+		bfree(state);
+		blog(LOG_DEBUG, "[obs-preview-sync] display=%p, buffered_present=disabled", (void *)display);
+		return true;
+	}
+
+	struct obs_display_present_thread *state = bzalloc(sizeof(*state));
+	state->display = display;
+	state->stop = CreateEventW(NULL, TRUE, FALSE, NULL);
+	if (!state->stop) {
+		bfree(state);
+		return false;
+	}
+	obs_enter_graphics();
+	if (display->present_thread) {
+		obs_leave_graphics();
+		CloseHandle(state->stop);
+		bfree(state);
+		return true;
+	}
+	bool success = gs_swapchain_set_buffered_present(display->swap, true);
+	if (success) {
+		state->has_credit = display->present_credit;
+		display->present_thread = state;
+		success = pthread_create(&state->thread, NULL, display_present_thread, state) == 0;
+		if (!success) {
+			display->present_thread = NULL;
+			gs_load_swapchain(display->swap);
+			gs_swapchain_set_buffered_present(display->swap, false);
+		}
+		if (success) {
+			display->present_credit = false;
+			reset_display_stats(display);
+		}
+	}
+	obs_leave_graphics();
+	if (!success) {
+		CloseHandle(state->stop);
+		bfree(state);
+	}
+	blog(LOG_DEBUG, "[obs-preview-sync] display=%p, buffered_present=%s", (void *)display,
+	     success ? "enabled" : "unavailable; using original path");
+	return success;
+#else
+	UNUSED_PARAMETER(display);
+	UNUSED_PARAMETER(enabled);
+	return false;
+#endif
+}
+
 bool obs_display_init(struct obs_display *display, const struct gs_init_data *graphics_data)
 {
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
@@ -57,6 +231,7 @@ bool obs_display_init(struct obs_display *display, const struct gs_init_data *gr
 	}
 
 	display->enabled = true;
+	reset_display_stats(display);
 	return true;
 }
 
@@ -108,6 +283,7 @@ void obs_display_destroy(obs_display_t *display)
 			display->next->prev_next = display->prev_next;
 		pthread_mutex_unlock(&obs->data.displays_mutex);
 
+		obs_display_set_buffered_present(display, false);
 		obs_enter_graphics();
 		obs_display_free(display);
 		obs_leave_graphics();
@@ -167,7 +343,8 @@ void obs_display_remove_draw_callback(obs_display_t *display, void (*draw)(void 
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 }
 
-static inline bool render_display_begin(struct obs_display *display, uint32_t cx, uint32_t cy, bool update_color_space)
+static inline bool render_display_begin(struct obs_display *display, uint32_t cx, uint32_t cy, bool update_color_space,
+					bool buffered)
 {
 	struct vec4 clear_color;
 
@@ -181,7 +358,18 @@ static inline bool render_display_begin(struct obs_display *display, uint32_t cx
 		gs_update_color_space();
 	}
 
-	const bool success = gs_is_present_ready();
+	bool success;
+#ifdef _WIN32
+	if (buffered) {
+		success = gs_swapchain_begin_buffered_frame(display->swap);
+	} else {
+		success = display->present_credit || gs_is_present_ready();
+		display->present_credit = false;
+	}
+#else
+	UNUSED_PARAMETER(buffered);
+	success = gs_is_present_ready();
+#endif
 	if (success) {
 		gs_begin_scene();
 
@@ -234,13 +422,53 @@ static inline void render_display_end()
 	gs_end_scene();
 }
 
+static void log_display_render_stats(struct obs_display *display, uint64_t now)
+{
+	struct obs_display_render_stats *stats = &display->render_stats;
+	const uint64_t elapsed_ns = now - stats->interval_start_ns;
+	if (elapsed_ns < 1000000000ULL)
+		return;
+
+	const double elapsed_seconds = (double)elapsed_ns / 1000000000.0;
+	const double not_ready_percent = stats->attempts ? 100.0 * (double)stats->not_ready / (double)stats->attempts
+							 : 0.0;
+	const double present_avg_ms =
+		stats->present_calls ? (double)stats->present_total_ns / (double)stats->present_calls / 1000000.0 : 0.0;
+
+	blog(LOG_DEBUG,
+	     "[obs-display-stats] display=%p, size=%ux%u, interval=%.3fs, obs_fps=%.2f, "
+	     "attempts=%" PRIu64 " (%.2f/s), not_ready=%" PRIu64 " (%.1f%%), "
+	     "present_calls=%" PRIu64 " (%.2f/s), present_ms(avg/max)=%.3f/%.3f",
+	     (void *)display, display->cx, display->cy, elapsed_seconds, obs_get_active_fps(), stats->attempts,
+	     (double)stats->attempts / elapsed_seconds, stats->not_ready, not_ready_percent, stats->present_calls,
+	     (double)stats->present_calls / elapsed_seconds, present_avg_ms, (double)stats->present_max_ns / 1000000.0);
+
+	*stats = (struct obs_display_render_stats){.interval_start_ns = now};
+}
+
 void render_display(struct obs_display *display)
 {
 	uint32_t cx, cy;
 	bool update_color_space;
 
-	if (!display || !display->enabled)
+	if (!display)
 		return;
+	if (!display->enabled) {
+		display->render_stats = (struct obs_display_render_stats){0};
+		return;
+	}
+	bool buffered = false;
+#ifdef _WIN32
+	buffered = display->present_thread != NULL;
+#endif
+
+	struct obs_display_render_stats *stats = &display->render_stats;
+	display->draw_attempts++;
+	if (!buffered) {
+		if (!stats->interval_start_ns)
+			stats->interval_start_ns = os_gettime_ns();
+		stats->attempts++;
+	}
 
 	/* -------------------------------------------- */
 
@@ -256,7 +484,7 @@ void render_display(struct obs_display *display)
 
 	/* -------------------------------------------- */
 
-	if (render_display_begin(display, cx, cy, update_color_space)) {
+	if (render_display_begin(display, cx, cy, update_color_space, buffered)) {
 		GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DISPLAY, "obs_display");
 
 		pthread_mutex_lock(&display->draw_callbacks_mutex);
@@ -274,14 +502,48 @@ void render_display(struct obs_display *display)
 
 		GS_DEBUG_MARKER_END();
 
+#ifdef _WIN32
+		if (buffered) {
+			gs_swapchain_end_buffered_frame(display->swap);
+			return;
+		}
+#endif
+		const uint64_t present_start_ns = os_gettime_ns();
 		gs_present();
+		const uint64_t present_duration_ns = os_gettime_ns() - present_start_ns;
+		struct preview_present_counters *totals = &display->presentation_stats.counters;
+		totals->produced++;
+		totals->submitted++;
+		totals->present_total += present_duration_ns;
+		if (present_duration_ns > totals->present_max)
+			totals->present_max = present_duration_ns;
+		const uint64_t present_end_ns = present_start_ns + present_duration_ns;
+		if (display->last_present_time) {
+			const uint64_t gap = present_end_ns - display->last_present_time;
+			if (gap > totals->gap_max)
+				totals->gap_max = gap;
+		}
+		display->last_present_time = present_end_ns;
+		stats->present_calls++;
+		stats->present_total_ns += present_duration_ns;
+		if (present_duration_ns > stats->present_max_ns)
+			stats->present_max_ns = present_duration_ns;
+	} else if (!buffered) {
+		stats->not_ready++;
+		display->not_ready++;
 	}
+
+	if (!buffered)
+		log_display_render_stats(display, os_gettime_ns());
 }
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)
 {
-	if (display)
+	if (display) {
+		obs_enter_graphics();
 		display->enabled = enable;
+		obs_leave_graphics();
+	}
 }
 
 bool obs_display_enabled(obs_display_t *display)

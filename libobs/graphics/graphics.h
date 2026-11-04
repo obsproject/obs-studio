@@ -18,6 +18,7 @@
 #pragma once
 
 #include "../util/bmem.h"
+#include "../util/preview-stats.h"
 #include "input.h"
 #ifdef __APPLE__
 #include <objc/objc-runtime.h>
@@ -693,6 +694,25 @@ EXPORT void gs_clear(uint32_t clear_flags, const struct vec4 *color, float depth
 EXPORT bool gs_is_present_ready(void);
 EXPORT void gs_present(void);
 EXPORT void gs_flush(void);
+
+struct gs_swapchain_present_stats {
+	struct preview_present_counters counters;
+	uint64_t generation;
+	uint64_t sample_time;
+	uint64_t refresh_interval;
+	uint32_t queued;
+	bool timing_valid;
+};
+
+#ifdef _WIN32
+EXPORT bool gs_swapchain_get_present_stats(gs_swapchain_t *swapchain, struct gs_swapchain_present_stats *stats,
+					   bool reset);
+EXPORT bool gs_swapchain_set_buffered_present(gs_swapchain_t *swapchain, bool enabled);
+EXPORT void *gs_swapchain_get_present_wait_handle(gs_swapchain_t *swapchain);
+EXPORT bool gs_swapchain_begin_buffered_frame(gs_swapchain_t *swapchain);
+EXPORT void gs_swapchain_end_buffered_frame(gs_swapchain_t *swapchain);
+EXPORT int gs_swapchain_present_buffered_frame(gs_swapchain_t *swapchain, uint64_t lock_wait_ns);
+#endif
 
 EXPORT void gs_set_cull_mode(enum gs_cull_mode mode);
 EXPORT enum gs_cull_mode gs_get_cull_mode(void);

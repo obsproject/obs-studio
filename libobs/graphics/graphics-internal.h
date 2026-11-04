@@ -243,6 +243,15 @@ struct gs_exports {
 
 	bool (*device_can_adapter_fast_clear)(gs_device_t *device);
 
+	bool (*device_swapchain_get_present_stats)(gs_device_t *device, gs_swapchain_t *swapchain,
+						   struct gs_swapchain_present_stats *stats, bool reset);
+	bool (*device_swapchain_set_buffered_present)(gs_device_t *device, gs_swapchain_t *swapchain, bool enabled);
+	void *(*device_swapchain_get_present_wait_handle)(gs_device_t *device, gs_swapchain_t *swapchain);
+	bool (*device_swapchain_begin_buffered_frame)(gs_device_t *device, gs_swapchain_t *swapchain);
+	void (*device_swapchain_end_buffered_frame)(gs_device_t *device, gs_swapchain_t *swapchain);
+	int (*device_swapchain_present_buffered_frame)(gs_device_t *device, gs_swapchain_t *swapchain,
+						       uint64_t lock_wait_ns);
+
 	gs_texture_t *(*device_texture_create_gdi)(gs_device_t *device, uint32_t width, uint32_t height);
 
 	void *(*gs_texture_get_dc)(gs_texture_t *gdi_tex);

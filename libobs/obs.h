@@ -1032,6 +1032,19 @@ EXPORT void obs_display_resize(obs_display_t *display, uint32_t cx, uint32_t cy)
 /** Updates the color space of this display */
 EXPORT void obs_display_update_color_space(obs_display_t *display);
 
+EXPORT bool obs_display_set_buffered_present(obs_display_t *display, bool enabled);
+
+struct obs_display_stats {
+	struct gs_swapchain_present_stats presentation;
+	uint64_t draw_attempts;
+	uint64_t not_ready;
+	bool enabled;
+	bool buffered;
+};
+
+EXPORT bool obs_display_get_stats(obs_display_t *display, struct obs_display_stats *stats);
+EXPORT void obs_display_reset_stats(obs_display_t *display);
+
 /**
  * Adds a draw callback for this display context
  *

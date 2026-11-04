@@ -23,6 +23,24 @@ class OBSBasicStats : public QFrame {
 	QLabel *renderTime = nullptr;
 	QLabel *skippedFrames = nullptr;
 	QLabel *missedFrames = nullptr;
+	QLabel *previewMode = nullptr;
+	QLabel *previewRefresh = nullptr;
+	QLabel *previewProduced = nullptr;
+	QLabel *previewSubmitted = nullptr;
+	QLabel *previewSubmittedCount = nullptr;
+	QLabel *previewQueued = nullptr;
+	QLabel *previewDiscarded = nullptr;
+	QLabel *previewNotReady = nullptr;
+	QLabel *previewNoCandidate = nullptr;
+	QLabel *previewGpuPending = nullptr;
+	QLabel *previewBusy = nullptr;
+	QLabel *previewGap = nullptr;
+	QLabel *previewAge = nullptr;
+	QLabel *previewPresentTime = nullptr;
+	QLabel *previewLockWait = nullptr;
+	QLabel *previewDrawAttempts = nullptr;
+	obs_display_stats previousPreviewStats = {};
+	bool previewStatsValid = false;
 
 	QGridLayout *outputLayout = nullptr;
 
@@ -56,6 +74,7 @@ class OBSBasicStats : public QFrame {
 
 	void AddOutputLabels(QString name);
 	void Update();
+	void UpdatePreview();
 
 	virtual void closeEvent(QCloseEvent *event) override;
 

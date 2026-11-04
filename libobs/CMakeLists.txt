@@ -118,6 +118,8 @@ target_sources(
     util/pipe.h
     util/platform.c
     util/platform.h
+    util/preview-frame-selection.h
+    util/preview-stats.h
     util/profiler.c
     util/profiler.h
     util/profiler.hpp
@@ -352,6 +354,7 @@ set(
   util/lexer.h
   util/pipe.h
   util/platform.h
+  util/preview-stats.h
   util/profiler.h
   util/profiler.hpp
   util/serializer.h

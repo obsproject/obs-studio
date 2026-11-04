@@ -244,6 +244,37 @@ void OBSBasic::on_preview_customContextMenuRequested()
 	CreateSourcePopupMenu(GetTopSelectedSourceItem(), true);
 }
 
+obs_display_t *OBSBasic::GetPreviewDisplay() const
+{
+	return ui->preview->GetDisplay();
+}
+
+void OBSBasic::AddPreviewBufferedPresentAction(QMenu *menu)
+{
+#ifdef _WIN32
+	QAction *action = menu->addAction(QTStr("Basic.Main.PreviewConextMenu.BufferedPresent"));
+	action->setCheckable(true);
+	action->setChecked(previewBufferedPresent);
+	action->setEnabled(ui->preview->GetDisplay() != nullptr);
+	action->setStatusTip(QTStr("Basic.Main.PreviewConextMenu.BufferedPresent.Description"));
+	connect(action, &QAction::triggered, this, [this, action](bool enabled) {
+		if (!obs_display_set_buffered_present(ui->preview->GetDisplay(), enabled)) {
+			action->setChecked(previewBufferedPresent);
+			OBSMessageBox::warning(this, QTStr("Basic.Main.PreviewConextMenu.BufferedPresent"),
+					       QTStr("Basic.Main.PreviewConextMenu.BufferedPresent.Failed"));
+			return;
+		}
+		previewBufferedPresent = enabled;
+		config_set_bool(App()->GetUserConfig(), "BasicWindow", "PreviewBufferedPresent", enabled);
+		if (config_save_safe(App()->GetUserConfig(), "tmp", nullptr) != CONFIG_SUCCESS) {
+			blog(LOG_WARNING, "Could not save buffered preview presentation setting");
+		}
+	});
+#else
+	UNUSED_PARAMETER(menu);
+#endif
+}
+
 void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 {
 	QMenu popup(this);
@@ -252,6 +283,7 @@ void OBSBasic::on_previewDisabledWidget_customContextMenuRequested()
 	QAction *action = popup.addAction(QTStr("Basic.Main.PreviewConextMenu.Enable"), this, &OBSBasic::TogglePreview);
 	action->setCheckable(true);
 	action->setChecked(obs_display_enabled(ui->preview->GetDisplay()));
+	AddPreviewBufferedPresentAction(&popup);
 
 	previewProjectorMain = new QMenu(QTStr("Projector.Open.Preview"));
 	AddProjectorMenuMonitors(previewProjectorMain, this, &OBSBasic::OpenPreviewProjector);

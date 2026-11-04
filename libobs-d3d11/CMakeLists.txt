@@ -8,6 +8,8 @@ target_sources(
   PRIVATE
     d3d11-duplicator.cpp
     d3d11-indexbuffer.cpp
+    d3d11-present.cpp
+    d3d11-present.hpp
     d3d11-rebuild.cpp
     d3d11-samplerstate.cpp
     d3d11-shader.cpp

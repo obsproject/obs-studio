@@ -27,6 +27,7 @@
 #include <winternl.h>
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
+#include "d3d11-present.hpp"
 #include <shellscalingapi.h>
 #include <d3dkmthk.h>
 
@@ -166,6 +167,7 @@ void gs_swap_chain::InitZStencilBuffer(uint32_t cx, uint32_t cy)
 
 void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
 {
+	ResetBufferedPresent();
 	RECT clientRect;
 	HRESULT hr;
 
@@ -256,13 +258,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	/* Ignore Alt+Enter */
 	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
-	if (flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) {
-		ComPtr<IDXGISwapChain2> swap2 = ComQIPtr<IDXGISwapChain2>(swap);
-		hWaitable = swap2->GetFrameLatencyWaitableObject();
-		if (hWaitable == NULL) {
-			throw HRError("Failed to GetFrameLatencyWaitableObject", hr);
-		}
-	}
+	InitWaitable();
 
 	Init();
 }

@@ -5,6 +5,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QGridLayout>
+#include <QGroupBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QScrollArea>
@@ -142,6 +143,37 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	/* --------------------------------------------- */
 
 	QVBoxLayout *outputContainerLayout = new QVBoxLayout();
+	QGroupBox *previewGroup = new QGroupBox(QTStr("Basic.Stats.Preview"), this);
+	QGridLayout *previewLayout = new QGridLayout(previewGroup);
+	int previewIndex = 0;
+	auto addPreviewStat = [&](const char *key, QLabel *&value) {
+		const std::string prefix = "Basic.Stats.Preview.";
+		QLabel *name = new QLabel(QTStr((prefix + key).c_str()), previewGroup);
+		value = new QLabel(QStringLiteral("—"), previewGroup);
+		const int previewRow = previewIndex / 2;
+		const int previewColumn = previewIndex % 2 * 2;
+		previewLayout->addWidget(name, previewRow, previewColumn);
+		previewLayout->addWidget(value, previewRow, previewColumn + 1);
+		previewIndex++;
+	};
+	addPreviewStat("Mode", previewMode);
+	addPreviewStat("Refresh", previewRefresh);
+	addPreviewStat("Produced", previewProduced);
+	addPreviewStat("Submitted", previewSubmitted);
+	addPreviewStat("SubmittedCount", previewSubmittedCount);
+	addPreviewStat("Queued", previewQueued);
+	addPreviewStat("Discarded", previewDiscarded);
+	addPreviewStat("NotReady", previewNotReady);
+	addPreviewStat("NoCandidate", previewNoCandidate);
+	addPreviewStat("GpuPending", previewGpuPending);
+	addPreviewStat("Busy", previewBusy);
+	addPreviewStat("Gap", previewGap);
+	addPreviewStat("Age", previewAge);
+	addPreviewStat("PresentTime", previewPresentTime);
+	addPreviewStat("LockWait", previewLockWait);
+	addPreviewStat("DrawAttempts", previewDrawAttempts);
+	previewGroup->setToolTip(QTStr("Basic.Stats.Preview.Tooltip"));
+	outputContainerLayout->addWidget(previewGroup);
 	outputContainerLayout->addLayout(outputLayout);
 	outputContainerLayout->addStretch();
 
@@ -169,7 +201,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closable)
 	shortcutFilter = CreateShortcutFilter();
 	installEventFilter(shortcutFilter);
 
-	resize(800, 280);
+	resize(900, 520);
 
 	setWindowTitle(QTStr("Basic.Stats"));
 #ifndef __APPLE__
@@ -269,6 +301,7 @@ void OBSBasicStats::InitializeValues()
 void OBSBasicStats::Update()
 {
 	OBSBasic *main = OBSBasic::Get();
+	UpdatePreview();
 
 	/* TODO: Un-hardcode */
 
@@ -471,9 +504,92 @@ void OBSBasicStats::RecordingTimeLeft()
 	recordTimeLeft->setMinimumWidth(recordTimeLeft->width());
 }
 
+void OBSBasicStats::UpdatePreview()
+{
+	const QString unavailable = QStringLiteral("—");
+	OBSBasic *main = OBSBasic::Get();
+	obs_display_stats snapshot = {};
+	if (!obs_display_get_stats(main ? main->GetPreviewDisplay() : nullptr, &snapshot)) {
+		for (QLabel *label :
+		     {previewRefresh, previewProduced, previewSubmitted, previewSubmittedCount, previewQueued,
+		      previewDiscarded, previewNotReady, previewNoCandidate, previewGpuPending, previewBusy, previewGap,
+		      previewAge, previewPresentTime, previewLockWait, previewDrawAttempts}) {
+			label->setText(unavailable);
+		}
+		previewMode->setText(QTStr("Basic.Stats.Preview.Unavailable"));
+		previewStatsValid = false;
+		return;
+	}
+	const auto &presentation = snapshot.presentation;
+	const auto &counters = presentation.counters;
+	QString mode = QTStr(snapshot.buffered ? "Basic.Stats.Preview.Buffered" : "Basic.Stats.Preview.Original");
+	if (!snapshot.enabled) {
+		mode = QTStr("Basic.Stats.Preview.Paused").arg(mode);
+	}
+	previewMode->setText(mode);
+	QString producedRate = unavailable;
+	QString submittedRate = unavailable;
+	if (previewStatsValid && snapshot.buffered == previousPreviewStats.buffered &&
+	    snapshot.enabled == previousPreviewStats.enabled &&
+	    presentation.generation == previousPreviewStats.presentation.generation &&
+	    presentation.sample_time > previousPreviewStats.presentation.sample_time &&
+	    counters.produced >= previousPreviewStats.presentation.counters.produced &&
+	    counters.submitted >= previousPreviewStats.presentation.counters.submitted) {
+		const double seconds =
+			double(presentation.sample_time - previousPreviewStats.presentation.sample_time) / 1000000000.0;
+		producedRate = QString::number(
+			double(counters.produced - previousPreviewStats.presentation.counters.produced) / seconds, 'f',
+			2);
+		submittedRate = QString::number(
+			double(counters.submitted - previousPreviewStats.presentation.counters.submitted) / seconds,
+			'f', 2);
+	}
+	previewProduced->setText(producedRate);
+	previewSubmitted->setText(submittedRate);
+	previewSubmittedCount->setText(QString::number(counters.submitted));
+	previewDrawAttempts->setText(QString::number(snapshot.draw_attempts));
+	previewNotReady->setText(snapshot.buffered ? unavailable : QString::number(snapshot.not_ready));
+	previewQueued->setText(snapshot.buffered ? QString::number(presentation.queued) : unavailable);
+	previewDiscarded->setText(snapshot.buffered ? QStringLiteral("%1 / %2 / %3")
+							      .arg(QString::number(counters.dropped),
+								   QString::number(counters.expired),
+								   QString::number(counters.skipped))
+						    : unavailable);
+	previewNoCandidate->setText(snapshot.buffered ? QString::number(counters.no_candidate) : unavailable);
+	previewGpuPending->setText(snapshot.buffered ? QString::number(counters.gpu_pending) : unavailable);
+	previewBusy->setText(snapshot.buffered ? QString::number(counters.busy) : unavailable);
+	previewRefresh->setText(
+		snapshot.buffered && presentation.refresh_interval
+			? QTStr(presentation.timing_valid ? "Basic.Stats.Preview.RefreshMeasured"
+							  : "Basic.Stats.Preview.RefreshEstimated")
+				  .arg(QString::number(1000000000.0 / presentation.refresh_interval, 'f', 2))
+			: unavailable);
+	auto averageMaximum = [&](uint64_t total, uint64_t count, uint64_t maximum) {
+		if (!count) {
+			return unavailable;
+		}
+		return QStringLiteral("%1 / %2 ms")
+			.arg(QString::number(double(total) / count / 1000000.0, 'f', 2),
+			     QString::number(double(maximum) / 1000000.0, 'f', 2));
+	};
+	previewAge->setText(snapshot.buffered ? averageMaximum(counters.age_total, counters.submitted, counters.age_max)
+					      : unavailable);
+	previewPresentTime->setText(averageMaximum(counters.present_total, counters.submitted, counters.present_max));
+	previewLockWait->setText(snapshot.buffered
+					 ? averageMaximum(counters.lock_total, counters.lock_samples, counters.lock_max)
+					 : unavailable);
+	previewGap->setText(counters.gap_max ? QStringLiteral("%1 ms").arg(
+						       QString::number(double(counters.gap_max) / 1000000.0, 'f', 2))
+					     : unavailable);
+	previousPreviewStats = snapshot;
+	previewStatsValid = true;
+}
+
 void OBSBasicStats::Reset()
 {
 	timer.start();
+	obs_display_reset_stats(OBSBasic::Get()->GetPreviewDisplay());
+	previewStatsValid = false;
 
 	first_encoded = 0xFFFFFFFF;
 	first_skipped = 0xFFFFFFFF;
@@ -592,6 +708,8 @@ void OBSBasicStats::OutputLabels::Reset(obs_output_t *output)
 
 void OBSBasicStats::showEvent(QShowEvent *)
 {
+	previewStatsValid = false;
+	UpdatePreview();
 	timer.start(TIMER_INTERVAL);
 }
 

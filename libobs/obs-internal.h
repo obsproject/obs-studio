@@ -290,6 +290,15 @@ extern void obs_view_free(struct obs_view *view);
 /* ------------------------------------------------------------------------- */
 /* displays */
 
+struct obs_display_render_stats {
+	uint64_t interval_start_ns;
+	uint64_t attempts;
+	uint64_t not_ready;
+	uint64_t present_calls;
+	uint64_t present_total_ns;
+	uint64_t present_max_ns;
+};
+
 struct obs_display {
 	bool update_color_space;
 	bool enabled;
@@ -301,6 +310,15 @@ struct obs_display {
 	pthread_mutex_t draw_info_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
 	bool use_clear_workaround;
+	struct obs_display_render_stats render_stats;
+	struct gs_swapchain_present_stats presentation_stats;
+	uint64_t draw_attempts;
+	uint64_t not_ready;
+	uint64_t last_present_time;
+#ifdef _WIN32
+	struct obs_display_present_thread *present_thread;
+	bool present_credit;
+#endif
 
 	struct obs_display *next;
 	struct obs_display **prev_next;
