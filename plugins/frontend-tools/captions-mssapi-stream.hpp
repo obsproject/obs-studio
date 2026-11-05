@@ -30,6 +30,7 @@ class CaptionStream : public ISpAudio {
 	SPAUDIOSTATE state;
 	WinHandle event;
 	ULONG vol = 0;
+	volatile bool stop = false;
 
 	std::condition_variable cv;
 	std::mutex m;
