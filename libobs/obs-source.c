@@ -1786,6 +1786,9 @@ static inline enum convert_type get_convert_type(enum video_format format, bool 
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_Y410:
+	case VIDEO_FORMAT_GBR10:
 		/* Unimplemented */
 		break;
 	}
@@ -2363,6 +2366,7 @@ static const char *select_conversion_technique(enum video_format format, bool fu
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_RGBA:
+	case VIDEO_FORMAT_GBRA:
 	case VIDEO_FORMAT_NONE:
 		if (full_range)
 			assert(false && "No conversion requested");
@@ -2372,6 +2376,8 @@ static const char *select_conversion_technique(enum video_format format, bool fu
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_Y410:
+	case VIDEO_FORMAT_GBR10:
 		/* Unimplemented */
 		break;
 	}
@@ -3494,6 +3500,9 @@ static void copy_frame_data(struct obs_source_frame *dst, const struct obs_sourc
 
 	case VIDEO_FORMAT_P216:
 	case VIDEO_FORMAT_P416:
+	case VIDEO_FORMAT_GBRA:
+	case VIDEO_FORMAT_Y410:
+	case VIDEO_FORMAT_GBR10:
 		/* Unimplemented */
 		break;
 	}
