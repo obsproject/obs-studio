@@ -107,6 +107,11 @@ void DoubleSpinBox::fixup(QString &input) const
 
 void DoubleSpinBox::mousePressEvent(QMouseEvent *event)
 {
+	if (!(event->buttons() & Qt::LeftButton)) {
+		QDoubleSpinBox::mousePressEvent(event);
+		return;
+	}
+
 	QStyleOptionSpinBox opt;
 	initStyleOption(&opt);
 
