@@ -160,9 +160,9 @@ inline uint64_t VCamFilter::GetTime()
 
 void VCamFilter::Thread()
 {
-	HANDLE h[2] = {thread_start, thread_stop};
+	HANDLE h[2] = {thread_stop, thread_start};
 	DWORD ret = WaitForMultipleObjects(2, h, false, INFINITE);
-	if (ret != WAIT_OBJECT_0) {
+	if (ret != WAIT_OBJECT_0 + 1) {
 		return;
 	}
 
