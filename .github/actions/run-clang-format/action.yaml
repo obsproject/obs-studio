@@ -47,6 +47,7 @@ runs:
       working-directory: ${{ inputs.workingDirectory }}
       env:
         CHANGED_FILES: ${{ steps.checks.outputs.changedFiles }}
+        FAIL_MODE: ${{ inputs.failCondition }}
       run: |
         : Run clang-format 🐉
         if (( ${+RUNNER_DEBUG} )) setopt XTRACE
@@ -59,5 +60,11 @@ runs:
 
         print ::group::Run clang-format-22
         local -a changes=(${(s:,:)CHANGED_FILES//[\[\]\'\"]/})
-        ./build-aux/run-clang-format --fail-${{ inputs.failCondition }} --check ${changes}
+
+        if [[ "${FAIL_MODE:-never}" == 'never' ]] {
+          setopt NO_ERR_EXIT
+          setopt NO_ERR_RETURN
+        }
+
+        ./build-aux/run-clang-format --check --github ${changes}
         print ::endgroup::

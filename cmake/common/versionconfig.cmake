@@ -26,8 +26,7 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/.git
 elseif(DEFINED OBS_VERSION_OVERRIDE)
   if(OBS_VERSION_OVERRIDE MATCHES "([0-9]+)\\.([0-9]+)\\.([0-9]+).*")
     string(
-      REGEX REPLACE
-      "([0-9]+)\\.([0-9]+)\\.([0-9]+).*"
+      REGEX REPLACE "([0-9]+)\\.([0-9]+)\\.([0-9]+).*"
       "\\1;\\2;\\3"
       _obs_version_canonical
       ${OBS_VERSION_OVERRIDE}
