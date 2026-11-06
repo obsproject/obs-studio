@@ -58,7 +58,7 @@ class OBSCameraStreamSource: NSObject, CMIOExtensionStreamSource {
             streamProperties.activeFormatIndex = 0
         }
         if properties.contains(.streamFrameDuration) {
-            let frameDuration = CMTime(value: 1, timescale: Int32(OBSCameraFrameRate))
+            let frameDuration = CMTime(value: 1, timescale: Int32(obsCameraFrameRate))
             streamProperties.frameDuration = frameDuration
         }
 

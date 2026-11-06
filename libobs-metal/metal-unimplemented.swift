@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+// swift-format-ignore-file: AlwaysUseLowerCamelCase
+
 @_cdecl("device_load_default_samplerstate")
 public func device_load_default_samplerstate(device: UnsafeRawPointer, b_3d: Bool, unit: Int) {
     return
