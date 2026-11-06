@@ -49,6 +49,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	void obs_frontend_set_current_scene(obs_source_t *scene) override;
 
 	void obs_frontend_get_transitions(struct obs_frontend_source_list *sources) override;
+	obs_source_t *obs_frontend_add_transition(const char *transition_name, const char *transition_id,
+						  obs_data_t *settings) override;
 
 	obs_source_t *obs_frontend_get_current_transition(void) override;
 
