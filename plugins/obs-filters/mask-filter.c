@@ -4,7 +4,8 @@
 #include <graphics/image-file.h>
 #include <util/platform.h>
 #include <util/dstr.h>
-#include <sys/stat.h>
+#include <util/threading.h>
+#include <util/file-watcher.h>
 
 /* clang-format off */
 
@@ -33,54 +34,53 @@ struct mask_filter_data {
 	gs_effect_t *effect;
 
 	char *image_file;
-	time_t image_file_timestamp;
-	float update_time_elapsed;
 
-	gs_texture_t *target;
+	file_watcher_t *image_watcher;
+	float tick_time_elapsed;
+
+	pthread_mutex_t pending_image_mutex;
+	gs_image_file_ex_t pending_image;
+
 	gs_image_file_ex_t image;
 	struct vec4 color;
 	bool lock_aspect;
 };
 
-static time_t get_modified_timestamp(const char *filename)
+static void mask_filter_image_preload(struct mask_filter_data *filter, const char *path)
 {
-	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
-		return -1;
+	bool destroy_old = false;
+	gs_image_file_ex_t old_pending_image;
+	gs_image_file_ex_t pending_image;
 
-	return stats.st_mtime;
+	if (path && *path)
+		gs_image_file_ex_init(&pending_image, path, GS_IMAGE_ALPHA_STRAIGHT);
+	else
+		memset(&pending_image, 0, sizeof(pending_image));
+
+	pthread_mutex_lock(&filter->pending_image_mutex);
+	if (filter->pending_image.loaded) {
+		old_pending_image = filter->pending_image;
+		destroy_old = true;
+	}
+	filter->pending_image = pending_image;
+	pthread_mutex_unlock(&filter->pending_image_mutex);
+
+	// Old pending images haven't created textures, so no need to enter graphics
+	if (destroy_old)
+		gs_image_file_ex_free(&old_pending_image);
+}
+
+static void mask_filter_image_changed(void *data, char *path)
+{
+	struct mask_filter_data *filter = data;
+
+	mask_filter_image_preload(filter, path);
 }
 
 static const char *mask_filter_get_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("MaskFilter");
-}
-
-static void mask_filter_image_unload(struct mask_filter_data *filter)
-{
-	obs_enter_graphics();
-	gs_image_file_ex_free(&filter->image);
-	obs_leave_graphics();
-}
-
-static void mask_filter_image_load(struct mask_filter_data *filter)
-{
-	mask_filter_image_unload(filter);
-
-	char *path = filter->image_file;
-
-	if (path && *path) {
-		filter->image_file_timestamp = get_modified_timestamp(path);
-		gs_image_file_ex_init(&filter->image, path, GS_IMAGE_ALPHA_STRAIGHT);
-		filter->update_time_elapsed = 0;
-
-		obs_enter_graphics();
-		gs_image_file_ex_init_texture(&filter->image);
-		obs_leave_graphics();
-	}
-
-	filter->target = filter->image.texture;
 }
 
 static void mask_filter_update_internal(void *data, obs_data_t *settings, float opacity, bool srgb)
@@ -91,6 +91,14 @@ static void mask_filter_update_internal(void *data, obs_data_t *settings, float 
 	const char *effect_file = obs_data_get_string(settings, SETTING_TYPE);
 	uint32_t color = (uint32_t)obs_data_get_int(settings, SETTING_COLOR);
 	char *effect_path;
+
+	// Mutex not required for watcher, since .video_tick and .update are both always executed within the graphics thread
+	if (filter->image_watcher && (!path || strcmp(filter->image_file, path) != 0)) {
+		file_watcher_destroy(filter->image_watcher);
+		filter->image_watcher = NULL;
+	}
+	if (!filter->image_watcher && path && *path)
+		filter->image_watcher = file_watcher_create(path, mask_filter_image_changed, filter);
 
 	if (filter->image_file)
 		bfree(filter->image_file);
@@ -104,7 +112,7 @@ static void mask_filter_update_internal(void *data, obs_data_t *settings, float 
 
 	filter->color.w = opacity;
 
-	mask_filter_image_load(filter);
+	mask_filter_image_preload(filter, path);
 	filter->lock_aspect = !obs_data_get_bool(settings, SETTING_STRETCH);
 
 	obs_enter_graphics();
@@ -199,6 +207,11 @@ static void *mask_filter_create(obs_data_t *settings, obs_source_t *context)
 	struct mask_filter_data *filter = bzalloc(sizeof(struct mask_filter_data));
 	filter->context = context;
 
+	if (pthread_mutex_init(&filter->pending_image_mutex, NULL) != 0) {
+		bfree(filter);
+		return NULL;
+	}
+
 	obs_source_update(context, settings);
 	return filter;
 }
@@ -207,30 +220,43 @@ static void mask_filter_destroy(void *data)
 {
 	struct mask_filter_data *filter = data;
 
+	file_watcher_destroy(filter->image_watcher);
+
 	if (filter->image_file)
 		bfree(filter->image_file);
 
 	obs_enter_graphics();
 	gs_effect_destroy(filter->effect);
 	gs_image_file_ex_free(&filter->image);
+	gs_image_file_ex_free(&filter->pending_image);
 	obs_leave_graphics();
 
+	pthread_mutex_destroy(&filter->pending_image_mutex);
 	bfree(filter);
 }
 
 static void mask_filter_tick(void *data, float seconds)
 {
 	struct mask_filter_data *filter = data;
-	filter->update_time_elapsed += seconds;
+	filter->tick_time_elapsed += seconds;
 
-	if (filter->update_time_elapsed >= 1.0f) {
-		time_t t = get_modified_timestamp(filter->image_file);
-		filter->update_time_elapsed = 0.0f;
-
-		if (filter->image_file_timestamp != t) {
-			mask_filter_image_load(filter);
-		}
+	if (filter->tick_time_elapsed >= 1.0f) {
+		file_watcher_check(filter->image_watcher);
+		filter->tick_time_elapsed = 0.0f;
 	}
+
+	pthread_mutex_lock(&filter->pending_image_mutex);
+	if (filter->pending_image.loaded) {
+		obs_enter_graphics();
+		gs_image_file_ex_free(&filter->image);
+		gs_image_file_ex_init_texture(&filter->pending_image);
+		obs_leave_graphics();
+
+		filter->image = filter->pending_image;
+		memset(&filter->pending_image, 0, sizeof(filter->pending_image));
+		filter->last_time = 0;
+	}
+	pthread_mutex_unlock(&filter->pending_image_mutex);
 
 	if (filter->image.is_animated_gif) {
 		uint64_t cur_time = obs_get_video_frame_time();
@@ -256,8 +282,9 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 	gs_eparam_t *param;
 	struct vec2 add_val = {0};
 	struct vec2 mul_val = {1.0f, 1.0f};
+	gs_texture_t *const mask_texture = filter->image.texture;
 
-	if (!target || !filter->target || !filter->effect) {
+	if (!target || !mask_texture || !filter->effect) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
@@ -284,8 +311,8 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 
 			source_size.x = (float)obs_source_get_base_width(target);
 			source_size.y = (float)obs_source_get_base_height(target);
-			mask_size.x = (float)gs_texture_get_width(filter->target);
-			mask_size.y = (float)gs_texture_get_height(filter->target);
+			mask_size.x = (float)gs_texture_get_width(mask_texture);
+			mask_size.y = (float)gs_texture_get_height(mask_texture);
 
 			source_aspect = source_size.x / source_size.y;
 			mask_aspect = mask_size.x / mask_size.y;
@@ -306,7 +333,7 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 		if (obs_source_process_filter_begin_with_color_space(filter->context, format, source_space,
 								     OBS_ALLOW_DIRECT_RENDERING)) {
 			param = gs_effect_get_param_by_name(filter->effect, "target");
-			gs_effect_set_texture_srgb(param, filter->target);
+			gs_effect_set_texture_srgb(param, mask_texture);
 
 			param = gs_effect_get_param_by_name(filter->effect, "color");
 			gs_effect_set_vec4(param, &filter->color);
