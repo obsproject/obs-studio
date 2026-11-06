@@ -451,6 +451,7 @@ private:
 	QStringList extraCustomDockNames;
 	QList<QPointer<QDockWidget>> extraCustomDocks;
 
+	QPointer<OBSDock> transitionsDock;
 	QPointer<OBSDock> controlsDock;
 	QPointer<OBSDock> mixerDock;
 
@@ -1506,8 +1507,8 @@ private:
 	std::unordered_map<std::string, std::string> transitionNameToUuids;
 	int transitionDuration;
 	std::string currentTransitionUuid;
-	obs_source_t *fadeTransition = nullptr;
-	obs_source_t *cutTransition = nullptr;
+	std::string fadeTransitionUuid;
+	std::string cutTransitionUuid;
 	std::vector<QuickTransition> quickTransitions;
 	bool swapScenesMode = true;
 
@@ -1520,6 +1521,8 @@ private:
 	bool tBarActive = false;
 
 	OBSSource prevFTBSource = nullptr;
+
+	bool transitionsControlLocked = false;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
@@ -1559,24 +1562,25 @@ private:
 
 	void PasteShowHideTransition(obs_sceneitem_t *item, bool show, obs_source_t *tr, int duration);
 
-	void UpdateCurrentTransition(const std::string &uuid, bool setTransition);
+	void setTransitionInternal(OBSSource transition);
+	void setCurrentTransition(const std::string &uuid);
 
 public slots:
 	void SetCurrentScene(OBSSource scene, bool force = false);
 
-	void SetTransition(OBSSource transition);
+	void studioAPISetTransition(OBSSource transition);
 	void OverrideTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false, bool quickTransition = false, int quickDuration = 0,
 			       bool black = false, bool manual = false);
-
-	void SetCurrentTransition(const QString &uuid);
 
 	void SetTransitionDuration(int duration);
 
 private slots:
 	void AddTransition(const char *id);
 	void RenameTransition(OBSSource transition);
+
+	void setCurrentTransitionQString(const QString &uuid);
 
 	void TransitionClicked();
 	void TransitionStarted();
@@ -1587,20 +1591,22 @@ private slots:
 	void TBarChanged(int value);
 	void TBarReleased();
 
-	void on_transitionAdd_clicked();
-	void on_transitionRemove_clicked();
-	void on_transitionProps_clicked();
+	void createAddTransitionMenu();
+	void removeCurrentTransition();
+	void createCurrentTransitionPropertiesMenu();
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
 
 signals:
+	void transitionsControlChanged(bool locked);
+
 	void TransitionAdded(const QString &name, const QString &uuid);
 	void TransitionRenamed(const QString &uuid, const QString &newName);
 	void TransitionRemoved(const QString &uuid);
 	void TransitionsCleared();
 
-	void CurrentTransitionChanged(const QString &uuid);
+	void currentTransitionChanged(const QString &uuid, bool fixed, bool configurable);
 
 	void TransitionDurationChanged(const int &duration);
 
