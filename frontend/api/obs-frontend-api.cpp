@@ -691,3 +691,8 @@ bool obs_frontend_is_safe_mode_enabled(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_is_safe_mode_enabled() : false;
 }
+
+bool obs_frontend_is_portable_mode_enabled(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_portable_mode_enabled() : false;
+}

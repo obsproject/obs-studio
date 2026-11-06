@@ -264,6 +264,8 @@ EXPORT void obs_frontend_paste_sceneitem(obs_scene_t *scene, bool duplicate);
 
 EXPORT bool obs_frontend_is_safe_mode_enabled(void);
 
+EXPORT bool obs_frontend_is_portable_mode_enabled(void);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

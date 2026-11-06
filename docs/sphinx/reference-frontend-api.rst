@@ -997,3 +997,11 @@ Functions
    :return: *true* if OBS was launched in Safe Mode, *false* otherwise
 
    .. versionadded:: 33.0
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_portable_mode_enabled(void)
+
+   :return: *true* if OBS is running in portable mode, *false* otherwise
+
+   .. versionadded:: 33.2

@@ -727,6 +727,11 @@ bool OBSStudioAPI::obs_frontend_is_safe_mode_enabled()
 	return safe_mode;
 }
 
+bool OBSStudioAPI::obs_frontend_is_portable_mode_enabled()
+{
+	return App()->IsPortableMode();
+}
+
 void OBSStudioAPI::on_load(obs_data_t *settings)
 {
 	for (size_t i = saveCallbacks.size(); i > 0; i--) {
