@@ -47,7 +47,7 @@
                     "url": "rtmp://eun10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "South America (S\u00e3o Paulo)",
+                    "name": "South America (São Paulo)",
                     "url": "rtmp://sae10.contribute.live-video.net/app/"
                 },
                 {
@@ -1137,28 +1137,6 @@
                 "profile": "main",
                 "max video bitrate": 7000,
                 "max audio bitrate": 192
-            },
-            "supported video codecs": [
-                "h264"
-            ]
-        },
-        {
-            "name": "Trovo",
-            "alt_names": [
-                "Madcat"
-            ],
-            "stream_key_link": "https://studio.trovo.live/mychannel/stream",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://livepush.trovo.live/live/"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 9000,
-                "max audio bitrate": 160,
-                "x264opts": "scenecut=0"
             },
             "supported video codecs": [
                 "h264"
@@ -2513,7 +2491,7 @@
                     "url": "rtmps://eun10.contribute.live-video.net:443/app/"
                 },
                 {
-                    "name": "South America (S\u00e3o Paulo) (RTMPS)",
+                    "name": "South America (São Paulo) (RTMPS)",
                     "url": "rtmps://sae10.contribute.live-video.net:443/app/"
                 },
                 {
@@ -2565,7 +2543,7 @@
                     "url": "rtmp://eun10.contribute.live-video.net/app/"
                 },
                 {
-                    "name": "South America (S\u00e3o Paulo) (RTMP)",
+                    "name": "South America (São Paulo) (RTMP)",
                     "url": "rtmp://sae10.contribute.live-video.net/app/"
                 },
                 {
