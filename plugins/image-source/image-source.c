@@ -1,9 +1,9 @@
 #include <obs-module.h>
 #include <graphics/image-file.h>
 #include <util/threading.h>
+#include <util/file-watcher.h>
 #include <util/platform.h>
 #include <util/dstr.h>
-#include <sys/stat.h>
 
 #define blog(log_level, format, ...) \
 	blog(log_level, "[image_source: '%s'] " format, obs_source_get_name(context->source), ##__VA_ARGS__)
@@ -19,11 +19,11 @@ struct image_source {
 	bool persistent;
 	bool manual_load;
 	bool linear_alpha;
-	time_t file_timestamp;
-	float update_time_elapsed;
 	uint64_t last_time;
-	bool active;
 	bool restart_gif;
+
+	file_watcher_t *image_watcher;
+	float update_time_elapsed;
 
 	pthread_mutex_t preload_mutex;
 
@@ -32,21 +32,6 @@ struct image_source {
 
 	gs_image_file_ex_t image;
 };
-
-static time_t get_modified_timestamp(const char *filename)
-{
-	struct stat stats;
-	if (os_stat(filename, &stats) != 0)
-		return -1;
-
-	return stats.st_mtime;
-}
-
-static const char *image_source_get_name(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return obs_module_text("ImageInput");
-}
 
 void image_source_preload_image(void *data)
 {
@@ -80,6 +65,19 @@ void image_source_preload_image(void *data)
 		gs_image_file_ex_free(&old_pending_image);
 }
 
+static void image_source_file_changed(void *data, char *file)
+{
+	UNUSED_PARAMETER(file);
+
+	image_source_preload_image(data);
+}
+
+static const char *image_source_get_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("ImageInput");
+}
+
 static void image_source_unload(void *data)
 {
 	struct image_source *context = data;
@@ -103,6 +101,14 @@ static void image_source_update(void *data, obs_data_t *settings)
 	// Deprecated, use manual_load
 	if (obs_data_get_bool(settings, "is_slide"))
 		manual_load = true;
+
+	// Mutex not required for watcher, since .video_tick and .update are both always executed within the graphics thread
+	if (context->image_watcher && (!file || strcmp(context->file, file) != 0)) {
+		file_watcher_destroy(context->image_watcher);
+		context->image_watcher = NULL;
+	}
+	if (!context->image_watcher && file && *file)
+		context->image_watcher = file_watcher_create(file, image_source_file_changed, context);
 
 	pthread_mutex_lock(&context->preload_mutex);
 	if (context->file)
@@ -187,6 +193,8 @@ static void image_source_destroy(void *data)
 {
 	struct image_source *context = data;
 
+	file_watcher_destroy(context->image_watcher);
+
 	image_source_unload(context);
 
 	if (context->file)
@@ -247,30 +255,19 @@ static void restart_gif(void *data)
 		obs_enter_graphics();
 		gs_image_file_ex_update_texture(&context->image);
 		obs_leave_graphics();
-
-		context->restart_gif = false;
 	}
+
+	context->restart_gif = false;
 }
 
 static void image_source_tick(void *data, float seconds)
 {
 	struct image_source *context = data;
-	const bool showing = obs_source_showing(context->source);
 	context->update_time_elapsed += seconds;
 
-	if (showing) {
-		if (context->update_time_elapsed >= 1.0f) {
-			time_t t = get_modified_timestamp(context->file);
-			context->update_time_elapsed = 0.0f;
-
-			if (context->file_timestamp != t) {
-				image_source_preload_image(context);
-				context->file_timestamp = t;
-			}
-		}
-
-		if (context->restart_gif)
-			restart_gif(context);
+	if (context->update_time_elapsed >= 1.0f) {
+		file_watcher_check(context->image_watcher);
+		context->update_time_elapsed = 0.0f;
 	}
 
 	pthread_mutex_lock(&context->pending_image_mutex);
@@ -286,14 +283,14 @@ static void image_source_tick(void *data, float seconds)
 	}
 	pthread_mutex_unlock(&context->pending_image_mutex);
 
-	if (!showing)
-		return;
-
-	if (context->image.is_animated_gif) {
+	if (obs_source_showing(context->source) && context->image.is_animated_gif) {
 		uint64_t cur_time = obs_get_video_frame_time();
 
 		if (!context->last_time)
 			context->last_time = cur_time;
+
+		if (context->restart_gif)
+			restart_gif(context);
 
 		uint64_t elapsed = cur_time - context->last_time;
 		bool updated = gs_image_file_ex_tick(&context->image, elapsed);
