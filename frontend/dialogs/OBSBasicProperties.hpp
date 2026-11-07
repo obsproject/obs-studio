@@ -37,7 +37,7 @@ private:
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	OBSSignal updatePropertiesSignal;
-	OBSData oldSettings;
+	OBSDataAutoRelease oldSettings;
 	OBSPropertiesView *view;
 	QSplitter *windowSplitter;
 
