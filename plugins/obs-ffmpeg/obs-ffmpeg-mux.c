@@ -400,6 +400,8 @@ static inline bool ffmpeg_mux_start_internal(struct ffmpeg_muxer *stream, obs_da
 		stream->max_time = obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 		stream->max_size = obs_data_get_int(settings, "max_size_mb") * (1024 * 1024);
 		stream->split_file = obs_data_get_bool(settings, "split_file");
+		stream->rebase_after_split_only = obs_data_get_bool(settings, "split_file_rebase_after_split_only");
+		stream->did_split = false;
 		stream->allow_overwrite = obs_data_get_bool(settings, "allow_overwrite");
 		stream->cur_size = 0;
 		stream->sent_headers = false;
@@ -601,6 +603,11 @@ static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst, boo
 	obs_data_release(settings);
 }
 
+static inline bool ts_rebase_active(struct ffmpeg_muxer *stream)
+{
+	return stream->split_file && (!stream->rebase_after_split_only || stream->did_split);
+}
+
 bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
@@ -613,7 +620,7 @@ bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 				       .type = is_video ? FFM_PACKET_VIDEO : FFM_PACKET_AUDIO,
 				       .keyframe = packet->keyframe};
 
-	if (stream->split_file) {
+	if (ts_rebase_active(stream)) {
 		if (is_video) {
 			info.dts -= stream->video_pts_offset;
 			info.pts -= stream->video_pts_offset;
@@ -755,6 +762,7 @@ static bool prepare_split_file(struct ffmpeg_muxer *stream, struct encoder_packe
 	stream->cur_size = 0;
 	stream->cur_time = packet->dts_usec;
 	ts_offset_clear(stream);
+	stream->did_split = true;
 
 	return true;
 }
@@ -839,7 +847,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		os_atomic_set_bool(&stream->manual_split, false);
 	}
 
-	if (stream->split_file)
+	if (ts_rebase_active(stream))
 		ts_offset_update(stream, packet);
 
 	write_packet(stream, packet);

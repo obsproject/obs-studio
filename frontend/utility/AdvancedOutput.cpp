@@ -824,14 +824,22 @@ bool AdvancedOutput::StartRecording()
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path", strPath.c_str());
 
-		if (splitFile) {
-			splitFileType = config_get_string(main->Config(), "AdvOut", "RecSplitFileType");
-			splitFileTime = (astrcmpi(splitFileType, "Time") == 0)
-						? config_get_int(main->Config(), "AdvOut", "RecSplitFileTime")
-						: 0;
-			splitFileSize = (astrcmpi(splitFileType, "Size") == 0)
-						? config_get_int(main->Config(), "AdvOut", "RecSplitFileSize")
-						: 0;
+		/* Native recording muxers always get manual splitting enabled so
+		 * the recording can be split on demand (e.g. "Save Recording So
+		 * Far to Folder"); automatic splitting only when configured. */
+		if (splitFile || !ffmpegRecording) {
+			if (splitFile) {
+				splitFileType = config_get_string(main->Config(), "AdvOut", "RecSplitFileType");
+				splitFileTime = (astrcmpi(splitFileType, "Time") == 0)
+							? config_get_int(main->Config(), "AdvOut", "RecSplitFileTime")
+							: 0;
+				splitFileSize = (astrcmpi(splitFileType, "Size") == 0)
+							? config_get_int(main->Config(), "AdvOut", "RecSplitFileSize")
+							: 0;
+			} else {
+				splitFileTime = 0;
+				splitFileSize = 0;
+			}
 			string ext = GetFormatExt(recFormat);
 			obs_data_set_string(settings, "directory", path);
 			obs_data_set_string(settings, "format", filenameFormat);
@@ -839,6 +847,9 @@ bool AdvancedOutput::StartRecording()
 			obs_data_set_bool(settings, "allow_spaces", !noSpace);
 			obs_data_set_bool(settings, "allow_overwrite", overwriteIfExists);
 			obs_data_set_bool(settings, "split_file", true);
+			/* Without user-enabled splitting, keep the file identical
+			 * to an unsplit recording until a split actually happens. */
+			obs_data_set_bool(settings, "split_file_rebase_after_split_only", !splitFile);
 			obs_data_set_int(settings, "max_time_sec", splitFileTime * 60);
 			obs_data_set_int(settings, "max_size_mb", splitFileSize);
 		}

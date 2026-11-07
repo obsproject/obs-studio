@@ -467,6 +467,7 @@ IdianPlayground QVBoxLayout {
 #streamButton:!hover:!pressed.state-active,
 #recordButton:!hover:!pressed.state-active,
 #pauseRecordButton:!hover:!pressed.state-active,
+#splitRecordButton:!hover:!pressed.state-active,
 #replayBufferButton:!hover:!pressed.state-active,
 #virtualCamButton:!hover:!pressed.state-active,
 #modeSwitch:!hover:!pressed.state-active,

@@ -160,6 +160,34 @@
        </layout>
       </item>
       <item>
+       <widget class="QPushButton" name="splitRecordButton">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Basic.Main.SplitToFolder.Button</string>
+        </property>
+        <property name="toolTip">
+         <string>Basic.Main.SplitToFolder</string>
+        </property>
+        <property name="accessibleName">
+         <string>Basic.Main.SplitToFolder</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <layout class="QHBoxLayout" name="replayBufferLayout">
         <property name="spacing">
          <number>2</number>

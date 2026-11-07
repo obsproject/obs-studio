@@ -58,6 +58,7 @@ class OBSBasicTransform;
 class OBSLogViewer;
 class OBSMissingFiles;
 class OBSProjector;
+class RecordingSegmentMover;
 class ScreenshotObj;
 class VolumeControl;
 #ifdef YOUTUBE_ENABLED
@@ -90,6 +91,15 @@ enum class ItemPasteType { Invalid, Reference, Duplicate, Both };
 #define PREVIEW_EDGE_SIZE 10
 
 enum class ProjectorType;
+
+/* Progress of "Save Recording So Far to Folder", shown on its button */
+enum class SplitRecordingState {
+	Idle,    /* ready */
+	Pending, /* waiting for the next keyframe to split */
+	Saving,  /* moving the finished segment into the folder */
+	Saved,   /* segment saved (detail: destination folder) */
+	Failed,  /* segment could not be moved (detail: where it still is) */
+};
 
 enum class QtDataRole {
 	OBSRef = Qt::UserRole,
@@ -496,7 +506,8 @@ private:
 
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys, replayBufHotkeys, vcamHotkeys,
 		togglePreviewHotkeys, contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, addChapterHotkey, saveReplayBufferHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey, splitToFolderHotkey, addChapterHotkey,
+		saveReplayBufferHotkey;
 
 	void InitHotkeys();
 	void CreateHotkeys();
@@ -1002,8 +1013,18 @@ private:
 	bool isRecordingPausable = false;
 	bool recordingPaused = false;
 
+	/* "Save Recording So Far to Folder": folder the segment currently being
+	 * split off will be moved to, empty when no split is pending. */
+	QString pendingSplitFolder;
+	QPointer<RecordingSegmentMover> segmentMover;
+
 	void AutoRemux(QString input, bool no_show = false);
 	void UpdateIsRecordingPausable();
+
+	bool RecordingCanSplit();
+	QStringList GetRecentSplitFolders() const;
+	void AddRecentSplitFolder(const QString &folder);
+	void MoveRecordingSegment(const QString &source, const QString &nextFile, const QString &folder);
 
 	bool LowDiskSpace();
 	void DiskSpaceMessage();
@@ -1017,6 +1038,10 @@ private slots:
 	/* Record pause (pause/unpause) slot */
 	void RecordPauseToggled();
 
+	/* "Save Recording So Far to Folder" */
+	void ShowSplitRecordingMenu(QPoint pos);
+	void RecordingSegmentMoved(const QString &source, const QString &destination, bool success);
+
 public slots:
 	void StartRecording();
 	void StopRecording();
@@ -1024,7 +1049,11 @@ public slots:
 	void RecordingStart();
 	void RecordStopping();
 	void RecordingStop(int code, QString last_error);
-	void RecordingFileChanged(QString lastRecordingPath);
+	void RecordingFileChanged(QString lastRecordingPath, QString nextRecordingPath);
+
+	void SplitRecordingToFolder(const QString &folder);
+	void SplitRecordingToLastFolder();
+	void SplitRecordingBrowseFolder();
 
 	void PauseRecording();
 	void UnpauseRecording();
@@ -1040,6 +1069,8 @@ signals:
 	void RecordingUnpaused();
 	void RecordingStopping();
 	void RecordingStopped();
+	void RecordingSplitAvailable(bool available);
+	void RecordingSplitStateChanged(SplitRecordingState state, const QString &detail);
 
 	/* -------------------------------------
 	 * MARK: - OBSBasic_ReplayBuffer

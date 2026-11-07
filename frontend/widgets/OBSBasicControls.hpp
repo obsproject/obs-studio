@@ -9,6 +9,7 @@
 #include <memory>
 
 class OBSBasic;
+enum class SplitRecordingState; /* defined in OBSBasic.hpp */
 
 class OBSBasicControls : public QFrame {
 	Q_OBJECT
@@ -18,6 +19,12 @@ class OBSBasicControls : public QFrame {
 	QScopedPointer<QMenu> streamButtonMenu;
 	QPointer<QAction> startStreamAction;
 	QPointer<QAction> stopStreamAction;
+
+	bool recordingPaused = false;
+	SplitRecordingState splitState{}; /* Idle */
+	QString splitDetail;
+	unsigned int splitStateGeneration = 0;
+	void UpdateSplitRecordButton();
 
 private slots:
 	void StreamingPreparing();
@@ -35,6 +42,8 @@ private slots:
 	void RecordingUnpaused();
 	void RecordingStopping();
 	void RecordingStopped();
+	void RecordingSplitAvailable(bool available);
+	void RecordingSplitStateChanged(SplitRecordingState state, const QString &detail);
 
 	void ReplayBufferStarted();
 	void ReplayBufferStopping();
@@ -58,6 +67,7 @@ signals:
 	void BroadcastButtonClicked();
 	void RecordButtonClicked();
 	void PauseRecordButtonClicked();
+	void SplitRecordButtonClicked(QPoint menuPos);
 	void ReplayBufferButtonClicked();
 	void SaveReplayBufferButtonClicked();
 	void VirtualCamButtonClicked();

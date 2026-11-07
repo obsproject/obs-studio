@@ -255,6 +255,10 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	startRecording.Connect(obs_output_get_signal_handler(fileOutput), "start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput), "stop", OBSStopRecording, this);
 	recordStopping.Connect(obs_output_get_signal_handler(fileOutput), "stopping", OBSRecordStopping, this);
+	if (!ffmpegOutput) {
+		recordFileChanged.Connect(obs_output_get_signal_handler(fileOutput), "file_changed",
+					  OBSRecordFileChanged, this);
+	}
 }
 
 int SimpleOutput::GetAudioBitrate() const
@@ -860,6 +864,19 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path", strPath.c_str());
 		if (ffmpegOutput) {
 			obs_output_set_mixers(fileOutput, tracks);
+		} else {
+			/* Enable manual-only splitting so the recording can be
+			 * split on demand (e.g. "Save Recording So Far to Folder"). */
+			string ext = GetFormatExt(format);
+			obs_data_set_string(settings, "directory", path);
+			obs_data_set_string(settings, "format", f.c_str());
+			obs_data_set_string(settings, "extension", ext.c_str());
+			obs_data_set_bool(settings, "allow_spaces", !noSpace);
+			obs_data_set_bool(settings, "allow_overwrite", overwriteIfExists);
+			obs_data_set_bool(settings, "split_file", true);
+			obs_data_set_bool(settings, "split_file_rebase_after_split_only", true);
+			obs_data_set_int(settings, "max_time_sec", 0);
+			obs_data_set_int(settings, "max_size_mb", 0);
 		}
 	}
 

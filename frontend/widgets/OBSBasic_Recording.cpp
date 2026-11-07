@@ -21,11 +21,16 @@
 
 #include <components/UIValidation.hpp>
 #include <dialogs/OBSRemux.hpp>
+#include <utility/RecordingSegmentMover.hpp>
 
 #include <qt-wrappers.hpp>
 
 #include <QDesktopServices>
+#include <QDir>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QMenu>
 
 void OBSBasic::on_actionShow_Recordings_triggered()
 {
@@ -164,6 +169,10 @@ void OBSBasic::RecordingStart()
 	ui->statusbar->RecordingStarted(outputHandler->fileOutput);
 	emit RecordingStarted(isRecordingPausable);
 
+	pendingSplitFolder.clear();
+	emit RecordingSplitStateChanged(SplitRecordingState::Idle, QString());
+	emit RecordingSplitAvailable(RecordingCanSplit());
+
 	if (sysTrayRecord) {
 		sysTrayRecord->setText(QTStr("Basic.Main.StopRecording"));
 	}
@@ -184,6 +193,13 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 {
 	ui->statusbar->RecordingStopped();
 	emit RecordingStopped();
+
+	/* A split was requested but the recording stopped before it happened:
+	 * the final file is the segment the user asked to save. */
+	QString splitFolder = pendingSplitFolder;
+	pendingSplitFolder.clear();
+	emit RecordingSplitStateChanged(SplitRecordingState::Idle, QString());
+	emit RecordingSplitAvailable(false);
 
 	if (sysTrayRecord) {
 		sysTrayRecord->setText(QTStr("Basic.Main.StartRecording"));
@@ -241,17 +257,249 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 		diskFullTimer->stop();
 	}
 
-	AutoRemux(outputHandler->lastRecordingPath.c_str());
+	if (!splitFolder.isEmpty() && !outputHandler->lastRecordingPath.empty()) {
+		/* Remuxing happens after the move, see RecordingSegmentMoved */
+		MoveRecordingSegment(QT_UTF8(outputHandler->lastRecordingPath.c_str()), QString(), splitFolder);
+	} else {
+		AutoRemux(outputHandler->lastRecordingPath.c_str());
+	}
 
 	OnDeactivate();
 }
 
-void OBSBasic::RecordingFileChanged(QString lastRecordingPath)
+void OBSBasic::RecordingFileChanged(QString lastRecordingPath, QString nextRecordingPath)
 {
+	if (!pendingSplitFolder.isEmpty()) {
+		QString folder = pendingSplitFolder;
+		pendingSplitFolder.clear();
+
+		/* Remuxing happens after the move, see RecordingSegmentMoved */
+		MoveRecordingSegment(lastRecordingPath, nextRecordingPath, folder);
+		return;
+	}
+
 	QString str = QTStr("Basic.StatusBar.RecordingSavedTo");
 	ShowStatusBarMessage(str.arg(lastRecordingPath));
 
 	AutoRemux(lastRecordingPath, true);
+}
+
+/* -------------------------------------------------------------------------
+ * "Save Recording So Far to Folder"
+ *
+ * Splits the running recording at the next keyframe (using the outputs'
+ * existing split_file mechanism) and moves the finished segment into a folder
+ * chosen by the user. Recording and streaming continue uninterrupted.
+ * ------------------------------------------------------------------------- */
+
+#define SPLIT_FOLDERS_SECTION "BasicWindow"
+#define SPLIT_FOLDERS_KEY "SplitRecordingRecentFolders"
+#define MAX_RECENT_SPLIT_FOLDERS 5
+
+bool OBSBasic::RecordingCanSplit()
+{
+	if (!outputHandler || !outputHandler->fileOutput) {
+		return false;
+	}
+
+	/* Only the native recording muxers support splitting; the custom
+	 * FFmpeg output (incl. Simple mode "Lossless") does not. */
+	const char *id = obs_output_get_id(outputHandler->fileOutput);
+	return id &&
+	       (strcmp(id, "ffmpeg_muxer") == 0 || strcmp(id, "mp4_output") == 0 || strcmp(id, "mov_output") == 0);
+}
+
+QStringList OBSBasic::GetRecentSplitFolders() const
+{
+	QStringList folders;
+
+	const char *json = config_get_string(App()->GetUserConfig(), SPLIT_FOLDERS_SECTION, SPLIT_FOLDERS_KEY);
+	if (!json || !*json) {
+		return folders;
+	}
+
+	const QJsonArray array = QJsonDocument::fromJson(QByteArray(json)).array();
+	for (const QJsonValue &value : array) {
+		QString folder = value.toString();
+		if (!folder.isEmpty()) {
+			folders << folder;
+		}
+	}
+
+	return folders;
+}
+
+void OBSBasic::AddRecentSplitFolder(const QString &folder)
+{
+	QString cleanFolder = QDir::cleanPath(folder);
+#ifdef _WIN32
+	Qt::CaseSensitivity cs = Qt::CaseInsensitive;
+#else
+	Qt::CaseSensitivity cs = Qt::CaseSensitive;
+#endif
+
+	QStringList folders = GetRecentSplitFolders();
+	folders.removeIf([&](const QString &f) { return QDir::cleanPath(f).compare(cleanFolder, cs) == 0; });
+	folders.prepend(cleanFolder);
+	while (folders.size() > MAX_RECENT_SPLIT_FOLDERS) {
+		folders.removeLast();
+	}
+
+	QJsonArray array;
+	for (const QString &f : folders) {
+		array.append(f);
+	}
+
+	QByteArray json = QJsonDocument(array).toJson(QJsonDocument::Compact);
+	config_set_string(App()->GetUserConfig(), SPLIT_FOLDERS_SECTION, SPLIT_FOLDERS_KEY, json.constData());
+	config_save_safe(App()->GetUserConfig(), "tmp", nullptr);
+}
+
+void OBSBasic::SplitRecordingToFolder(const QString &folder)
+{
+	if (folder.isEmpty() || !outputHandler || !outputHandler->RecordingActive() || recordingStopping) {
+		return;
+	}
+
+	if (!pendingSplitFolder.isEmpty()) {
+		/* A split is already on its way; it will happen at the next
+		 * keyframe. */
+		return;
+	}
+
+	if (os_atomic_load_bool(&recording_paused)) {
+		ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Paused"));
+		return;
+	}
+
+	if (!RecordingCanSplit()) {
+		ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Unsupported"));
+		return;
+	}
+
+	proc_handler_t *ph = obs_output_get_proc_handler(outputHandler->fileOutput);
+	uint8_t stack[128];
+	calldata cd;
+	calldata_init_fixed(&cd, stack, sizeof(stack));
+	bool called = proc_handler_call(ph, "split_file", &cd);
+	bool enabled = called && calldata_bool(&cd, "split_file_enabled");
+
+	if (!enabled) {
+		blog(LOG_WARNING, "[Split to Folder] Recording output does not have splitting enabled");
+		ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Unsupported"));
+		return;
+	}
+
+	blog(LOG_INFO, "[Split to Folder] Splitting recording, segment will be saved to '%s'", QT_TO_UTF8(folder));
+
+	pendingSplitFolder = folder;
+	AddRecentSplitFolder(folder);
+
+	emit RecordingSplitStateChanged(SplitRecordingState::Pending, folder);
+	ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Pending"));
+}
+
+void OBSBasic::SplitRecordingToLastFolder()
+{
+	if (!outputHandler || !outputHandler->RecordingActive()) {
+		return;
+	}
+
+	QStringList folders = GetRecentSplitFolders();
+	if (folders.isEmpty()) {
+		blog(LOG_INFO, "[Split to Folder] No folder chosen yet, ignoring hotkey");
+		ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.NoFolder"));
+		return;
+	}
+
+	SplitRecordingToFolder(folders.first());
+}
+
+void OBSBasic::SplitRecordingBrowseFolder()
+{
+	if (!outputHandler || !outputHandler->RecordingActive()) {
+		return;
+	}
+
+	QStringList folders = GetRecentSplitFolders();
+	QString startDir = folders.isEmpty() ? QT_UTF8(GetCurrentOutputPath()) : folders.first();
+
+	QString folder = SelectDirectory(this, QTStr("Basic.Main.SplitToFolder.SelectFolder"), startDir);
+	if (folder.isEmpty()) {
+		return;
+	}
+
+	/* The recording may have stopped while the dialog was open; the
+	 * function checks for that. */
+	SplitRecordingToFolder(folder);
+}
+
+void OBSBasic::ShowSplitRecordingMenu(QPoint pos)
+{
+	QMenu menu(this);
+
+	QAction *header = menu.addAction(QTStr("Basic.Main.SplitToFolder.MenuHeader"));
+	header->setEnabled(false);
+
+	const QStringList folders = GetRecentSplitFolders();
+	for (const QString &folder : folders) {
+		QAction *action = menu.addAction(QDir::toNativeSeparators(folder));
+		connect(action, &QAction::triggered, this, [this, folder]() { SplitRecordingToFolder(folder); });
+	}
+
+	menu.addSeparator();
+	menu.addAction(QTStr("Browse"), this, &OBSBasic::SplitRecordingBrowseFolder);
+
+	menu.exec(pos);
+}
+
+void OBSBasic::MoveRecordingSegment(const QString &source, const QString &nextFile, const QString &folder)
+{
+	if (source.isEmpty()) {
+		return;
+	}
+
+	if (!segmentMover) {
+		segmentMover = new RecordingSegmentMover(this);
+		connect(segmentMover, &RecordingSegmentMover::Finished, this, &OBSBasic::RecordingSegmentMoved);
+	}
+
+	ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Saving").arg(QDir::toNativeSeparators(folder)));
+	emit RecordingSplitStateChanged(SplitRecordingState::Saving, folder);
+	segmentMover->Move(source, nextFile, folder);
+}
+
+void OBSBasic::RecordingSegmentMoved(const QString &source, const QString &destination, bool success)
+{
+	/* Only report on the button if no newer split is already under way */
+	if (pendingSplitFolder.isEmpty()) {
+		if (success) {
+			emit RecordingSplitStateChanged(SplitRecordingState::Saved,
+							QFileInfo(destination).absolutePath());
+		} else {
+			emit RecordingSplitStateChanged(SplitRecordingState::Failed, source);
+		}
+	}
+
+	if (!success) {
+		ShowStatusBarMessage(QTStr("Basic.Main.SplitToFolder.Failed").arg(QDir::toNativeSeparators(source)));
+		if (!isVisible()) {
+			SysTrayNotify(QTStr("Basic.Main.SplitToFolder.Failed").arg(QDir::toNativeSeparators(source)),
+				      QSystemTrayIcon::Warning);
+		}
+		/* The segment stays where it was recorded; still remux it. */
+		if (outputHandler && outputHandler->fileOutput) {
+			AutoRemux(source, true);
+		}
+		return;
+	}
+
+	ShowStatusBarMessage(QTStr("Basic.StatusBar.RecordingSavedTo").arg(QDir::toNativeSeparators(destination)));
+
+	if (outputHandler && outputHandler->fileOutput) {
+		/* Don't pop up the remux window while still recording */
+		AutoRemux(destination, RecordingActive());
+	}
 }
 
 void OBSBasic::RecordActionTriggered()
