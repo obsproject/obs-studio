@@ -17,15 +17,18 @@ struct image_source {
 
 	char *file;
 	bool persistent;
-	bool is_slide;
+	bool manual_load;
 	bool linear_alpha;
 	time_t file_timestamp;
 	float update_time_elapsed;
 	uint64_t last_time;
 	bool active;
 	bool restart_gif;
-	volatile bool file_decoded;
-	volatile bool texture_loaded;
+
+	pthread_mutex_t preload_mutex;
+
+	pthread_mutex_t pending_image_mutex;
+	gs_image_file_ex_t pending_image;
 
 	gs_image_file_ex_t image;
 };
@@ -48,53 +51,45 @@ static const char *image_source_get_name(void *unused)
 void image_source_preload_image(void *data)
 {
 	struct image_source *context = data;
-	if (os_atomic_load_bool(&context->file_decoded))
-		return;
+	bool destroy_old = false;
+	gs_image_file_ex_t old_pending_image;
+	gs_image_file_ex_t pending_image;
 
-	context->file_timestamp = get_modified_timestamp(context->file);
-	gs_image_file_ex_init(&context->image, context->file,
-			      context->linear_alpha ? GS_IMAGE_ALPHA_PREMULTIPLY_SRGB : GS_IMAGE_ALPHA_PREMULTIPLY);
-	os_atomic_set_bool(&context->file_decoded, true);
-}
+	// We need a mutex around preloading because of path and linear_alpha
+	pthread_mutex_lock(&context->preload_mutex);
 
-static void image_source_load_texture(void *data)
-{
-	struct image_source *context = data;
-	if (os_atomic_load_bool(&context->texture_loaded))
-		return;
+	const char *path = context->file;
+	if (path && *path)
+		gs_image_file_ex_init(&pending_image, path,
+				      context->linear_alpha ? GS_IMAGE_ALPHA_PREMULTIPLY_SRGB
+							    : GS_IMAGE_ALPHA_PREMULTIPLY);
+	else
+		memset(&pending_image, 0, sizeof(pending_image));
 
-	debug("loading texture '%s'", context->file);
+	pthread_mutex_lock(&context->pending_image_mutex);
+	if (context->pending_image.loaded) {
+		old_pending_image = context->pending_image;
+		destroy_old = true;
+	}
+	context->pending_image = pending_image;
+	pthread_mutex_unlock(&context->pending_image_mutex);
+	pthread_mutex_unlock(&context->preload_mutex);
 
-	obs_enter_graphics();
-	gs_image_file_ex_init_texture(&context->image);
-	obs_leave_graphics();
-
-	if (!context->image.loaded)
-		warn("failed to load texture '%s'", context->file);
-
-	context->update_time_elapsed = 0;
-	os_atomic_set_bool(&context->texture_loaded, true);
+	// Old pending images haven't created textures, so no need to enter graphics
+	if (destroy_old)
+		gs_image_file_ex_free(&old_pending_image);
 }
 
 static void image_source_unload(void *data)
 {
 	struct image_source *context = data;
-	os_atomic_set_bool(&context->file_decoded, false);
-	os_atomic_set_bool(&context->texture_loaded, false);
 
+	pthread_mutex_lock(&context->pending_image_mutex);
 	obs_enter_graphics();
 	gs_image_file_ex_free(&context->image);
+	gs_image_file_ex_free(&context->pending_image);
 	obs_leave_graphics();
-}
-
-static void image_source_load(struct image_source *context)
-{
-	image_source_unload(context);
-
-	if (context->file && *context->file) {
-		image_source_preload_image(context);
-		image_source_load_texture(context);
-	}
+	pthread_mutex_unlock(&context->pending_image_mutex);
 }
 
 static void image_source_update(void *data, obs_data_t *settings)
@@ -103,22 +98,28 @@ static void image_source_update(void *data, obs_data_t *settings)
 	const char *file = obs_data_get_string(settings, "file");
 	const bool unload = obs_data_get_bool(settings, "unload");
 	const bool linear_alpha = obs_data_get_bool(settings, "linear_alpha");
-	const bool is_slide = obs_data_get_bool(settings, "is_slide");
+	bool manual_load = obs_data_get_bool(settings, "manual_load");
 
+	// Deprecated, use manual_load
+	if (obs_data_get_bool(settings, "is_slide"))
+		manual_load = true;
+
+	pthread_mutex_lock(&context->preload_mutex);
 	if (context->file)
 		bfree(context->file);
 
 	context->file = bstrdup(file);
 	context->persistent = !unload;
 	context->linear_alpha = linear_alpha;
-	context->is_slide = is_slide;
+	context->manual_load = manual_load;
+	pthread_mutex_unlock(&context->preload_mutex);
 
-	if (is_slide)
+	if (manual_load)
 		return;
 
 	/* Load the image if the source is persistent or showing */
 	if (context->persistent || obs_source_showing(context->source))
-		image_source_load(data);
+		image_source_preload_image(data);
 	else
 		image_source_unload(data);
 }
@@ -133,33 +134,16 @@ static void image_source_show(void *data)
 {
 	struct image_source *context = data;
 
-	if (!context->persistent && !context->is_slide)
-		image_source_load(context);
+	if (!context->persistent && !context->manual_load)
+		image_source_preload_image(context);
 }
 
 static void image_source_hide(void *data)
 {
 	struct image_source *context = data;
 
-	if (!context->persistent && !context->is_slide)
+	if (!context->persistent && !context->manual_load)
 		image_source_unload(context);
-}
-
-static void restart_gif(void *data)
-{
-	struct image_source *context = data;
-
-	if (context->image.is_animated_gif) {
-		context->image.cur_frame = 0;
-		context->image.cur_loop = 0;
-		context->image.cur_time = 0;
-
-		obs_enter_graphics();
-		gs_image_file_ex_update_texture(&context->image);
-		obs_leave_graphics();
-
-		context->restart_gif = false;
-	}
 }
 
 static void image_source_activate(void *data)
@@ -168,10 +152,32 @@ static void image_source_activate(void *data)
 	context->restart_gif = true;
 }
 
+static void preload_image_proc(void *data, calldata_t *cd)
+{
+	UNUSED_PARAMETER(cd);
+
+	image_source_preload_image(data);
+}
+
 static void *image_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct image_source *context = bzalloc(sizeof(struct image_source));
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+
 	context->source = source;
+
+	if (pthread_mutex_init(&context->pending_image_mutex, NULL) != 0) {
+		bfree(context);
+		return NULL;
+	}
+
+	if (pthread_mutex_init(&context->preload_mutex, NULL) != 0) {
+		pthread_mutex_destroy(&context->pending_image_mutex);
+		bfree(context);
+		return NULL;
+	}
+
+	proc_handler_add(ph, "void preload(void)", preload_image_proc, context);
 
 	image_source_update(context, settings);
 	return context;
@@ -185,6 +191,9 @@ static void image_source_destroy(void *data)
 
 	if (context->file)
 		bfree(context->file);
+
+	pthread_mutex_destroy(&context->preload_mutex);
+	pthread_mutex_destroy(&context->pending_image_mutex);
 
 	bfree(context);
 }
@@ -204,8 +213,6 @@ static uint32_t image_source_getheight(void *data)
 static void image_source_render(void *data, gs_effect_t *effect)
 {
 	struct image_source *context = data;
-	if (!os_atomic_load_bool(&context->texture_loaded))
-		return;
 
 	gs_image_file_ex_t *const image = &context->image;
 	gs_texture_t *const texture = image->texture;
@@ -228,53 +235,67 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	gs_enable_framebuffer_srgb(previous);
 }
 
+static void restart_gif(void *data)
+{
+	struct image_source *context = data;
+
+	if (context->image.is_animated_gif) {
+		context->image.cur_frame = 0;
+		context->image.cur_loop = 0;
+		context->image.cur_time = 0;
+
+		obs_enter_graphics();
+		gs_image_file_ex_update_texture(&context->image);
+		obs_leave_graphics();
+
+		context->restart_gif = false;
+	}
+}
+
 static void image_source_tick(void *data, float seconds)
 {
 	struct image_source *context = data;
-	if (!os_atomic_load_bool(&context->texture_loaded)) {
-		if (os_atomic_load_bool(&context->file_decoded))
-			image_source_load_texture(context);
-		else
-			return;
-	}
-
-	uint64_t frame_time = obs_get_video_frame_time();
-
+	const bool showing = obs_source_showing(context->source);
 	context->update_time_elapsed += seconds;
 
-	if (obs_source_showing(context->source)) {
+	if (showing) {
 		if (context->update_time_elapsed >= 1.0f) {
 			time_t t = get_modified_timestamp(context->file);
 			context->update_time_elapsed = 0.0f;
 
 			if (context->file_timestamp != t) {
-				image_source_load(context);
+				image_source_preload_image(context);
+				context->file_timestamp = t;
 			}
-		}
-	}
-
-	if (obs_source_showing(context->source)) {
-		if (!context->active) {
-			if (context->image.is_animated_gif)
-				context->last_time = frame_time;
-
-			context->active = true;
 		}
 
 		if (context->restart_gif)
 			restart_gif(context);
-
-	} else {
-		if (context->active) {
-			restart_gif(context);
-			context->active = false;
-		}
-
-		return;
 	}
 
-	if (context->last_time && context->image.is_animated_gif) {
-		uint64_t elapsed = frame_time - context->last_time;
+	pthread_mutex_lock(&context->pending_image_mutex);
+	if (context->pending_image.loaded) {
+		obs_enter_graphics();
+		gs_image_file_ex_free(&context->image);
+		gs_image_file_ex_init_texture(&context->pending_image);
+		obs_leave_graphics();
+
+		context->image = context->pending_image;
+		memset(&context->pending_image, 0, sizeof(context->pending_image));
+		context->last_time = 0;
+	}
+	pthread_mutex_unlock(&context->pending_image_mutex);
+
+	if (!showing)
+		return;
+
+	if (context->image.is_animated_gif) {
+		uint64_t cur_time = obs_get_video_frame_time();
+
+		if (!context->last_time)
+			context->last_time = cur_time;
+
+		uint64_t elapsed = cur_time - context->last_time;
 		bool updated = gs_image_file_ex_tick(&context->image, elapsed);
 
 		if (updated) {
@@ -283,8 +304,6 @@ static void image_source_tick(void *data, float seconds)
 			obs_leave_graphics();
 		}
 	}
-
-	context->last_time = frame_time;
 }
 
 static const char *image_filter =

@@ -294,14 +294,14 @@ static void decode_image(void *data)
 }
 
 /* creates source from a file path. only used in get_new_source(). */
-static inline obs_source_t *create_source_from_file(struct slideshow *ss, const char *file, bool now)
+static inline obs_source_t *create_source_from_file(struct slideshow *ss, const char *file)
 {
 	obs_data_t *settings = obs_data_create();
 	obs_source_t *source;
 
 	obs_data_set_string(settings, "file", file);
 	obs_data_set_bool(settings, "unload", false);
-	obs_data_set_bool(settings, "is_slide", !now);
+	obs_data_set_bool(settings, "manual_load", true);
 	source = obs_source_create_private("image_source", NULL, settings);
 
 	obs_data_release(settings);
@@ -365,7 +365,7 @@ static struct source_data get_new_source(struct slideshow *ss, struct active_sli
 
 	sd.path = ssd->files.array[slide_idx].path;
 	sd.slide_idx = slide_idx;
-	sd.source = create_source_from_file(ss, sd.path, false);
+	sd.source = create_source_from_file(ss, sd.path);
 	return sd;
 }
 
