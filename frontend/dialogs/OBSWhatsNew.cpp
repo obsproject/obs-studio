@@ -35,7 +35,7 @@ OBSWhatsNew::OBSWhatsNew(QWidget *parent, const std::string &url) : QDialog(pare
 		return;
 	}
 
-	connect(cefWidget, &QCefWidget::titleChanged, this, &OBSWhatsNew::setWindowTitle);
+	connect(cefWidget, &QCefWidget::titleChanged, this, &OBSWhatsNew::setWindowTitle, Qt::QueuedConnection);
 
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
 	topLayout->setContentsMargins(0, 0, 0, 0);
