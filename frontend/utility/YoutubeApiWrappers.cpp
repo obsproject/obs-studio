@@ -188,6 +188,24 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
 	const std::string url = std::string(youtubeLiveBroadcastUrl) + "?part=snippet,status,contentDetails";
+	Json::object contentDetails = Json::object{
+		{"latencyPreference", QT_TO_UTF8(broadcast.latency)},
+		{"enableAutoStart", broadcast.auto_start},
+		{"enableAutoStop", broadcast.auto_stop},
+		{"enableDvr", broadcast.dvr},
+		{"projection", QT_TO_UTF8(broadcast.projection)},
+		{
+			"monitorStream",
+			Json::object{
+				{"enableMonitorStream", false},
+			},
+		},
+	};
+
+	if (broadcast.use_obs_captions) {
+		contentDetails["closedCaptionsType"] = "closedCaptionsEmbedded";
+	}
+
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -200,20 +218,7 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 			 {"privacyStatus", QT_TO_UTF8(broadcast.privacy)},
 			 {"selfDeclaredMadeForKids", broadcast.made_for_kids},
 		 }},
-		{"contentDetails",
-		 Json::object{
-			 {"latencyPreference", QT_TO_UTF8(broadcast.latency)},
-			 {"enableAutoStart", broadcast.auto_start},
-			 {"enableAutoStop", broadcast.auto_stop},
-			 {"enableDvr", broadcast.dvr},
-			 {"projection", QT_TO_UTF8(broadcast.projection)},
-			 {
-				 "monitorStream",
-				 Json::object{
-					 {"enableMonitorStream", false},
-				 },
-			 },
-		 }},
+		{"contentDetails", contentDetails},
 	};
 	Json json_out;
 	if (!InsertCommand(url.c_str(), "application/json", "", data.dump().c_str(), json_out)) {
