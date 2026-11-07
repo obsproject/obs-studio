@@ -190,6 +190,17 @@ void OBSBasic::CreateHotkeys()
 		this);
 	LoadHotkey(splitFileHotkey, "OBSBasic.SplitFile");
 
+	splitToFolderHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.SplitToLastFolder", Str("Basic.Main.SplitToFolder.LastFolderHotkey"),
+		[](void *data, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+			if (pressed) {
+				QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+							  &OBSBasic::SplitRecordingToLastFolder, Qt::QueuedConnection);
+			}
+		},
+		this);
+	LoadHotkey(splitToFolderHotkey, "OBSBasic.SplitToLastFolder");
+
 	addChapterHotkey = obs_hotkey_register_frontend(
 		"OBSBasic.AddChapterMarker", Str("Basic.Main.AddChapterMarker"),
 		[](void *, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
@@ -320,6 +331,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_pair_unregister(recordingHotkeys);
 	obs_hotkey_pair_unregister(pauseHotkeys);
 	obs_hotkey_unregister(splitFileHotkey);
+	obs_hotkey_unregister(splitToFolderHotkey);
 	obs_hotkey_unregister(addChapterHotkey);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
 	obs_hotkey_unregister(saveReplayBufferHotkey);

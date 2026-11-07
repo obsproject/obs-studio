@@ -2,6 +2,10 @@
 #include "OBSBasic.hpp"
 #include "qt-wrappers.hpp"
 
+#include <QDir>
+#include <QFileInfo>
+#include <QTimer>
+
 #include "moc_OBSBasicControls.cpp"
 
 OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicControls)
@@ -26,6 +30,17 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		Qt::DirectConnection);
 	connect(
 		ui->pauseRecordButton, &QPushButton::clicked, this, [this]() { emit this->PauseRecordButtonClicked(); },
+		Qt::DirectConnection);
+	connect(
+		ui->splitRecordButton, &QPushButton::clicked, this,
+		[this]() {
+			/* Ignore clicks while a split is waiting for its keyframe */
+			if (splitState == SplitRecordingState::Pending) {
+				return;
+			}
+			QPoint pos = ui->splitRecordButton->mapToGlobal(QPoint(0, ui->splitRecordButton->height()));
+			emit this->SplitRecordButtonClicked(pos);
+		},
 		Qt::DirectConnection);
 	connect(
 		ui->replayBufferButton, &QPushButton::clicked, this,
@@ -60,6 +75,8 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	/* Set up default visibility */
 	ui->broadcastButton->setVisible(false);
 	ui->pauseRecordButton->setVisible(false);
+	ui->splitRecordButton->setVisible(false);
+	UpdateSplitRecordButton();
 	ui->replayBufferButton->setVisible(false);
 	ui->saveReplayButton->setVisible(false);
 	ui->virtualCamButton->setVisible(false);
@@ -81,6 +98,8 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	connect(main, &OBSBasic::RecordingUnpaused, this, &OBSBasicControls::RecordingUnpaused);
 	connect(main, &OBSBasic::RecordingStopping, this, &OBSBasicControls::RecordingStopping);
 	connect(main, &OBSBasic::RecordingStopped, this, &OBSBasicControls::RecordingStopped);
+	connect(main, &OBSBasic::RecordingSplitAvailable, this, &OBSBasicControls::RecordingSplitAvailable);
+	connect(main, &OBSBasic::RecordingSplitStateChanged, this, &OBSBasicControls::RecordingSplitStateChanged);
 
 	connect(main, &OBSBasic::ReplayBufStarted, this, &OBSBasicControls::ReplayBufferStarted);
 	connect(main, &OBSBasic::ReplayBufStopping, this, &OBSBasicControls::ReplayBufferStopping);
@@ -197,6 +216,9 @@ void OBSBasicControls::RecordingPaused()
 	ui->pauseRecordButton->setToolTip(text);
 
 	ui->saveReplayButton->setEnabled(false);
+
+	recordingPaused = true;
+	UpdateSplitRecordButton();
 }
 
 void OBSBasicControls::RecordingUnpaused()
@@ -208,6 +230,9 @@ void OBSBasicControls::RecordingUnpaused()
 	ui->pauseRecordButton->setToolTip(text);
 
 	ui->saveReplayButton->setEnabled(true);
+
+	recordingPaused = false;
+	UpdateSplitRecordButton();
 }
 
 void OBSBasicControls::RecordingStopping()
@@ -221,6 +246,91 @@ void OBSBasicControls::RecordingStopped()
 	ui->recordButton->setText(QTStr("Basic.Main.StartRecording"));
 
 	ui->pauseRecordButton->setVisible(false);
+
+	recordingPaused = false;
+	splitState = SplitRecordingState::Idle;
+	splitDetail.clear();
+	ui->splitRecordButton->setVisible(false);
+	UpdateSplitRecordButton();
+}
+
+void OBSBasicControls::RecordingSplitAvailable(bool available)
+{
+	ui->splitRecordButton->setVisible(available);
+	UpdateSplitRecordButton();
+}
+
+void OBSBasicControls::RecordingSplitStateChanged(SplitRecordingState state, const QString &detail)
+{
+	splitState = state;
+	splitDetail = detail;
+	UpdateSplitRecordButton();
+
+	/* Show the result for a few seconds, then return to the normal button */
+	if (state == SplitRecordingState::Saved || state == SplitRecordingState::Failed) {
+		unsigned int generation = ++splitStateGeneration;
+		int timeoutMs = state == SplitRecordingState::Saved ? 4000 : 8000;
+		QTimer::singleShot(timeoutMs, this, [this, generation]() {
+			if (generation == splitStateGeneration) {
+				RecordingSplitStateChanged(SplitRecordingState::Idle, QString());
+			}
+		});
+	} else {
+		++splitStateGeneration;
+	}
+}
+
+static QString ShortFolderName(const QString &folder)
+{
+	QString name = QFileInfo(QDir::cleanPath(folder)).fileName();
+	if (name.isEmpty()) {
+		/* Drive root, e.g. "D:/" */
+		name = QDir::toNativeSeparators(folder);
+	}
+	constexpr int maxChars = 18;
+	if (name.size() > maxChars) {
+		name = name.left(maxChars - 1) + QChar(0x2026);
+	}
+	return name;
+}
+
+void OBSBasicControls::UpdateSplitRecordButton()
+{
+	QString text;
+	QString tooltip;
+	bool active = false;
+
+	switch (splitState) {
+	case SplitRecordingState::Idle:
+		text = QTStr("Basic.Main.SplitToFolder.Button");
+		tooltip = QTStr("Basic.Main.SplitToFolder");
+		break;
+	case SplitRecordingState::Pending:
+		text = QTStr("Basic.Main.SplitToFolder.Button.Pending");
+		tooltip = QTStr("Basic.Main.SplitToFolder.Pending");
+		active = true;
+		break;
+	case SplitRecordingState::Saving:
+		text = QTStr("Basic.Main.SplitToFolder.Button.Saving").arg(ShortFolderName(splitDetail));
+		tooltip = QTStr("Basic.Main.SplitToFolder.Saving").arg(QDir::toNativeSeparators(splitDetail));
+		active = true;
+		break;
+	case SplitRecordingState::Saved:
+		text = QTStr("Basic.Main.SplitToFolder.Button.Saved").arg(ShortFolderName(splitDetail));
+		tooltip = QTStr("Basic.StatusBar.RecordingSavedTo").arg(QDir::toNativeSeparators(splitDetail));
+		break;
+	case SplitRecordingState::Failed:
+		text = QTStr("Basic.Main.SplitToFolder.Button.Failed");
+		tooltip = QTStr("Basic.Main.SplitToFolder.Failed").arg(QDir::toNativeSeparators(splitDetail));
+		break;
+	}
+
+	setClasses(ui->splitRecordButton, active ? "state-active" : "");
+	/* "&" would otherwise become a keyboard mnemonic and not be shown */
+	ui->splitRecordButton->setText(QString(text).replace("&", "&&"));
+	ui->splitRecordButton->setToolTip(tooltip);
+	ui->splitRecordButton->setAccessibleName(text);
+	ui->splitRecordButton->setEnabled(!recordingPaused);
 }
 
 void OBSBasicControls::ReplayBufferStarted()

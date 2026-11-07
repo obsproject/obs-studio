@@ -41,6 +41,8 @@ target_sources(
     utility/PreviewProgramSizeObserver.hpp
     utility/QuickTransition.cpp
     utility/QuickTransition.hpp
+    utility/RecordingSegmentMover.cpp
+    utility/RecordingSegmentMover.hpp
     utility/RemoteTextThread.cpp
     utility/RemoteTextThread.hpp
     utility/RemuxEntryPathItemDelegate.cpp
