@@ -257,7 +257,8 @@ void gs_image_file_ex_free(gs_image_file_ex_t *image)
 			bfree(image->internal->animation_frame_data);
 		}
 
-		gs_texture_destroy(image->texture);
+		if (image->texture)
+			gs_texture_destroy(image->texture);
 	}
 
 	bfree(image->texture_data);
