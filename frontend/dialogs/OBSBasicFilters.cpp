@@ -499,7 +499,7 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 			continue;
 		}
 
-		QAction *popupItem = new QAction(QT_UTF8(type.name.c_str()), this);
+		QAction *popupItem = new QAction(EscapeMenuItem(QT_UTF8(type.name.c_str())), this);
 		popupItem->setData(QT_UTF8(type.type.c_str()));
 		connect(popupItem, &QAction::triggered, this, [this, type]() { AddNewFilter(type.type.c_str()); });
 		popup->addAction(popupItem);
