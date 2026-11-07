@@ -888,7 +888,7 @@ int main(int argc, char *argv[])
 		struct sigaction signalHandler{};
 		signalHandler.sa_handler = callback;
 		sigemptyset(&signalHandler.sa_mask);
-		signalHandler.sa_flags = 0;
+		signalHandler.sa_flags = SA_RESTART;
 
 		sigaction(signal, &signalHandler, nullptr);
 	};
