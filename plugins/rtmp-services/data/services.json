@@ -2747,6 +2747,39 @@
             "recommended": {
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "5centsCDN",
+            "common": false,
+            "more_info_link": "https://www.5centscdn.net/",
+            "servers": [
+                {
+                    "name": "South Asia (India)",
+                    "url": "rtmp://fms-01-02.5centscdn.com/cdnlive"
+                },
+                {
+                    "name": "Southeast Asia (Singapore)",
+                    "url": "rtmp://fms-01-01.5centscdn.com/cdnlive"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://fms-03-01.5centscdn.com/cdnlive"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://fms-02-01.5centscdn.com/cdnlive"
+                },
+                {
+                    "name": "Oceania",
+                    "url": "rtmp://fms-04-01.5centscdn.com/cdnlive"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2
+            }
         }
     ]
 }
