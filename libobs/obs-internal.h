@@ -915,6 +915,8 @@ struct obs_source {
 	bool async_update_texture;
 	bool async_unbuffered;
 	bool async_decoupled;
+	struct obs_async_buffer_config async_buffer_config;
+	struct async_frame_buffer async_buffer;
 	struct obs_source_frame *async_preload_frame;
 	DARRAY(struct async_frame) async_cache;
 	DARRAY(struct obs_source_frame *) async_frames;
@@ -1146,6 +1148,7 @@ extern bool update_async_textures(struct obs_source *source, const struct obs_so
 				  gs_texture_t *tex[MAX_AV_PLANES], gs_texrender_t *texrender);
 extern bool set_async_texture_size(struct obs_source *source, const struct obs_source_frame *frame);
 extern void remove_async_frame(obs_source_t *source, struct obs_source_frame *frame);
+extern struct obs_source_frame *get_async_buffered_frame(obs_source_t *source, uint64_t output_timestamp);
 
 extern void set_deinterlace_texture_size(obs_source_t *source);
 extern void deinterlace_process_last_frame(obs_source_t *source, uint64_t sys_time);

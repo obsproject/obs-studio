@@ -88,6 +88,7 @@ target_sources(
   PRIVATE
     util/array-serializer.c
     util/array-serializer.h
+    util/async-frame-buffer.h
     util/base.c
     util/base.h
     util/bitstream.c
@@ -336,6 +337,7 @@ set(
   obs.h
   obs.hpp
   util/array-serializer.h
+  util/async-frame-buffer.h
   util/base.h
   util/bitstream.h
   util/bmem.h

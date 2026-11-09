@@ -141,6 +141,24 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s, uint64_t sys_
 {
 	uint64_t half_interval;
 
+	if (s->async_buffer_config.enabled) {
+		struct obs_source_frame *frame = get_async_buffered_frame(s, sys_time);
+		if (frame) {
+			uint64_t interval = obs->video.video_frame_interval_ns;
+			if (s->async_buffer_config.rebuild_timestamps)
+				interval = async_frame_buffer_interval(&s->async_buffer_config);
+			else if (frame->timestamp > s->deinterlace_frame_ts &&
+				 frame->timestamp - s->deinterlace_frame_ts < MAX_TS_VAR)
+				interval = frame->timestamp - s->deinterlace_frame_ts;
+			s->cur_async_frame = frame;
+			s->deinterlace_half_duration =
+				(uint32_t)(interval / 2 > UINT32_MAX ? UINT32_MAX : interval / 2);
+			s->deinterlace_frame_ts = frame->timestamp;
+			s->deinterlace_offset = sys_time - frame->timestamp;
+		}
+		return;
+	}
+
 	if (s->async_unbuffered && s->deinterlace_offset) {
 		// Want to keep frame if it has not elapsed.
 		const uint64_t frame_end = s->deinterlace_frame_ts + s->deinterlace_offset +

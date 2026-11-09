@@ -43,6 +43,11 @@ using namespace DShow;
 #define LAST_VIDEO_DEV_ID "last_video_device_id"
 #define LAST_RESOLUTION   "last_resolution"
 #define BUFFERING_VAL     "buffering"
+#define BUFFER_TARGET     "buffering_target_frames"
+#define BUFFER_MAX        "buffering_max_frames"
+#define BUFFER_REBUILD_TS "buffering_rebuild_timestamps"
+#define BUFFER_FPS_NUM    "buffering_fps_numerator"
+#define BUFFER_FPS_DEN    "buffering_fps_denominator"
 #define FLIP_IMAGE        "flip_vertically"
 #define AUDIO_OUTPUT_MODE "audio_output_mode"
 #define USE_CUSTOM_AUDIO  "use_custom_audio_device"
@@ -103,6 +108,7 @@ enum class BufferingType : int64_t {
 	Auto,
 	On,
 	Off,
+	FrameCount,
 };
 
 void ffmpeg_log(void *bla, int level, const char *msg, va_list args)
@@ -867,11 +873,28 @@ inline void DShowInput::SetupBuffering(obs_data_t *settings)
 	if (bufType == BufferingType::Auto) {
 		useBuffering = IsDelayedDevice(videoConfig);
 	} else {
-		useBuffering = bufType == BufferingType::On;
+		useBuffering = bufType == BufferingType::On || bufType == BufferingType::FrameCount;
 	}
 
+	obs_async_buffer_config config = {};
+	config.enabled = bufType == BufferingType::FrameCount;
+	config.target_frames =
+		(uint32_t)clamp<int64_t>(obs_data_get_int(settings, BUFFER_TARGET), 1, OBS_ASYNC_BUFFER_MAX_FRAMES);
+	config.max_frames = (uint32_t)clamp<int64_t>(obs_data_get_int(settings, BUFFER_MAX), config.target_frames,
+						     OBS_ASYNC_BUFFER_MAX_FRAMES);
+	config.rebuild_timestamps = obs_data_get_bool(settings, BUFFER_REBUILD_TS);
+	config.fps_numerator = (uint32_t)clamp<int64_t>(obs_data_get_int(settings, BUFFER_FPS_NUM), 1,
+							OBS_ASYNC_BUFFER_MAX_RATE_COMPONENT);
+	config.fps_denominator = (uint32_t)clamp<int64_t>(obs_data_get_int(settings, BUFFER_FPS_DEN), 1,
+							  OBS_ASYNC_BUFFER_MAX_RATE_COMPONENT);
+	obs_source_set_async_buffer_config(source, &config);
 	obs_source_set_async_unbuffered(source, !useBuffering);
 	obs_source_set_async_decoupled(source, IsDecoupled(videoConfig));
+	if (config.enabled) {
+		blog(LOG_INFO, "[DShow Device: '%s'] frame buffer: target=%u, max=%u, rebuild=%s, rate=%u/%u",
+		     obs_source_get_name(source), config.target_frames, config.max_frames,
+		     config.rebuild_timestamps ? "yes" : "no", config.fps_numerator, config.fps_denominator);
+	}
 }
 
 static DStr GetVideoFormatName(VideoFormat format);
@@ -1232,6 +1255,11 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 
 static void GetDShowDefaults(obs_data_t *settings)
 {
+	obs_data_set_default_int(settings, BUFFER_TARGET, 2);
+	obs_data_set_default_int(settings, BUFFER_MAX, 5);
+	obs_data_set_default_bool(settings, BUFFER_REBUILD_TS, false);
+	obs_data_set_default_int(settings, BUFFER_FPS_NUM, 60);
+	obs_data_set_default_int(settings, BUFFER_FPS_DEN, 1);
 	obs_data_set_default_int(settings, FRAME_INTERVAL, FPS_MATCHING);
 	obs_data_set_default_int(settings, RES_TYPE, ResType_Preferred);
 	obs_data_set_default_int(settings, VIDEO_FORMAT, (int)VideoFormat::Any);
@@ -1895,6 +1923,24 @@ static bool VideoFormatChanged(obs_properties_t *props, obs_property_t *p, obs_d
 	return true;
 }
 
+static bool BufferingChanged(obs_properties_t *props, obs_property_t *, obs_data_t *settings)
+{
+	const bool enabled = (BufferingType)obs_data_get_int(settings, BUFFERING_VAL) == BufferingType::FrameCount;
+	const bool rebuild = obs_data_get_bool(settings, BUFFER_REBUILD_TS);
+	const int target =
+		(int)clamp<int64_t>(obs_data_get_int(settings, BUFFER_TARGET), 1, OBS_ASYNC_BUFFER_MAX_FRAMES);
+	if (obs_data_get_int(settings, BUFFER_MAX) < target) {
+		obs_data_set_int(settings, BUFFER_MAX, target);
+	}
+	obs_property_int_set_limits(obs_properties_get(props, BUFFER_MAX), target, OBS_ASYNC_BUFFER_MAX_FRAMES, 1);
+	obs_property_set_visible(obs_properties_get(props, BUFFER_TARGET), enabled);
+	obs_property_set_visible(obs_properties_get(props, BUFFER_MAX), enabled);
+	obs_property_set_visible(obs_properties_get(props, BUFFER_REBUILD_TS), enabled);
+	obs_property_set_visible(obs_properties_get(props, BUFFER_FPS_NUM), enabled && rebuild);
+	obs_property_set_visible(obs_properties_get(props, BUFFER_FPS_DEN), enabled && rebuild);
+	return true;
+}
+
 static bool CustomAudioClicked(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
 	bool useCustomAudio = obs_data_get_bool(settings, USE_CUSTOM_AUDIO);
@@ -1990,8 +2036,27 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_property_list_add_int(p, TEXT_BUFFERING_AUTO, (int64_t)BufferingType::Auto);
 	obs_property_list_add_int(p, TEXT_BUFFERING_ON, (int64_t)BufferingType::On);
 	obs_property_list_add_int(p, TEXT_BUFFERING_OFF, (int64_t)BufferingType::Off);
+	obs_property_list_add_int(p, obs_module_text("Buffering.FrameCount"), (int64_t)BufferingType::FrameCount);
 
 	obs_property_set_long_description(p, obs_module_text("Buffering.ToolTip"));
+	obs_property_set_modified_callback(p, BufferingChanged);
+
+	p = obs_properties_add_int(ppts, BUFFER_TARGET, obs_module_text("Buffering.TargetFrames"), 1,
+				   OBS_ASYNC_BUFFER_MAX_FRAMES, 1);
+	obs_property_set_long_description(p, obs_module_text("Buffering.TargetFrames.ToolTip"));
+	obs_property_set_modified_callback(p, BufferingChanged);
+	p = obs_properties_add_int(ppts, BUFFER_MAX, obs_module_text("Buffering.MaxFrames"), 1,
+				   OBS_ASYNC_BUFFER_MAX_FRAMES, 1);
+	obs_property_set_long_description(p, obs_module_text("Buffering.MaxFrames.ToolTip"));
+	p = obs_properties_add_bool(ppts, BUFFER_REBUILD_TS, obs_module_text("Buffering.RebuildTimestamps"));
+	obs_property_set_long_description(p, obs_module_text("Buffering.RebuildTimestamps.ToolTip"));
+	obs_property_set_modified_callback(p, BufferingChanged);
+	p = obs_properties_add_int(ppts, BUFFER_FPS_NUM, obs_module_text("Buffering.FPSNumerator"), 1,
+				   OBS_ASYNC_BUFFER_MAX_RATE_COMPONENT, 1);
+	obs_property_set_long_description(p, obs_module_text("Buffering.FPS.ToolTip"));
+	p = obs_properties_add_int(ppts, BUFFER_FPS_DEN, obs_module_text("Buffering.FPSDenominator"), 1,
+				   OBS_ASYNC_BUFFER_MAX_RATE_COMPONENT, 1);
+	obs_property_set_long_description(p, obs_module_text("Buffering.FPS.ToolTip"));
 
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 

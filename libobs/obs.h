@@ -18,6 +18,7 @@
 #pragma once
 
 #include "util/c99defs.h"
+#include "util/async-frame-buffer.h"
 #include "util/bmem.h"
 #include "util/profiler.h"
 #include "util/text-lookup.h"
@@ -1577,6 +1578,8 @@ EXPORT void obs_source_get_audio_mix(const obs_source_t *source, struct obs_sour
 
 EXPORT void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered);
 EXPORT bool obs_source_async_unbuffered(const obs_source_t *source);
+
+EXPORT void obs_source_set_async_buffer_config(obs_source_t *source, const struct obs_async_buffer_config *config);
 
 /** Used to decouple audio from video so that audio doesn't attempt to sync up
  * with video.  I.E. Audio acts independently.  Only works when in unbuffered

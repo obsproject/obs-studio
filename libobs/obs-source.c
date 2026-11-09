@@ -3522,6 +3522,7 @@ static inline void free_async_cache(struct obs_source *source)
 	da_resize(source->async_frames, 0);
 	source->cur_async_frame = NULL;
 	source->prev_async_frame = NULL;
+	async_frame_buffer_reset(&source->async_buffer);
 }
 
 #define MAX_UNUSED_FRAME_DURATION 5
@@ -3549,7 +3550,7 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source, co
 
 	pthread_mutex_lock(&source->async_mutex);
 
-	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
+	if (!source->async_buffer_config.enabled && source->async_frames.num >= MAX_ASYNC_FRAMES) {
 		free_async_cache(source);
 		source->last_frame_ts = 0;
 		pthread_mutex_unlock(&source->async_mutex);
@@ -3601,6 +3602,30 @@ static inline struct obs_source_frame *cache_video(struct obs_source *source, co
 	return new_frame;
 }
 
+static void discard_async_buffered_frames(obs_source_t *source, size_t count)
+{
+	if (!count)
+		return;
+	for (size_t index = 0; index < count; index++)
+		remove_async_frame(source, source->async_frames.array[index]);
+	da_erase_range(source->async_frames, 0, count);
+}
+
+static void enqueue_async_buffered_frame(obs_source_t *source, struct obs_source_frame *frame)
+{
+	if (async_frame_buffer_arrived(&source->async_buffer, frame->timestamp,
+				       source->async_buffer_config.rebuild_timestamps)) {
+		discard_async_buffered_frames(source, source->async_frames.num);
+		source->async_buffer.playing = false;
+	}
+	da_push_back(source->async_frames, &frame);
+	const size_t discard = async_frame_buffer_trim(&source->async_buffer_config, source->async_frames.num);
+	if (discard) {
+		discard_async_buffered_frames(source, discard);
+		source->async_buffer.playing = false;
+	}
+}
+
 static void obs_source_output_video_internal(obs_source_t *source, const struct obs_source_frame *frame)
 {
 	if (!obs_source_valid(source, "obs_source_output_video"))
@@ -3626,7 +3651,10 @@ static void obs_source_output_video_internal(obs_source_t *source, const struct 
 			obs_source_frame_destroy(output);
 			output = NULL;
 		} else {
-			da_push_back(source->async_frames, &output);
+			if (source->async_buffer_config.enabled)
+				enqueue_async_buffered_frame(source, output);
+			else
+				da_push_back(source->async_frames, &output);
 			source->async_active = true;
 		}
 	}
@@ -4213,8 +4241,28 @@ static bool ready_async_frame(obs_source_t *source, uint64_t sys_time)
 	return frame != NULL;
 }
 
+struct obs_source_frame *get_async_buffered_frame(obs_source_t *source, uint64_t output_timestamp)
+{
+	uint64_t timestamps[OBS_ASYNC_BUFFER_MAX_FRAMES];
+	for (size_t index = 0; index < source->async_frames.num; index++)
+		timestamps[index] = source->async_frames.array[index]->timestamp;
+	const struct async_frame_buffer_selection selection = async_frame_buffer_select(
+		&source->async_buffer, &source->async_buffer_config, timestamps, source->async_frames.num,
+		output_timestamp, obs->video.video_frame_interval_ns);
+	discard_async_buffered_frames(source, selection.discard);
+	if (!selection.output)
+		return NULL;
+	struct obs_source_frame *frame = source->async_frames.array[0];
+	da_erase(source->async_frames, 0);
+	source->last_frame_ts = frame->timestamp;
+	return frame;
+}
+
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source, uint64_t sys_time)
 {
+	if (source->async_buffer_config.enabled)
+		return get_async_buffered_frame(source, sys_time);
+
 	if (!source->async_frames.num)
 		return NULL;
 
@@ -5668,6 +5716,28 @@ enum obs_monitoring_type obs_source_get_monitoring_type(const obs_source_t *sour
 
 	return obs_source_valid(source, "obs_source_get_monitoring_type") ? source->monitoring_type
 									  : OBS_MONITORING_TYPE_NONE;
+}
+
+void obs_source_set_async_buffer_config(obs_source_t *source, const struct obs_async_buffer_config *config)
+{
+	if (!obs_source_valid(source, "obs_source_set_async_buffer_config") || !config)
+		return;
+	const struct obs_async_buffer_config normalized = async_frame_buffer_normalize(*config);
+	pthread_mutex_lock(&source->async_mutex);
+	const struct obs_async_buffer_config *previous = &source->async_buffer_config;
+	const bool changed = previous->enabled != normalized.enabled ||
+			     previous->target_frames != normalized.target_frames ||
+			     previous->max_frames != normalized.max_frames ||
+			     previous->rebuild_timestamps != normalized.rebuild_timestamps ||
+			     previous->fps_numerator != normalized.fps_numerator ||
+			     previous->fps_denominator != normalized.fps_denominator;
+	if (changed && (previous->enabled || normalized.enabled)) {
+		discard_async_buffered_frames(source, source->async_frames.num);
+		async_frame_buffer_reset(&source->async_buffer);
+		source->last_frame_ts = 0;
+	}
+	source->async_buffer_config = normalized;
+	pthread_mutex_unlock(&source->async_mutex);
 }
 
 void obs_source_set_async_unbuffered(obs_source_t *source, bool unbuffered)
