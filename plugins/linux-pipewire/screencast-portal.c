@@ -35,6 +35,12 @@ enum portal_cursor_mode {
 	PORTAL_CURSOR_MODE_METADATA = 1 << 2,
 };
 
+enum portal_audio_type {
+	PORTAL_AUDIO_TYPE_NONE = 1 << 0,
+	PORTAL_AUDIO_TYPE_SYSTEM = 1 << 1,
+	PORTAL_AUDIO_TYPE_APPLICATION = 1 << 2,
+};
+
 enum obs_portal_capture_type {
 	OBS_PORTAL_CAPTURE_TYPE_MONITOR = PORTAL_CAPTURE_TYPE_MONITOR,
 	OBS_PORTAL_CAPTURE_TYPE_WINDOW = PORTAL_CAPTURE_TYPE_WINDOW,
@@ -55,8 +61,13 @@ struct screencast_portal_capture {
 	uint32_t pipewire_node;
 	bool cursor_visible;
 
+	bool capture_audio;
+	bool has_audio_stream;
+	uint32_t audio_pipewire_node;
+
 	obs_pipewire *obs_pw;
 	obs_pipewire_stream *obs_pw_stream;
+	obs_pipewire_audio_stream *obs_pw_audio_stream;
 };
 
 /* ------------------------------------------------- */
@@ -117,6 +128,22 @@ static uint32_t get_available_cursor_modes(void)
 	return available_cursor_modes;
 }
 
+static uint32_t get_available_audio_types(void)
+{
+	g_autoptr(GVariant) cached_audio_types = NULL;
+	uint32_t available_audio_types = 0;
+
+	ensure_screencast_portal_proxy();
+
+	if (!screencast_proxy)
+		return 0;
+
+	cached_audio_types = g_dbus_proxy_get_cached_property(screencast_proxy, "AvailableAudioTypes");
+	available_audio_types = cached_audio_types ? g_variant_get_uint32(cached_audio_types) : 0;
+
+	return available_audio_types;
+}
+
 static uint32_t get_screencast_version(void)
 {
 	g_autoptr(GVariant) cached_version = NULL;
@@ -131,6 +158,12 @@ static uint32_t get_screencast_version(void)
 	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
 
 	return version;
+}
+
+static bool audio_capture_available(void)
+{
+	return get_screencast_version() >= 7 &&
+	       (get_available_audio_types() & (PORTAL_AUDIO_TYPE_SYSTEM | PORTAL_AUDIO_TYPE_APPLICATION));
 }
 
 /* ------------------------------------------------- */
@@ -195,6 +228,18 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res, voi
 
 	capture->obs_pw_stream =
 		obs_pipewire_connect_stream(capture->obs_pw, capture->source, capture->pipewire_node, &connect_info);
+
+	if (capture->has_audio_stream && capture->capture_audio) {
+		struct obs_pipewire_connect_stream_info audio_connect_info = {
+			.stream_name = "OBS Studio",
+			.stream_properties = pw_properties_new(PW_KEY_MEDIA_TYPE, "Audio", PW_KEY_MEDIA_CATEGORY,
+							       "Capture", PW_KEY_MEDIA_ROLE, "Screen", NULL),
+		};
+
+		capture->obs_pw_audio_stream = obs_pipewire_connect_audio_stream(
+			capture->obs_pw, capture->source, capture->audio_pipewire_node, &audio_connect_info);
+		obs_source_set_audio_active(capture->source, true);
+	}
 }
 
 static void open_pipewire_remote(struct screencast_portal_capture *capture)
@@ -211,15 +256,53 @@ static void open_pipewire_remote(struct screencast_portal_capture *capture)
 
 /* ------------------------------------------------- */
 
+static bool is_audio_stream(GVariant *stream_properties)
+{
+	const char *media_type = NULL;
+
+	return g_variant_lookup(stream_properties, "media_type", "&s", &media_type) &&
+	       g_strcmp0(media_type, "audio") == 0;
+}
+
+/* Finds the audio stream of the source whose video stream has this mapping_id */
+static bool find_audio_stream(GVariant *streams, const char *mapping_id, uint32_t *audio_pipewire_node)
+{
+	GVariant *properties = NULL;
+	GVariantIter iter = {0};
+	uint32_t pipewire_node = 0;
+
+	if (!mapping_id)
+		return false;
+
+	g_variant_iter_init(&iter, streams);
+	while (g_variant_iter_next(&iter, "(u@a{sv})", &pipewire_node, &properties)) {
+		g_autoptr(GVariant) stream_properties = properties;
+		const char *audio_mapping_id = NULL;
+
+		if (!is_audio_stream(stream_properties) ||
+		    !g_variant_lookup(stream_properties, "mapping_id", "&s", &audio_mapping_id) ||
+		    g_strcmp0(audio_mapping_id, mapping_id) != 0)
+			continue;
+
+		*audio_pipewire_node = pipewire_node;
+		return true;
+	}
+
+	return false;
+}
+
 static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 {
 	struct screencast_portal_capture *capture = user_data;
-	g_autoptr(GVariant) stream_properties = NULL;
+	g_autoptr(GVariant) video_properties = NULL;
 	g_autoptr(GVariant) streams = NULL;
 	g_autoptr(GVariant) result = NULL;
+	const char *mapping_id = NULL;
+	GVariant *properties = NULL;
 	GVariantIter iter;
+	uint32_t pipewire_node = 0;
 	uint32_t response;
-	size_t n_streams;
+	size_t n_video_streams = 0;
 
 	g_variant_get(parameters, "(u@a{sv})", &response, &result);
 
@@ -230,27 +313,39 @@ static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 
 	streams = g_variant_lookup_value(result, "streams", G_VARIANT_TYPE_ARRAY);
 
+	// The KDE Desktop portal implementation sometimes sends an invalid
+	// response where more than one stream is attached, and only the
+	// last one is the one we're looking for. This is the only known
+	// buggy implementation, so let's at least try to make it work here.
 	g_variant_iter_init(&iter, streams);
+	while (g_variant_iter_next(&iter, "(u@a{sv})", &pipewire_node, &properties)) {
+		g_autoptr(GVariant) stream_properties = properties;
 
-	n_streams = g_variant_iter_n_children(&iter);
-	if (n_streams != 1) {
+		if (is_audio_stream(stream_properties))
+			continue;
+
+		n_video_streams++;
+		capture->pipewire_node = pipewire_node;
+		g_clear_pointer(&video_properties, g_variant_unref);
+		video_properties = g_steal_pointer(&stream_properties);
+	}
+
+	if (n_video_streams == 0) {
+		blog(LOG_WARNING, "[pipewire] Received no video stream");
+		return;
+	}
+
+	if (n_video_streams != 1) {
 		blog(LOG_WARNING, "[pipewire] Received more than one stream when only one was expected. "
 				  "This is probably a bug in the desktop portal implementation you are "
 				  "using.");
-
-		// The KDE Desktop portal implementation sometimes sends an invalid
-		// response where more than one stream is attached, and only the
-		// last one is the one we're looking for. This is the only known
-		// buggy implementation, so let's at least try to make it work here.
-		for (size_t i = 0; i < n_streams - 1; i++) {
-			g_autoptr(GVariant) throwaway_properties = NULL;
-			uint32_t throwaway_pipewire_node;
-
-			g_variant_iter_loop(&iter, "(u@a{sv})", &throwaway_pipewire_node, &throwaway_properties);
-		}
 	}
 
-	g_variant_iter_loop(&iter, "(u@a{sv})", &capture->pipewire_node, &stream_properties);
+	g_variant_lookup(video_properties, "mapping_id", "&s", &mapping_id);
+	capture->has_audio_stream = find_audio_stream(streams, mapping_id, &capture->audio_pipewire_node);
+
+	if (capture->capture_audio && audio_capture_available() && !capture->has_audio_stream)
+		blog(LOG_INFO, "[pipewire] No audio stream for the selected source");
 
 	if (get_screencast_version() >= 4) {
 		g_autoptr(GVariant) restore_token = NULL;
@@ -346,6 +441,7 @@ static void select_source(struct screencast_portal_capture *capture)
 {
 	GVariantBuilder builder;
 	uint32_t available_cursor_modes;
+	uint32_t audio_types = 0;
 	char *request_token;
 	char *request_path;
 
@@ -368,6 +464,13 @@ static void select_source(struct screencast_portal_capture *capture)
 				      g_variant_new_uint32(PORTAL_CURSOR_MODE_EMBEDDED));
 	else
 		g_variant_builder_add(&builder, "{sv}", "cursor_mode", g_variant_new_uint32(PORTAL_CURSOR_MODE_HIDDEN));
+
+	// The user can turn audio off in the dialog. A monitor only gets system audio.
+	audio_types = get_available_audio_types() & (PORTAL_AUDIO_TYPE_SYSTEM | PORTAL_AUDIO_TYPE_APPLICATION);
+	if ((capture->capture_type & PORTAL_CAPTURE_TYPE_MONITOR) && !(audio_types & PORTAL_AUDIO_TYPE_SYSTEM))
+		audio_types = 0;
+	if (capture->capture_audio && audio_types && audio_capture_available())
+		g_variant_builder_add(&builder, "{sv}", "audio_types", g_variant_new_uint32(audio_types));
 
 	if (get_screencast_version() >= 4) {
 		g_variant_builder_add(&builder, "{sv}", "persist_mode", g_variant_new_uint32(2));
@@ -478,6 +581,8 @@ static bool reload_session_cb(obs_properties_t *properties, obs_property_t *prop
 	struct screencast_portal_capture *capture = data;
 
 	g_clear_pointer(&capture->restore_token, bfree);
+	g_clear_pointer(&capture->obs_pw_audio_stream, obs_pipewire_audio_stream_destroy);
+	obs_source_set_audio_active(capture->source, false);
 	g_clear_pointer(&capture->obs_pw_stream, obs_pipewire_stream_destroy);
 	g_clear_pointer(&capture->obs_pw, obs_pipewire_destroy);
 
@@ -516,8 +621,12 @@ static void *screencast_portal_desktop_capture_create(obs_data_t *settings, obs_
 	capture = bzalloc(sizeof(struct screencast_portal_capture));
 	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_MONITOR;
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
+	capture->capture_audio = obs_data_get_bool(settings, "CaptureAudio");
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
+
+	// Shown in the mixer once there is an audio stream
+	obs_source_set_audio_active(source, false);
 
 	init_screencast_capture(capture);
 
@@ -530,8 +639,12 @@ static void *screencast_portal_window_capture_create(obs_data_t *settings, obs_s
 	capture = bzalloc(sizeof(struct screencast_portal_capture));
 	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_WINDOW;
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
+	capture->capture_audio = obs_data_get_bool(settings, "CaptureAudio");
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
+
+	// Shown in the mixer once there is an audio stream
+	obs_source_set_audio_active(source, false);
 
 	init_screencast_capture(capture);
 
@@ -545,8 +658,12 @@ static void *screencast_portal_capture_create(obs_data_t *settings, obs_source_t
 	capture = bzalloc(sizeof(struct screencast_portal_capture));
 	capture->capture_type = OBS_PORTAL_CAPTURE_TYPE_UNIFIED;
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
+	capture->capture_audio = obs_data_get_bool(settings, "CaptureAudio");
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
+
+	// Shown in the mixer once there is an audio stream
+	obs_source_set_audio_active(source, false);
 
 	init_screencast_capture(capture);
 
@@ -570,6 +687,7 @@ static void screencast_portal_capture_destroy(void *data)
 
 	g_clear_pointer(&capture->restore_token, bfree);
 
+	g_clear_pointer(&capture->obs_pw_audio_stream, obs_pipewire_audio_stream_destroy);
 	g_clear_pointer(&capture->obs_pw_stream, obs_pipewire_stream_destroy);
 	obs_pipewire_destroy(capture->obs_pw);
 	g_cancellable_cancel(capture->cancellable);
@@ -587,6 +705,7 @@ static void screencast_portal_capture_save(void *data, obs_data_t *settings)
 static void screencast_portal_capture_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "ShowCursor", true);
+	obs_data_set_default_bool(settings, "CaptureAudio", false);
 	obs_data_set_default_string(settings, "RestoreToken", NULL);
 }
 
@@ -614,6 +733,12 @@ static obs_properties_t *screencast_portal_capture_get_properties(void *data)
 	obs_properties_add_button2(properties, "Reload", obs_module_text(reload_string_id), reload_session_cb, capture);
 	obs_properties_add_bool(properties, "ShowCursor", obs_module_text("ShowCursor"));
 
+	if (audio_capture_available()) {
+		obs_property_t *capture_audio =
+			obs_properties_add_bool(properties, "CaptureAudio", obs_module_text("CaptureAudio"));
+		obs_property_set_long_description(capture_audio, obs_module_text("CaptureAudio.TT"));
+	}
+
 	return properties;
 }
 
@@ -621,10 +746,23 @@ static void screencast_portal_capture_update(void *data, obs_data_t *settings)
 {
 	struct screencast_portal_capture *capture = data;
 
+	bool capture_audio = obs_data_get_bool(settings, "CaptureAudio");
+
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 
 	if (capture->obs_pw_stream)
 		obs_pipewire_stream_set_cursor_visible(capture->obs_pw_stream, capture->cursor_visible);
+
+	if (capture_audio != capture->capture_audio) {
+		capture->capture_audio = capture_audio;
+		// The share dialog offers audio only when it opens: open it again
+		if (capture_audio) {
+			reload_session_cb(NULL, NULL, capture);
+		} else {
+			g_clear_pointer(&capture->obs_pw_audio_stream, obs_pipewire_audio_stream_destroy);
+			obs_source_set_audio_active(capture->source, false);
+		}
+	}
 }
 
 static void screencast_portal_capture_show(void *data)
@@ -692,7 +830,8 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_desktop_capture_info = {
 		.id = "pipewire-desktop-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CAP_OBSOLETE,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE |
+				OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_desktop_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -714,7 +853,8 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_window_capture_info = {
 		.id = "pipewire-window-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CAP_OBSOLETE,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE |
+				OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = screencast_portal_window_capture_get_name,
 		.create = screencast_portal_window_capture_create,
 		.destroy = screencast_portal_capture_destroy,
@@ -736,7 +876,7 @@ void screencast_portal_load(void)
 	const struct obs_source_info screencast_portal_capture_info = {
 		.id = "pipewire-screen-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_DO_NOT_DUPLICATE,
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE,
 		.get_name = screencast_portal_desktop_capture_get_name,
 		.create = screencast_portal_capture_create,
 		.destroy = screencast_portal_capture_destroy,
