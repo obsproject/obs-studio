@@ -12,7 +12,8 @@
 #include <iomanip>
 #include <algorithm>
 
-#include "OBSVideoFrame.h"
+#include "HDRVideoFrame.hpp"
+#include "DeckLinkVideoBufferAccess.hpp"
 
 #include <caption/caption.h>
 #include <util/bitstream.h>
@@ -56,6 +57,19 @@ HRESULT RenderDelegate<T>::ScheduledFrameCompleted(IDeckLinkVideoFrame *complete
 template<typename T> HRESULT RenderDelegate<T>::ScheduledPlaybackHasStopped()
 {
 	return S_OK;
+}
+
+static BMDColorspace ConvertColorSpace(video_colorspace colorspace)
+{
+	switch (colorspace) {
+	case VIDEO_CS_601:
+		return bmdColorspaceRec601;
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
+		return bmdColorspaceRec2020;
+	default:
+		return bmdColorspaceRec709;
+	}
 }
 
 static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
@@ -118,13 +132,6 @@ DeckLinkDeviceInstance::DeckLinkDeviceInstance(DecklinkBase *decklink_, DeckLink
 	currentPacket.samples_per_sec = 48000;
 	currentPacket.speakers = SPEAKERS_STEREO;
 	currentPacket.format = AUDIO_FORMAT_16BIT;
-}
-
-DeckLinkDeviceInstance::~DeckLinkDeviceInstance()
-{
-	if (convertFrame) {
-		delete convertFrame;
-	}
 }
 
 void DeckLinkDeviceInstance::HandleAudioPacket(IDeckLinkAudioInputPacket *audioPacket, const uint64_t timestamp)
@@ -195,19 +202,25 @@ void DeckLinkDeviceInstance::HandleVideoFrame(IDeckLinkVideoInputFrame *videoFra
 	}
 
 	ComPtr<IDeckLinkVideoFrame> frame;
-	if (videoFrame->GetPixelFormat() != convertFrame->GetPixelFormat()) {
-		ComPtr<IDeckLinkVideoConversion> frameConverter;
-		frameConverter.Set(CreateVideoConversionInstance());
+	if (videoFrame->GetPixelFormat() != convertFormat) {
+		if (!frameConverter) {
+			frameConverter.Set(CreateVideoConversionInstance());
+		}
 
-		frameConverter->ConvertFrame(videoFrame, convertFrame);
-
-		frame = convertFrame;
+		const HRESULT result = frameConverter->ConvertNewFrame(
+			videoFrame, convertFormat, ConvertColorSpace(activeColorSpace), nullptr, &frame);
+		if (FAILED(result)) {
+			LOG(LOG_WARNING, "Failed to convert video frame");
+			return;
+		}
 	} else {
 		frame = videoFrame;
 	}
 
-	void *bytes;
-	if (frame->GetBytes(&bytes) != S_OK) {
+	DeckLinkVideoBufferAccess access(frame, bmdBufferAccessRead);
+	void *bytes = access.GetBytes();
+
+	if (!bytes) {
 		LOG(LOG_WARNING, "Failed to get video frame data");
 		return;
 	}
@@ -386,9 +399,6 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	video_format_get_parameters_for_format(activeColorSpace, colorRange, format, currentFrame.color_matrix,
 					       currentFrame.color_range_min, currentFrame.color_range_max);
 
-	delete convertFrame;
-
-	BMDPixelFormat convertFormat;
 	switch (pixelFormat) {
 	case bmdFormat10BitYUV:
 	case bmdFormat8BitBGRA:
@@ -399,8 +409,6 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 		convertFormat = bmdFormat8BitYUV;
 		break;
 	}
-
-	convertFrame = new OBSVideoFrame(mode_->GetWidth(), mode_->GetHeight(), convertFormat);
 
 #ifdef LOG_SETUP_VIDEO_FORMAT
 	LOG(LOG_INFO, "Setup video format: %s, %s, %s", pixelFormat == bmdFormat8BitYUV ? "YUV" : "RGB",
@@ -670,8 +678,13 @@ void DeckLinkDeviceInstance::UpdateVideoFrame(video_data *frame)
 
 void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
 {
-	void *bytes;
-	if (SUCCEEDED(frame->GetBytes(&bytes))) {
+	{
+		DeckLinkVideoBufferAccess access(frame, bmdBufferAccessWrite);
+		void *bytes = access.GetBytes();
+		if (!bytes) {
+			return;
+		}
+
 		uint8_t *blob = frameQueueObsToDecklink.pop();
 		if (blob) {
 			if (activeBlob) {
@@ -688,10 +701,10 @@ void DeckLinkDeviceInstance::ScheduleVideoFrame(IDeckLinkVideoFrame *frame)
 		} else {
 			memset(bytes, 0, frameSize);
 		}
-
-		output->ScheduleVideoFrame(frame, totalFramesScheduled * frameDuration, frameDuration, frameTimescale);
-		++totalFramesScheduled;
 	}
+
+	output->ScheduleVideoFrame(frame, totalFramesScheduled * frameDuration, frameDuration, frameTimescale);
+	++totalFramesScheduled;
 }
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)

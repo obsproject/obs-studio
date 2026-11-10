@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2021 Blackmagic Design
+** Copyright (c) 2026 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -25,6 +25,10 @@
 ** -LICENSE-END-
 */
 
+/*
+ * -- AUTOMATICALLY GENERATED - DO NOT EDIT ---
+ */
+
 #ifndef BMD_DECKLINKAPICONFIGURATION_H
 #define BMD_DECKLINKAPICONFIGURATION_H
 
@@ -46,7 +50,7 @@
 
 // Interface ID Declarations
 
-BMD_CONST REFIID IID_IDeckLinkConfiguration                       = /* 912F634B-2D4E-40A4-8AAB-8D80B73F1289 */ { 0x91,0x2F,0x63,0x4B,0x2D,0x4E,0x40,0xA4,0x8A,0xAB,0x8D,0x80,0xB7,0x3F,0x12,0x89 };
+BMD_CONST REFIID IID_IDeckLinkConfiguration                       = /* 5A68FFD4-1C12-4EDE-A6D2-45451D385FC1 */ { 0x5A,0x68,0xFF,0xD4,0x1C,0x12,0x4E,0xDE,0xA6,0xD2,0x45,0x45,0x1D,0x38,0x5F,0xC1 };
 BMD_CONST REFIID IID_IDeckLinkEncoderConfiguration                = /* 138050E5-C60A-4552-BF3F-0F358049327E */ { 0x13,0x80,0x50,0xE5,0xC6,0x0A,0x45,0x52,0xBF,0x3F,0x0F,0x35,0x80,0x49,0x32,0x7E };
 
 /* Enum BMDDeckLinkConfigurationID - DeckLink Configuration ID */
@@ -63,12 +67,15 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigHDMI3DPackingFormat                         = /* '3dpf' */ 0x33647066,
     bmdDeckLinkConfigBypass                                      = /* 'byps' */ 0x62797073,
     bmdDeckLinkConfigClockTimingAdjustment                       = /* 'ctad' */ 0x63746164,
+    bmdDeckLinkConfigAudioMeterType                              = /* 'aumt' */ 0x61756D74,
 
     /* Audio Input/Output Flags */
 
     bmdDeckLinkConfigAnalogAudioConsumerLevels                   = /* 'aacl' */ 0x6161636C,
     bmdDeckLinkConfigSwapHDMICh3AndCh4OnInput                    = /* 'hi34' */ 0x68693334,
     bmdDeckLinkConfigSwapHDMICh3AndCh4OnOutput                   = /* 'ho34' */ 0x686F3334,
+    bmdDeckLinkConfigAnalogAudioOutputChannelsMutedByHeadphone   = /* 'amhp' */ 0x616D6870,
+    bmdDeckLinkConfigAnalogAudioOutputChannelsMutedBySpeaker     = /* 'amsp' */ 0x616D7370,
 
     /* Video Output Flags */
 
@@ -82,13 +89,19 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigRec2020Output                               = /* 'rec2' */ 0x72656332,	// Ensure output is Rec.2020 colorspace
     bmdDeckLinkConfigQuadLinkSDIVideoOutputSquareDivisionSplit   = /* 'SDQS' */ 0x53445153,
     bmdDeckLinkConfigOutput1080pAsPsF                            = /* 'pfpr' */ 0x70667072,
+    bmdDeckLinkConfigOutputValidateEDIDForDolbyVision            = /* 'pred' */ 0x70726564,
+    bmdDeckLinkConfigExtendedDesktop                             = /* 'exdt' */ 0x65786474,
+    bmdDeckLinkConfigEthernetVideoOutputIP10                     = /* 'IP10' */ 0x49503130,
 
     /* Video Output Integers */
 
     bmdDeckLinkConfigVideoOutputConnection                       = /* 'vocn' */ 0x766F636E,
     bmdDeckLinkConfigVideoOutputConversionMode                   = /* 'vocm' */ 0x766F636D,
+    bmdDeckLinkConfigVideoOutputConversionColorspaceDestination  = /* 'vccd' */ 0x76636364,	// Parameter is of type BMDColorspace
+    bmdDeckLinkConfigVideoOutputConversionColorspaceSource       = /* 'vccs' */ 0x76636373,	// Parameter is of type BMDColorspace
     bmdDeckLinkConfigAnalogVideoOutputFlags                      = /* 'avof' */ 0x61766F66,
     bmdDeckLinkConfigReferenceInputTimingOffset                  = /* 'glot' */ 0x676C6F74,
+    bmdDeckLinkConfigReferenceOutputMode                         = /* 'glOm' */ 0x676C4F6D,
     bmdDeckLinkConfigVideoOutputIdleOperation                    = /* 'voio' */ 0x766F696F,
     bmdDeckLinkConfigDefaultVideoOutputMode                      = /* 'dvom' */ 0x64766F6D,
     bmdDeckLinkConfigDefaultVideoOutputModeFlags                 = /* 'dvof' */ 0x64766F66,
@@ -105,6 +118,9 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigVideoOutputCompositeChromaGain              = /* 'oicg' */ 0x6F696367,
     bmdDeckLinkConfigVideoOutputSVideoLumaGain                   = /* 'oslg' */ 0x6F736C67,
     bmdDeckLinkConfigVideoOutputSVideoChromaGain                 = /* 'oscg' */ 0x6F736367,
+    bmdDeckLinkConfigDolbyVisionCMVersion                        = /* 'dvvr' */ 0x64767672,
+    bmdDeckLinkConfigDolbyVisionMasterMinimumNits                = /* 'mnnt' */ 0x6D6E6E74,
+    bmdDeckLinkConfigDolbyVisionMasterMaximumNits                = /* 'mxnt' */ 0x6D786E74,
 
     /* Video Input Flags */
 
@@ -124,6 +140,10 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigVANCSourceLine3Mapping                      = /* 'vsl3' */ 0x76736C33,
     bmdDeckLinkConfigCapturePassThroughMode                      = /* 'cptm' */ 0x6370746D,
     bmdDeckLinkConfigCaptureGroup                                = /* 'cpgr' */ 0x63706772,
+    bmdDeckLinkConfigHANCInputFilter1                            = /* 'hif1' */ 0x68696631,
+    bmdDeckLinkConfigHANCInputFilter2                            = /* 'hif2' */ 0x68696632,
+    bmdDeckLinkConfigHANCInputFilter3                            = /* 'hif3' */ 0x68696633,
+    bmdDeckLinkConfigHANCInputFilter4                            = /* 'hif4' */ 0x68696634,
 
     /* Video Input Floats */
 
@@ -155,10 +175,13 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigAnalogAudioInputScaleChannel4               = /* 'ais4' */ 0x61697334,
     bmdDeckLinkConfigDigitalAudioInputScale                      = /* 'dais' */ 0x64616973,
     bmdDeckLinkConfigMicrophoneInputGain                         = /* 'micg' */ 0x6D696367,
+    bmdDeckLinkConfigAudioOutputXLRDelayFrames                   = /* 'xdfr' */ 0x78646672,
 
     /* Audio Output Integers */
 
     bmdDeckLinkConfigAudioOutputAESAnalogSwitch                  = /* 'aoaa' */ 0x616F6161,
+    bmdDeckLinkConfigAudioOutputXLRDelayTime                     = /* 'xdms' */ 0x78646D73,
+    bmdDeckLinkConfigAudioOutputXLRDelayType                     = /* 'xdty' */ 0x78647479,
 
     /* Audio Output Floats */
 
@@ -168,6 +191,40 @@ enum _BMDDeckLinkConfigurationID {
     bmdDeckLinkConfigAnalogAudioOutputScaleChannel4              = /* 'aos4' */ 0x616F7334,
     bmdDeckLinkConfigDigitalAudioOutputScale                     = /* 'daos' */ 0x64616F73,
     bmdDeckLinkConfigHeadphoneVolume                             = /* 'hvol' */ 0x68766F6C,
+    bmdDeckLinkConfigSpeakerVolume                               = /* 'svol' */ 0x73766F6C,
+
+    /* Ethernet Flags */
+
+    bmdDeckLinkConfigEthernetPTPFollowerOnly                     = /* 'PTPf' */ 0x50545066,
+    bmdDeckLinkConfigEthernetPTPUseUDPEncapsulation              = /* 'PTPU' */ 0x50545055,
+    bmdDeckLinkConfigEthernetUseManualNMOSRegistry               = /* 'nmrp' */ 0x6E6D7270,
+
+    /* Ethernet Integers */
+
+    bmdDeckLinkConfigEthernetPTPPriority1                        = /* 'PTP1' */ 0x50545031,
+    bmdDeckLinkConfigEthernetPTPPriority2                        = /* 'PTP2' */ 0x50545032,
+    bmdDeckLinkConfigEthernetPTPDomain                           = /* 'PTPD' */ 0x50545044,
+    bmdDeckLinkConfigEthernetPTPLogAnnounceInterval              = /* 'PTPA' */ 0x50545041,
+
+    /* Ethernet Strings */
+
+    bmdDeckLinkConfigEthernetAudioOutputChannelOrder             = /* 'caco' */ 0x6361636F,
+    bmdDeckLinkConfigEthernetNMOSRegistryAddress                 = /* 'nmre' */ 0x6E6D7265,
+
+    /* Parameterized Ethernet Flags */
+
+    bmdDeckLinkConfigParamEthernetUseDHCP                        = /* 'DHCP' */ 0x44484350,
+
+    /* Parameterized Ethernet Strings */
+
+    bmdDeckLinkConfigParamEthernetStaticLocalIPAddress           = /* 'nsip' */ 0x6E736970,
+    bmdDeckLinkConfigParamEthernetStaticSubnetMask               = /* 'nssm' */ 0x6E73736D,
+    bmdDeckLinkConfigParamEthernetStaticGatewayIPAddress         = /* 'nsgw' */ 0x6E736777,
+    bmdDeckLinkConfigParamEthernetStaticPrimaryDNS               = /* 'nspd' */ 0x6E737064,
+    bmdDeckLinkConfigParamEthernetStaticSecondaryDNS             = /* 'nssd' */ 0x6E737364,
+    bmdDeckLinkConfigParamEthernetVideoOutputAddress             = /* 'noav' */ 0x6E6F6176,
+    bmdDeckLinkConfigParamEthernetAudioOutputAddress             = /* 'noaa' */ 0x6E6F6161,
+    bmdDeckLinkConfigParamEthernetAncillaryOutputAddress         = /* 'noaA' */ 0x6E6F6141,
 
     /* Device Information Strings */
 
@@ -180,7 +237,11 @@ enum _BMDDeckLinkConfigurationID {
 
     /* Deck Control Integers */
 
-    bmdDeckLinkConfigDeckControlConnection                       = /* 'dcco' */ 0x6463636F
+    bmdDeckLinkConfigDeckControlConnection                       = /* 'dcco' */ 0x6463636F,
+
+    /* UI/UX Integers */
+
+    bmdDeckLinkConfigDisplayLanguage                             = /* 'lang' */ 0x6C616E67
 };
 
 /* Enum BMDDeckLinkEncoderConfigurationID - DeckLink Encoder Configuration ID */
@@ -231,6 +292,14 @@ public:
     virtual HRESULT GetFloat (/* in */ BMDDeckLinkConfigurationID cfgID, /* out */ double* value) = 0;
     virtual HRESULT SetString (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ const char* value) = 0;
     virtual HRESULT GetString (/* in */ BMDDeckLinkConfigurationID cfgID, /* out */ const char** value) = 0;
+    virtual HRESULT SetFlagWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* in */ bool value) = 0;
+    virtual HRESULT GetFlagWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* out */ bool* value) = 0;
+    virtual HRESULT SetIntWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* in */ int64_t value) = 0;
+    virtual HRESULT GetIntWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* out */ int64_t* value) = 0;
+    virtual HRESULT SetFloatWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* in */ double value) = 0;
+    virtual HRESULT GetFloatWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* out */ double* value) = 0;
+    virtual HRESULT SetStringWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* in */ const char* value) = 0;
+    virtual HRESULT GetStringWithParam (/* in */ BMDDeckLinkConfigurationID cfgID, /* in */ uint64_t param, /* out */ const char** value) = 0;
     virtual HRESULT WriteConfigurationToPreferences (void) = 0;
 
 protected:
@@ -262,6 +331,8 @@ extern "C" {
 
 
 }
+
+
 
 #endif /* defined(__cplusplus) */
 #endif /* defined(BMD_DECKLINKAPICONFIGURATION_H) */

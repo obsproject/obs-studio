@@ -1,5 +1,5 @@
 /* -LICENSE-START-
-** Copyright (c) 2021 Blackmagic Design
+** Copyright (c) 2026 Blackmagic Design
 **
 ** Permission is hereby granted, free of charge, to any person or organization
 ** obtaining a copy of the software and accompanying documentation covered by
@@ -25,6 +25,10 @@
 ** -LICENSE-END-
 */
 
+/*
+ * -- AUTOMATICALLY GENERATED - DO NOT EDIT ---
+ */
+
 #ifndef BMD_DECKLINKAPITYPES_H
 #define BMD_DECKLINKAPITYPES_H
 
@@ -47,6 +51,7 @@ typedef int64_t BMDTimeValue;
 typedef int64_t BMDTimeScale;
 typedef uint32_t BMDTimecodeBCD;
 typedef uint32_t BMDTimecodeUserBits;
+typedef int64_t BMDIPFlowID;
 
 // Interface ID Declarations
 
@@ -74,7 +79,10 @@ enum _BMDVideoConnection {
     bmdVideoConnectionOpticalSDI                                 = 1 << 2,
     bmdVideoConnectionComponent                                  = 1 << 3,
     bmdVideoConnectionComposite                                  = 1 << 4,
-    bmdVideoConnectionSVideo                                     = 1 << 5
+    bmdVideoConnectionSVideo                                     = 1 << 5,
+    bmdVideoConnectionEthernet                                   = 1 << 6,
+    bmdVideoConnectionOpticalEthernet                            = 1 << 7,
+    bmdVideoConnectionInternal                                   = 1 << 8
 };
 
 /* Enum BMDAudioConnection - Audio connection types */
@@ -125,6 +133,8 @@ extern "C" {
 
 
 }
+
+
 
 #endif /* defined(__cplusplus) */
 #endif /* defined(BMD_DECKLINKAPITYPES_H) */
