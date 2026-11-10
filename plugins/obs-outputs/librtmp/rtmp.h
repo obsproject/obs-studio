@@ -60,8 +60,10 @@
 #endif
 
 #include <mbedtls/ssl.h>
+#if MBEDTLS_VERSION_MAJOR < 4
 #include <mbedtls/ctr_drbg.h>
 #include <mbedtls/entropy.h>
+#endif
 
 #define my_dhm_P \
     "E4004C1F94182000103D883A448B3F80" \
@@ -79,8 +81,10 @@
 
 typedef struct tls_ctx
 {
+#if MBEDTLS_VERSION_MAJOR < 4
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
+#endif
     mbedtls_ssl_config conf;
     mbedtls_ssl_session ssn;
     mbedtls_x509_crt *cacert;
@@ -89,11 +93,17 @@ typedef struct tls_ctx
 
 typedef tls_ctx *TLS_CTX;
 
+#if MBEDTLS_VERSION_MAJOR < 4
+#define MBEDTLS_INIT_ENTROPY(ctx) mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg)
+#else
+#define MBEDTLS_INIT_ENTROPY(ctx) {}
+#endif
+
 #define TLS_client(ctx,s)	\
   s = malloc(sizeof(mbedtls_ssl_context));\
   mbedtls_ssl_init(s);\
   mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);\
-  mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg);\
+  MBEDTLS_INIT_ENTROPY(ctx); \
   mbedtls_ssl_conf_authmode(&ctx->conf, MBEDTLS_SSL_VERIFY_REQUIRED);\
   mbedtls_ssl_setup(s, &ctx->conf)
 

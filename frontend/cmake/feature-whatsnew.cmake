@@ -6,7 +6,7 @@ if(ENABLE_WHATSNEW AND TARGET OBS::browser-panels)
   if(OS_MACOS)
     include(cmake/feature-macos-update.cmake)
   elseif(OS_LINUX)
-    find_package(MbedTLS 3...<4 REQUIRED)
+    find_package(MbedTLS REQUIRED)
     find_package(nlohmann_json 3.11 REQUIRED)
 
     if(NOT TARGET OBS::blake2)
