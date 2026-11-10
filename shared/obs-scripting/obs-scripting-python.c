@@ -1218,6 +1218,7 @@ static void add_hook_functions(PyObject *module)
 		DEF_FUNC("obs_hotkey_unregister", hotkey_unregister),
 		DEF_FUNC("obs_hotkey_register_frontend", hotkey_register_frontend),
 		DEF_FUNC("obs_properties_add_button", properties_add_button),
+		DEF_FUNC("obs_properties_add_button2", properties_add_button),
 		DEF_FUNC("obs_property_set_modified_callback", property_set_modified_callback),
 		DEF_FUNC("remove_current_callback", remove_current_callback),
 
