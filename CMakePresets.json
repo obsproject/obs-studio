@@ -56,14 +56,21 @@
                   "baseUrl": "https://cdn-fastly.obsproject.com/downloads",
                   "label": "Chromium Embedded Framework",
                   "hashes": {
-                      "macos-x86_64": "980783bba509e7e79a671c29040bbe29d832a934c1368b500a17a22e076eb0f4",
-                      "macos-arm64": "0343233fc462384c2f1f58a4222028bc6171f05948a822241f89df2faa7cee8d",
-                      "ubuntu-x86_64": "8ffc64d06ea74da613eeda7f2aa5d4e98661af6fa3ed8c68724c9a6e4e89ea8e",
-                      "ubuntu-aarch64": "b05cf13b0f482e3b0149ac21268268c536d091b5e6608c742019ebd6c8e8a1e3",
-                      "windows-x64": "54cd191a3f56bb1f05be22b95e1fa8041061b38bd5fe94e0776fb34dd599f341",
-                      "windows-arm64": "3f5b604eab71baab20c08f054d68c6212d06237e172fb8d38271c2384c2eb3a6"
+                      "macos-x86_64": "c3b4ac0dea0afdb46d637fdfbc3c8d5973d8a674678f0b57177f712be19e38d0",
+                      "macos-arm64": "f1693ef12b28df06bbd9ebf215c9fe2d84e3066c220b905e71dc033bd5b6fbfc",
+                      "ubuntu-x86_64": "3f5c74f8c4c4b24dbbe9ff4cff7ba764aa4d0a72127b96976342e4360e435db3",
+                      "ubuntu-aarch64": "a6f04ea5a1a0555d683f2dafa663e0704a0ea954d703dee4cab5ff67ba074ad0",
+                      "windows-x64": "3f120367db3f2314041fef20e67904e5c2c2adf550addbd0e1d2cbbac20a8b9a",
+                      "windows-arm64": "e8b9e07a0d04244ea5c2f4843f5a0ed2c1d6198aba35a84b947ca7b2804cf3dd"
                   },
-                  "revision": {}
+                  "revision": {
+                      "macos-x86_64": 2,
+                      "macos-arm64": 2,
+                      "ubuntu-x86_64": 2,
+                      "ubuntu-aarch64": 2,
+                      "windows-x64": 2,
+                      "windows-arm64": 2
+                  }
               }
             },
             "tools": {

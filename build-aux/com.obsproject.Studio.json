@@ -121,8 +121,8 @@
             "sources": [
                 {
                     "type": "archive",
-                    "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_7871_linux_x86_64.tar.xz",
-                    "sha256": "8ffc64d06ea74da613eeda7f2aa5d4e98661af6fa3ed8c68724c9a6e4e89ea8e"
+                    "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_7871_linux_x86_64_v2.tar.xz",
+                    "sha256": "3f5c74f8c4c4b24dbbe9ff4cff7ba764aa4d0a72127b96976342e4360e435db3"
                 }
             ]
         },
