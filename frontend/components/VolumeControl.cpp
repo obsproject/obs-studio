@@ -648,8 +648,7 @@ void VolumeControl::updateCategoryLabel()
 	categoryLabel->setText(labelText);
 	categoryLabel->setAlignment(Qt::AlignCenter);
 
-	style()->polish(categoryLabel);
-	style()->polish(volumeMeter);
+	idian::Utils::polishNow(this);
 
 	bool forceUpdate = true;
 	volumeMeter->updateBackgroundCache(forceUpdate);
@@ -806,8 +805,8 @@ void VolumeControl::processMixerState()
 
 	idian::Utils::toggleClass(muteButton, "mute-warning", showWarningIcon);
 
-	style()->polish(muteButton);
-	style()->polish(monitorButton);
+	idian::Utils::polishNow(muteButton);
+	idian::Utils::polishNow(monitorButton);
 
 	updateCategoryLabel();
 }
