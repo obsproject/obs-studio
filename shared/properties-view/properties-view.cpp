@@ -29,6 +29,7 @@
 #include "DoubleSpinBox.hpp"
 #include "SpinBox.hpp"
 #include "double-slider.hpp"
+#include "int-slider.hpp"
 #include "spinbox-ignorewheel.hpp"
 #include "moc_properties-view.cpp"
 #include "properties-view.moc.hpp"
@@ -457,17 +458,14 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout, QLabel
 	children.emplace_back(info);
 
 	if (type == OBS_NUMBER_SLIDER) {
-		QSlider *slider = new SliderIgnoreScroll();
-		slider->setMinimum(minVal);
-		slider->setMaximum(maxVal);
-		slider->setPageStep(stepVal);
-		slider->setValue(val);
+		IntSlider *slider = new IntSlider();
+		slider->setIntConstraints(minVal, maxVal, stepVal, val);
 		slider->setOrientation(Qt::Horizontal);
 		slider->setEnabled(obs_property_enabled(prop));
 		subLayout->addWidget(slider);
 
-		connect(slider, &QSlider::valueChanged, spin, &QSpinBox::setValue);
-		connect(spin, &QSpinBox::valueChanged, slider, &QSlider::setValue);
+		connect(slider, &IntSlider::intValChanged, spin, &QSpinBox::setValue);
+		connect(spin, &QSpinBox::valueChanged, slider, &IntSlider::setIntVal);
 	}
 
 	connect(spin, &QSpinBox::valueChanged, info, &WidgetInfo::ControlChanged);
