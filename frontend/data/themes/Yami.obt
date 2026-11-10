@@ -374,6 +374,34 @@
     color: var(--green3);
 }
 
+.border-none {
+    border: none;
+}
+
+.border-primary {
+    border-color: var(--blue4);
+}
+
+.border-secondary {
+    border-color: var(--teal4);
+}
+
+.border-info {
+    border-color: var(--grey7);
+}
+
+.border-warning {
+    border-color: var(--yellow4);
+}
+
+.border-danger {
+    border-color: var(--red4);
+}
+
+.border-success {
+    border-color: var(--green4);
+}
+
 .bg-secondary.text-secondary {
     color: var(--teal1);
 }
@@ -392,6 +420,54 @@
 
 .bg-success.text-success {
     color: var(--green1);
+}
+
+QAbstractButton.bg-primary:hover {
+    background-color: var(--blue5);
+}
+
+QAbstractButton.bg-secondary:hover {
+    background-color: var(--teal5);
+}
+
+QAbstractButton.bg-info:hover {
+    background-color: var(--grey7);
+}
+
+QAbstractButton.bg-warning:hover {
+    background-color: var(--yellow5);
+}
+
+QAbstractButton.bg-danger:hover {
+    background-color: var(--red5);
+}
+
+QAbstractButton.bg-success:hover {
+    background-color: var(--green5);
+}
+
+QAbstractButton.border-primary:hover {
+    border-color: var(--blue2);
+}
+
+QAbstractButton.border-secondary:hover {
+    border-color: var(--teal2);
+}
+
+QAbstractButton.border-info:hover {
+    border-color: var(--grey6);
+}
+
+QAbstractButton.border-warning:hover {
+    border-color: var(--yellow2);
+}
+
+QAbstractButton.border-danger:hover {
+    border-color: var(--red2);
+}
+
+QAbstractButton.border-success:hover {
+    border-color: var(--green2);
 }
 
 .frame-notice {
@@ -981,6 +1057,15 @@ StatusBarWidget > QFrame {
     border: 0px solid var(--border_color);
     border-left-width: 1px;
     padding: 0px var(--padding_xlarge) var(--padding_small);
+}
+
+StatusBarWidget #healthFrame {
+    border-left-width: 0px;
+    border-right-width: 1px;
+}
+
+StatusBarWidget QPushButton {
+    padding: 0px var(--padding_xlarge);
 }
 
 /* Group Box */
@@ -2884,4 +2969,19 @@ AlignmentSelector::indicator:disabled {
 
 AlignmentSelector::indicator:checked:disabled {
     background: var(--grey3);
+}
+
+HealthCheckWidget idian--RowList {
+    border-radius: 0;
+    border-bottom-left-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
+}
+
+HealthCheckWidget idian--RowList idian--Row {
+    padding: var(--action_row_padding) var(--action_row_padding_x);
+}
+
+HealthCheckStatusLabel {
+    border-radius: var(--border_radius);
+    padding: var(--padding_large) var(--padding_xlarge);
 }
