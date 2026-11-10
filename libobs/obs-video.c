@@ -1194,6 +1194,8 @@ void *obs_graphics_thread(void *param)
 #endif
 		;
 
+	execute_graphics_tasks();
+
 #ifdef _WIN32
 	uninit_winrt_state(&winrt);
 #endif
