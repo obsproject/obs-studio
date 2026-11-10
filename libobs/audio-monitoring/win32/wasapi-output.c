@@ -77,6 +77,7 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 	} else if (monitor->prev_video_ts == last_frame_ts) {
 		monitor->time_since_prev += util_mul_div64(*frames, 1000000000ULL, monitor->sample_rate);
 	} else {
+		monitor->prev_video_ts = last_frame_ts;
 		monitor->time_since_prev = 0;
 	}
 
