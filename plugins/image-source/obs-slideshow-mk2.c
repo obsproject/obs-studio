@@ -34,6 +34,7 @@ static const char *S_PLAYBACK_MODE           = "playback_mode";
 static const char *S_PLAYBACK_ONCE           = "once";
 static const char *S_PLAYBACK_LOOP           = "loop";
 static const char *S_PLAYBACK_RANDOM         = "random";
+static const char *S_PLAYBACK_SHUFFLE        = "shuffled";
 
 static const char *TR_CUT                    = "cut";
 static const char *TR_FADE                   = "fade";
@@ -58,6 +59,7 @@ static const char *TR_SLIDE                  = "slide";
 #define T_PLAYBACK_ONCE                      T_("PlaybackMode.Once")
 #define T_PLAYBACK_LOOP                      T_("PlaybackMode.Loop")
 #define T_PLAYBACK_RANDOM                    T_("PlaybackMode.Random")
+#define T_PLAYBACK_SHUFFLE                   T_("PlaybackMode.Shuffled")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT                             T_TR_("Cut")
@@ -105,6 +107,7 @@ struct slideshow_data {
 	const char *tr_name;
 	bool manual;
 	bool randomize;
+	bool shuffle;
 	bool loop;
 	bool restart_on_activate;
 	bool pause_on_deactivate;
@@ -241,7 +244,7 @@ static void do_transition(void *data, bool to_null)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data *ssd = &ss->data;
-	bool valid = !!ss->data.files.num;
+	bool valid = ss->data.files.num != 0;
 
 	if (valid && ssd->use_cut) {
 		obs_transition_set(ss->transition, ssd->slides.cur.source);
@@ -369,6 +372,35 @@ static struct source_data get_new_source(struct slideshow *ss, struct active_sli
 	return sd;
 }
 
+/* fisher-yates shuffle on image file paths and sources if needed */
+static void shuffle_files(struct slideshow_data *ssd)
+{
+	/* Only shuffle existing sources if every slide fits into next, prev, and current twice
+	 * Should speed up huge file lists, where shuffling sources are unlikley to matter */
+	const bool shuffle_buffers = ssd->files.num <= (SLIDE_BUFFER_COUNT * 4 + 1);
+
+	for (size_t i = ssd->files.num - 1; i != 0; i--) {
+		const size_t r = rand() % (i + 1);
+
+		char *const i_path = ssd->files.array[i].path;
+		char *const r_path = ssd->files.array[r].path;
+
+		/* swap file paths */
+		ssd->files.array[i].path = r_path;
+		ssd->files.array[r].path = i_path;
+
+		if (shuffle_buffers) {
+			struct source_data *rsd = find_existing_source(&ssd->slides, r);
+			struct source_data *isd = find_existing_source(&ssd->slides, i);
+
+			if (rsd && isd) {
+				rsd->slide_idx = i;
+				isd->slide_idx = r;
+			}
+		}
+	}
+}
+
 static void restart_slides(struct slideshow *ss)
 {
 	struct slideshow_data *ssd = &ss->data;
@@ -376,6 +408,8 @@ static void restart_slides(struct slideshow *ss)
 
 	if (ssd->randomize && ssd->files.num > 0) {
 		start_idx = (size_t)rand() % ssd->files.num;
+	} else if (ssd->shuffle && ssd->files.num > 2) {
+		shuffle_files(ssd);
 	}
 
 	struct active_slides new_slides = {0};
@@ -460,6 +494,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	const char *playback_mode = obs_data_get_string(settings, S_PLAYBACK_MODE);
 	new_data.randomize = strcmp(playback_mode, S_PLAYBACK_RANDOM) == 0;
 	new_data.loop = strcmp(playback_mode, S_PLAYBACK_LOOP) == 0;
+	new_data.shuffle = strcmp(playback_mode, S_PLAYBACK_SHUFFLE) == 0;
 
 	new_data.hide = obs_data_get_bool(settings, S_HIDE);
 
@@ -647,10 +682,14 @@ static void ss_next_slide(void *data)
 	struct source_data *last = deque_data(&slides->next, (SLIDE_BUFFER_COUNT - 1) * sizeof(sd));
 
 	size_t slide_idx = last->slide_idx;
-	if (ss->data.randomize)
+	if (ssd->randomize) {
 		slide_idx = random_file(&ss->data, slide_idx);
-	else if (++slide_idx >= ssd->files.num)
+	} else if (++slide_idx >= ssd->files.num) {
 		slide_idx = 0;
+		if (ssd->shuffle) {
+			shuffle_files(ssd);
+		}
+	}
 
 	sd = get_new_source(ss, NULL, slide_idx);
 	deque_push_back(&slides->next, &sd, sizeof(sd));
@@ -868,12 +907,9 @@ static void ss_video_tick(void *data, float seconds)
 	if (ssd->elapsed > ssd->slide_time) {
 		ssd->elapsed -= ssd->slide_time;
 
-		if (!ssd->randomize && !ssd->loop && ssd->slides.cur.slide_idx == ssd->files.num - 1) {
-			if (ssd->hide)
-				do_transition(ss, true);
-			else
-				do_transition(ss, false);
-
+		const bool looping = ssd->loop || ssd->randomize || ssd->shuffle;
+		if (!looping && ssd->slides.cur.slide_idx == ssd->files.num - 1) {
+			do_transition(ss, ssd->hide);
 			return;
 		}
 
@@ -1011,6 +1047,7 @@ static obs_properties_t *ss_properties(void *data)
 	obs_property_list_add_string(p, T_PLAYBACK_ONCE, S_PLAYBACK_ONCE);
 	obs_property_list_add_string(p, T_PLAYBACK_LOOP, S_PLAYBACK_LOOP);
 	obs_property_list_add_string(p, T_PLAYBACK_RANDOM, S_PLAYBACK_RANDOM);
+	obs_property_list_add_string(p, T_PLAYBACK_SHUFFLE, S_PLAYBACK_SHUFFLE);
 
 	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
 
