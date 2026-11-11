@@ -4,9 +4,9 @@
 
 #include "moc_OBSBasicControls.cpp"
 
-OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui::OBSBasicControls)
+OBSBasicControls::OBSBasicControls(QWidget *parent, OBSBasic *main) : QFrame(parent), ui(new Ui::OBSBasicControls)
 {
-	/* Create UI elements */
+	// Create UI elements
 	ui->setupUi(this);
 
 	streamButtonMenu.reset(new QMenu());
@@ -14,7 +14,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	stopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.StopStreaming"));
 	QAction *forceStopStreamAction = streamButtonMenu->addAction(QTStr("Basic.Main.ForceStopStreaming"));
 
-	/* Transfer buttons signals as OBSBasicControls signals */
+	// Transfer buttons signals as OBSBasicControls signals
 	connect(
 		ui->streamButton, &QPushButton::clicked, this, [this]() { emit this->StreamButtonClicked(); },
 		Qt::DirectConnection);
@@ -46,7 +46,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		ui->settingsButton, &QPushButton::clicked, this, [this]() { emit this->SettingsButtonClicked(); },
 		Qt::DirectConnection);
 
-	/* Transfer menu actions signals as OBSBasicControls signals */
+	// Transfer menu actions signals as OBSBasicControls signals
 	connect(
 		startStreamAction.get(), &QAction::triggered, this,
 		[this]() { emit this->StartStreamMenuActionClicked(); }, Qt::DirectConnection);
@@ -57,7 +57,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 		forceStopStreamAction, &QAction::triggered, this,
 		[this]() { emit this->ForceStopStreamMenuActionClicked(); }, Qt::DirectConnection);
 
-	/* Set up default visibility */
+	// Set up default visibility
 	ui->broadcastButton->setVisible(false);
 	ui->pauseRecordButton->setVisible(false);
 	ui->replayBufferButton->setVisible(false);
@@ -65,7 +65,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 	ui->virtualCamButton->setVisible(false);
 	ui->virtualCamConfigButton->setVisible(false);
 
-	/* Set up state update connections */
+	// Set up state update connections
 	connect(main, &OBSBasic::StreamingPreparing, this, &OBSBasicControls::StreamingPreparing);
 	connect(main, &OBSBasic::StreamingStarting, this, &OBSBasicControls::StreamingStarting);
 	connect(main, &OBSBasic::StreamingStarted, this, &OBSBasicControls::StreamingStarted);
@@ -91,7 +91,7 @@ OBSBasicControls::OBSBasicControls(OBSBasic *main) : QFrame(nullptr), ui(new Ui:
 
 	connect(main, &OBSBasic::PreviewProgramModeChanged, this, &OBSBasicControls::UpdateStudioModeState);
 
-	/* Set up enablement connection */
+	// Set up enablement connection
 	connect(main, &OBSBasic::BroadcastFlowEnabled, this, &OBSBasicControls::EnableBroadcastFlow);
 	connect(main, &OBSBasic::ReplayBufEnabled, this, &OBSBasicControls::EnableReplayBufferButtons);
 	connect(main, &OBSBasic::VirtualCamEnabled, this, &OBSBasicControls::EnableVirtualCamButtons);
