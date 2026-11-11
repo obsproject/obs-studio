@@ -1282,7 +1282,7 @@ static void add_roi(struct nvenc_data *enc, NV_ENC_PIC_PARAMS *params)
 }
 
 bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pic, int64_t pts,
-		       struct encoder_packet *packet, bool *received_packet)
+		       struct encoder_packet *packet, bool *received_packet, obs_frame_flags flags)
 {
 	NV_ENC_PIC_PARAMS params = {0};
 	params.version = NV_ENC_PIC_PARAMS_VER;
@@ -1321,6 +1321,9 @@ bool nvenc_encode_base(struct nvenc_data *enc, struct nv_bitstream *bs, void *pi
 	/* Add ROI map if enabled */
 	if (obs_encoder_has_roi(enc->encoder))
 		add_roi(enc, &params);
+
+	if (flags & OBS_FRAME_FORCE_IDR)
+		params.encodePicFlags |= NV_ENC_PIC_FLAG_FORCEIDR;
 
 	NVENCSTATUS err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
@@ -1405,7 +1408,7 @@ struct obs_encoder_info h264_nvenc_info = {
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = h264_nvenc_get_name,
 	.create = h264_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1427,7 +1430,7 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = hevc_nvenc_get_name,
 	.create = hevc_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1449,7 +1452,7 @@ struct obs_encoder_info av1_nvenc_info = {
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
-		OBS_ENCODER_CAP_ROI,
+		OBS_ENCODER_CAP_ROI | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = av1_nvenc_get_name,
 	.create = av1_nvenc_create,
 	.destroy = nvenc_destroy,
@@ -1469,7 +1472,7 @@ struct obs_encoder_info h264_nvenc_soft_info = {
 	.codec = "h264",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = h264_nvenc_soft_get_name,
 	.create = h264_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -1488,7 +1491,7 @@ struct obs_encoder_info hevc_nvenc_soft_info = {
 	.codec = "hevc",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = hevc_nvenc_soft_get_name,
 	.create = hevc_nvenc_soft_create,
 	.destroy = nvenc_destroy,
@@ -1507,7 +1510,7 @@ struct obs_encoder_info av1_nvenc_soft_info = {
 	.codec = "av1",
 	.type = OBS_ENCODER_VIDEO,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
-		OBS_ENCODER_CAP_INTERNAL,
+		OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_FORCE_IDR,
 	.get_name = av1_nvenc_soft_get_name,
 	.create = av1_nvenc_soft_create,
 	.destroy = nvenc_destroy,

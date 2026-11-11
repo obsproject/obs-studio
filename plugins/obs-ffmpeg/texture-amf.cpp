@@ -820,7 +820,7 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf, encoder_packet 
 	}
 }
 
-static bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key, uint64_t *next_key,
+static bool amf_encode_tex(void *data, encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 			   encoder_packet *packet, bool *received_packet)
 try {
 	amf_texencode *enc = (amf_texencode *)data;
@@ -831,9 +831,15 @@ try {
 	AMFSurfacePtr amf_surf;
 	AMF_RESULT res;
 
-	if (handle == GS_INVALID_HANDLE) {
+	if (!texture || texture->handle == GS_INVALID_HANDLE) {
 		*next_key = lock_key;
 		throw "Encode failed: bad texture handle";
+	}
+
+	uint32_t handle = texture->handle;
+
+	if (texture->flags & OBS_FRAME_FORCE_IDR) {
+		enc->force_idr = true;
 	}
 
 	/* ------------------------------------ */
@@ -955,6 +961,10 @@ try {
 
 	if (!enc->linesize) {
 		enc->linesize = frame->linesize[0];
+	}
+
+	if (frame->flags & OBS_FRAME_FORCE_IDR) {
+		enc->force_idr = true;
 	}
 
 	buf = get_buf(enc);
@@ -1806,19 +1816,21 @@ static void register_avc()
 	amf_encoder_info.create = amf_avc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_avc_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_avc_defaults;
 	amf_encoder_info.get_properties = amf_avc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
 	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h264_fallback_amf";
 	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
-	amf_encoder_info.encode_texture = nullptr;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
+	amf_encoder_info.encode_texture2 = nullptr;
 	amf_encoder_info.create = amf_avc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
 	amf_encoder_info.get_video_info = h264_video_info_fallback;
@@ -2217,19 +2229,21 @@ static void register_hevc()
 	amf_encoder_info.create = amf_hevc_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_hevc_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_hevc_defaults;
 	amf_encoder_info.get_properties = amf_hevc_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
 	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "h265_fallback_amf";
 	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
-	amf_encoder_info.encode_texture = nullptr;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
+	amf_encoder_info.encode_texture2 = nullptr;
 	amf_encoder_info.create = amf_hevc_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
 	amf_encoder_info.get_video_info = h265_video_info_fallback;
@@ -2632,19 +2646,21 @@ static void register_av1()
 	amf_encoder_info.create = amf_av1_create_texencode;
 	amf_encoder_info.destroy = amf_destroy;
 	amf_encoder_info.update = amf_av1_update;
-	amf_encoder_info.encode_texture = amf_encode_tex;
+	amf_encoder_info.encode_texture2 = amf_encode_tex;
 	amf_encoder_info.get_defaults = amf_av1_defaults;
 	amf_encoder_info.get_properties = amf_av1_properties;
 	amf_encoder_info.get_extra_data = amf_extra_data;
 	amf_encoder_info.caps = OBS_ENCODER_CAP_PASS_TEXTURE | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
 
 	obs_register_encoder(&amf_encoder_info);
 
 	amf_encoder_info.id = "av1_fallback_amf";
 	amf_encoder_info.caps = OBS_ENCODER_CAP_INTERNAL | OBS_ENCODER_CAP_DYN_BITRATE |
-				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI;
-	amf_encoder_info.encode_texture = nullptr;
+				OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE | OBS_ENCODER_CAP_ROI |
+				OBS_ENCODER_CAP_FORCE_IDR;
+	amf_encoder_info.encode_texture2 = nullptr;
 	amf_encoder_info.create = amf_av1_create_fallback;
 	amf_encoder_info.encode = amf_encode_fallback;
 	amf_encoder_info.get_video_info = av1_video_info_fallback;

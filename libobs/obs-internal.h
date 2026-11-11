@@ -1369,6 +1369,12 @@ struct obs_encoder_group {
 	uint32_t encoders_updated_next_pts;
 	uint32_t encoders_reconfigured;
 	bool reconfigure_again;
+
+	bool idr_request_supported;
+	bool idr_requested;
+	int64_t next_idr_pts;
+	uint32_t encoders_updated_next_idr_pts;
+	uint32_t encoders_idr_requested;
 };
 
 struct obs_encoder {
@@ -1465,6 +1471,8 @@ struct obs_encoder {
 
 	/* reconfigure encoder at next possible opportunity */
 	bool reconfigure_requested;
+	/* Make the next frame an IDR */
+	volatile bool idr_requested;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);
@@ -1485,6 +1493,10 @@ extern bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame, 
 extern void send_off_encoder_packet(obs_encoder_t *encoder, bool success, bool received, struct encoder_packet *pkt);
 
 void obs_encoder_destroy(obs_encoder_t *encoder);
+
+/* Reconfigure and IDR request related helpers */
+void handle_encoder_group_reconfigure_request(obs_encoder_t *encoder);
+void handle_encoder_group_idr_request(obs_encoder_t *encoder);
 
 /* ------------------------------------------------------------------------- */
 /* services */
