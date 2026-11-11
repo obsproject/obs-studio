@@ -43,15 +43,14 @@ if(EXISTS "${Uthash_INCLUDE_DIR}/uthash.h")
   )
 
   string(
-    REGEX REPLACE
-    "#define[ \t]+UTHASH_VERSION[ \t]+([0-9]+\\.[0-9]+\\.[0-9]+)"
+    REGEX REPLACE "#define[ \t]+UTHASH_VERSION[ \t]+([0-9]+\\.[0-9]+\\.[0-9]+)"
     "\\1"
     Uthash_VERSION
     "${_version_string}"
   )
 else()
   if(NOT Uthash_FIND_QUIETLY)
-    message(AUTHOR_WARNING "Failed to find uthash version.")
+    message(WARNING "Failed to find uthash version.")
   endif()
   set(Uthash_VERSION 0.0.0)
 endif()

@@ -24,7 +24,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET get-graphics-offsets
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x64 --config $<CONFIG> -t get-graphics-offsets
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x64 --config $<CONFIG> -t get-graphics-offsets
       COMMENT "Build x64 get-graphics-offsets"
     )
   endif()
@@ -33,7 +33,7 @@ if(OBS_PARENT_ARCHITECTURE STREQUAL CMAKE_VS_PLATFORM_NAME)
     add_custom_command(
       TARGET get-graphics-offsets
       POST_BUILD
-      COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_SOURCE_DIR}/build_x86 --config $<CONFIG> -t get-graphics-offsets
+      COMMAND "${CMAKE_COMMAND}" --build ${OBS_BUILD_PARENT_PATH}/build_x86 --config $<CONFIG> -t get-graphics-offsets
       COMMENT "Build x86 get-graphics-offsets"
     )
   endif()
