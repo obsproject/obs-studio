@@ -31,47 +31,47 @@ include(FindPackageHandleStandardArgs)
 #        on Linux and convert Windows and macOS library type from OBJECT to INTERFACE.
 set(
   SteinbergVST3_REQUIRED_SOURCES
-  vst3sdk/pluginterfaces/base/coreiids.cpp
-  vst3sdk/pluginterfaces/base/funknown.cpp
-  vst3sdk/public.sdk/source/common/commonstringconvert.cpp
-  vst3sdk/public.sdk/source/common/memorystream.cpp
-  vst3sdk/public.sdk/source/vst/hosting/connectionproxy.cpp
-  vst3sdk/public.sdk/source/vst/hosting/eventlist.cpp
-  vst3sdk/public.sdk/source/vst/hosting/hostclasses.cpp
-  vst3sdk/public.sdk/source/vst/hosting/module.cpp
-  vst3sdk/public.sdk/source/vst/hosting/parameterchanges.cpp
-  vst3sdk/public.sdk/source/vst/hosting/pluginterfacesupport.cpp
-  vst3sdk/public.sdk/source/vst/hosting/plugprovider.cpp
-  vst3sdk/public.sdk/source/vst/hosting/processdata.cpp
-  vst3sdk/public.sdk/source/vst/moduleinfo/moduleinfoparser.cpp
-  vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp
-  vst3sdk/public.sdk/source/vst/vstinitiids.cpp
+  pluginterfaces/base/coreiids.cpp
+  pluginterfaces/base/funknown.cpp
+  public.sdk/source/common/commonstringconvert.cpp
+  public.sdk/source/common/memorystream.cpp
+  public.sdk/source/vst/hosting/connectionproxy.cpp
+  public.sdk/source/vst/hosting/eventlist.cpp
+  public.sdk/source/vst/hosting/hostclasses.cpp
+  public.sdk/source/vst/hosting/module.cpp
+  public.sdk/source/vst/hosting/parameterchanges.cpp
+  public.sdk/source/vst/hosting/pluginterfacesupport.cpp
+  public.sdk/source/vst/hosting/plugprovider.cpp
+  public.sdk/source/vst/hosting/processdata.cpp
+  public.sdk/source/vst/moduleinfo/moduleinfoparser.cpp
+  public.sdk/source/vst/utility/stringconvert.cpp
+  public.sdk/source/vst/vstinitiids.cpp
 )
 
 if(CMAKE_HOST_SYSTEM_NAME MATCHES "Windows")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
-    vst3sdk/public.sdk/source/common/threadchecker_win32.cpp
-    vst3sdk/public.sdk/source/vst/hosting/module_win32.cpp
+    public.sdk/source/common/threadchecker_win32.cpp
+    public.sdk/source/vst/hosting/module_win32.cpp
   )
 elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
-    vst3sdk/public.sdk/source/common/threadchecker_mac.mm
-    vst3sdk/public.sdk/source/vst/hosting/module_mac.mm
+    public.sdk/source/common/threadchecker_mac.mm
+    public.sdk/source/vst/hosting/module_mac.mm
   )
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD|OpenBSD")
   list(
     APPEND SteinbergVST3_REQUIRED_SOURCES
-    vst3sdk/public.sdk/source/common/threadchecker_linux.cpp
-    vst3sdk/public.sdk/source/vst/hosting/module_linux.cpp
+    public.sdk/source/common/threadchecker_linux.cpp
+    public.sdk/source/vst/hosting/module_linux.cpp
   )
 endif()
 
 find_path(
   SteinbergVST3_INCLUDE_DIR
-  NAMES vst3sdk/pluginterfaces/base/funknown.h
-  PATHS "${STEINBERG_VST3_PATH}" /usr/include /usr/local/include
+  NAMES pluginterfaces/base/funknown.h
+  PATHS "${STEINBERG_VST3_PATH}" "${STEINBERG_VST3_PATH}/vst3sdk"
   DOC "Steinberg VST3 SDK directory"
 )
 
@@ -93,7 +93,7 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
   set(
     SteinbergVST3_ERROR_REASON
-    "Ensure Steinberg VST3 SDK is available in local library paths or provided via STEINBERG_VST3_PATH."
+    "Ensure UNCOMPILED Steinberg VST3 SDK is provided via STEINBERG_VST3_PATH. Distro Packages usually include headers for compiled sources."
   )
 endif()
 
@@ -121,23 +121,23 @@ endif()
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|AppleClang|Clang")
   set_property(
-    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/common/commonstringconvert.cpp"
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/public.sdk/source/common/commonstringconvert.cpp"
     PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
   )
 
   set_property(
-    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/vst/utility/stringconvert.cpp"
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/public.sdk/source/vst/utility/stringconvert.cpp"
     PROPERTY COMPILE_OPTIONS "-Wno-deprecated-declarations"
   )
 endif()
 
 if(CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
   set_property(
-    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/common/threadchecker_mac.mm"
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/public.sdk/source/common/threadchecker_mac.mm"
     PROPERTY COMPILE_OPTIONS "-fobjc-arc"
   )
   set_property(
-    SOURCE "${SteinbergVST3_INCLUDE_DIR}/vst3sdk/public.sdk/source/vst/hosting/module_mac.mm"
+    SOURCE "${SteinbergVST3_INCLUDE_DIR}/public.sdk/source/vst/hosting/module_mac.mm"
     PROPERTY COMPILE_OPTIONS "-fobjc-arc;-Wno-unused-parameter"
   )
 endif()
