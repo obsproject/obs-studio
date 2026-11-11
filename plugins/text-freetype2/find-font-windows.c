@@ -170,74 +170,79 @@ char *sfnt_name_to_utf8(FT_SfntName *sfnt_name)
 uint32_t get_font_checksum(void)
 {
 	uint32_t checksum = 0;
-	struct dstr path = {0};
+	wchar_t path[MAX_PATH];
+	wchar_t search[MAX_PATH];
 	HANDLE handle;
-	WIN32_FIND_DATAA wfd;
+	WIN32_FIND_DATAW wfd;
 
-	dstr_reserve(&path, MAX_PATH);
-
-	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path.array);
+	HRESULT res = SHGetFolderPathW(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path);
 	if (res != S_OK) {
 		blog(LOG_WARNING, "Error finding windows font folder");
 		return 0;
 	}
 
-	path.len = strlen(path.array);
-	dstr_cat(&path, "\\*.*");
+	int ret = _snwprintf(search, MAX_PATH, L"%s\\*.*", path);
+	if (ret < 0 || ret >= MAX_PATH) {
+		return checksum;
+	}
 
-	handle = FindFirstFileA(path.array, &wfd);
-	if (handle == INVALID_HANDLE_VALUE)
-		goto free_string;
-
-	dstr_resize(&path, path.len - 4);
+	handle = FindFirstFileW(search, &wfd);
+	if (handle == INVALID_HANDLE_VALUE) {
+		return checksum;
+	}
 
 	do {
 		checksum = calc_crc32(checksum, &wfd.ftLastWriteTime, sizeof(FILETIME));
-		checksum = calc_crc32(checksum, wfd.cFileName, strlen(wfd.cFileName));
-	} while (FindNextFileA(handle, &wfd));
+		checksum = calc_crc32(checksum, wfd.cFileName, wcslen(wfd.cFileName) * sizeof(wchar_t));
+	} while (FindNextFileW(handle, &wfd));
 
 	FindClose(handle);
-
-free_string:
-	dstr_free(&path);
 	return checksum;
 }
 
 void load_os_font_list(void)
 {
-	struct dstr path = {0};
+	wchar_t path[MAX_PATH];
+	wchar_t search[MAX_PATH];
 	HANDLE handle;
-	WIN32_FIND_DATAA wfd;
+	WIN32_FIND_DATAW wfd;
+	char *path_utf8;
 
-	dstr_reserve(&path, MAX_PATH);
-
-	HRESULT res = SHGetFolderPathA(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path.array);
+	HRESULT res = SHGetFolderPathW(NULL, CSIDL_FONTS, NULL, SHGFP_TYPE_CURRENT, path);
 	if (res != S_OK) {
 		blog(LOG_WARNING, "Error finding windows font folder");
 		return;
 	}
 
-	path.len = strlen(path.array);
-	dstr_cat(&path, "\\*.*");
+	int ret = _snwprintf(search, MAX_PATH, L"%s\\*.*", path);
+	if (ret < 0 || ret >= MAX_PATH) {
+		return;
+	}
 
-	handle = FindFirstFileA(path.array, &wfd);
+	handle = FindFirstFileW(search, &wfd);
 	if (handle == INVALID_HANDLE_VALUE)
-		goto free_string;
+		return;
 
-	dstr_resize(&path, path.len - 4);
+	path_utf8 = wide_to_utf8(path, MAX_PATH);
 
 	do {
-		struct dstr full_path = {0};
 		FT_Face face;
 		FT_Long idx = 0;
 		FT_Long max_faces = 1;
+		char *filename;
 
 		if (wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 			continue;
 
-		dstr_copy_dstr(&full_path, &path);
+		filename = wide_to_utf8(wfd.cFileName, MAX_PATH);
+		if (!filename)
+			continue;
+
+		struct dstr full_path = {0};
+		dstr_copy(&full_path, path_utf8);
 		dstr_cat(&full_path, "\\");
-		dstr_cat(&full_path, wfd.cFileName);
+		dstr_cat(&full_path, filename);
+		bfree(filename);
 
 		while (idx < max_faces) {
 			FT_Error ret = FT_New_Face(ft2_lib, full_path.array, idx, &face);
@@ -250,12 +255,10 @@ void load_os_font_list(void)
 		}
 
 		dstr_free(&full_path);
-	} while (FindNextFileA(handle, &wfd));
+	} while (FindNextFileW(handle, &wfd));
 
+	bfree(path_utf8);
 	FindClose(handle);
 
 	save_font_list();
-
-free_string:
-	dstr_free(&path);
 }
