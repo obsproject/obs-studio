@@ -1683,6 +1683,10 @@ private:
 				   bool autostart, bool autostop, bool startNow);
 #endif
 
+#ifdef RESTREAM_ENABLED
+	void RestreamActionDialogOk(bool startNow);
+#endif
+
 	void BroadcastButtonClicked();
 	void SetBroadcastFlowEnabled(bool enabled);
 
