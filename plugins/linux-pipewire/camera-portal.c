@@ -277,8 +277,9 @@ static void stream_camera(struct camera_portal_source *camera_source)
 			.framerate = framerate,
 		}};
 
-	camera_source->obs_pw_stream =
-		obs_pipewire_connect_stream(connection->obs_pw, camera_source->source, device->id, &connect_info);
+	camera_source->obs_pw_stream = obs_pipewire_connect_stream(
+		connection->obs_pw, camera_source->source,
+		(struct obs_pipewire_stream_target){.has_serial = false, .node = device->id}, &connect_info);
 }
 
 static double gcd(uint32_t m, uint32_t n)

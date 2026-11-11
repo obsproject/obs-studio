@@ -41,13 +41,22 @@ struct obs_pipewire_connect_stream_info {
 	} video;
 };
 
+struct obs_pipewire_stream_target {
+	bool has_serial;
+	union {
+		uint32_t node;
+		uint64_t serial;
+	};
+};
+
 obs_pipewire *obs_pipewire_connect_fd(int pipewire_fd, const struct pw_registry_events *registry_events,
 				      void *user_data);
 struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
 void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
-obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
+						 struct obs_pipewire_stream_target target,
 						 const struct obs_pipewire_connect_stream_info *connect_info);
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream);
