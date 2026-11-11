@@ -519,8 +519,6 @@ static void *screencast_portal_desktop_capture_create(obs_data_t *settings, obs_
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
 
-	init_screencast_capture(capture);
-
 	return capture;
 }
 static void *screencast_portal_window_capture_create(obs_data_t *settings, obs_source_t *source)
@@ -532,8 +530,6 @@ static void *screencast_portal_window_capture_create(obs_data_t *settings, obs_s
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
-
-	init_screencast_capture(capture);
 
 	return capture;
 }
@@ -547,8 +543,6 @@ static void *screencast_portal_capture_create(obs_data_t *settings, obs_source_t
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 	capture->restore_token = bstrdup(obs_data_get_string(settings, "RestoreToken"));
 	capture->source = source;
-
-	init_screencast_capture(capture);
 
 	return capture;
 }
@@ -630,6 +624,9 @@ static void screencast_portal_capture_update(void *data, obs_data_t *settings)
 static void screencast_portal_capture_show(void *data)
 {
 	struct screencast_portal_capture *capture = data;
+
+	if (!capture->obs_pw_stream && !capture->session_handle && !capture->cancellable)
+		init_screencast_capture(capture);
 
 	if (capture->obs_pw_stream)
 		obs_pipewire_stream_show(capture->obs_pw_stream);
