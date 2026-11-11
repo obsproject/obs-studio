@@ -16,8 +16,13 @@ include(defaults)
 include(helpers)
 
 option(ENABLE_FRONTEND "Enable building with UI (requires Qt)" ON)
+option(ENABLE_PLUGINS "Enable building OBS plugins" ON)
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(ENABLE_HEVC "Enable HEVC encoders" ON)
+
+if(ENABLE_PLUGINS OR (OS_WINDOWS AND ENABLE_FRONTEND))
+  include("${CMAKE_SOURCE_DIR}/cmake/common/crypto-backend.cmake")
+endif()
 
 add_subdirectory(libobs)
 if(OS_WINDOWS)
