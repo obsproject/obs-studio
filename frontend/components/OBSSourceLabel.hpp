@@ -24,11 +24,10 @@
 class OBSSourceLabel : public QLabel {
 	Q_OBJECT;
 
-public:
-	OBSSignal renamedSignal;
-	OBSSignal removedSignal;
-	OBSSignal destroyedSignal;
+private:
+	std::vector<OBSSignal> obsSignals;
 
+public:
 	OBSSourceLabel(const obs_source_t *source, QWidget *parent = nullptr, Qt::WindowFlags f = Qt::WindowFlags());
 
 protected:

@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include <math.h>
 
+#include "audio-monitoring/monitoring-mix.h"
 #include "media-io/format-conversion.h"
 #include "media-io/video-frame.h"
 #include "media-io/audio-io.h"
@@ -285,6 +286,8 @@ static void obs_source_init_finalize(struct obs_source *source, obs_canvas_t *ca
 			obs_context_data_insert_name(&source->context, &obs->data.sources_mutex,
 						     &obs->data.public_sources);
 		}
+	} else if (requires_canvas(source)) {
+		source->canvas = obs_canvas_get_weak_canvas(canvas);
 	}
 	obs_context_data_insert_uuid(&source->context, &obs->data.sources_mutex, &obs->data.sources);
 }
@@ -569,6 +572,12 @@ obs_source_t *obs_source_create_canvas(obs_canvas_t *canvas, const char *id, con
 	return obs_source_create_internal(id, name, NULL, settings, hotkey_data, false, LIBOBS_API_VER, canvas);
 }
 
+obs_source_t *obs_source_create_private_with_canvas(obs_canvas_t *canvas, const char *id, const char *name,
+						    obs_data_t *settings)
+{
+	return obs_source_create_internal(id, name, NULL, settings, NULL, true, LIBOBS_API_VER, canvas);
+}
+
 obs_source_t *obs_source_create_set_last_ver(obs_canvas_t *canvas, const char *id, const char *name, const char *uuid,
 					     obs_data_t *settings, obs_data_t *hotkey_data, uint32_t last_obs_ver,
 					     bool is_private)
@@ -756,6 +765,9 @@ void obs_source_destroy(struct obs_source *source)
 	}
 
 	if (is_audio_source(source)) {
+		if (obs->audio.monitoring_mix && source->monitoring_mix_source) {
+			monitoring_mix_remove_source(obs->audio.monitoring_mix, source->monitoring_mix_source);
+		}
 		pthread_mutex_lock(&source->audio_cb_mutex);
 		da_free(source->audio_cb_list);
 		pthread_mutex_unlock(&source->audio_cb_mutex);
@@ -2458,6 +2470,8 @@ static bool update_async_texrender(struct obs_source *source, const struct obs_s
 			gs_effect_set_val(max_param, frame->color_range_max, sizeof(float) * 3);
 		}
 
+		gs_load_vertexbuffer(NULL);
+		gs_load_indexbuffer(NULL);
 		gs_draw(GS_TRIS, 0, 3);
 
 		gs_technique_end_pass(tech);
@@ -5628,9 +5642,15 @@ void obs_source_set_monitoring_enabled(obs_source_t *source, bool enabled)
 	if (was_on != enabled) {
 		if (!was_on) {
 			source->monitor = audio_monitor_create(source);
+			if (obs->audio.monitoring_mix) {
+				monitoring_mix_add_source(source);
+			}
 		} else {
 			audio_monitor_destroy(source->monitor);
 			source->monitor = NULL;
+			if (obs->audio.monitoring_mix && source->monitoring_mix_source) {
+				monitoring_mix_remove_source(obs->audio.monitoring_mix, source->monitoring_mix_source);
+			}
 		}
 	}
 }

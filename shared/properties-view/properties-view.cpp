@@ -114,6 +114,10 @@ void OBSPropertiesView::ReloadProperties()
 
 void OBSPropertiesView::RefreshProperties()
 {
+	if (auto dialog = findChild<QDialog *>()) {
+		dialog->reject();
+	}
+
 	int h, v, hend, vend;
 	GetScrollPos(h, v, hend, vend);
 

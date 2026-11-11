@@ -240,7 +240,8 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 			});
 		}
 
-		connect(newRow, &InstalledPluginRow::toggleChanged, this, [this, entry](bool enabled) {
+		connect(newRow, &InstalledPluginRow::toggleChanged, this, [this, &entry](bool enabled) {
+			// Update enabled state in the modules reference.
 			auto it = std::find_if(modules_.begin(), modules_.end(), [&entry](const ModuleInfo &module) {
 				return module.module_name == entry.module.module_name;
 			});
@@ -248,6 +249,9 @@ void PluginManagerWindow::setupInstalledPage(std::vector<std::string> failedModu
 			if (it != modules_.end()) {
 				it->enabled = enabled;
 			}
+
+			// Update enabled state in the local installedPluginEntries data.
+			entry.module.enabled = enabled;
 
 			ui->manageRestartLabel->setVisible(isEnabledPluginsChanged());
 		});
