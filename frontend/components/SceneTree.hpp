@@ -27,6 +27,7 @@ public:
 
 private:
 	void RepositionGrid(QDragMoveEvent *event = nullptr);
+	int ComputeGridWidth(int &scrollWid);
 
 protected:
 	virtual bool eventFilter(QObject *obj, QEvent *event) override;
