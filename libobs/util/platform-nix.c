@@ -28,6 +28,9 @@
 #include <time.h>
 #include <signal.h>
 #include <uuid/uuid.h>
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__) || defined(__OpenBSD__)
+#include <xlocale.h>
+#endif
 
 #include "obsconfig.h"
 
@@ -54,7 +57,6 @@
 #include <spawn.h>
 #endif
 
-#include "darray.h"
 #include "dstr.h"
 #include "platform.h"
 #include "threading.h"
@@ -425,6 +427,54 @@ char *os_get_abs_path_ptr(const char *path)
 	return ptr;
 }
 
+int os_strcoll_l(const char *a, const char *b, os_locale_t locale)
+{
+	return strcoll_l(a, b, locale);
+}
+int os_wcscoll_l(const wchar_t *a, const wchar_t *b, os_locale_t locale)
+{
+	return wcscoll_l(a, b, locale);
+}
+
+os_locale_t os_get_locale(const char *locale)
+{
+	return newlocale(LC_ALL_MASK, locale ? locale : ".UTF-8", (locale_t)0);
+}
+
+void os_free_locale(os_locale_t locale)
+{
+	freelocale(locale);
+}
+
+struct _locale_aware_sort_context {
+	os_locale_aware_cmp cmp;
+	os_locale_t locale;
+};
+typedef struct _locale_aware_sort_context locale_aware_sort_ctx;
+
+static THREAD_LOCAL locale_aware_sort_ctx *sort_ctx = NULL;
+
+int _locale_aware_comparison(const void *a, const void *b)
+{
+	return sort_ctx->cmp(a, b, sort_ctx->locale);
+}
+
+void os_locale_aware_sort(void *base, size_t elements, size_t element_size, os_locale_aware_cmp cmp, os_locale_t locale)
+{
+	bool tmplocale = !locale;
+
+	locale_aware_sort_ctx context = {.cmp = cmp, .locale = tmplocale ? os_get_locale(NULL) : locale};
+
+	// Restore old context after, so this function is re-entrant capable despite static thread locals
+	locale_aware_sort_ctx *old_ctx = sort_ctx;
+	sort_ctx = &context;
+	qsort(base, elements, element_size, _locale_aware_comparison);
+	sort_ctx = old_ctx;
+
+	if (tmplocale)
+		os_free_locale(context.locale);
+}
+
 struct os_dir {
 	const char *path;
 	DIR *dir;
@@ -489,6 +539,34 @@ void os_closedir(os_dir_t *dir)
 	if (dir) {
 		closedir(dir->dir);
 		bfree(dir);
+	}
+}
+
+int natural_compare_files(const void *a, const void *b, os_locale_t locale)
+{
+	const struct os_dirent *aa = (const struct os_dirent *)a;
+	const struct os_dirent *bb = (const struct os_dirent *)b;
+
+	return astrnatcmp(aa->d_name, bb->d_name, locale);
+}
+
+void os_sortdir_natural(os_dir_t *dir, struct darray *sorted, dir_filter_func filter_func)
+{
+	size_t start = sorted->num;
+	size_t item_size = sizeof(struct os_dirent);
+
+	while (os_readdir(dir)) {
+
+		if (!filter_func || filter_func(&dir->out)) {
+			darray_push_back(item_size, sorted, &dir->out);
+			// da_push_back(*sorted, &dir->out);
+		}
+	}
+
+	size_t count = sorted->num - start;
+	if (count) {
+		struct os_dirent *start_iter = &((struct os_dirent *)sorted->array)[start];
+		os_locale_aware_sort(start_iter, count, item_size, natural_compare_files, NULL);
 	}
 }
 
