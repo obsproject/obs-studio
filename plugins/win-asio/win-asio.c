@@ -808,7 +808,7 @@ static void asio_input_deactivate(void *vptr)
 }
 
 struct obs_source_info asio_input_capture = {
-	.id = "asio_input_capture",
+	.id = "asio_input",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_AUDIO | OBS_SOURCE_DO_NOT_DUPLICATE,
 	.get_name = asio_input_getname,
