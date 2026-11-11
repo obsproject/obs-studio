@@ -431,6 +431,24 @@ void OBSBasicSourceSelect::updateExistingSources(int limit)
 			     return false;
 		     });
 
+	// Don't sort the recent tab.
+	if (selectedTypeId.compare(kRecentTypeId) != 0) {
+		std::sort(matchingSources.begin(), matchingSources.end(),
+			  [](obs_weak_source_t *a, obs_weak_source_t *b) {
+				  OBSSource sourceA = OBSGetStrongRef(a);
+				  OBSSource sourceB = OBSGetStrongRef(b);
+
+				  if (!sourceA || !sourceB) {
+					  return false;
+				  }
+
+				  QString nameA = obs_source_get_name(sourceA);
+				  QString nameB = obs_source_get_name(sourceB);
+
+				  return nameA.compare(nameB, Qt::CaseInsensitive) < 0;
+			  });
+	}
+
 	QWidget *prevTabWidget = ui->sourceTypeList;
 
 	auto createSourceButton = [this, &prevTabWidget](obs_weak_source_t *weak) {
