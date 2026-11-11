@@ -121,13 +121,13 @@ static inline bool shex_init_d3d11()
 	HMODULE dxgi;
 	HRESULT hr;
 
-	d3d11 = load_system_library("d3d11.dll");
+	d3d11 = load_system_library(L"d3d11.dll");
 	if (!d3d11) {
 		hlog("d3d9_init: Failed to load D3D11");
 		return false;
 	}
 
-	dxgi = load_system_library("dxgi.dll");
+	dxgi = load_system_library(L"dxgi.dll");
 	if (!dxgi) {
 		hlog("d3d9_init: Failed to load DXGI");
 		return false;
@@ -429,7 +429,7 @@ static void d3d9_init(IDirect3DDevice9 *device)
 	HWND window = nullptr;
 	HRESULT hr;
 
-	data.d3d9 = get_system_module("d3d9.dll");
+	data.d3d9 = get_system_module(L"d3d9.dll");
 	data.device = device;
 
 	hr = device->QueryInterface(__uuidof(IDirect3DDevice9Ex), (void **)&d3d9ex);
@@ -465,7 +465,7 @@ static inline HRESULT get_backbuffer(IDirect3DDevice9 *device, IDirect3DSurface9
 	static bool checked_exceptions = false;
 
 	if (!checked_exceptions) {
-		if (_strcmpi(get_process_name(), "hotd_ng.exe") == 0) {
+		if (_wcsicmp(get_process_name(), L"hotd_ng.exe") == 0) {
 			use_backbuffer = true;
 		}
 		checked_exceptions = true;
@@ -792,7 +792,7 @@ static bool manually_get_d3d9_addrs(HMODULE d3d9_module, void **present_addr, vo
 
 bool hook_d3d9(void)
 {
-	HMODULE d3d9_module = get_system_module("d3d9.dll");
+	HMODULE d3d9_module = get_system_module(L"d3d9.dll");
 	uint32_t d3d9_size;
 	void *present_addr = nullptr;
 	void *present_ex_addr = nullptr;

@@ -226,25 +226,26 @@ static inline void release_afx_lib(void)
 	}
 }
 
-static inline bool nvafx_get_sdk_path(char *buffer, const size_t len)
+static inline bool nvafx_get_sdk_path(wchar_t *buffer, const size_t len)
 {
-	DWORD ret = GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
+	DWORD ret = GetEnvironmentVariableW(L"NVAFX_SDK_DIR", buffer, (DWORD)len);
 
-	if (!ret || ret >= len - 1) {
-		ret = GetEnvironmentVariableA("AFX_SDK_DIR", buffer, (DWORD)len);
+	if (!ret || ret >= len) {
+		ret = GetEnvironmentVariableW(L"AFX_SDK_DIR", buffer, (DWORD)len);
 	}
-	if (!ret || ret >= len - 1) {
-		char path[MAX_PATH];
-		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
+	if (!ret || ret >= len) {
+		wchar_t path[MAX_PATH];
+		if (!GetEnvironmentVariableW(L"ProgramFiles", path, MAX_PATH)) {
 			buffer[0] = 0;
 			return false;
 		}
 
-		if (_snprintf_s(buffer, len, _TRUNCATE, "%s\\NVIDIA Corporation\\NVIDIA Audio Effects SDK", path) > 0) {
-			return true;
+		int r = _snwprintf_s(buffer, len, _TRUNCATE, L"%s\\NVIDIA Corporation\\NVIDIA Audio Effects SDK",
+				     path);
+		if (r <= 0 || r >= len) {
+			buffer[0] = 0;
+			return false;
 		}
-
-		return false;
 	}
 
 	return true;
@@ -260,14 +261,14 @@ static unsigned int get_lib_version(void)
 
 	version_checked = true;
 
-	char sdkPath[MAX_PATH];
+	wchar_t sdkPath[MAX_PATH];
 	wchar_t dllPath[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return version;
 	}
 
-	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%S\\NVAudioEffects.dll", sdkPath) == -1) {
+	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%s\\NVAudioEffects.dll", sdkPath) == -1) {
 		return version;
 	}
 
@@ -278,38 +279,38 @@ static unsigned int get_lib_version(void)
 	return version;
 }
 
-static inline bool load_afx_module(HMODULE *module, const char *sdk_path, const char *filename)
+static inline bool load_afx_module(HMODULE *module, const wchar_t *sdk_path, const wchar_t *filename)
 {
-	char path[MAX_PATH];
+	wchar_t path[MAX_PATH];
 
 	if (*module) {
 		return true;
 	}
 
-	if (_snprintf_s(path, _countof(path), _TRUNCATE, "%s\\%s", sdk_path, filename) < 0) {
+	if (_snwprintf_s(path, _countof(path), _TRUNCATE, L"%s\\%s", sdk_path, filename) < 0) {
 		return false;
 	}
 
-	*module = LoadLibraryExA(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	*module = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	return *module != NULL;
 }
 
 static inline bool load_lib(unsigned int version)
 {
-	char sdk_path[MAX_PATH];
+	wchar_t sdk_path[MAX_PATH];
 
 	if (!nvafx_get_sdk_path(sdk_path, _countof(sdk_path)))
 		return false;
 
-	if (!load_afx_module(&nv_audiofx, sdk_path, "NVAudioEffects.dll"))
+	if (!load_afx_module(&nv_audiofx, sdk_path, L"NVAudioEffects.dll"))
 		return false;
 
 	if (version < MIN_ARM_AFX_SDK_VERSION)
 		return true;
 
-	if (!load_afx_module(&nv_denoiserfx, sdk_path, "nvafxdenoiser.dll") ||
-	    !load_afx_module(&nv_dereverbfx, sdk_path, "nvafxdereverb.dll") ||
-	    !load_afx_module(&nv_dereverbdenoiserfx, sdk_path, "nvafxdereverbdenoiser.dll")) {
+	if (!load_afx_module(&nv_denoiserfx, sdk_path, L"nvafxdenoiser.dll") ||
+	    !load_afx_module(&nv_dereverbfx, sdk_path, L"nvafxdereverb.dll") ||
+	    !load_afx_module(&nv_dereverbdenoiserfx, sdk_path, L"nvafxdereverbdenoiser.dll")) {
 		return false;
 	}
 

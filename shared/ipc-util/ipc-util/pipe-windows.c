@@ -63,13 +63,16 @@ error:
 static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe, const char *name)
 {
 	SECURITY_ATTRIBUTES sa;
-	char new_name[512];
+	wchar_t new_name[512];
+	wchar_t name_utf16[512];
 	void *sd;
 	const DWORD access = PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED;
 	const DWORD flags = PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT;
 
-	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
-	strcat_s(new_name, sizeof(new_name), name);
+	MultiByteToWideChar(CP_UTF8, 0, name, -1, name_utf16, _countof(name_utf16));
+
+	wcscpy_s(new_name, _countof(new_name), L"\\\\.\\pipe\\");
+	wcscat_s(new_name, _countof(new_name), name_utf16);
 
 	sd = create_full_access_security_descriptor();
 	if (!sd) {
@@ -80,7 +83,7 @@ static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe, const 
 	sa.lpSecurityDescriptor = sd;
 	sa.bInheritHandle = false;
 
-	pipe->handle = CreateNamedPipeA(new_name, access, flags, 1, IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0, &sa);
+	pipe->handle = CreateNamedPipeW(new_name, access, flags, 1, IPC_PIPE_BUF_SIZE, IPC_PIPE_BUF_SIZE, 0, &sa);
 	free(sd);
 
 	return pipe->handle != INVALID_HANDLE_VALUE;
@@ -171,12 +174,15 @@ static inline bool ipc_pipe_internal_wait_for_connection(ipc_pipe_server_t *pipe
 static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe, const char *name)
 {
 	DWORD mode = PIPE_READMODE_MESSAGE;
-	char new_name[512];
+	wchar_t new_name[512];
+	wchar_t name_utf16[512];
 
-	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
-	strcat_s(new_name, sizeof(new_name), name);
+	MultiByteToWideChar(CP_UTF8, 0, name, -1, name_utf16, _countof(name_utf16));
 
-	pipe->handle = CreateFileA(new_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
+	wcscpy_s(new_name, _countof(new_name), L"\\\\.\\pipe\\");
+	wcscat_s(new_name, _countof(new_name), name_utf16);
+
+	pipe->handle = CreateFileW(new_name, GENERIC_READ | GENERIC_WRITE, 0, NULL, OPEN_EXISTING, 0, NULL);
 	if (pipe->handle == INVALID_HANDLE_VALUE) {
 		return false;
 	}
