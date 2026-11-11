@@ -71,7 +71,9 @@ endif()
 find_path(
   SteinbergVST3_INCLUDE_DIR
   NAMES pluginterfaces/base/funknown.h
-  PATHS "${STEINBERG_VST3_PATH}" "${STEINBERG_VST3_PATH}/vst3sdk"
+  HINTS "${STEINBERG_VST3_PATH}"
+  PATHS /usr/include /usr/local/include
+  PATH_SUFFIXES include include/vst3sdk vst3sdk
   DOC "Steinberg VST3 SDK directory"
 )
 
@@ -93,7 +95,7 @@ if(CMAKE_HOST_SYSTEM_NAME MATCHES "Darwin|Windows")
 elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
   set(
     SteinbergVST3_ERROR_REASON
-    "Ensure UNCOMPILED Steinberg VST3 SDK is provided via STEINBERG_VST3_PATH. Distro Packages usually include headers for compiled sources."
+    "Provide UNCOMPILED Steinberg VST3 SDK via STEINBERG_VST3_PATH (distro packages only supply compiled headers). Set -DENABLE_VST3=OFF to skip."
   )
 endif()
 

@@ -133,8 +133,7 @@
         "ENABLE_AJA": false,
         "ENABLE_VLC": true,
         "ENABLE_WAYLAND": true,
-        "ENABLE_WEBRTC": false,
-        "ENABLE_VST3": false
+        "ENABLE_WEBRTC": false
       }
     },
     {
