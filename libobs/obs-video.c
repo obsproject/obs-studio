@@ -1051,6 +1051,8 @@ static void uninit_winrt_state(struct winrt_state *winrt)
 static const char *tick_sources_name = "tick_sources";
 static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
+static const char *gs_begin_frame_name = "gs_begin_frame";
+static const char *gs_end_frame_name = "gs_end_frame";
 static inline void update_active_state(struct obs_core_video_mix *video)
 {
 	const bool raw_was_active = video->raw_was_active;
@@ -1105,7 +1107,9 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	source_profiler_frame_begin();
 
 	gs_enter_context(obs->video.graphics);
+	profile_start(gs_begin_frame_name);
 	gs_begin_frame();
+	profile_end(gs_begin_frame_name);
 	gs_leave_context();
 
 	profile_start(tick_sources_name);
@@ -1124,6 +1128,12 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(output_frame_name);
 	output_frames();
 	profile_end(output_frame_name);
+
+	gs_enter_context(obs->video.graphics);
+	profile_start(gs_end_frame_name);
+	gs_end_frame();
+	profile_end(gs_end_frame_name);
+	gs_leave_context();
 
 	profile_start(render_displays_name);
 	render_displays();
