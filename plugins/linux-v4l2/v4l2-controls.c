@@ -16,6 +16,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 
 #include <linux/videodev2.h>
 #include <libv4l2.h>
@@ -66,6 +68,27 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props, obs_proper
 	v4l2_close(dev);
 
 	return ret;
+}
+
+static bool v4l2_get_control_value(obs_data_t *settings, const struct v4l2_queryctrl *qctrl, int *value)
+{
+	const char *name = (const char *)qctrl->name;
+
+	if (!obs_data_has_user_value(settings, name))
+		return false;
+
+	switch (qctrl->type) {
+	case V4L2_CTRL_TYPE_BOOLEAN:
+		*value = obs_data_get_bool(settings, name);
+		return true;
+	case V4L2_CTRL_TYPE_INTEGER:
+	case V4L2_CTRL_TYPE_MENU:
+	case V4L2_CTRL_TYPE_INTEGER_MENU:
+		*value = (int)obs_data_get_int(settings, name);
+		return true;
+	default:
+		return false;
+	}
 }
 
 static bool v4l2_update_controls_menu(int_fast32_t dev, obs_properties_t *props, struct v4l2_queryctrl *qctrl)
@@ -144,6 +167,42 @@ int_fast32_t v4l2_update_controls(int_fast32_t dev, obs_properties_t *props, obs
 	qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
 	while (0 == v4l2_ioctl(dev, VIDIOC_QUERYCTRL, &qctrl)) {
 		add_control_property(props, settings, dev, &qctrl);
+		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
+	}
+
+	return 0;
+}
+
+int_fast32_t v4l2_apply_controls(int_fast32_t dev, obs_data_t *settings)
+{
+	struct v4l2_queryctrl qctrl;
+
+	if (dev == -1 || !settings)
+		return -1;
+
+	memset(&qctrl, 0, sizeof(qctrl));
+	qctrl.id = V4L2_CTRL_FLAG_NEXT_CTRL;
+
+	while (0 == v4l2_ioctl(dev, VIDIOC_QUERYCTRL, &qctrl)) {
+		struct v4l2_control control = {0};
+		int value;
+
+		if (!valid_control(&qctrl) || !v4l2_get_control_value(settings, &qctrl, &value))
+			goto next;
+
+		control.id = qctrl.id;
+
+		if (0 == v4l2_ioctl(dev, VIDIOC_G_CTRL, &control) && control.value == value)
+			goto next;
+
+		control.value = value;
+
+		if (0 != v4l2_ioctl(dev, VIDIOC_S_CTRL, &control)) {
+			blog(LOG_WARNING, "failed to apply control %s (0x%08X): %s", (char *)qctrl.name, qctrl.id,
+			     strerror(errno));
+		}
+
+	next:
 		qctrl.id |= V4L2_CTRL_FLAG_NEXT_CTRL;
 	}
 

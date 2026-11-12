@@ -982,6 +982,23 @@ static void v4l2_update_source_flags(struct v4l2_data *data, obs_data_t *setting
 	obs_source_set_async_unbuffered(data->source, !obs_data_get_bool(settings, "buffering"));
 }
 
+static void v4l2_apply_current_controls(struct v4l2_data *data, obs_data_t *settings)
+{
+	int dev;
+
+	if (!data->device_id || !*data->device_id)
+		return;
+
+	dev = v4l2_open(data->device_id, O_RDWR | O_NONBLOCK);
+	if (dev == -1) {
+		blog(LOG_WARNING, "Unable to open device to apply controls");
+		return;
+	}
+
+	v4l2_apply_controls(dev, settings);
+	v4l2_close(dev);
+}
+
 /**
  * Checking if any of the settings have changed so that we can restart the
  * stream
@@ -1062,6 +1079,8 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 
 	if (needs_restart)
 		v4l2_init(data);
+
+	v4l2_apply_current_controls(data, settings);
 }
 
 static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
