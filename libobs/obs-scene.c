@@ -3000,17 +3000,6 @@ bool obs_sceneitem_visible(const obs_sceneitem_t *item)
 	return item ? item->user_visible : false;
 }
 
-static bool group_item_transition(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
-{
-	if (!param || !item)
-		return true;
-	const bool visible = *(bool *)param;
-	if (obs_sceneitem_visible(item))
-		obs_sceneitem_do_transition(item, visible);
-	UNUSED_PARAMETER(scene);
-	return true;
-}
-
 bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 {
 	struct calldata cd;
@@ -3027,8 +3016,6 @@ bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)
 		return false;
 
 	obs_sceneitem_do_transition(item, visible);
-	if (obs_sceneitem_is_group(item))
-		obs_sceneitem_group_enum_items(item, group_item_transition, &visible);
 
 	item->user_visible = visible;
 
