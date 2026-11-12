@@ -63,4 +63,4 @@ if(OS_WINDOWS)
   )
 endif()
 
-set_target_properties_obs(obs-vst3 PROPERTIES FOLDER plugins PREFIX "" AUTOMOC ON)
+set_target_properties_obs(obs-vst3 PROPERTIES FOLDER plugins/obs-vst3 PREFIX "" AUTOMOC ON)
