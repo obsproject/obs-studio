@@ -34,7 +34,7 @@ void HashToString(const B2Hash &in, string &out)
 
 void StringToHash(const string &in, B2Hash &out)
 {
-	unsigned int temp;
+	unsigned int temp{0};
 	const char *str = in.c_str();
 
 	for (size_t i = 0; i < kBlake2HashLength; i++) {
