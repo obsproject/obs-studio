@@ -11,4 +11,6 @@ target_link_libraries(
   PRIVATE OBS::COMutils AMF::AMF d3d11 dxgi dxguid
 )
 
+target_link_options(obs-amf-test PRIVATE $<$<PLATFORM_ID:Windows>:/DEPENDENTLOADFLAG:0x800>)
+
 set_target_properties_obs(obs-amf-test PROPERTIES FOLDER plugins/obs-ffmpeg)
