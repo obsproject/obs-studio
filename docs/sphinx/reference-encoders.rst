@@ -388,6 +388,14 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak, obs_encoder_t *encoder)
+
+   Compares a weak encoder reference with an encoder.
+
+   :return: Whether the weak encoder reference ties back to the specified encoder
+
+---------------------
+
 .. function:: void obs_encoder_set_name(obs_encoder_t *encoder, const char *name)
 
    Sets the name of an encoder.  If the encoder is not private and the

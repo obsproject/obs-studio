@@ -272,6 +272,14 @@ General Service Functions
 
 ---------------------
 
+.. function:: bool obs_weak_service_references_service(obs_weak_service_t *weak, obs_service_t *service)
+
+   Compares a weak service reference with a service.
+
+   :return: Whether the weak service reference ties back to the specified service
+
+---------------------
+
 .. function:: const char *obs_service_get_name(const obs_service_t *service)
 
    :return: The name of the service
