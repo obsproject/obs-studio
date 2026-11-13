@@ -957,6 +957,14 @@ General Source Functions
 
 ---------------------
 
+.. function:: bool obs_weak_source_references_source(obs_weak_source_t *weak, obs_source_t *source)
+
+   Compares a weak source reference with a source.
+
+   :return: Whether the weak source reference ties back to the specified source
+
+---------------------
+
 .. function:: void obs_source_remove(obs_source_t *source)
 
    Notifies all reference holders of the source (via
