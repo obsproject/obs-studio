@@ -47,6 +47,8 @@ constexpr uint8_t kBlake2HashLength = 20;
 constexpr uint8_t kBlake2StrLength = kBlake2HashLength * 2;
 using B2Hash = std::array<std::byte, kBlake2HashLength>;
 
+constexpr int kErrorHashMismatch = -11;
+
 #if defined _M_IX86
 #pragma comment(linker, "/manifestdependency:\"type='win32' "       \
 			"name='Microsoft.Windows.Common-Controls' " \
@@ -91,7 +93,8 @@ void StringToHash(const std::string &in, B2Hash &out);
 
 bool CalculateFileHash(const wchar_t *path, B2Hash &hash);
 
-int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, size_t patch_size, const wchar_t *targetFile);
+int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, size_t patch_size, const wchar_t *targetFile,
+	       const B2Hash &expectedHash);
 
 extern HWND hwndMain;
 extern HCRYPTPROV hProvider;
