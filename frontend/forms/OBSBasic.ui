@@ -54,7 +54,7 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QWidget" name="canvasEditor">
+     <widget class="QFrame" name="canvasEditor">
       <layout class="QHBoxLayout" name="previewLayout">
        <property name="spacing">
         <number>2</number>
@@ -178,7 +178,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="previewContainer">
+        <widget class="QFrame" name="previewContainer">
          <layout class="QVBoxLayout" name="previewTextLayout">
           <property name="spacing">
            <number>0</number>
@@ -243,7 +243,7 @@
              </widget>
             </item>
             <item row="2" column="1">
-             <widget class="QWidget" name="previewXContainer">
+             <widget class="QFrame" name="previewXContainer">
               <layout class="QHBoxLayout" name="horizontalLayout_7">
                <property name="spacing">
                 <number>0</number>
@@ -721,6 +721,8 @@
     <property name="title">
      <string>Basic.MainMenu.File</string>
     </property>
+    <addaction name="actionBasic_MainMenu_File_Save"/>
+    <addaction name="separator"/>
     <addaction name="actionShow_Recordings"/>
     <addaction name="actionRemux"/>
     <addaction name="separator"/>
@@ -2228,6 +2230,34 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.Scale.ResetZoom</string>
+   </property>
+  </action>
+  <action name="actionBasic_MainMenu_File_New_Scene">
+   <property name="text">
+    <string>Basic.MainMenu.File.New.Scene</string>
+   </property>
+  </action>
+  <action name="actionBasic_MainMenu_File_New_Source">
+   <property name="text">
+    <string>Basic.MainMenu.File.New.Source</string>
+   </property>
+  </action>
+  <action name="actionBasic_MainMenu_File_New_SceneCollection">
+   <property name="text">
+    <string>Basic.MainMenu.File.New.SceneCollection</string>
+   </property>
+  </action>
+  <action name="actionBasic_MainMenu_File_New_Profile">
+   <property name="text">
+    <string>Basic.MainMenu.File.New.Profile</string>
+   </property>
+  </action>
+  <action name="actionBasic_MainMenu_File_Save">
+   <property name="text">
+    <string>Basic.MainMenu.File.Save</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
    </property>
   </action>
  </widget>

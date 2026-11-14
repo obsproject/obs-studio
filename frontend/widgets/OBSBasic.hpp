@@ -656,6 +656,8 @@ private slots:
 	void on_stats_triggered();
 	void on_idianPlayground_triggered();
 
+	void on_actionBasic_MainMenu_File_Save_triggered();
+
 	void on_resetUI_triggered();
 
 	void logUploadFinished(const std::string &text, const std::string &error, OBS::LogFileType uploadType);
