@@ -4,6 +4,8 @@
 #include <chrono>
 #include <future>
 #include <cstring>
+#include <cstdlib>
+#include <charconv>
 
 #include <ffnvcodec/nvEncodeAPI.h>
 #include <ffnvcodec/dynlink_loader.h>
@@ -563,10 +565,25 @@ int check_thread()
 	return ret;
 }
 
+static chrono::milliseconds get_timeout()
+{
+	const char *env = getenv("OBS_NVENC_TEST_TIMEOUT_MS");
+	if (!env)
+		return 2500ms;
+
+	int ms = 0;
+	const char *end = env + strlen(env);
+	const auto [ptr, ec] = from_chars(env, end, ms);
+	if (ec != errc() || ptr != end || ms <= 0)
+		return 2500ms;
+
+	return chrono::milliseconds(ms);
+}
+
 int main(int, char **)
 {
 	future<int> f = async(launch::async, check_thread);
-	future_status status = f.wait_for(2.5s);
+	future_status status = f.wait_for(get_timeout());
 
 	if (status == future_status::timeout) {
 		exit(1);
