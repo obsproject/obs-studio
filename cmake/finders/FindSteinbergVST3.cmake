@@ -73,7 +73,7 @@ find_path(
   NAMES pluginterfaces/base/funknown.h
   HINTS "${STEINBERG_VST3_PATH}"
   PATHS /usr/include /usr/local/include
-  PATH_SUFFIXES include include/vst3sdk vst3sdk
+  PATH_SUFFIXES vst3sdk
   DOC "Steinberg VST3 SDK directory"
 )
 
