@@ -59,7 +59,6 @@ void OBSBasicStatusBar::Activate()
 		int total = video_output_get_total_frames(obs_get_video());
 
 		totalStreamSeconds = 0;
-		totalRecordSeconds = 0;
 		lastSkippedFrameCount = 0;
 		startSkippedFrameCount = skipped;
 		startTotalFrameCount = total;
@@ -111,7 +110,6 @@ void OBSBasicStatusBar::Deactivate()
 		statusWidget->ui->recordTime->setText(QString("00:00:00"));
 		statusWidget->ui->recordTime->setDisabled(true);
 		statusWidget->ui->recordIcon->setPixmap(recordingInactivePixmap);
-		totalRecordSeconds = 0;
 	}
 
 	if (main->outputHandler && !main->outputHandler->Active()) {
@@ -282,8 +280,6 @@ void OBSBasicStatusBar::UpdateRecordTime()
 	bool paused = os_atomic_load_bool(&recording_paused);
 
 	if (!paused) {
-		totalRecordSeconds++;
-
 		if (recordOutput && !statusWidget->ui->recordTime->isEnabled()) {
 			statusWidget->ui->recordTime->setDisabled(false);
 		}
@@ -299,6 +295,12 @@ void OBSBasicStatusBar::UpdateRecordTime()
 
 void OBSBasicStatusBar::UpdateRecordTimeLabel()
 {
+	int totalRecordSeconds = 0;
+	if (recordOutput) {
+		uint64_t now = recordPauseTime ? recordPauseTime : os_gettime_ns();
+		totalRecordSeconds = int((now - recordStartTime) / 1000000000ULL);
+	}
+
 	int seconds = totalRecordSeconds % 60;
 	int totalMinutes = totalRecordSeconds / 60;
 	int minutes = totalMinutes % 60;
@@ -540,6 +542,8 @@ void OBSBasicStatusBar::StreamStopped()
 
 void OBSBasicStatusBar::RecordingStarted(obs_output_t *output)
 {
+	recordStartTime = os_gettime_ns();
+	recordPauseTime = 0;
 	recordOutput = OBSGetWeakRef(output);
 	Activate();
 }
@@ -553,6 +557,7 @@ void OBSBasicStatusBar::RecordingStopped()
 void OBSBasicStatusBar::RecordingPaused()
 {
 	if (recordOutput) {
+		recordPauseTime = os_gettime_ns();
 		statusWidget->ui->recordIcon->setPixmap(recordingPausePixmap);
 		streamPauseIconToggle = true;
 	}
@@ -563,6 +568,8 @@ void OBSBasicStatusBar::RecordingPaused()
 void OBSBasicStatusBar::RecordingUnpaused()
 {
 	if (recordOutput) {
+		recordStartTime += os_gettime_ns() - recordPauseTime;
+		recordPauseTime = 0;
 		statusWidget->ui->recordIcon->setPixmap(recordingActivePixmap);
 	}
 

@@ -28,7 +28,8 @@ private:
 
 	int retries = 0;
 	int totalStreamSeconds = 0;
-	int totalRecordSeconds = 0;
+	uint64_t recordStartTime = 0;
+	uint64_t recordPauseTime = 0;
 
 	int reconnectTimeout = 0;
 
