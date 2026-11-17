@@ -727,10 +727,10 @@ static void apply_video_encoder_settings(obs_data_t *settings, json_t *recommend
 	}
 
 	const char *rc = obs_data_get_string(settings, "rate_control");
-	if (astrcmpi(rc, "hqcbr") == 0) {
-		obs_data_set_string(settings, "rate_control", "HQCBR");
-	} else {
+	if (!astrstri(rc, "cbr")) {
 		obs_data_set_string(settings, "rate_control", "CBR");
+	} else {
+		obs_data_set_string(settings, "rate_control", rc);
 	}
 
 	item = json_object_get(recommended, "profile");
