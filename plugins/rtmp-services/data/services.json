@@ -320,6 +320,17 @@
             ]
         },
         {
+            "name": "Instagram",
+            "common": true,
+            "stream_key_link": "https://www.instagram.com/?create_live=true&live_view=manage_keys",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://live-upload.instagram.com:443/rtmp/"
+                }
+            ]
+        },
+        {
             "name": "Facebook Live",
             "common": true,
             "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
