@@ -22,6 +22,14 @@ recording, and streaming video content, efficiently.
 It's distributed under the GNU General Public License v2 (or any later
 version) - see the accompanying COPYING file for more details.
 
+Mobile application scaffold
+----------------------------
+
+An early Android and iOS interface scaffold is available in ``mobile/``.
+It keeps the desktop frontend unchanged and is not yet connected to
+``libobs`` or to mobile camera, screen-capture, recording, or streaming
+APIs. See ``mobile/README.md`` for the current scope and integration plan.
+
 Quick Links
 -----------
 

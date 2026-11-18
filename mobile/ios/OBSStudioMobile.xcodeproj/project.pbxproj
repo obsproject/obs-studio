@@ -1,0 +1,29 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {};
+	objectVersion = 56;
+	objects = {
+		A10000000000000000000001 /* Project object */ = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastUpgradeCheck = 2600; TargetAttributes = {A10000000000000000000002 = {CreatedOnToolsVersion = 26.0; }; }; }; buildConfigurationList = A10000000000000000000010; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base,); mainGroup = A10000000000000000000003; productRefGroup = A10000000000000000000004; projectDirPath = ""; projectRoot = ""; targets = (A10000000000000000000002,); };
+		A10000000000000000000002 /* OBSStudioMobile */ = {isa = PBXNativeTarget; buildConfigurationList = A10000000000000000000011; buildPhases = (A10000000000000000000012, A10000000000000000000013, A10000000000000000000014,); buildRules = (); dependencies = (); name = OBSStudioMobile; productName = OBSStudioMobile; productReference = A10000000000000000000005; productType = "com.apple.product-type.application"; };
+		A10000000000000000000003 = {isa = PBXGroup; children = (A10000000000000000000006, A10000000000000000000004,); sourceTree = "<group>"; };
+		A10000000000000000000004 = {isa = PBXGroup; children = (A10000000000000000000005,); name = Products; sourceTree = "<group>"; };
+		A10000000000000000000005 = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OBSStudioMobile.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000006 = {isa = PBXGroup; children = (A10000000000000000000007, A10000000000000000000008, A10000000000000000000020,); path = Sources; sourceTree = "<group>"; };
+		A10000000000000000000007 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OBSStudioMobileApp.swift; sourceTree = "<group>"; };
+		A10000000000000000000008 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ObsMobileView.swift; sourceTree = "<group>"; };
+		A10000000000000000000020 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A10000000000000000000009 = {isa = PBXBuildFile; fileRef = A10000000000000000000007; };
+		A10000000000000000000015 = {isa = PBXBuildFile; fileRef = A10000000000000000000008; };
+		A10000000000000000000012 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000009, A10000000000000000000015,); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000013 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000014 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000010 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000016, A10000000000000000000017,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000011 = {isa = XCConfigurationList; buildConfigurations = (A10000000000000000000018, A10000000000000000000019,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		A10000000000000000000016 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Debug; };
+		A10000000000000000000017 = {isa = XCBuildConfiguration; buildSettings = {CLANG_ENABLE_MODULES = YES; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SDKROOT = iphoneos; }; name = Release; };
+		A10000000000000000000018 = {isa = XCBuildConfiguration; buildSettings = {CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Sources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.obsproject.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Debug; };
+		A10000000000000000000019 = {isa = XCBuildConfiguration; buildSettings = {CURRENT_PROJECT_VERSION = 1; GENERATE_INFOPLIST_FILE = NO; INFOPLIST_FILE = Sources/Info.plist; IPHONEOS_DEPLOYMENT_TARGET = 17.0; MARKETING_VERSION = 0.1.0; PRODUCT_BUNDLE_IDENTIFIER = com.obsproject.mobile; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; }; name = Release; };
+	};
+	rootObject = A10000000000000000000001;
+}

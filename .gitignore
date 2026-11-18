@@ -9,6 +9,8 @@
 !/docs
 !/frontend
 !/libobs*
+!/mobile
+!/mobile/**
 !/plugins
 !/shared
 !/test
