@@ -193,6 +193,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 	obs_encoder_t *aencoder = obs_output_get_audio_encoder(context, 0);
 	video_t *video = obs_encoder_video(vencoder);
 	audio_t *audio = obs_encoder_audio(aencoder);
+	const struct video_output_info *voi = video_output_get_info(video);
 	char buf[4096];
 	char *enc = buf;
 	char *end = enc + sizeof(buf);
@@ -212,7 +213,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 
 	enc_num_val(&enc, end, "videocodecid", encoder_video_codec(vencoder));
 	enc_num_val(&enc, end, "videodatarate", encoder_bitrate(vencoder));
-	enc_num_val(&enc, end, "framerate", video_output_get_frame_rate(video));
+	enc_num_val(&enc, end, "framerate", (double)voi->fps_num / (double)voi->fps_den);
 
 	enc_num_val(&enc, end, "audiocodecid", AUDIODATA_AAC);
 	enc_num_val(&enc, end, "audiodatarate", encoder_bitrate(aencoder));
