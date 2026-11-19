@@ -166,6 +166,7 @@ struct NVML {
 		if (!init || !shutdown || !getDriverVersion || !getDeviceHandleByPCIBusId || !getDeviceUUID ||
 		    !getDeviceName || !getDevicePCIeGen || !getDevicePCIeWidth || !getEncoderSessions ||
 		    !getEncoderCapacity || !getEncoderUtilisation || !getDeviceArchitecture) {
+			printf("reason=nvml_function_load_failure\n");
 			return false;
 		}
 
@@ -205,7 +206,7 @@ private:
 };
 
 struct CUDACtx {
-	CUcontext ctx;
+	CUcontext ctx = nullptr;
 
 	CUDACtx() = default;
 
@@ -506,8 +507,6 @@ int check_thread()
 	caps["hevc"]["codec_supported"] = 0;
 	caps["av1"]["codec_supported"] = 0;
 
-	printf("[general]\n");
-
 	if (nvenc_checks(caps, device_infos)) {
 		printf("nvenc_supported=true\n");
 	} else {
@@ -565,11 +564,16 @@ int check_thread()
 
 int main(int, char **)
 {
+	printf("[general]\n");
+
 	future<int> f = async(launch::async, check_thread);
-	future_status status = f.wait_for(2.5s);
+	future_status status = f.wait_for(10s);
 
 	if (status == future_status::timeout) {
-		exit(1);
+		printf("nvenc_supported=false\n");
+		printf("reason=timeout\n");
+		std::fflush(stdout);
+		std::quick_exit(1);
 	}
 
 	return f.get();
