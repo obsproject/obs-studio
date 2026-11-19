@@ -131,6 +131,11 @@ PY_EXTERN int (*Import_PyArg_VaParse)(PyObject *, const char *, va_list);
 PY_EXTERN PyObject(*Import__Py_NoneStruct);
 PY_EXTERN PyObject *(*Import_PyTuple_New)(Py_ssize_t size);
 PY_EXTERN int (*Import_PyType_GetFlags)(PyTypeObject *o);
+PY_EXTERN void (*Import_PyConfig_InitPythonConfig)(PyConfig *config);
+PY_EXTERN PyStatus (*Import_PyConfig_SetArgv)(PyConfig *config, Py_ssize_t argc, wchar_t *const *argv);
+PY_EXTERN void (*Import_PyConfig_Clear)(PyConfig *config);
+PY_EXTERN PyStatus (*Import_Py_InitializeFromConfig)(const PyConfig *config);
+PY_EXTERN int (*Import_PyStatus_Exception)(PyStatus err);
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
 #endif
@@ -219,6 +224,11 @@ extern bool import_python(const char *python_path, python_version_t *python_vers
 #define PyArg_VaParse Import_PyArg_VaParse
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
 #define PyTuple_New Import_PyTuple_New
+#define PyConfig_InitPythonConfig Import_PyConfig_InitPythonConfig
+#define PyConfig_SetArgv Import_PyConfig_SetArgv
+#define PyConfig_Clear Import_PyConfig_Clear
+#define Py_InitializeFromConfig Import_Py_InitializeFromConfig
+#define PyStatus_Exception Import_PyStatus_Exception
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 #define _Py_Dealloc Import__Py_Dealloc
 #endif
