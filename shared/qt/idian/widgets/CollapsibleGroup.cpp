@@ -38,9 +38,6 @@ CollapsibleGroup::CollapsibleGroup(QWidget *parent) : QFrame(parent)
 
 	mainLayout->addWidget(rowWidget);
 
-	auto *headerInfo = new RowInfo(rowWidget);
-	rowWidget->layout()->addWidget(headerInfo);
-
 	expandButton = new ExpandButton(this);
 	rowWidget->layout()->addWidget(expandButton);
 	rowWidget->setBuddy(expandButton);
@@ -62,7 +59,7 @@ void CollapsibleGroup::setCheckable(bool check)
 
 		toggleSwitch = new ToggleSwitch(false);
 
-		rowWidget->layout()->insertWidget(rowWidget->layout()->count() - 1, toggleSwitch);
+		rowWidget->layout()->insertWidget(rowWidget->layout()->count(), toggleSwitch);
 		connect(toggleSwitch, &ToggleSwitch::toggled, propertyList, &RowList::setEnabled);
 		connect(toggleSwitch, &ToggleSwitch::toggled, this, &CollapsibleGroup::toggled);
 	}

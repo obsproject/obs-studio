@@ -106,7 +106,7 @@ OBSIdianPlayground::OBSIdianPlayground(QWidget *parent) : QDialog(parent), ui(ne
 	rowList->addRow(tmp);
 
 	CollapsibleGroup *tmp2 = new CollapsibleGroup(this);
-	tmp2->row()->layout()->insertWidget(0, new RowInfo(tmp, "A Collapsible row!"));
+	tmp2->row()->layout()->insertWidget(1, new RowInfo(tmp, "A Collapsible row!"));
 	tmp2->setCheckable(true);
 	rowList->addRow(tmp2);
 

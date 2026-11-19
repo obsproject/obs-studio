@@ -2707,9 +2707,8 @@ idian--Row QComboBox QAbstractItemView::item:selected {
     padding: var(--padding_base) var(--padding_large);
 }
 
-idian--Row QPushButton,
-idian--Row QSpinBox,
-idian--Row QDoubleSpinBox {
+idian--RowSpinBox QWidget,
+idian--RowDoubleSpinBox QWidget {
     margin: 0;
     padding: var(--padding_base) var(--action_row_padding_x);
 }
@@ -2768,10 +2767,6 @@ idian--CollapsibleGroup idian--Row.keyFocus {
 
 idian--CollapsibleGroup idian--RowList {
     border-radius: 0;
-    border-left: 1px solid var(--grey5);
-    border-right: 1px solid var(--grey5);
-    border-bottom: 1px solid var(--grey5);
-    border-bottom: 1px solid var(--grey5);
     margin: var(--spacing_small) 0px 0px;
 }
 
@@ -2803,8 +2798,7 @@ idian--CollapsibleGroup idian--RowList idian--ToggleSwitch {
     qproperty-background_hover: var(--grey6);
 }
 
-idian--InlineButton,
-idian--Row idian--InlineButton {
+idian--InlineButton {
     background: transparent;
     min-width: var(--input_height);
     min-height: var(--input_height);
@@ -2838,6 +2832,7 @@ idian--Row.keyFocus idian--InlineButton.checked {
 
 idian--ExpandButton {
     qproperty-icon: url(theme:Dark/down.svg);
+    margin: 0;
 }
 
 idian--ExpandButton.checked {
