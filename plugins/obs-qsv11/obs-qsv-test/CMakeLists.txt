@@ -19,4 +19,9 @@ target_link_libraries(
 
 target_link_options(obs-qsv-test PRIVATE /IGNORE:4099)
 
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-qsv-test.rc)
+  target_sources(obs-qsv-test PRIVATE obs-qsv-test.rc)
+endif()
+
 set_target_properties_obs(obs-qsv-test PROPERTIES FOLDER plugins/obs-qsv11 PREFIX "")
