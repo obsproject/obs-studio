@@ -20,7 +20,6 @@
 #include <util/dstr.h>
 #include <util/array-serializer.h>
 #include "flv-mux.h"
-#include "obs-output-ver.h"
 #include "rtmp-helpers.h"
 
 /* TODO: FIXME: this is currently hard-coded to h264 and aac!  ..not that we'll
@@ -228,7 +227,7 @@ static void build_flv_meta_data(obs_output_t *context, uint8_t **output, size_t 
 	enc_bool_val(&enc, end, "5.1", audio_output_get_channels(audio) == 6);
 	enc_bool_val(&enc, end, "7.1", audio_output_get_channels(audio) == 8);
 
-	dstr_printf(&encoder_name, "%s (libobs version ", MODULE_NAME);
+	dstr_printf(&encoder_name, "%s (libobs version ", obs_output_get_name(context));
 
 	dstr_cat(&encoder_name, obs_get_version_string());
 
