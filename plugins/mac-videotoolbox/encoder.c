@@ -64,6 +64,7 @@ struct vt_encoder {
 	CMVideoCodecType codec_type;
 	bool bframes;
 	bool spatial_aq;
+	bool low_latency;
 
 	int vt_pix_fmt;
 	enum video_colorspace colorspace;
@@ -273,7 +274,8 @@ static OSStatus session_set_prop(VTCompressionSessionRef session, CFStringRef ke
 }
 
 static OSStatus session_set_bitrate(VTCompressionSessionRef session, const char *rate_control, int new_bitrate,
-				    float quality, bool limit_bitrate, int max_bitrate, double max_bitrate_window)
+				    float quality, bool limit_bitrate, int max_bitrate, double max_bitrate_window,
+				    bool low_latency)
 {
 	OSStatus code;
 
@@ -284,7 +286,11 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session, const char 
 		compressionPropertyKey = kVTCompressionPropertyKey_AverageBitRate;
 		can_limit_bitrate = true;
 
-		if (__builtin_available(macOS 13.0, *)) {
+		if (low_latency) {
+			VT_LOG(LOG_WARNING,
+			       "CBR is not supported with low latency rate control. Will use ABR instead.");
+			can_limit_bitrate = false;
+		} else if (__builtin_available(macOS 13.0, *)) {
 			if (is_apple_silicon) {
 				compressionPropertyKey = kVTCompressionPropertyKey_ConstantBitRate;
 				can_limit_bitrate = false;
@@ -422,6 +428,54 @@ void sample_encoded_callback(void *data, void *source, OSStatus status, VTEncode
 	CFRelease(pixbuf);
 }
 
+static CFStringRef copy_low_latency_encoder_id(struct vt_encoder *enc)
+{
+	CFTypeRef keys[1] = {kVTVideoEncoderSpecification_EnableLowLatencyRateControl};
+	CFTypeRef values[1] = {kCFBooleanTrue};
+	CFDictionaryRef spec = CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, &kCFTypeDictionaryKeyCallBacks,
+						  &kCFTypeDictionaryValueCallBacks);
+
+	CFStringRef id = NULL;
+	OSStatus code = VTCopySupportedPropertyDictionaryForEncoder((int32_t)enc->width, (int32_t)enc->height,
+								    enc->codec_type, spec, &id, NULL);
+	CFRelease(spec);
+
+	if (code != noErr)
+		return NULL;
+
+	return id;
+}
+
+static CFStringRef select_low_latency_encoder_id(struct vt_encoder *enc, obs_data_t *settings)
+{
+	if (!obs_data_get_bool(settings, "low_latency"))
+		return NULL;
+
+	struct vt_encoder_type_data *type_data = (struct vt_encoder_type_data *)obs_encoder_get_type_data(enc->encoder);
+
+	if (!type_data->hardware_accelerated ||
+	    (enc->codec_type != kCMVideoCodecType_H264 && enc->codec_type != kCMVideoCodecType_HEVC)) {
+		VT_BLOG(LOG_INFO, "low latency was requested but this encoder does not support it, encoding normally");
+		return NULL;
+	}
+
+	CFStringRef low_latency_encoder_id = copy_low_latency_encoder_id(enc);
+	if (low_latency_encoder_id == NULL) {
+		VT_BLOG(LOG_WARNING, "no low latency encoder for %.4s at %ux%u, encoding normally",
+			codec_type_to_print_fmt(enc->codec_type), enc->width, enc->height);
+		return NULL;
+	}
+
+	char *id_str = cfstr_copy_cstr(low_latency_encoder_id, kCFStringEncodingUTF8);
+	VT_BLOG(LOG_INFO, "low latency: encoding with '%s' in place of '%s'", id_str ? id_str : "(unknown)",
+		enc->vt_encoder_id);
+	bfree(id_str);
+
+	enc->low_latency = true;
+
+	return low_latency_encoder_id;
+}
+
 static inline CFDictionaryRef create_encoder_spec(const char *vt_encoder_id)
 {
 	CFStringRef id = CFStringCreateWithFileSystemRepresentation(NULL, vt_encoder_id);
@@ -435,6 +489,16 @@ static inline CFDictionaryRef create_encoder_spec(const char *vt_encoder_id)
 	CFRelease(id);
 
 	return encoder_spec;
+}
+
+static inline CFDictionaryRef create_low_latency_encoder_spec(CFStringRef low_latency_encoder_id)
+{
+	CFTypeRef keys[2] = {kVTVideoEncoderSpecification_EncoderID,
+			     kVTVideoEncoderSpecification_EnableLowLatencyRateControl};
+	CFTypeRef values[2] = {low_latency_encoder_id, kCFBooleanTrue};
+
+	return CFDictionaryCreate(kCFAllocatorDefault, keys, values, 2, &kCFTypeDictionaryKeyCallBacks,
+				  &kCFTypeDictionaryValueCallBacks);
 }
 
 static inline CFDictionaryRef create_prores_encoder_spec(CMVideoCodecType target_codec_type, bool hardware_accelerated)
@@ -485,7 +549,7 @@ static inline CFDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 	return pixbuf_spec;
 }
 
-static OSStatus create_encoder(struct vt_encoder *enc)
+static OSStatus create_encoder(struct vt_encoder *enc, obs_data_t *settings)
 {
 	OSStatus code;
 
@@ -494,10 +558,13 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 	const char *codec_name = obs_encoder_get_codec(enc->encoder);
 
 	CFDictionaryRef encoder_spec;
+	CFStringRef low_latency_encoder_id = select_low_latency_encoder_id(enc, settings);
 	if (strcmp(codec_name, "prores") == 0) {
 		struct vt_encoder_type_data *type_data =
 			(struct vt_encoder_type_data *)obs_encoder_get_type_data(enc->encoder);
 		encoder_spec = create_prores_encoder_spec(enc->codec_type, type_data->hardware_accelerated);
+	} else if (low_latency_encoder_id != NULL) {
+		encoder_spec = create_low_latency_encoder_spec(low_latency_encoder_id);
 	} else {
 		encoder_spec = create_encoder_spec(enc->vt_encoder_id);
 	}
@@ -513,6 +580,8 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 
 	CFRelease(encoder_spec);
 	CFRelease(pixbuf_spec);
+	if (low_latency_encoder_id != NULL)
+		CFRelease(low_latency_encoder_id);
 
 	CFBooleanRef b = NULL;
 	code = VTSessionCopyProperty(s, kVTCompressionPropertyKey_UsingHardwareAcceleratedVideoEncoder, NULL, &b);
@@ -572,28 +641,36 @@ static OSStatus create_encoder(struct vt_encoder *enc)
 		}
 
 		code = session_set_bitrate(s, enc->rate_control, enc->bitrate, enc->quality, enc->limit_bitrate,
-					   enc->rc_max_bitrate, enc->rc_max_bitrate_window);
+					   enc->rc_max_bitrate, enc->rc_max_bitrate_window, enc->low_latency);
 		if (code != noErr) {
 			return code;
 		}
 
-		if (__builtin_available(macOS 15.0, *)) {
-			int spatial_aq = enc->spatial_aq ? kVTQPModulationLevel_Default : kVTQPModulationLevel_Disable;
-			CFNumberRef spatialAQ = CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &spatial_aq);
+		/* The low latency encoder rejects Spatial AQ with kVTPropertyNotSupportedErr, so skip it */
+		if (!enc->low_latency) {
+			if (__builtin_available(macOS 15.0, *)) {
+				int spatial_aq = enc->spatial_aq ? kVTQPModulationLevel_Default
+								 : kVTQPModulationLevel_Disable;
+				CFNumberRef spatialAQ =
+					CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &spatial_aq);
 
-			code = VTSessionSetProperty(s, kVTCompressionPropertyKey_SpatialAdaptiveQPLevel, spatialAQ);
+				code = VTSessionSetProperty(s, kVTCompressionPropertyKey_SpatialAdaptiveQPLevel,
+							    spatialAQ);
 
-			if (code != noErr) {
-				log_osstatus(LOG_WARNING, enc,
-					     "setting kVTCompressionPropertyKey_SpatialAdaptiveQPLevel failed", code);
+				if (code != noErr) {
+					log_osstatus(LOG_WARNING, enc,
+						     "setting kVTCompressionPropertyKey_SpatialAdaptiveQPLevel failed",
+						     code);
+				}
+
+				CFRelease(spatialAQ);
 			}
-
-			CFRelease(spatialAQ);
 		}
 	}
 
 	// This can fail depending on hardware configuration
-	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime, kCFBooleanFalse);
+	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime,
+				enc->low_latency ? kCFBooleanTrue : kCFBooleanFalse);
 	if (code != noErr)
 		log_osstatus(LOG_WARNING, enc,
 			     "setting kVTCompressionPropertyKey_RealTime failed, "
@@ -648,11 +725,13 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
 		"\tspatial_aq:            %s\n"
+		"\tlow_latency:           %s\n"
 		"\tprofile:               %s\n"
 		"\tcodec_type:            %.4s\n",
 		enc->vt_encoder_id, enc->rate_control, enc->bitrate, enc->quality, enc->fps_num, enc->fps_den,
 		enc->width, enc->height, enc->keyint, enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
 		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off", enc->spatial_aq ? "on" : "off",
+		enc->low_latency ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile : "default",
 		codec_type_to_print_fmt(enc->codec_type));
 }
@@ -772,7 +851,8 @@ static bool vt_update(void *data, obs_data_t *settings)
 		return true;
 
 	OSStatus code = session_set_bitrate(enc->session, enc->rate_control, enc->bitrate, enc->quality,
-					    enc->limit_bitrate, enc->rc_max_bitrate, enc->rc_max_bitrate_window);
+					    enc->limit_bitrate, enc->rc_max_bitrate, enc->rc_max_bitrate_window,
+					    enc->low_latency);
 	if (code != noErr)
 		VT_BLOG(LOG_WARNING, "Failed to set bitrate to session");
 
@@ -797,7 +877,7 @@ static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
-	code = create_encoder(enc);
+	code = create_encoder(enc, settings);
 	if (code != noErr) {
 		goto fail;
 	}
@@ -1387,6 +1467,7 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	obs_data_set_default_int(settings, "codec_type", kCMVideoCodecType_AppleProRes422);
 	obs_data_set_default_bool(settings, "bframes", true);
 	obs_data_set_default_int(settings, "spatial_aq_mode", AQ_AUTO);
+	obs_data_set_default_bool(settings, "low_latency", false);
 }
 
 static void vt_free_type_data(void *data)
