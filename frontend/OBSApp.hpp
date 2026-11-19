@@ -182,8 +182,8 @@ public:
 
 	profiler_name_store_t *GetProfilerNameStore() const { return profilerNameStore; }
 
-	const char *GetLastLog() const;
-	const char *GetCurrentLog() const;
+	std::filesystem::path GetLastLog() const;
+	std::filesystem::path GetCurrentLog() const;
 
 	void openCrashLogDirectory() const;
 	void uploadLastAppLog() const;
@@ -259,8 +259,7 @@ signals:
 	void logUploadFailed(OBS::LogFileType, const QString &errorMessage);
 };
 
-int GetAppConfigPath(char *path, size_t size, const char *name);
-char *GetAppConfigPathPtr(const char *name);
+std::filesystem::path GetAppConfigPath(const char *suffix = {});
 
 inline OBSApp *App()
 {
@@ -277,9 +276,6 @@ inline QString QTStr(const char *lookupVal)
 	return QString::fromUtf8(Str(lookupVal));
 }
 
-int GetProgramDataPath(char *path, size_t size, const char *name);
-char *GetProgramDataPathPtr(const char *name);
-
 bool GetFileSafeName(const char *name, std::string &file);
 bool GetClosestUnusedFileName(std::string &path, const char *extension);
 
@@ -292,7 +288,7 @@ extern "C" void log_blocked_dlls(void);
 
 std::string CurrentDateTimeString();
 std::string GetFormatString(const char *format, const char *prefix, const char *suffix);
-std::string GenerateTimeDateFilename(const char *extension, bool noSpace = false);
+std::filesystem::path GenerateTimeDateFilename(const char *extension, const char *prefix = "", bool noSpace = false);
 std::string GetFormatExt(const char *container);
 std::string GetOutputFilename(const char *path, const char *container, bool noSpace, bool overwrite,
 			      const char *format);

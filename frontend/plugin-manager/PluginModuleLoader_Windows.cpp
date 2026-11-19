@@ -21,6 +21,7 @@
 #include <obs.h>
 #include <util/dstr.h>
 #include <util/platform.h>
+#include <util/util.hpp>
 
 #include <string>
 #include <string_view>
@@ -123,17 +124,15 @@ State PluginManager::loadPlugins(bool usePortableMode)
 	std::string appLibraryPath{};
 
 	if (!usePortableMode) {
-		appLibraryPath.resize(MAX_PATH);
-		int bufferSize = os_get_program_data_path(appLibraryPath.data(), appLibraryPath.size(),
-							  kPluginPathSuffix.data());
-		if (bufferSize > 0) {
-			appLibraryPath.resize(bufferSize);
-		}
+		BPtr<char> tmpPath = os_get_program_data_path_ptr(kPluginPathSuffix.data());
+		appLibraryPath = tmpPath.Get();
 	} else {
 		appLibraryPath = kPortablePluginPath;
 	}
 
-	libraryPluginState = loadPluginsFromPath(appLibraryPath, OBS_MODULE_TYPE_PLUGIN, failedModules_);
+	if (!appLibraryPath.empty()) {
+		libraryPluginState = loadPluginsFromPath(appLibraryPath, OBS_MODULE_TYPE_PLUGIN, failedModules_);
+	}
 
 	return (userPluginState && libraryPluginState) ? State::Success : State::PartialFailure;
 }
@@ -179,11 +178,11 @@ State PluginManager::loadLegacyPlugins(bool usePortableMode)
 
 	if (!usePortableMode) {
 		std::string appLibraryPath{};
-		appLibraryPath.resize(MAX_PATH);
-		int bufferSize = os_get_program_data_path(appLibraryPath.data(), appLibraryPath.size(),
-							  kPluginPathSuffix.data());
-		if (bufferSize > 0) {
-			appLibraryPath.resize(bufferSize);
+
+		BPtr<char> tmpPath = os_get_program_data_path_ptr(kPluginPathSuffix.data());
+		appLibraryPath = tmpPath.Get();
+
+		if (!appLibraryPath.empty()) {
 			libraryPluginState =
 				loadPluginsFromPath(appLibraryPath, OBS_MODULE_TYPE_LEGACY_PLUGIN, failedModules_);
 		}

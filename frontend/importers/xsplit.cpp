@@ -503,10 +503,8 @@ OBSImporterFiles XSplitImporter::FindFiles()
 {
 	OBSImporterFiles res;
 #ifdef _WIN32
-	char dst[512];
-	int found = os_get_program_data_path(dst, 512, "SplitMediaLabs\\XSplit\\Presentation2.0\\");
-
-	if (found == -1) {
+	BPtr<char> dst = os_get_program_data_path_ptr("SplitMediaLabs\\XSplit\\Presentation2.0\\");
+	if (!dst) {
 		return res;
 	}
 
@@ -521,7 +519,7 @@ OBSImporterFiles XSplitImporter::FindFiles()
 		}
 
 		if (name == "Placements.bpres") {
-			string str = dst + name;
+			string str = dst.Get() + name;
 			res.push_back(str);
 
 			break;

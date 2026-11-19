@@ -32,9 +32,9 @@ extern "C" {
 
 extern void hlog(const char *format, ...);
 extern void hlog_hr(const char *text, HRESULT hr);
-static inline const char *get_process_name(void);
-static inline HMODULE get_system_module(const char *module);
-static inline HMODULE load_system_library(const char *module);
+static inline const wchar_t *get_process_name(void);
+static inline HMODULE get_system_module(const wchar_t *module);
+static inline HMODULE load_system_library(const wchar_t *module);
 extern uint64_t os_gettime_ns(void);
 
 #define flog(format, ...) hlog("%s: " format, __FUNCTION__, ##__VA_ARGS__)
@@ -106,25 +106,43 @@ extern HANDLE signal_stop;
 extern HANDLE signal_ready;
 extern HANDLE signal_exit;
 extern HANDLE tex_mutexes[2];
-extern char system_path[MAX_PATH];
-extern char process_name[MAX_PATH];
+extern wchar_t system_path[MAX_PATH];
+extern wchar_t process_name[MAX_PATH];
 extern wchar_t keepalive_name[64];
 extern HWND dummy_window;
 extern volatile bool active;
 
-static inline const char *get_process_name(void)
+static inline char *wide_to_utf8_ptr(const wchar_t *wstr)
+{
+	if (!wstr)
+		return NULL;
+
+	int wlen = (int)wcslen(wstr);
+	int size = WideCharToMultiByte(CP_UTF8, 0, wstr, wlen + 1, NULL, 0, NULL, NULL);
+	if (size <= 0)
+		return NULL;
+
+	char *str = (char *)malloc((size_t)size);
+	if (!str)
+		return NULL;
+
+	WideCharToMultiByte(CP_UTF8, 0, wstr, wlen + 1, str, size, NULL, NULL);
+	return str;
+}
+
+static inline const wchar_t *get_process_name(void)
 {
 	return process_name;
 }
 
-static inline HMODULE get_system_module(const char *module)
+static inline HMODULE get_system_module(const wchar_t *module)
 {
-	char base_path[MAX_PATH];
+	wchar_t base_path[MAX_PATH];
 
-	strcpy(base_path, system_path);
-	strcat(base_path, "\\");
-	strcat(base_path, module);
-	return GetModuleHandleA(base_path);
+	wcscpy(base_path, system_path);
+	wcscat(base_path, L"\\");
+	wcscat(base_path, module);
+	return GetModuleHandleW(base_path);
 }
 
 static inline uint32_t module_size(HMODULE module)
@@ -134,20 +152,20 @@ static inline uint32_t module_size(HMODULE module)
 	return success ? info.SizeOfImage : 0;
 }
 
-static inline HMODULE load_system_library(const char *name)
+static inline HMODULE load_system_library(const wchar_t *name)
 {
-	char base_path[MAX_PATH];
+	wchar_t base_path[MAX_PATH];
 	HMODULE module;
 
-	strcpy(base_path, system_path);
-	strcat(base_path, "\\");
-	strcat(base_path, name);
+	wcscpy(base_path, system_path);
+	wcscat(base_path, L"\\");
+	wcscat(base_path, name);
 
-	module = GetModuleHandleA(base_path);
+	module = GetModuleHandleW(base_path);
 	if (module)
 		return module;
 
-	return LoadLibraryA(base_path);
+	return LoadLibraryW(base_path);
 }
 
 static inline bool capture_alive(void)
