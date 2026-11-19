@@ -1574,6 +1574,8 @@ public slots:
 
 	void SetTransitionDuration(int duration);
 
+	void SetTbarPosition(int position);
+
 private slots:
 	void AddTransition(const char *id);
 	void RenameTransition(OBSSource transition);
