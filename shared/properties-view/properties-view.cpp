@@ -214,6 +214,10 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj, Prope
 {
 	setFrameShape(QFrame::NoFrame);
 	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
+
+	viewport()->setAutoFillBackground(false);
+	setAutoFillBackground(false);
+	style()->polish(this);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesReloadCallback reloadCallback,
@@ -229,6 +233,10 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj, PropertiesRel
 {
 	setFrameShape(QFrame::NoFrame);
 	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
+
+	viewport()->setAutoFillBackground(false);
+	setAutoFillBackground(false);
+	style()->polish(this);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, PropertiesReloadCallback reloadCallback_,
@@ -241,6 +249,10 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_, Prope
 {
 	setFrameShape(QFrame::NoFrame);
 	QMetaObject::invokeMethod(this, &OBSPropertiesView::ReloadProperties, Qt::QueuedConnection);
+
+	viewport()->setAutoFillBackground(false);
+	setAutoFillBackground(false);
+	style()->polish(this);
 }
 
 void OBSPropertiesView::SetDisabled(bool disabled)
