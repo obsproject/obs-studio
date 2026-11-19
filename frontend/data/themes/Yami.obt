@@ -196,6 +196,8 @@
     --input_height_half: calc(var(--input_height_base) / 2);
     --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
 
+    --input_text_bg: var(--grey7);
+
     --input_bg: var(--grey4);
     --input_bg_hover: var(--grey7);
     --input_bg_focus: var(--grey7);
@@ -1278,6 +1280,11 @@ QDateTimeEdit::down-arrow {
     width: 100%;
 }
 
+QComboBox:editable {
+    background-color: var(--input_text_bg);
+    border-bottom-width: 2px;
+}
+
 QComboBox:editable:hover {
     background-color: var(--input_bg_hover);
     border-color: var(--input_border_hover);
@@ -1292,8 +1299,13 @@ QComboBox:editable:focus {
 
 QComboBox::drop-down:editable,
 QDateTimeEdit::drop-down:editable {
+    background-color: var(--input_bg);
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;
+}
+
+QComboBox::drop-down:editable:hover {
+    background-color: var(--button_bg_hover);
 }
 
 QComboBox::down-arrow:editable,
@@ -1308,11 +1320,12 @@ QDateTimeEdit::down-arrow:editable {
 QLineEdit,
 QTextEdit,
 QPlainTextEdit {
-    background-color: var(--input_bg);
+    background-color: var(--input_text_bg);
     border: none;
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     border: 1px solid var(--input_bg);
+    border-bottom-width: 2px;
     height: var(--input_height);
 }
 
@@ -1333,6 +1346,7 @@ QPlainTextEdit:focus {
 QLineEdit:read-only,
 QLineEdit:read-only:hover,
 QLineEdit:read-only:focus {
+    color: var(--text_muted);
     background-color: transparent;
     border-color: var(--input_bg);
 }
@@ -1347,8 +1361,9 @@ QTextEdit:!editable:focus {
 
 QSpinBox,
 QDoubleSpinBox {
-    background-color: var(--input_bg);
+    background-color: var(--input_text_bg);
     border: var(--input_border_width) solid var(--input_bg);
+    border-bottom-width: 2px;
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     padding-right: var(--padding_base);
@@ -1357,6 +1372,13 @@ QDoubleSpinBox {
     min-width: var(--spinbox_width);
     max-height: var(--input_height);
     min-width: var(--spinbox_min_width);
+}
+
+QSpinBox:disabled,
+QDoubleSpinBox:disabled {
+    background-color: var(--input_bg);
+    border-color: var(--input_bg);
+    border-bottom-width: 1px;
 }
 
 QSpinBox:hover,
@@ -1373,6 +1395,7 @@ QDoubleSpinBox:focus {
 
 QSpinBox::up-button,
 QDoubleSpinBox::up-button {
+    background-color: var(--input_bg);
     subcontrol-origin: padding;
     /* position at the top right corner */
     subcontrol-position: top right;
@@ -1387,6 +1410,7 @@ QDoubleSpinBox::up-button {
 
 QSpinBox::down-button,
 QDoubleSpinBox::down-button {
+    background-color: var(--input_bg);
     subcontrol-origin: padding;
     /* position at the top right corner */
     subcontrol-position: bottom right;
