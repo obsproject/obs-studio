@@ -9,8 +9,11 @@
 #ifdef _WIN32
 #define INITGUID
 #include <dxgi.h>
+#include <dxgi1_6.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <d3d12.h>
+#include <dxgidebug.h>
 #else
 #include <glad/glad.h>
 #endif
@@ -89,9 +92,23 @@ struct nvenc_data {
 	int packet_priority;
 
 #ifdef _WIN32
+	bool is_use_d3d12;
 	DARRAY(struct nv_texture) textures;
-	ID3D11Device *device;
+	ID3D11Device *device11;
 	ID3D11DeviceContext *context;
+
+	ID3D12Device *device12;
+	ID3D12CommandQueue *command_queue;
+	HANDLE event;
+
+	ID3D12Fence *input_fence;
+	uint64_t input_fence_value;
+
+	ID3D12Fence *output_fence;
+	uint64_t output_fence_value;
+
+	ID3D12GraphicsCommandList *command_list;
+	DARRAY(ID3D12CommandAllocator *) allocators;
 #endif
 
 	uint32_t cx;
@@ -125,7 +142,7 @@ struct nvenc_data {
 struct handle_tex {
 #ifdef _WIN32
 	uint32_t handle;
-	ID3D11Texture2D *tex;
+	void *tex;
 	IDXGIKeyedMutex *km;
 #else
 	GLuint tex_id;
@@ -134,6 +151,15 @@ struct handle_tex {
 	CUgraphicsResource res_uv;
 #endif
 };
+
+#ifdef _WIN32
+struct nv_output {
+	void *res;
+	void *tex;
+	void *mapped_res;
+	void *output_res;
+};
+#endif
 
 /* Bitstream buffer */
 struct nv_bitstream {
@@ -152,8 +178,9 @@ struct nv_cuda_surface {
 /* DX11 textures */
 struct nv_texture {
 	void *res;
-	ID3D11Texture2D *tex;
+	void *tex;
 	void *mapped_res;
+	void *input_res;
 };
 #endif
 
@@ -175,6 +202,23 @@ bool d3d11_init_textures(struct nvenc_data *enc);
 void d3d11_free_textures(struct nvenc_data *enc);
 
 bool d3d11_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
+		  struct encoder_packet *packet, bool *received_packet);
+
+/** D3D12 **/
+bool d3d12_init(struct nvenc_data *enc, obs_data_t *settings);
+void d3d12_free(struct nvenc_data *enc);
+
+bool d3d12_init_allocators(struct nvenc_data *enc);
+
+bool d3d12_init_textures(struct nvenc_data *enc);
+void d3d12_free_textures(struct nvenc_data *enc);
+
+void cpu_wait_for_fence_point(struct nvenc_data *enc, ID3D12Fence *fence, uint64_t fence_value);
+
+bool d3d12_init_readback(struct nvenc_data *enc, struct nv_bitstream *bs);
+void d3d12_free_readback(struct nvenc_data *enc, struct nv_bitstream *bs);
+
+bool d3d12_encode(void *data, struct encoder_texture *texture, int64_t pts, uint64_t lock_key, uint64_t *next_key,
 		  struct encoder_packet *packet, bool *received_packet);
 #endif
 
