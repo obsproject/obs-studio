@@ -474,6 +474,22 @@ static int libsrt_setup(URLContext *h, const char *uri)
 	if (s->rw_timeout >= 0) {
 		open_timeout = h->rw_timeout = s->rw_timeout;
 	}
+
+	/* Caller and Rendezvous need a remote peer, if none is passed default to listener mode 
+	   See: https://github.com/Haivision/srt/blob/master/docs/apps/srt-live-transmit.md	*/
+	if (!av_find_info_tag(buf, sizeof(buf), "mode", p) &&
+	    (hostname[0] == '\0' || strcmp(hostname, "0.0.0.0") == 0)) {
+		/* srt://:<port> and srt://0.0.0.0:<port> are listener mode urls */
+		s->mode = SRT_MODE_LISTENER;
+		blog(LOG_INFO,
+		     "[obs-ffmpeg mpegts muxer / libsrt]: URL host is empty or 0.0.0.0; enabling listener mode");
+	}
+	if (s->mode == SRT_MODE_LISTENER && hostname[0] == '\0') {
+		/* listen on all interfaces by default if no interface is specified */
+		strncpy(hostname, "0.0.0.0", sizeof(hostname) - 1);
+		hostname[sizeof(hostname) - 1] = '\0';
+	}
+
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 	snprintf(portstr, sizeof(portstr), "%d", port);
