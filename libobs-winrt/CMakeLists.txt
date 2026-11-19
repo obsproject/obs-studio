@@ -26,6 +26,9 @@ target_precompile_headers(
     <winrt/Windows.System.h>
 )
 
+configure_file(cmake/windows/obs-module.rc.in libobs-winrt.rc)
+target_sources(libobs-winrt PRIVATE libobs-winrt.rc)
+
 target_link_libraries(libobs-winrt PRIVATE OBS::libobs OBS::COMutils Dwmapi windowsapp)
 
 # FIXME: WinRT library headers trigger deprecation warning until OBS Studio uses C++20 or newer
