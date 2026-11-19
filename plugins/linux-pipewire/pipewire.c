@@ -1189,7 +1189,8 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 	bfree(obs_pw);
 }
 
-obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
+						 struct obs_pipewire_stream_target target,
 						 const struct obs_pipewire_connect_stream_info *connect_info)
 {
 	struct spa_pod_builder pod_builder;
@@ -1225,6 +1226,9 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw_stream->reneg);
 
 	/* Stream */
+	if (target.has_serial) {
+		pw_properties_setf(connect_info->stream_properties, PW_KEY_TARGET_OBJECT, "%" PRIu64, target.serial);
+	}
 	obs_pw_stream->stream = pw_stream_new(obs_pw->core, connect_info->stream_name, connect_info->stream_properties);
 	pw_stream_add_listener(obs_pw_stream->stream, &obs_pw_stream->stream_listener, &stream_events, obs_pw_stream);
 	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw_stream->stream);
@@ -1240,7 +1244,7 @@ obs_pipewire_stream *obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_sourc
 		return NULL;
 	}
 
-	pw_stream_connect(obs_pw_stream->stream, PW_DIRECTION_INPUT, pipewire_node,
+	pw_stream_connect(obs_pw_stream->stream, PW_DIRECTION_INPUT, target.has_serial ? PW_ID_ANY : target.node,
 			  PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params, n_params);
 
 	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw_stream->stream);
