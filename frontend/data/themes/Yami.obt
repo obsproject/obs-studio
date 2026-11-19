@@ -422,6 +422,10 @@
     margin: var(--spacing_base) 0;
 }
 
+.dialog-buttons {
+    padding: var(--spacing_base) var(--spacing_base);
+}
+
 .subtitle {
     font-size: var(--font_small);
     font-weight: bold;
