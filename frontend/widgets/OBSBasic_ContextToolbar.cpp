@@ -91,16 +91,17 @@ void OBSBasic::UpdateContextBarVisibility()
 	UpdateContextBarDeferred();
 }
 
-static bool is_network_media_source(obs_source_t *source, const char *id)
+static bool is_source_seekable(obs_source_t *source, const char *id)
 {
 	if (strcmp(id, "ffmpeg_source") != 0) {
-		return false;
+		return true;
 	}
 
 	OBSDataAutoRelease s = obs_source_get_settings(source);
 	bool is_local_file = obs_data_get_bool(s, "is_local_file");
+	bool seekable = obs_data_get_bool(s, "seekable");
 
-	return !is_local_file;
+	return is_local_file || seekable;
 }
 
 void OBSBasic::UpdateContextBarDeferred(bool force)
@@ -145,7 +146,7 @@ std::optional<QWidget *> OBSBasic::createContextBarWidget(obs_source_t *source)
 	}
 
 	if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-		if (!is_network_media_source(source, id)) {
+		if (!is_source_seekable(source, id)) {
 			MediaControls *contextBarWidget = new MediaControls(ui->emptySpace);
 			contextBarWidget->SetSource(source);
 			return contextBarWidget;
