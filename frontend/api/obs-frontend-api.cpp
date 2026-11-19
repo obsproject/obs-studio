@@ -119,6 +119,14 @@ void obs_frontend_get_transitions(struct obs_frontend_source_list *sources)
 	}
 }
 
+obs_source_t *obs_frontend_add_transition(const char *transition_id, const char *transition_name, obs_data_t *settings)
+{
+	if (callbacks_valid()) {
+		return c->obs_frontend_add_transition(transition_id, transition_name, settings);
+	}
+	return nullptr;
+}
+
 obs_source_t *obs_frontend_get_current_transition(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_current_transition() : nullptr;
