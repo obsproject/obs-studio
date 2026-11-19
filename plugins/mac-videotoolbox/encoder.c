@@ -1151,7 +1151,18 @@ static bool vt_encode(void *data, struct encoder_frame *frame, struct encoder_pa
 		goto fail;
 	}
 
-	code = VTCompressionSessionEncodeFrame(enc->session, pixbuf, pts, dur, NULL, pixbuf, NULL);
+	CFDictionaryRef frame_props = NULL;
+	if (frame->flags & OBS_FRAME_FORCE_IDR) {
+		const void *keys[] = {kVTEncodeFrameOptionKey_ForceKeyFrame};
+		const void *values[] = {kCFBooleanTrue};
+		frame_props = CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, &kCFTypeDictionaryKeyCallBacks,
+						 &kCFTypeDictionaryValueCallBacks);
+	}
+
+	code = VTCompressionSessionEncodeFrame(enc->session, pixbuf, pts, dur, frame_props, pixbuf, NULL);
+	if (frame_props) {
+		CFRelease(frame_props);
+	}
 	if (code != noErr) {
 		goto fail;
 	}
@@ -1447,7 +1458,8 @@ void obs_module_post_load(void)
 		.get_defaults2 = vt_defaults,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
-		.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE,
+		.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_MULTITRACK_DYN_BITRATE |
+			OBS_ENCODER_CAP_FORCE_IDR,
 	};
 
 	da_init(vt_prores_hardware_encoder_list);

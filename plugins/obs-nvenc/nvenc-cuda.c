@@ -322,5 +322,5 @@ bool cuda_encode(void *data, struct encoder_frame *frame, struct encoder_packet 
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, surf->mapped_res, frame->pts, packet, received_packet);
+	return nvenc_encode_base(enc, bs, surf->mapped_res, frame->pts, packet, received_packet, frame->flags);
 }

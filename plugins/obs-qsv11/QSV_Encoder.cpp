@@ -161,13 +161,13 @@ void qsv_encoder_clear_roi(qsv_t *pContext)
 }
 
 int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY,
-		       uint32_t strideUV, mfxBitstream **pBS)
+		       uint32_t strideUV, mfxBitstream **pBS, bool force_idr)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
 	if (pDataY != NULL && pDataUV != NULL) {
-		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS);
+		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV, pBS, force_idr);
 	}
 
 	if (sts == MFX_ERR_NONE) {
@@ -180,12 +180,12 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY, uint8_t *p
 }
 
 int qsv_encoder_encode_tex(qsv_t *pContext, uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key,
-			   mfxBitstream **pBS)
+			   mfxBitstream **pBS, bool force_idr)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS);
+	sts = pEncoder->Encode_tex(ts, tex, lock_key, next_key, pBS, force_idr);
 
 	if (sts == MFX_ERR_NONE) {
 		return 0;
