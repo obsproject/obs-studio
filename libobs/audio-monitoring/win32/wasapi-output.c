@@ -49,6 +49,16 @@ struct audio_monitor {
 
 /* #define DEBUG_AUDIO */
 
+static void drop_stale_audio(struct audio_monitor *monitor, size_t keep_size, uint32_t blocksize)
+{
+	while (monitor->delay_buffer.size > keep_size) {
+		uint32_t data;
+		deque_pop_front(&monitor->delay_buffer, NULL, sizeof(uint64_t));
+		deque_pop_front(&monitor->delay_buffer, &data, sizeof(data));
+		deque_pop_front(&monitor->delay_buffer, NULL, (size_t)data * blocksize);
+	}
+}
+
 static bool process_audio_delay(struct audio_monitor *monitor, float **data, uint32_t *frames, uint64_t ts,
 				uint32_t pad)
 {
@@ -67,17 +77,17 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 
 	ts += monitor->source->sync_offset;
 
+	const size_t new_data = sizeof(ts) + sizeof(*frames) + (size_t)*frames * blocksize;
+
 	deque_push_back(&monitor->delay_buffer, &ts, sizeof(ts));
 	deque_push_back(&monitor->delay_buffer, frames, sizeof(*frames));
 	deque_push_back(&monitor->delay_buffer, *data, *frames * blocksize);
 
-	if (!monitor->prev_video_ts) {
+	if (last_frame_ts != monitor->prev_video_ts) {
 		monitor->prev_video_ts = last_frame_ts;
-
-	} else if (monitor->prev_video_ts == last_frame_ts) {
-		monitor->time_since_prev += util_mul_div64(*frames, 1000000000ULL, monitor->sample_rate);
-	} else {
 		monitor->time_since_prev = 0;
+	} else {
+		monitor->time_since_prev += util_mul_div64(*frames, 1000000000ULL, monitor->sample_rate);
 	}
 
 	while (monitor->delay_buffer.size != 0) {
@@ -88,6 +98,9 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data, uin
 		front_ts = cur_ts - util_mul_div64(pad, 1000000000ULL, monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 		bad_diff = !last_frame_ts || llabs(diff) > 5000000000 || monitor->time_since_prev > 100000000ULL;
+
+		if (bad_diff && monitor->delay_buffer.size > new_data)
+			drop_stale_audio(monitor, new_data, blocksize);
 
 		/* delay audio if rushing */
 		if (!bad_diff && diff > 75000000) {
