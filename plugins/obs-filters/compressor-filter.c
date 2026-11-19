@@ -353,6 +353,18 @@ static void analyze_sidechain(struct compressor_data *cd, const uint32_t num_sam
 	cd->envelope = cd->envelope_buf[num_samples - 1];
 }
 
+static inline void apply_natural_release(struct compressor_data *cd, const uint32_t num_samples)
+{
+	if (cd->envelope_buf_len < num_samples)
+		resize_env_buffer(cd, num_samples);
+
+	const float release_gain = cd->release_gain;
+	for (uint32_t i = 0; i < num_samples; ++i) {
+		cd->envelope = release_gain * cd->envelope;
+		cd->envelope_buf[i] = cd->envelope;
+	}
+}
+
 static inline void process_compression(const struct compressor_data *cd, float **samples, uint32_t num_samples)
 {
 	for (size_t i = 0; i < num_samples; ++i) {
@@ -415,7 +427,6 @@ static void compressor_tick(void *data, float seconds)
 static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_audio_data *audio)
 {
 	struct compressor_data *cd = data;
-
 	const uint32_t num_samples = audio->frames;
 	if (num_samples == 0)
 		return audio;
@@ -423,13 +434,24 @@ static struct obs_audio_data *compressor_filter_audio(void *data, struct obs_aud
 	float **samples = (float **)audio->data;
 
 	pthread_mutex_lock(&cd->sidechain_update_mutex);
-	obs_weak_source_t *weak_sidechain = cd->weak_sidechain;
+	obs_source_t *sidechain = cd->weak_sidechain ? obs_weak_source_get_source(cd->weak_sidechain) : NULL;
+	bool has_sidechain_config = (cd->weak_sidechain != NULL);
 	pthread_mutex_unlock(&cd->sidechain_update_mutex);
 
-	if (weak_sidechain)
+	bool sidechain_active = (sidechain && obs_source_active(sidechain) && !obs_source_muted(sidechain));
+
+	if (sidechain_active) {
 		analyze_sidechain(cd, num_samples);
-	else
+	} else if (has_sidechain_config) {
+		// SIDECHAIN MUTE/INACTIVE: Apply smooth decay
+		apply_natural_release(cd, num_samples);
+	} else {
+		// NO SIDECHAIN: Standard self-compression
 		analyze_envelope(cd, samples, num_samples);
+	}
+
+	if (sidechain)
+		obs_source_release(sidechain);
 
 	process_compression(cd, samples, num_samples);
 	return audio;
