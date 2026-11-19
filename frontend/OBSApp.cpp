@@ -1123,6 +1123,36 @@ static void move_basic_to_scene_collections(void)
 	}
 }
 
+static QString GetEarlyTranslation(const char *translationKey, const char *fallback)
+{
+	const QString locale = QLocale::system().name().replace('_', '-');
+	const QByteArray localeFile = QString("locale/%1.ini").arg(locale).toUtf8();
+	std::string path;
+	if (!GetDataFilePath(localeFile.constData(), path)) {
+		return QString::fromUtf8(fallback);
+	}
+
+	lookup_t *lookup = text_lookup_create(path.c_str());
+	if (!lookup) {
+		return QString::fromUtf8(fallback);
+	}
+
+	const char *translated = nullptr;
+	const bool found = text_lookup_getstr(lookup, translationKey, &translated);
+
+	const QString result = (found && translated) ? QString::fromUtf8(translated) : QString::fromUtf8(fallback);
+
+	text_lookup_destroy(lookup);
+	return result;
+}
+
+static void ThrowEarlyRuntimeError(const char *message, const char *translationKey)
+{
+	const QByteArray display = GetEarlyTranslation(translationKey, message).toUtf8();
+	OBSErrorBox(nullptr, "%s", display.constData());
+	throw std::runtime_error(message);
+}
+
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
@@ -1130,16 +1160,18 @@ void OBSApp::AppInit()
 	QAccessible::installFactory(alignmentSelectorFactory);
 
 	if (!MakeUserDirs()) {
-		throw "Failed to create required user directories";
+		ThrowEarlyRuntimeError("Failed to create required user directories",
+				       "Initialization.Errors.FailedToCreateUserDirectories");
 	}
 	if (!InitGlobalConfig()) {
-		throw "Failed to initialize global config";
+		ThrowEarlyRuntimeError("Failed to initialize global config",
+				       "Initialization.Errors.FailedToInitializeGlobalConfig");
 	}
 	if (!InitLocale()) {
-		throw "Failed to load locale";
+		ThrowEarlyRuntimeError("Failed to load locale", "Initialization.Errors.FailedToLoadLocale");
 	}
 	if (!InitTheme()) {
-		throw "Failed to load theme";
+		ThrowEarlyRuntimeError("Failed to load theme", "Initialization.Errors.FailedToLoadTheme");
 	}
 
 	config_set_default_string(userConfig, "Basic", "Profile", Str("Untitled"));
@@ -1181,7 +1213,8 @@ void OBSApp::AppInit()
 	move_basic_to_scene_collections();
 
 	if (!MakeUserProfileDirs()) {
-		throw "Failed to create profile directories";
+		ThrowEarlyRuntimeError("Failed to create profile directories",
+				       "Initialization.Errors.FailedToCreateProfileDirectories");
 	}
 }
 
