@@ -23,6 +23,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <QString>
 
 using FailureInfo = obs_module_failure_info;
 using ModuleLoadInfo = obs_runtime_module_info;
@@ -34,16 +35,11 @@ inline constexpr std::string_view kLegacyDataPathVariable{"OBS_LEGACY_PLUGINS_DA
 
 inline std::string getEnvironmentVariable(std::string_view variableName)
 {
-	std::unique_ptr<char> variablePointer{};
-	variablePointer.reset(getenv(variableName.data()));
-
-	if (!variablePointer) {
-		return {};
-	}
-
-	std::string result{variablePointer.release()};
-
-	return result;
+#ifdef _WIN32
+	return qEnvironmentVariable(variableName.data()).toStdString();
+#else
+	return qgetenv(variableName.data()).toStdString();
+#endif
 }
 
 inline int loadPluginsByInfo(const ModuleLoadInfo &info, ModuleList &failedModules)
