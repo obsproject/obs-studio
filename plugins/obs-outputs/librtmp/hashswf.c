@@ -184,7 +184,7 @@ HTTP_get(struct HTTP_ctx *http, const char *url, HTTP_read_callback *cb)
 #endif
 
         int connect_return = TLS_connect(sb.sb_ssl);
-        if (connect_return < 0)
+        if (!TLS_success(connect_return))
         {
             RTMP_Log(RTMP_LOGERROR, "%s, TLS_Connect failed", __FUNCTION__);
             ret = HTTPRES_LOST_CONNECTION;
