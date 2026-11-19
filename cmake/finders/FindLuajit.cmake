@@ -88,7 +88,7 @@ elseif(EXISTS "${Luajit_INCLUDE_DIR}/luajit.h")
   string(REGEX REPLACE ".*#define[ \t]+LUAJIT_VERSION[ \t]+\"LuaJIT (.+)\".*" "\\1" Luajit_VERSION "${_VERSION_STRING}")
 else()
   if(NOT Luajit_FIND_QUIETLY)
-    message(AUTHOR_WARNING "Failed to find Luajit version.")
+    message(WARNING "Failed to find Luajit version.")
   endif()
 endif()
 
