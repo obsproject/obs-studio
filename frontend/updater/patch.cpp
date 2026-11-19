@@ -16,6 +16,8 @@
 
 #include "updater.hpp"
 
+#include <blake2.h>
+
 #include <vector>
 
 using namespace std;
@@ -55,12 +57,18 @@ constexpr const char *kDeltaMagic = "BOUF//ZSTD//DICT";
 constexpr int kMagicSize = 16;
 constexpr int kHeaderSize = kMagicSize + 8; // magic + int64_t delta size
 
-int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, const size_t patch_size, const wchar_t *targetFile)
+int ApplyPatch(ZSTD_DCtx *zstdCtx, const std::byte *patch_data, const size_t patch_size, const wchar_t *targetFile,
+	       const B2Hash &expectedHash)
 try {
 	int64_t newsize;
 	bool success;
 
 	WinHandle hTarget;
+
+	// Can't possibly be a valid patch
+	if (patch_size < kHeaderSize) {
+		throw int(-3);
+	}
 
 	/* --------------------------------- *
 	 * open patch and file to patch      */
@@ -81,7 +89,7 @@ try {
 	 * allocate new file size data       */
 
 	newsize = offtin((const uint8_t *)patch_data + kMagicSize);
-	if (newsize < 0 || newsize >= 0x7ffffffff) {
+	if (newsize < 0 || newsize >= 0x7fffffff) {
 		throw int(-5);
 	}
 
@@ -125,6 +133,26 @@ try {
 
 	if (result != newsize || ZSTD_isError(result)) {
 		throw int(-9);
+	}
+
+	// Verify hash before the new data touches the disk
+	B2Hash newFileHash{};
+	blake2b_state blake2{};
+
+	if (blake2b_init(&blake2, kBlake2HashLength) != 0) {
+		throw int(-10);
+	}
+
+	if (blake2b_update(&blake2, newData.data(), newData.size()) != 0) {
+		throw int(-10);
+	}
+
+	if (blake2b_final(&blake2, newFileHash.data(), newFileHash.size()) != 0) {
+		throw int(-10);
+	}
+
+	if (newFileHash != expectedHash) {
+		throw int(kErrorHashMismatch);
 	}
 
 	/* --------------------------------- *
