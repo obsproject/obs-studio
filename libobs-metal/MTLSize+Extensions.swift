@@ -15,6 +15,8 @@
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
 
+// swift-format-ignore-file: AvoidRetroactiveConformances
+
 import Foundation
 import Metal
 
