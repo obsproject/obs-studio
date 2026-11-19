@@ -36,13 +36,14 @@ ListHeader::ListHeader(QWidget *parent) : QFrame(parent)
 	nameLabel = new QLabel();
 	nameLabel->setVisible(false);
 	nameLabel->setIndent(0);
-	Utils::addClass(nameLabel, "title");
+	Utils::addClass(nameLabel, "text-bold");
 
 	descriptionLabel = new QLabel();
 	descriptionLabel->setVisible(false);
 	descriptionLabel->setIndent(0);
 	descriptionLabel->setWordWrap(true);
-	Utils::addClass(descriptionLabel, "description");
+	Utils::addClass(descriptionLabel, "text-small");
+	Utils::addClass(descriptionLabel, "text-muted");
 
 	textLayout->addWidget(nameLabel);
 	textLayout->addWidget(descriptionLabel);
