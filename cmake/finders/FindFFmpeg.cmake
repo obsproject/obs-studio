@@ -252,7 +252,7 @@ macro(FFmpeg_set_soname)
     endif()
   elseif(CMAKE_HOST_SYSTEM_NAME MATCHES "Linux|FreeBSD")
     execute_process(
-      COMMAND sh -c "objdump -p '${FFmpeg_${component}_LIBRARY}' | grep SONAME"
+      COMMAND sh -c "${CMAKE_OBJDUMP} -p '${FFmpeg_${component}_LIBRARY}' | grep SONAME"
       OUTPUT_VARIABLE _output
       RESULT_VARIABLE _result
     )
