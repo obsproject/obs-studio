@@ -24,6 +24,9 @@
 #include <docks/YouTubeAppDock.hpp>
 #include <utility/YoutubeApiWrappers.hpp>
 #endif
+#ifdef RESTREAM_ENABLED
+#include <dialogs/OBSRestreamActions.hpp>
+#endif
 
 #include <qt-wrappers.hpp>
 
@@ -362,6 +365,13 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 #ifdef YOUTUBE_ENABLED
 	if (YouTubeAppDock::IsYTServiceSelected()) {
 		youtubeAppDock->IngestionStopped();
+	}
+#endif
+
+#ifdef RESTREAM_ENABLED
+	Auth *const auth = GetAuth();
+	if (auth && IsRestreamService(auth->service())) {
+		broadcastActive = false;
 	}
 #endif
 
