@@ -61,3 +61,15 @@ jobs:
         uses: ./.github/actions/qt-xml-validator
         with:
           failCondition: error
+
+  commit-message-validator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Commit message check
+        id: commit-message-check
+        uses: ./.github/actions/commit-message-validator
+        with:
+          failCondition: error
