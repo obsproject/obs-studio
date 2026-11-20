@@ -28,7 +28,7 @@ struct obs_nix_hotkeys_vtable {
 
 	void (*free)(struct obs_core_hotkeys *hotkeys);
 
-	bool (*is_pressed)(obs_hotkeys_platform_t *context, obs_key_t key);
+	enum obs_hotkey_platform_pressed_state (*is_pressed)(obs_hotkeys_platform_t *context, obs_key_t key);
 
 	void (*key_to_str)(obs_key_t key, struct dstr *dstr);
 
