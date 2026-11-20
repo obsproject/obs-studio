@@ -176,11 +176,14 @@ static void platform_seat_capabilities(void *data, struct wl_seat *seat, uint32_
 	bool kb_present = capabilities & WL_SEAT_CAPABILITY_KEYBOARD;
 
 	if (kb_present && plat->keyboard == NULL) {
+		plat->seat = seat;
 		plat->keyboard = wl_seat_get_keyboard(plat->seat);
 		wl_keyboard_add_listener(plat->keyboard, &keyboard_listener, plat);
-	} else if (!kb_present && plat->keyboard != NULL) {
+	} else if (!kb_present && seat == plat->seat && plat->keyboard != NULL) {
+		// Only release if our current seat loses the keyboard cap.
 		wl_keyboard_release(plat->keyboard);
 		plat->keyboard = NULL;
+		plat->seat = NULL;
 	}
 }
 static void platform_seat_name(void *data, struct wl_seat *seat, const char *name)
@@ -207,8 +210,8 @@ static void platform_registry_handler(void *data, struct wl_registry *registry, 
 			return;
 		}
 		// Only negotiate up to version 7, the current wl_seat at time of writing.
-		plat->seat = wl_registry_bind(registry, id, &wl_seat_interface, version <= 7 ? version : 7);
-		wl_seat_add_listener(plat->seat, &seat_listener, plat);
+		struct wl_seat *seat = wl_registry_bind(registry, id, &wl_seat_interface, version <= 7 ? version : 7);
+		wl_seat_add_listener(seat, &seat_listener, plat);
 	}
 }
 
