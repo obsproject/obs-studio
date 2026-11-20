@@ -19,6 +19,7 @@
 #include "OBSApp.hpp"
 #include "OBSBasicSourceSelect.hpp"
 
+#include <dialogs/OBSBasicProperties.hpp>
 #include <utility/ResizeSignaler.hpp>
 #include <utility/ThumbnailManager.hpp>
 #include <utility/ThumbnailView.hpp>
@@ -812,7 +813,10 @@ void OBSBasicSourceSelect::createNew()
 	undo_s.add_action(QTStr("Undo.Add").arg(QString::fromStdString(newName)), undo, redo,
 			  std::string(obs_source_get_uuid(newSource)), std::string(obs_data_get_json(wrapper)));
 
-	main->CreatePropertiesWindow(newSource);
+	OBSBasicProperties *propertiesWindow = main->CreatePropertiesWindow(newSource);
+	if (propertiesWindow) {
+		propertiesWindow->focusNameEditor();
+	}
 
 	close();
 }

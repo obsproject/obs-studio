@@ -162,9 +162,6 @@
 
     --padding_base_border: calc(var(--padding_base) + 1px);
 
-    --spinbox_min_width: calc(var(--input_height) * 2.5);
-    --spinbox_button_height: calc(var(--input_height_half) - 1px);
-
     --volume_slider: calc(calc(4px + var(--font_base_value)) / 4);
     --volume_slider_box: calc(var(--volume_slider) * 4);
     --volume_slider_label: calc(var(--volume_slider_box) * 2);
@@ -194,32 +191,36 @@
     --input_text_padding: max(calc(6px + var(--padding_base)), 8px);
     --input_height: calc(var(--input_height_base) - calc(var(--input_padding) * 2px));
     --input_height_half: calc(var(--input_height_base) / 2);
+
+    --spinbox_min_width: calc(var(--input_height) * 2.5);
     --spinbox_width: calc(var(--input_height_base) + calc(var(--input_padding) * 2px));
+    --spinbox_button_height: calc(var(--input_height_half) - 0px);
 
-    --input_text_bg: var(--grey7);
+    --input_text_bg: var(--grey5);
 
-    --input_bg: var(--grey4);
+    --input_bg: var(--grey5);
     --input_bg_hover: var(--grey7);
     --input_bg_focus: var(--grey7);
+    --input_bg_disabled: var(--grey6);
 
     --list_item_bg_selected: var(--primary);
     --list_item_bg_hover: var(--primary_light);
 
-    --input_border: var(--grey1);
+    --input_border: var(--grey4);
     --input_border_width: 1px;
     --input_border_hover: var(--grey1);
     --input_border_focus: var(--primary);
 
     --spacing_input: var(--spacing_base);
 
-    --button_bg: var(--input_bg);
+    --button_bg: var(--grey4);
     --button_bg_hover: var(--grey3);
     --button_bg_down: var(--grey7);
     --button_bg_disabled: var(--grey6);
 
     --button_border_width: var(--input_border_width);
-    --button_border: var(--button_bg);
-    --button_border_hover: var(--grey1);
+    --button_border: var(--grey3);
+    --button_border_hover: var(--white5);
     --button_border_focus: var(--grey1);
 
     --tab_bg: var(--button_bg_disabled);
@@ -638,11 +639,8 @@ QCheckBox {
     background: transparent;
 }
 
-QComboBox,
-QCheckBox,
-QPushButton,
-QSpinBox,
-QDoubleSpinBox {
+QLabel,
+QCheckBox {
     margin-top: var(--spacing_input);
     margin-bottom: var(--spacing_input);
 }
@@ -872,6 +870,14 @@ OBSBasicSettings QScrollBar:horizontal {
 }
 
 /* Settings properties view */
+OBSBasicProperties #preview {
+    qproperty-displayBackgroundColor: var(--grey6);
+}
+
+#propertiesFrame > QWidget {
+    background: transparent;
+}
+
 OBSBasicSettings #PropertiesContainer {
     background-color: var(--bg_base);
 }
@@ -900,16 +906,9 @@ OBSDock QToolBar {
 
 OBSDock QToolBar QToolButton {
     background: transparent;
-    border: 1px solid transparent;
     margin: 1px;
     margin-top: 2px;
     padding: var(--padding_large);
-    max-width: var(--icon_small);
-    max-height: var(--icon_small);
-}
-
-OBSDock QToolBar QToolButton:hover {
-    border-color: var(--grey1);
 }
 
 OBSDock QToolBar QToolButton:disabled {
@@ -918,6 +917,10 @@ OBSDock QToolBar QToolButton:disabled {
 
 #transitionsFrame {
     padding: var(--padding_container);
+}
+
+#transitionsFrame > QWidget {
+    margin: var(--spacing_base);
 }
 
 OBSDock QLabel {
@@ -993,16 +996,17 @@ StatusBarWidget > QFrame {
 
 QGroupBox {
     background: var(--bg_base);
+    background-color: var(--grey6);
+    border: 1px solid var(--border_color);
     border-radius: var(--border_radius);
-    padding-top: var(--input_height_base);
-    padding-bottom: var(--padding_large);
+    padding: var(--input_height_base) var(--padding_xlarge) var(--padding_large);
     font-weight: bold;
-    margin-bottom: var(--spacing_large);
+    margin-top: var(--spacing_base);
 }
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: var(--spacing_title);
+    left: var(--padding_xlarge);
     top: var(--spacing_title);
 }
 
@@ -1237,7 +1241,7 @@ QTabBar QToolButton {
 QComboBox,
 QDateTimeEdit {
     background-color: var(--input_bg);
-    border: 1px solid var(--input_bg);
+    border: 1px solid var(--input_border);
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
     height: var(--input_height);
@@ -1262,6 +1266,7 @@ QComboBox:hover,
 QComboBox:focus,
 QDateTimeEdit:hover,
 QDateTimeEdit:selected {
+    background: var(--button_bg_hover);
     border-color: var(--input_border_hover);
 }
 
@@ -1273,8 +1278,10 @@ QComboBox:on {
 QComboBox::drop-down,
 QDateTimeEdit::drop-down {
     border: none;
-    border-left: 1px solid var(--grey6);
-    width: var(--input_height);
+
+    width: var(--input_height_base);
+    border-top-right-radius: var(--border_radius);
+    border-bottom-right-radius: var(--border_radius);
 }
 
 QComboBox::down-arrow,
@@ -1304,8 +1311,8 @@ QComboBox:editable:focus {
 QComboBox::drop-down:editable,
 QDateTimeEdit::drop-down:editable {
     background-color: var(--input_bg);
-    border-top-right-radius: 4px;
-    border-bottom-right-radius: 4px;
+    border-top-right-radius: var(--border_radius_small);
+    border-bottom-right-radius: var(--border_radius_small);
 }
 
 QComboBox::drop-down:editable:hover {
@@ -1366,7 +1373,7 @@ QTextEdit:!editable:focus {
 QSpinBox,
 QDoubleSpinBox {
     background-color: var(--input_text_bg);
-    border: var(--input_border_width) solid var(--input_bg);
+    border: var(--input_border_width) solid var(--input_border);
     border-bottom-width: 2px;
     border-radius: var(--border_radius);
     padding: var(--input_padding) var(--input_text_padding);
@@ -1376,13 +1383,6 @@ QDoubleSpinBox {
     min-width: var(--spinbox_width);
     max-height: var(--input_height);
     min-width: var(--spinbox_min_width);
-}
-
-QSpinBox:disabled,
-QDoubleSpinBox:disabled {
-    background-color: var(--input_bg);
-    border-color: var(--input_bg);
-    border-bottom-width: 1px;
 }
 
 QSpinBox:hover,
@@ -1401,13 +1401,10 @@ QSpinBox::up-button,
 QDoubleSpinBox::up-button {
     background-color: var(--input_bg);
     subcontrol-origin: padding;
-    /* position at the top right corner */
     subcontrol-position: top right;
 
-    width: var(--input_height);
+    width: var(--input_height_base);
     height: var(--spinbox_button_height);
-    border-left: 1px solid var(--grey6);
-    border-bottom: 1px solid transparent;
     border-radius: 0px;
     border-top-right-radius: var(--border_radius_small);
 }
@@ -1416,13 +1413,10 @@ QSpinBox::down-button,
 QDoubleSpinBox::down-button {
     background-color: var(--input_bg);
     subcontrol-origin: padding;
-    /* position at the top right corner */
     subcontrol-position: bottom right;
 
-    width: var(--input_height);
+    width: var(--input_height_base);
     height: var(--spinbox_button_height);
-    border-left: 1px solid var(--grey6);
-    border-top: 1px solid var(--grey6);
     border-radius: 0px;
     border-bottom-right-radius: var(--border_radius_small);
 }
@@ -1441,20 +1435,6 @@ QDoubleSpinBox::down-button:pressed {
     background-color: var(--button_bg_down);
 }
 
-QSpinBox::up-button:disabled,
-QSpinBox::up-button:off,
-QSpinBox::down-button:disabled,
-QSpinBox::down-button:off {
-    background-color: var(--button_bg_disabled);
-}
-
-QDoubleSpinBox::up-button:disabled,
-QDoubleSpinBox::up-button:off,
-QDoubleSpinBox::down-button:disabled,
-QDoubleSpinBox::down-button:off {
-    background-color: var(--button_bg_disabled);
-}
-
 QSpinBox::up-arrow,
 QDoubleSpinBox::up-arrow {
     image: url(theme:Dark/up.svg);
@@ -1467,6 +1447,36 @@ QDoubleSpinBox::down-arrow {
     image: url(theme:Dark/down.svg);
     width: 100%;
     padding: 2px;
+}
+
+/* Disabled inputs */
+
+QComboBox:disabled,
+QComboBox:editable:disabled,
+QLineEdit:disabled,
+QSpinBox:disabled,
+QDoubleSpinBox:disabled {
+    background-color: var(--input_bg_disabled);
+    border-color: var(--grey5);
+}
+
+QComboBox::drop-down:disabled,
+QComboBox::drop-down:editable:disabled {
+    background-color: transparent;
+}
+
+QSpinBox::up-button:disabled,
+QSpinBox::up-button:off,
+QSpinBox::down-button:disabled,
+QSpinBox::down-button:off {
+    background-color: transparent;
+}
+
+QDoubleSpinBox::up-button:disabled,
+QDoubleSpinBox::up-button:off,
+QDoubleSpinBox::down-button:disabled,
+QDoubleSpinBox::down-button:off {
+    background-color: transparent;
 }
 
 /* Controls Dock */
@@ -1526,19 +1536,14 @@ QPushButton {
     border-radius: var(--border_radius);
     height: var(--input_height);
     max-height: var(--input_height);
-    margin-top: var(--spacing_input);
-    margin-bottom: var(--spacing_input);
     padding: var(--input_padding) var(--padding_wide);
     icon-size: var(--icon_base);
     outline: none;
 }
 
-QPushButton:hover {
-    background-color: var(--button_bg_hover);
-}
-
 QPushButton:hover,
 QPushButton:focus {
+    background-color: var(--button_bg_hover);
     border-color: var(--button_border_hover);
 }
 
@@ -1581,11 +1586,13 @@ QToolButton {
 
 QToolButton,
 .btn-tool {
-    background-color: var(--button_bg);
-    padding: var(--padding_base) var(--padding_base);
-    margin: 0px 0px;
-    border: 1px solid var(--button_border);
+    background: transparent;
+    border: 1px solid transparent;
+    padding: var(--padding_large);
+    margin: 0px;
     border-radius: var(--border_radius);
+    max-width: var(--icon_small);
+    max-height: var(--icon_small);
     icon-size: var(--icon_base);
 }
 
@@ -1598,8 +1605,8 @@ QToolButton:hover,
 QToolButton:focus,
 .btn-tool:hover,
 .btn-tool:focus {
-    border-color: var(--button_border);
     background-color: var(--button_bg_hover);
+    border-color: var(--input_border_hover);
 }
 
 QToolButton:checked,
@@ -1625,7 +1632,8 @@ QToolButton:pressed:hover,
 
 QToolButton:disabled,
 .btn-tool:disabled {
-    background-color: var(--button_bg_disabled);
+    color: var(--text_muted);
+    background-color: var(--grey7);
     border-color: transparent;
 }
 
@@ -2591,6 +2599,27 @@ InfoChip {
     font-weight: bold;
     padding: 0 var(--padding_large);
     border-radius: var(--border_radius);
+}
+
+OBSInlineNameEditor {
+    font-size: var(--font_large);
+    font-weight: bold;
+}
+
+OBSInlineNameEditor:read-only:!hover {
+    background: var(--input_text_bg);
+    color: var(--text);
+    border-color: transparent;
+}
+
+OBSInlineNameEditor:read-only:hover {
+    color: var(--text);
+    background: var(--button_bg_hover);
+    border-color: var(--input_border_hover);
+}
+
+OBSInlineNameEditor.text-danger:read-only {
+    color: var(--red3);
 }
 
 /* Idian Widgets */
