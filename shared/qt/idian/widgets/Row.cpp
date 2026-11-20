@@ -63,7 +63,7 @@ void Row::enterEvent(QEnterEvent *event)
 	}
 
 	if (buddyWidget) {
-		Utils::repolish(buddyWidget);
+		Utils::polishNow(buddyWidget);
 	}
 
 	QFrame::enterEvent(event);
@@ -72,7 +72,7 @@ void Row::enterEvent(QEnterEvent *event)
 void Row::leaveEvent(QEvent *event)
 {
 	if (buddyWidget) {
-		Utils::repolish(buddyWidget);
+		Utils::polishNow(buddyWidget);
 	}
 
 	QFrame::leaveEvent(event);
