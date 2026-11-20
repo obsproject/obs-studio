@@ -5,6 +5,7 @@
 #include <future>
 #include <cstring>
 
+#define NVML_API_VERSION 1
 #include <ffnvcodec/nvEncodeAPI.h>
 #include <ffnvcodec/dynlink_loader.h>
 
