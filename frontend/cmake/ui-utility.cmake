@@ -3,6 +3,10 @@ target_sources(
   PRIVATE
     utility/AdvancedOutput.cpp
     utility/AdvancedOutput.hpp
+    utility/AppTooltip.cpp
+    utility/AppTooltip.hpp
+    utility/AppTooltipObserver.cpp
+    utility/AppTooltipObserver.hpp
     utility/BaseLexer.hpp
     utility/BasicOutputHandler.cpp
     utility/BasicOutputHandler.hpp
