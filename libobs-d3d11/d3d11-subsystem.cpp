@@ -29,6 +29,11 @@
 #include "d3d11-subsystem.hpp"
 #include <shellscalingapi.h>
 #include <d3dkmthk.h>
+#include <SetupAPI.h>
+#include <devguid.h>
+#include <initguid.h>
+#include <devpkey.h>
+#include <pciprop.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr) : HRError(str, hr) {}
@@ -1359,6 +1364,123 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 	}
 }
 
+namespace {
+struct PCIeLink {
+	uint32_t currentLanes;
+	uint32_t currentSpeed;
+	uint32_t maxLanes;
+	uint32_t maxSpeed;
+};
+
+std::optional<PCIeLink> AdapterPCIeConnection(const DXGI_ADAPTER_DESC *desc)
+{
+	std::optional<PCIeLink> result = std::nullopt;
+	D3DKMT_OPENADAPTERFROMLUID openAdapater{};
+	openAdapater.AdapterLuid = desc->AdapterLuid;
+
+	NTSTATUS res = D3DKMTOpenAdapterFromLuid(&openAdapater);
+	if (FAILED(res)) {
+		blog(LOG_ERROR, "Failed opening D3DKMT adapter: %x", res);
+		return std::nullopt;
+	}
+
+	// Query the "hardware PnP key", which is the registry key containing the  unique device instance ID we need to
+	// correlate with SetupAPI.
+	std::wstring pnpPath;
+	pnpPath.resize(1024);
+	UINT len = static_cast<UINT>(pnpPath.size());
+
+	D3DKMT_QUERY_PHYSICAL_ADAPTER_PNP_KEY pnpKey{};
+	pnpKey.pCchDest = &len;
+	pnpKey.pDest = pnpPath.data();
+	pnpKey.PnPKeyType = D3DKMT_PNP_KEY_HARDWARE;
+
+	D3DKMT_QUERYADAPTERINFO args;
+	args.hAdapter = openAdapater.hAdapter;
+	args.Type = KMTQAITYPE_PHYSICALADAPTERPNPKEY;
+	args.pPrivateDriverData = &pnpKey;
+	args.PrivateDriverDataSize = sizeof(pnpKey);
+	res = D3DKMTQueryAdapterInfo(&args);
+
+	if (FAILED(res)) {
+		blog(LOG_ERROR, "D3DKMTQueryAdapterInfo for PNP key failed with %x", res);
+	} else {
+		// Trim path to the returned length minus NULL terminator
+		pnpPath.resize(len - 1);
+		// Convert path to all-uppercase to match SetupAPI.
+		std::transform(pnpPath.begin(), pnpPath.end(), pnpPath.begin(), towupper);
+
+		HDEVINFO devInfoSet = SetupDiGetClassDevs(&GUID_DEVCLASS_DISPLAY, nullptr, nullptr, DIGCF_PRESENT);
+
+		for (DWORD index = 0;; index++) {
+			SP_DEVINFO_DATA devInfo = {sizeof(SP_DEVINFO_DATA)};
+			// If this fails all devices have been enumerated.
+			if (!SetupDiEnumDeviceInfo(devInfoSet, index, &devInfo)) {
+				break;
+			}
+
+			wchar_t pnpDeviceIdBuf[1024];
+			if (!SetupDiGetDeviceInstanceId(devInfoSet, &devInfo, pnpDeviceIdBuf, std::size(pnpDeviceIdBuf),
+							nullptr)) {
+				blog(LOG_WARNING, "SetupDiGetDeviceInstanceId failed with %d", GetLastError());
+				// Other devices might still match/work so keep iterating
+				continue;
+			}
+
+			if (pnpPath.find(pnpDeviceIdBuf) == std::string::npos) {
+				continue;
+			}
+
+			auto getProperty = [&](const DEVPROPKEY *key) -> UINT32 {
+				DEVPROPTYPE type;
+				// Result is UINT32
+				BYTE out[sizeof(UINT32)];
+				DWORD size;
+
+				if (!SetupDiGetDeviceProperty(devInfoSet, &devInfo, key, &type, out, sizeof(out), &size,
+							      0)) {
+					DWORD err = GetLastError();
+					// Not found can happen for iGPUs that are presumably not using PCIe
+					if (err != ERROR_NOT_FOUND) {
+						blog(LOG_WARNING, "SetupDiGetDeviceProperty failed: %d", err);
+					}
+
+					return 0;
+				}
+
+				if (type != DEVPROP_TYPE_UINT32 || size != sizeof(UINT32)) {
+					return 0;
+				}
+
+				return *reinterpret_cast<UINT32 *>(out);
+			};
+
+			PCIeLink link{getProperty(&DEVPKEY_PciDevice_CurrentLinkWidth),
+				      getProperty(&DEVPKEY_PciDevice_CurrentLinkSpeed),
+				      getProperty(&DEVPKEY_PciDevice_MaxLinkWidth),
+				      getProperty(&DEVPKEY_PciDevice_MaxLinkSpeed)};
+
+			// If at least one of the values is nonzero we consider it valid
+			if (link.currentLanes || link.currentSpeed || link.maxLanes || link.maxSpeed) {
+				result = link;
+			}
+
+			break;
+		}
+
+		SetupDiDestroyDeviceInfoList(devInfoSet);
+	}
+
+	D3DKMT_CLOSEADAPTER closeAdapter = {openAdapater.hAdapter};
+	res = D3DKMTCloseAdapter(&closeAdapter);
+	if (FAILED(res)) {
+		blog(LOG_DEBUG, "Failed closing D3DKMT adapter %x: %x", openAdapater.hAdapter, res);
+	}
+
+	return result;
+}
+} // namespace
+
 static inline double to_GiB(size_t bytes)
 {
 	return static_cast<double>(bytes) / (1 << 30);
@@ -1399,6 +1521,13 @@ static inline void LogD3DAdapters()
 		blog(LOG_INFO, "\t  Shared VRAM:    %" PRIu64 " (%.01f GiB)", desc.SharedSystemMemory,
 		     to_GiB(desc.SharedSystemMemory));
 		blog(LOG_INFO, "\t  PCI ID:         %x:%.4x", desc.VendorId, desc.DeviceId);
+
+		if (const auto pcieLink = AdapterPCIeConnection(&desc)) {
+			blog(LOG_INFO, "\t  PCIe Speed:     %d.0 x%d (Max: %d.0 x%d)", pcieLink->currentSpeed,
+			     pcieLink->currentLanes, pcieLink->maxSpeed, pcieLink->maxLanes);
+		} else {
+			blog(LOG_INFO, "\t  PCIe Speed:     Unknown/Not Found");
+		}
 
 		if (auto hags_support = GetAdapterHagsStatus(&desc)) {
 			blog(LOG_INFO, "\t  HAGS Status:    %s", hags_support->ToString().c_str());
