@@ -70,6 +70,9 @@ struct profiler_entry {
 	/* Timestamps of last N async frames rendered */
 	struct ucirclebuf async_rendered_ts;
 
+	struct ucirclebuf audio_render;
+	struct ucirclebuf async_audio_render;
+
 	UT_hash_handle hh;
 };
 
@@ -174,6 +177,8 @@ static struct profiler_entry *entry_create(const uintptr_t key)
 	ucirclebuf_init(&ent->render_gpu_sum, profiler_samples);
 	ucirclebuf_init(&ent->async_frame_ts, profiler_samples);
 	ucirclebuf_init(&ent->async_rendered_ts, profiler_samples);
+	ucirclebuf_init(&ent->audio_render, profiler_samples);
+	ucirclebuf_init(&ent->async_audio_render, profiler_samples);
 	return ent;
 }
 
@@ -186,6 +191,8 @@ static void entry_destroy(struct profiler_entry *entry)
 	ucirclebuf_free(&entry->render_gpu_sum);
 	ucirclebuf_free(&entry->async_frame_ts);
 	ucirclebuf_free(&entry->async_rendered_ts);
+	ucirclebuf_free(&entry->audio_render);
+	ucirclebuf_free(&entry->async_audio_render);
 	bfree(entry);
 }
 
@@ -478,6 +485,60 @@ void source_profiler_source_render_end(obs_source_t *source, uint64_t start, gs_
 	}
 }
 
+uint64_t source_profiler_source_audio_render_start(void)
+{
+	if (!enabled)
+		return 0;
+
+	return os_gettime_ns();
+}
+
+void source_profiler_source_audio_render_end(obs_source_t *source, uint64_t start, uint32_t frames)
+{
+	if (!enabled)
+		return;
+
+	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
+
+	const uint64_t delta = (os_gettime_ns() - start) * sample_rate / frames;
+
+	pthread_rwlock_wrlock(&hm_rwlock);
+
+	struct profiler_entry *ent;
+	HASH_FIND_PTR(hm_entries, &source, ent);
+	if (ent)
+		ucirclebuf_push(&ent->audio_render, delta);
+
+	pthread_rwlock_unlock(&hm_rwlock);
+}
+
+uint64_t source_profiler_source_audio_async_render_start(void)
+{
+	if (!enabled)
+		return 0;
+
+	return os_gettime_ns();
+}
+
+void source_profiler_source_audio_async_render_end(obs_source_t *source, uint64_t start, uint32_t frames)
+{
+	if (!enabled)
+		return;
+
+	const uint32_t sample_rate = audio_output_get_sample_rate(obs_get_audio());
+
+	const uint64_t delta = (os_gettime_ns() - start) * sample_rate / frames;
+
+	pthread_rwlock_wrlock(&hm_rwlock);
+
+	struct profiler_entry *ent;
+	HASH_FIND_PTR(hm_entries, &source, ent);
+	if (ent)
+		ucirclebuf_push(&ent->async_audio_render, delta);
+
+	pthread_rwlock_unlock(&hm_rwlock);
+}
+
 static void task_delete_source(void *key)
 {
 	struct source_samples *smp;
@@ -591,6 +652,40 @@ static inline void calculate_fps(const struct ucirclebuf *frames, double *avg, u
 	}
 }
 
+static inline void calculate_audio_render(struct profiler_entry *ent, struct profiler_result *result)
+{
+	size_t idx = 0;
+	uint64_t sum = 0;
+
+	for (; idx < ent->audio_render.num; idx++) {
+		const uint64_t delta = ent->audio_render.array[idx];
+		if (delta > result->audio_render_max)
+			result->audio_render_max = delta;
+
+		sum += delta;
+	}
+
+	if (idx)
+		result->audio_render_avg = sum / idx;
+}
+
+static inline void calculate_async_audio_render(struct profiler_entry *ent, struct profiler_result *result)
+{
+	size_t idx = 0;
+	uint64_t sum = 0;
+
+	for (; idx < ent->async_audio_render.num; idx++) {
+		const uint64_t delta = ent->async_audio_render.array[idx];
+		if (delta > result->audio_async_max)
+			result->audio_async_max = delta;
+
+		sum += delta;
+	}
+
+	if (idx)
+		result->audio_async_avg = sum / idx;
+}
+
 bool source_profiler_fill_result(obs_source_t *source, struct profiler_result *result)
 {
 	if (!enabled || !result)
@@ -612,6 +707,9 @@ bool source_profiler_fill_result(obs_source_t *source, struct profiler_result *r
 			calculate_fps(&ent->async_rendered_ts, &result->async_rendered, &result->async_rendered_best,
 				      &result->async_rendered_worst);
 		}
+
+		calculate_audio_render(ent, result);
+		calculate_async_audio_render(ent, result);
 	}
 
 	pthread_rwlock_unlock(&hm_rwlock);

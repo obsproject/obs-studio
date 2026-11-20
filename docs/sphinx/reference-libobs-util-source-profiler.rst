@@ -37,6 +37,16 @@ The source profiler is used to get information about individual source's perform
    
    Only valid for async sources (e.g. Media Source).
 
+.. member:: uint64_t profiler_result.audio_render_avg
+            uint64_t profiler_result.audio_async_avg
+   
+   Execution time of this source's audio functions within a second.
+   
+.. member:: uint64_t profiler_result.audio_render_max
+            uint64_t profiler_result.audio_async_max
+
+   Maximum execution time of this source's audio functions within a second.
+
 .. type:: struct profiler_result profiler_result_t
 
 .. code:: cpp
