@@ -11,6 +11,8 @@ OBSUpdate::OBSUpdate(QWidget *parent, bool manualUpdate, const QString &text)
 	ui->setupUi(this);
 	ui->text->setHtml(text);
 
+	setWindowModality(Qt::WindowModal);
+
 	if (manualUpdate) {
 		delete ui->skip;
 		ui->skip = nullptr;
