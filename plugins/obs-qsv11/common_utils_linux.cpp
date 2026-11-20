@@ -30,6 +30,7 @@ static const char *default_av1_device = nullptr;
 struct linux_data {
 	int fd;
 	VADisplay vaDisplay;
+	mfxLoader loader;
 };
 
 #define DEVICE_MGR_TYPE MFX_HANDLE_VA_DISPLAY
@@ -324,6 +325,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 	if (MFX_ERR_NONE > sts) {
 		blog(LOG_ERROR, "Failed to initialize MFX");
 		MSDK_PRINT_RET_MSG(sts);
+		MFXUnload(loader);
 		close(fd);
 		return sts;
 	}
@@ -333,6 +335,8 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 	int minor;
 	if (vaInitialize(vaDisplay, &major, &minor) != VA_STATUS_SUCCESS) {
 		blog(LOG_ERROR, "Failed to initialize VA-API");
+		MFXClose(*pSession);
+		MFXUnload(loader);
 		vaTerminate(vaDisplay);
 		close(fd);
 		return MFX_ERR_DEVICE_FAILED;
@@ -357,6 +361,7 @@ mfxStatus Initialize(mfxVersion ver, mfxSession *pSession, mfxFrameAllocator *pm
 	struct linux_data *d = (struct linux_data *)bmalloc(sizeof(struct linux_data));
 	d->fd = fd;
 	d->vaDisplay = (VADisplay)vaDisplay;
+	d->loader = loader;
 	*data = d;
 
 	return sts;
@@ -371,6 +376,7 @@ void ReleaseSessionData(void *data)
 	if (d) {
 		vaTerminate(d->vaDisplay);
 		close(d->fd);
+		MFXUnload(d->loader);
 		bfree(d);
 	}
 }
