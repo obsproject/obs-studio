@@ -28,24 +28,25 @@ MenuCheckBox::MenuCheckBox(const QString &text, QWidget *parent) : QCheckBox(tex
 	setContentsMargins(0, 0, 0, 0);
 
 	if (auto menu = qobject_cast<QMenu *>(parent)) {
-		connect(menu, &QMenu::hovered, this, [this, menu](QAction *action) {
-			if (action != menuAction) {
-				setHovered(false);
-				update();
-			}
+		connect(menu, &QMenu::aboutToShow, this, [this]() {
+			setHovered(false);
+			update();
 		});
-		connect(menu, &QMenu::aboutToHide, this, [this]() { setHovered(false); });
+		connect(menu, &QMenu::aboutToHide, this, [this]() {
+			setHovered(false);
+			update();
+		});
 	}
-}
-
-void MenuCheckBox::setAction(QAction *action)
-{
-	menuAction = action;
 }
 
 void MenuCheckBox::focusInEvent(QFocusEvent *)
 {
 	setHovered(true);
+}
+
+void MenuCheckBox::focusOutEvent(QFocusEvent *)
+{
+	setHovered(false);
 }
 
 void MenuCheckBox::mousePressEvent(QMouseEvent *event)
