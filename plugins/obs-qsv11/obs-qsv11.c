@@ -775,6 +775,11 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings, obs_enco
 	}
 	default:
 		switch (voi->colorspace) {
+		case VIDEO_CS_DEFAULT:
+		case VIDEO_CS_601:
+		case VIDEO_CS_709:
+		case VIDEO_CS_SRGB:
+			break;
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG: {
 			const char *const text = obs_module_text("8bitUnsupportedHdr");
