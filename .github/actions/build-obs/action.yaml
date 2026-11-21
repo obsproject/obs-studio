@@ -81,6 +81,29 @@ runs:
         git fetch origin --no-tags --no-recurse-submodules -q
         .github/scripts/build-ubuntu ${build_args}
 
+    - name: Install MSVC 14.44 ATL
+      if: runner.os == 'Windows' && inputs.target == 'x64'
+      shell: pwsh
+      run: |
+        # https://github.com/microsoft/vswhere
+        $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+
+        $vsPath = & $vswhere -latest -property installationPath
+        $installer = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+        
+        # manually download 14.44 ATL
+        $argList = "modify --installPath `"$vsPath`" --add Microsoft.VisualStudio.Component.VC.14.44.17.14.ATL --quiet --norestart --nocache"
+        $proc = Start-Process -FilePath $installer -ArgumentList $argList -Wait -PassThru
+        
+        # error if exit code is not 0 or 3010 (success but wants a reboot)
+        # https://learn.microsoft.com/en-us/visualstudio/install/use-command-line-parameters-to-install-visual-studio?view=visualstudio#error-codes
+        if ($proc.ExitCode -notin 0, 3010) { throw "bad exit code: $($proc.ExitCode)" }
+
+        # sanity check to verify file exists now
+        if (-not (Test-Path -Path "$vsPath\VC\Tools\MSVC\14.44*\atlmfc\include\atlbase.h")) {
+          throw "ATL header not found"
+        }
+
     - name: Run Windows Build
       if: runner.os == 'Windows'
       shell: pwsh
