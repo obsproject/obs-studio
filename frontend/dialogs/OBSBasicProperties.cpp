@@ -22,9 +22,8 @@
 
 #include <properties-view.hpp>
 #include <qt-wrappers.hpp>
-#include <vertical-scroll-area.hpp>
 
-#include <QPushButton>
+#include <QSplitter>
 
 #ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
@@ -58,6 +57,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 
 	ui->setupUi(this);
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setFocus();
+	ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
 
 	if (cx > 400 && cy > 400) {
 		resize(cx, cy);
@@ -84,7 +84,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		ui->transitionButton->setVisible(false);
 	}
 
-	view->show();
 	installEventFilter(CreateShortcutFilter());
 
 	const char *name = obs_source_get_name(source);
@@ -154,6 +153,20 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	}
 
 	connect(ui->defaultsButton, &QPushButton::clicked, this, &OBSBasicProperties::restoreDefaultsClicked);
+	connect(view, &OBSPropertiesView::Changed, this,
+		[this]() { ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(true); });
+
+	sourceNameEditor = new OBSInlineNameEditor(source, this);
+	ui->sourceNameContainer->layout()->addWidget(sourceNameEditor);
+
+	// Creating the splitter programmatically works around a QT quirk where stylesheets applied using CSS class
+	// syntax (.class-name) does not work correctly on widgets inside a QSplitter that was set up via Qt Designer.
+	auto *splitter = new QSplitter(Qt::Vertical, this);
+	splitter->setChildrenCollapsible(false);
+
+	ui->innerLayout->insertWidget(1, splitter);
+	splitter->addWidget(ui->previewFrame);
+	splitter->addWidget(ui->propertiesFrame);
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -292,49 +305,55 @@ void OBSBasicProperties::UpdateProperties(void *data, calldata_t *)
 	QMetaObject::invokeMethod(static_cast<OBSBasicProperties *>(data)->view, &OBSPropertiesView::ReloadProperties);
 }
 
+void OBSBasicProperties::saveSettings()
+{
+	ui->buttonBox->button(QDialogButtonBox::Apply)->setEnabled(false);
+
+	std::string scene_uuid = obs_source_get_uuid(main->GetCurrentSceneSource());
+
+	auto undo_redo = [scene_uuid](const std::string &data) {
+		OBSDataAutoRelease settings = obs_data_create_from_json(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_uuid(obs_data_get_string(settings, "undo_uuid"));
+		obs_source_reset_settings(source, settings);
+
+		obs_source_update_properties(source);
+
+		OBSSourceAutoRelease scene_source = obs_get_source_by_uuid(scene_uuid.c_str());
+
+		OBSBasic::Get()->SetCurrentScene(scene_source.Get(), true);
+	};
+
+	OBSDataAutoRelease new_settings = obs_data_create();
+	OBSDataAutoRelease curr_settings = obs_source_get_settings(source);
+	obs_data_apply(new_settings, curr_settings);
+	obs_data_set_string(new_settings, "undo_uuid", obs_source_get_uuid(source));
+	obs_data_set_string(oldSettings, "undo_uuid", obs_source_get_uuid(source));
+
+	std::string undo_data(obs_data_get_json(oldSettings));
+	std::string redo_data(obs_data_get_json(new_settings));
+
+	if (undo_data.compare(redo_data) != 0) {
+		main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo, undo_redo,
+					undo_data, redo_data);
+	}
+
+	if (view->DeferUpdate()) {
+		view->UpdateSettings();
+	}
+}
+
 void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 {
-	QDialogButtonBox::ButtonRole val = ui->buttonBox->buttonRole(button);
+	QDialogButtonBox::StandardButton buttonType = ui->buttonBox->standardButton(button);
 
-	if (val == QDialogButtonBox::AcceptRole) {
-
-		std::string scene_uuid = obs_source_get_uuid(main->GetCurrentSceneSource());
-
-		auto undo_redo = [scene_uuid](const std::string &data) {
-			OBSDataAutoRelease settings = obs_data_create_from_json(data.c_str());
-			OBSSourceAutoRelease source =
-				obs_get_source_by_uuid(obs_data_get_string(settings, "undo_uuid"));
-			obs_source_reset_settings(source, settings);
-
-			obs_source_update_properties(source);
-
-			OBSSourceAutoRelease scene_source = obs_get_source_by_uuid(scene_uuid.c_str());
-
-			OBSBasic::Get()->SetCurrentScene(scene_source.Get(), true);
-		};
-
-		OBSDataAutoRelease new_settings = obs_data_create();
-		OBSDataAutoRelease curr_settings = obs_source_get_settings(source);
-		obs_data_apply(new_settings, curr_settings);
-		obs_data_set_string(new_settings, "undo_uuid", obs_source_get_uuid(source));
-		obs_data_set_string(oldSettings, "undo_uuid", obs_source_get_uuid(source));
-
-		std::string undo_data(obs_data_get_json(oldSettings));
-		std::string redo_data(obs_data_get_json(new_settings));
-
-		if (undo_data.compare(redo_data) != 0) {
-			main->undo_s.add_action(QTStr("Undo.Properties").arg(obs_source_get_name(source)), undo_redo,
-						undo_redo, undo_data, redo_data);
-		}
+	if ((buttonType & QDialogButtonBox::Ok) != 0) {
+		saveSettings();
 
 		acceptClicked = true;
 		close();
-
-		if (view->DeferUpdate()) {
-			view->UpdateSettings();
-		}
-
-	} else if (val == QDialogButtonBox::RejectRole) {
+	} else if ((buttonType & QDialogButtonBox::Apply) != 0) {
+		saveSettings();
+	} else if ((buttonType & QDialogButtonBox::Cancel) != 0) {
 		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
 
@@ -421,6 +440,15 @@ void OBSBasicProperties::Cleanup()
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(), OBSBasicProperties::DrawTransitionPreview, this);
 }
 
+void OBSBasicProperties::mousePressEvent(QMouseEvent *event)
+{
+	if (sourceNameEditor->hasFocus() && !sourceNameEditor->underMouse()) {
+		sourceNameEditor->clearFocus();
+	}
+
+	QDialog::mousePressEvent(event);
+}
+
 void OBSBasicProperties::reject()
 {
 	if (!acceptClicked && (CheckSettings() != 0)) {
@@ -466,6 +494,15 @@ bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, qintptr 
 void OBSBasicProperties::Init()
 {
 	show();
+}
+
+void OBSBasicProperties::focusNameEditor()
+{
+	if (!sourceNameEditor) {
+		return;
+	}
+
+	sourceNameEditor->setFocus();
 }
 
 int OBSBasicProperties::CheckSettings()

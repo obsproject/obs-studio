@@ -34,6 +34,7 @@ protected:
 	static void obsSourceRenamed(void *data, calldata_t *params);
 	static void obsSourceRemoved(void *data, calldata_t *params);
 	static void obsSourceDestroyed(void *data, calldata_t *params);
+
 	void mousePressEvent(QMouseEvent *event);
 
 signals:

@@ -670,7 +670,7 @@ public:
 	void CreateInteractionWindow(obs_source_t *source);
 	void CreateFiltersWindow(obs_source_t *source);
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
-	void CreatePropertiesWindow(obs_source_t *source);
+	OBSBasicProperties *CreatePropertiesWindow(obs_source_t *source);
 
 	void UploadLog(const char *subdir, const char *file, OBS::LogFileType uploadType);
 

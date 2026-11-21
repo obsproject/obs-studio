@@ -902,10 +902,43 @@
        </widget>
       </item>
       <item>
-       <widget class="QDialogButtonBox" name="buttonBox">
-        <property name="standardButtons">
-         <set>QDialogButtonBox::StandardButton::Close|QDialogButtonBox::StandardButton::Reset</set>
+       <widget class="QFrame" name="dialogFooter">
+        <property name="frameShape">
+         <enum>QFrame::Shape::NoFrame</enum>
         </property>
+        <property name="frameShadow">
+         <enum>QFrame::Shadow::Plain</enum>
+        </property>
+        <property name="lineWidth">
+         <number>0</number>
+        </property>
+        <property name="class" stdset="0">
+         <string>dialog-buttons</string>
+        </property>
+        <layout class="QVBoxLayout" name="footerButtons">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QDialogButtonBox" name="buttonBox">
+           <property name="standardButtons">
+            <set>QDialogButtonBox::StandardButton::Close|QDialogButtonBox::StandardButton::Reset</set>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -913,6 +946,18 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>OBS::SpinBox</class>
+   <extends>QSpinBox</extends>
+   <header>SpinBox.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>OBS::DoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>DoubleSpinBox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <tabstops>
   <tabstop>positionX</tabstop>
   <tabstop>positionY</tabstop>
@@ -928,18 +973,6 @@
   <tabstop>cropTop</tabstop>
   <tabstop>cropBottom</tabstop>
  </tabstops>
- <customwidgets>
-  <customwidget>
-   <class>OBS::SpinBox</class>
-   <extends>QSpinBox</extends>
-   <header>SpinBox.hpp</header>
-  </customwidget>
-  <customwidget>
-   <class>OBS::DoubleSpinBox</class>
-   <extends>QDoubleSpinBox</extends>
-   <header>DoubleSpinBox.hpp</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections>
   <connection>

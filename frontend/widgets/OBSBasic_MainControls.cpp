@@ -83,7 +83,7 @@ void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 	interaction->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
-void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
+OBSBasicProperties *OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
 	bool closed = true;
 	if (properties) {
@@ -91,12 +91,14 @@ void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 	}
 
 	if (!closed) {
-		return;
+		return nullptr;
 	}
 
 	properties = new OBSBasicProperties(this, source);
 	properties->Init();
 	properties->setAttribute(Qt::WA_DeleteOnClose, true);
+
+	return properties;
 }
 
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
