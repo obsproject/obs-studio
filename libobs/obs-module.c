@@ -478,6 +478,63 @@ bool obs_get_module_allow_disable(const char *name)
 	return !is_core_module(name);
 }
 
+static uint32_t parse_semantic_version(const char *version)
+{
+	if (!version) {
+		return 0;
+	}
+
+	uint32_t major = 0;
+	uint32_t minor = 0;
+	uint32_t patch = 0;
+
+	sscanf(version, "%u.%u.%u", &major, &minor, &patch);
+
+	return (major << 24) | (minor << 16) | patch;
+}
+
+typedef struct restricted_module {
+	const char *name;
+	uint32_t min_version;
+} restricted_module_t;
+
+static const restricted_module_t restricted_modules[] = {{"aitum-stream-suite", MAKE_SEMANTIC_VERSION(1, 2, 6)},
+							 {"aitum-multistream", MAKE_SEMANTIC_VERSION(1, 0, 9)},
+							 {"vertical-canvas", MAKE_SEMANTIC_VERSION(1, 6, 8)},
+							 {"sl-browser-plugin", MAKE_SEMANTIC_VERSION(144, 0, 0)},
+							 {"obs-streamelements-core", MAKE_SEMANTIC_VERSION(26, 9, 4)}};
+
+static bool module_is_restricted(obs_module_t *module)
+{
+	for (size_t i = 0; i < sizeof(restricted_modules) / sizeof(restricted_modules[0]); i++) {
+		if (strcmp(module->mod_name, restricted_modules[i].name) == 0) {
+			if (!module->metadata) {
+				/* Plugins in the restricted list with no manifest file whatsoever are old enough we block them */
+				blog(LOG_WARNING, "Module '%s' is restricted due to outdated version",
+				     module->mod_name);
+
+				return true;
+			} else {
+				/* Check module version in metadata */
+				const char *version = obs_get_module_version(module);
+				uint32_t parsed_version = parse_semantic_version(version);
+				uint32_t min_version = restricted_modules[i].min_version;
+
+				if (parsed_version < min_version) {
+					blog(LOG_WARNING, "Module '%s' is restricted due to outdated version: %s",
+					     module->mod_name, version);
+
+					return true;
+				}
+			}
+
+			return false;
+		}
+	}
+
+	return false;
+}
+
 static void load_all_callback(void *param, const struct obs_module_info2 *info)
 {
 	struct fail_info *fail_info = param;
@@ -526,6 +583,19 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 	}
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
+
+	/* Restrict certain plugins to only known good versions */
+	if (info->type != OBS_MODULE_TYPE_CORE && code == MODULE_SUCCESS) {
+		if (module_is_restricted(module)) {
+			free_module(module);
+			obs_create_disabled_module(&disabled_module, info->bin_path, info->data_path,
+						   OBS_MODULE_FAILED_TO_OPEN);
+			disabled_module->module_type = info->type;
+
+			goto load_failure;
+		}
+	}
+
 	switch (code) {
 	case MODULE_MISSING_EXPORTS:
 		blog(LOG_DEBUG, "Failed to load module file '%s', not an OBS plugin", info->bin_path);
