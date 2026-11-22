@@ -106,7 +106,7 @@ void SpinBox::fixup(QString &input) const
 
 void SpinBox::mousePressEvent(QMouseEvent *event)
 {
-	if (!(event->buttons() & Qt::LeftButton)) {
+	if (event->button() != Qt::LeftButton) {
 		QSpinBox::mousePressEvent(event);
 		return;
 	}

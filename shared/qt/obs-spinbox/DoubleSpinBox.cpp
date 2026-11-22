@@ -107,7 +107,7 @@ void DoubleSpinBox::fixup(QString &input) const
 
 void DoubleSpinBox::mousePressEvent(QMouseEvent *event)
 {
-	if (!(event->buttons() & Qt::LeftButton)) {
+	if (event->button() != Qt::LeftButton) {
 		QDoubleSpinBox::mousePressEvent(event);
 		return;
 	}
