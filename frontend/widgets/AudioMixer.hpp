@@ -116,6 +116,9 @@ private:
 	QTimer updateTimer;
 	void updateVolumeLayouts();
 
+	bool enumPreviewSources(obs_scene_t *scene, obs_sceneitem_t *item);
+	void findAudioSourcesInScene(obs_scene_t *scene);
+
 	// OBS Callbacks
 	static void obsSourceActivated(void *data, calldata_t *params);
 	static void obsSourceDeactivated(void *data, calldata_t *params);
