@@ -22,6 +22,7 @@ static const char *S_TRANSITION              = "transition";
 static const char *S_RANDOMIZE               = "randomize";
 static const char *S_LOOP                    = "loop";
 static const char *S_HIDE                    = "hide";
+static const char *S_LINEAR_ALPHA            = "linear_alpha";
 static const char *S_FILES                   = "files";
 static const char *S_BEHAVIOR                = "playback_behavior";
 static const char *S_BEHAVIOR_STOP_RESTART   = "stop_restart";
@@ -110,6 +111,7 @@ struct slideshow_data {
 	bool pause_on_deactivate;
 	bool restart;
 	bool hide;
+	bool linear_alpha;
 	bool use_cut;
 	bool paused;
 	bool stop;
@@ -302,6 +304,7 @@ static inline obs_source_t *create_source_from_file(struct slideshow *ss, const 
 	obs_data_set_string(settings, "file", file);
 	obs_data_set_bool(settings, "unload", false);
 	obs_data_set_bool(settings, "is_slide", !now);
+	obs_data_set_bool(settings, "linear_alpha", ss->data.linear_alpha);
 	source = obs_source_create_private("image_source", NULL, settings);
 
 	obs_data_release(settings);
@@ -462,6 +465,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	new_data.loop = strcmp(playback_mode, S_PLAYBACK_LOOP) == 0;
 
 	new_data.hide = obs_data_get_bool(settings, S_HIDE);
+	new_data.linear_alpha = obs_data_get_bool(settings, S_LINEAR_ALPHA);
 
 	if (!old_data.tr_name || strcmp(tr_name, old_data.tr_name) != 0)
 		new_tr = obs_source_create_private(tr_name, NULL, NULL);
@@ -959,6 +963,7 @@ static void ss_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, S_BEHAVIOR, S_BEHAVIOR_ALWAYS_PLAY);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
 	obs_data_set_default_string(settings, S_PLAYBACK_MODE, S_PLAYBACK_LOOP);
+	obs_data_set_default_bool(settings, S_LINEAR_ALPHA, false);
 }
 
 static const char *file_filter = "Image files (*.bmp *.tga *.png *.jpeg *.jpg"
@@ -1013,6 +1018,7 @@ static obs_properties_t *ss_properties(void *data)
 	obs_property_list_add_string(p, T_PLAYBACK_RANDOM, S_PLAYBACK_RANDOM);
 
 	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
+	obs_properties_add_bool(ppts, S_LINEAR_ALPHA, obs_module_text("LinearAlpha"));
 
 	p = obs_properties_add_list(ppts, S_CUSTOM_SIZE, T_CUSTOM_SIZE, OBS_COMBO_TYPE_EDITABLE,
 				    OBS_COMBO_FORMAT_STRING);
