@@ -139,6 +139,9 @@ bool VST3Plugin::scanAudioBuses(SpeakerArrangement arr)
 	inputSpeakerArrangements.clear();
 	outputAudioBusInfos.clear();
 	outputSpeakerArrangements.clear();
+	numEnabledInputAudioBuses = 0;
+	numEnabledOutputAudioBuses = 0;
+	sidechainNumberChannels = 0;
 	// We enable the 1st compatible Main bus and the 1st Aux bus
 	for (int i = 0; i < numInputAudioBuses; ++i) {
 		BusInfo info = {};
@@ -147,14 +150,12 @@ bool VST3Plugin::scanAudioBuses(SpeakerArrangement arr)
 		// only 1 Main input bus is enabled by obs + 1 Aux (side-channel) Bus if it is available
 		if (info.busType == Steinberg::Vst::BusTypes::kMain) {
 			if (mainBusCount == 0) {
-				setBusActive(kAudio, kInput, i, true);
 				mainInputBusNumChannels = info.channelCount;
 				mainInputBusIndex = i;
 				numEnabledInputAudioBuses++;
 				mainBusCount = 1;
 				inputSpeakerArrangements.push_back(arr);
 			} else {
-				setBusActive(kAudio, kInput, i, false);
 				SpeakerArrangement currentArrangement = {};
 				if (audioEffect->getBusArrangement(kInput, i, currentArrangement) != kResultTrue) {
 					return false;
@@ -164,7 +165,6 @@ bool VST3Plugin::scanAudioBuses(SpeakerArrangement arr)
 		} else {
 			// The 1st aux bus (sidechain) is enabled only if it is mono or stereo
 			if (auxBusCount == 0 && (info.channelCount == 1 || info.channelCount == 2)) {
-				setBusActive(kAudio, kInput, i, true);
 				SpeakerArrangement speakerArr = info.channelCount == 1
 									? Steinberg::Vst::SpeakerArr::kMono
 									: Steinberg::Vst::SpeakerArr::kStereo;
@@ -174,7 +174,6 @@ bool VST3Plugin::scanAudioBuses(SpeakerArrangement arr)
 				auxBusIndex = i;
 				auxBusCount = 1;
 			} else {
-				setBusActive(kAudio, kInput, i, false);
 				SpeakerArrangement currentArrangement = {};
 				if (audioEffect->getBusArrangement(kInput, i, currentArrangement) != kResultTrue) {
 					return false;
@@ -197,13 +196,11 @@ bool VST3Plugin::scanAudioBuses(SpeakerArrangement arr)
 		outputAudioBusInfos.push_back(info);
 		bool isMain = (info.busType == Steinberg::Vst::BusTypes::kMain);
 		if (isMain && !numEnabledOutputAudioBuses) {
-			setBusActive(kAudio, kOutput, i, isMain);
 			mainOutputBusIndex = i;
 			mainOutputBusNumChannels = info.channelCount;
 			numEnabledOutputAudioBuses++;
 			outputSpeakerArrangements.push_back(arr);
 		} else {
-			setBusActive(kAudio, kOutput, i, false);
 			SpeakerArrangement currentArrangement = {};
 			if (audioEffect->getBusArrangement(kOutput, i, currentArrangement) != kResultTrue) {
 				return false;
@@ -364,6 +361,14 @@ bool VST3Plugin::init(const std::string &classId, const std::string &path_, int 
 	} else {
 		infovst3plugin("Failed to setup VST3 processing.");
 		return false;
+	}
+
+	for (int i = 0; i < numInputAudioBuses; ++i) {
+		const bool selected = i == mainInputBusIndex || (sidechainNumberChannels > 0 && i == auxBusIndex);
+		setBusActive(kAudio, kInput, i, selected);
+	}
+	for (int i = 0; i < numOutputAudioBuses; ++i) {
+		setBusActive(kAudio, kOutput, i, i == mainOutputBusIndex);
 	}
 
 	if (vstPlug->setActive(true) != kResultTrue) {
