@@ -2747,6 +2747,24 @@
             "recommended": {
                 "max audio bitrate": 96
             }
+        },
+        {
+            "name": "GHAI Multistream",
+            "stream_key_link": "https://stream.gaminghighlightai.com/?from=OBS",
+            "more_info_link": "https://stream.gaminghighlightai.com/obs",
+            "servers": [
+                {
+                    "name": "Default (EU)",
+                    "url": "rtmp://stream.gaminghighlightai.com/live"
+                }
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000
+            }
         }
     ]
 }
