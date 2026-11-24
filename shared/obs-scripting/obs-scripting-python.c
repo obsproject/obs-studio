@@ -1684,28 +1684,20 @@ bool obs_scripting_load_python(const char *python_path)
 /* PySys_SetArgv has been deprecated since Python 3.11 and will be removed
 in Python 3.15. Use PyConfig_InitPythonConfig instead, which was added
 in Python 3.8. */
+PyConfig config;
+PyConfig_InitPythonConfig(&config);
 
-#if PY_VERSION_HEX >= 0x03080000
-	PyConfig config;
-	PyConfig_InitPythonConfig(&config);
+config.parse_argv = 0;
+config.safe_path = 1;
 
-	config.parse_argv = 0;
-	config.safe_path = 1;
+PyWideStringList_Append(&config.argv, L"");
 
-	PyWideStringList_Append(&config.argv, L"");
+PyStatus status = Py_InitializeFromConfig(&config);
+PyConfig_Clear(&config);
 
-	PyStatus status = Py_InitializeFromConfig(&config);
-	PyConfig_Clear(&config); //critical!
-
-	if (PyStatus_Exception(status)) {
-		Py_ExitStatusException(status);
-	}
-#else
-	// Classic 3.6/3.7 path
-	Py_Initialize();
-	wchar_t *argv[] = {L"", NULL};
-	PySys_SetArgv(0, argv); // or PySys_SetArgvEx if you have 3.7+
-#endif
+if (PyStatus_Exception(status)) {
+	Py_ExitStatusException(status);
+}
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
