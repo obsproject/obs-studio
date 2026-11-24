@@ -1342,6 +1342,7 @@ bool OBSApp::OBSInit()
 
 	setQuitOnLastWindowClosed(false);
 
+	mediators = std::make_unique<OBS::mediator::Manager>();
 	thumbnailManager = new ThumbnailManager(this);
 
 	mainWindow = new OBSBasic();

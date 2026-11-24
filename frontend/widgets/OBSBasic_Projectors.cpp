@@ -299,3 +299,8 @@ void OBSBasic::openMultiviewWindow()
 {
 	OpenProjector(nullptr, -1, ProjectorType::Multiview);
 }
+
+void OBSBasic::updateMultiviewProjectors()
+{
+	OBSProjector::UpdateMultiviewProjectors();
+}

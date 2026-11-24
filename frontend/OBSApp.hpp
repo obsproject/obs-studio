@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <mediators/Manager.hpp>
+#include <mediators/Registry.hpp>
 #include <utility/NativeEventFilter.hpp>
 #include <utility/OBSTheme.hpp>
 #include <utility/ThumbnailManager.hpp>
@@ -257,6 +259,29 @@ signals:
 
 	void logUploadFinished(OBS::LogFileType, const QString &fileUrl);
 	void logUploadFailed(OBS::LogFileType, const QString &errorMessage);
+
+	// -------------------------------------------------------------------------------
+	// TEMP -- MOVE ME TO PROPER BLOCKS WHEN DONE
+
+public:
+	std::shared_ptr<OBS::mediator::Canvas> getCanvasMediator(obs_canvas_t *canvas)
+	{
+		return mediators->canvas(canvas);
+	}
+
+	void pruneMediators() { mediators->pruneAll(); }
+
+private:
+	std::unique_ptr<OBS::mediator::Manager> mediators;
+
+	// Canvases are a top level object, there is nothing above them to guarantee their lifetime implicitly.
+	// The application holds strong refs to ensure they stay alive.
+	std::vector<OBSCanvas> canvases;
+
+	static void obsCanvasCreated(void *data, calldata_t *params);
+	static void obsCanvasRemoved(void *data, calldata_t *params);
+
+	// -------------------------------------------------------------------------------
 };
 
 int GetAppConfigPath(char *path, size_t size, const char *name);
