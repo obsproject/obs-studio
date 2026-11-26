@@ -94,6 +94,9 @@ enum video_format {
 
 	/* packed uncompressed 10-bit format */
 	VIDEO_FORMAT_R10L,
+
+	VIDEO_FORMAT_NV16, /* two-plane, luma and packed chroma */
+	VIDEO_FORMAT_NV24, /* two-plane, luma and packed chroma */
 };
 
 enum video_trc {
@@ -143,6 +146,8 @@ static inline bool format_is_yuv(enum video_format format)
 	switch (format) {
 	case VIDEO_FORMAT_I420:
 	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_NV16:
+	case VIDEO_FORMAT_NV24:
 	case VIDEO_FORMAT_I422:
 	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_YVYU:
@@ -181,6 +186,10 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "I420";
 	case VIDEO_FORMAT_NV12:
 		return "NV12";
+	case VIDEO_FORMAT_NV16:
+		return "NV16";
+	case VIDEO_FORMAT_NV24:
+		return "NV24";
 	case VIDEO_FORMAT_I422:
 		return "I422";
 	case VIDEO_FORMAT_I210:
