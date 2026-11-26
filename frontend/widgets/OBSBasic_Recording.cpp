@@ -25,6 +25,7 @@
 #include <qt-wrappers.hpp>
 
 #include <QDesktopServices>
+#include <QDir>
 #include <QFileInfo>
 
 void OBSBasic::on_actionShow_Recordings_triggered()
@@ -36,7 +37,13 @@ void OBSBasic::on_actionShow_Recordings_triggered()
 				       : config_get_string(activeConfiguration, "AdvOut", "RecFilePath");
 	const char *path = strcmp(mode, "Advanced") ? config_get_string(activeConfiguration, "SimpleOutput", "FilePath")
 						    : adv_path;
-	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+
+	QDir folderPath{path};
+	if (!folderPath.exists()) {
+		return;
+	}
+
+	QDesktopServices::openUrl(QUrl::fromLocalFile(folderPath.absolutePath()));
 }
 
 #define RECORDING_START "==== Recording Start ==============================================="
