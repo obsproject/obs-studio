@@ -20,8 +20,9 @@
 
 void gs_texture_2d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 {
-	uint32_t rowSizeBytes = width * gs_get_format_bpp(format);
-	uint32_t texSizeBytes = height * rowSizeBytes / 8;
+	const uint64_t rowSizeBits = (uint64_t)width * gs_get_format_bpp(format);
+	const uint64_t texSizeBytes = (uint64_t)height * rowSizeBits / 8;
+	uint64_t rowSizeBytes = rowSizeBits;
 	size_t textures = type == GS_TEXTURE_2D ? 1 : 6;
 	uint32_t actual_levels = levels;
 	size_t curTex = 0;
@@ -33,14 +34,14 @@ void gs_texture_2d::InitSRD(std::vector<D3D11_SUBRESOURCE_DATA> &srd)
 	rowSizeBytes /= 8;
 
 	for (size_t i = 0; i < textures; i++) {
-		uint32_t newRowSize = rowSizeBytes;
-		uint32_t newTexSize = texSizeBytes;
+		uint64_t newRowSize = rowSizeBytes;
+		uint64_t newTexSize = texSizeBytes;
 
 		for (uint32_t j = 0; j < actual_levels; j++) {
 			D3D11_SUBRESOURCE_DATA newSRD;
 			newSRD.pSysMem = data[curTex++].data();
-			newSRD.SysMemPitch = newRowSize;
-			newSRD.SysMemSlicePitch = newTexSize;
+			newSRD.SysMemPitch = (UINT)newRowSize;
+			newSRD.SysMemSlicePitch = (UINT)newTexSize;
 			srd.push_back(newSRD);
 
 			newRowSize /= 2;
@@ -66,7 +67,7 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 				break;
 			}
 
-			uint32_t texSize = bbp * w * h / 8;
+			size_t texSize = (size_t)bbp * w * h / 8;
 
 			std::vector<uint8_t> &subData = this->data[i];
 			subData.resize(texSize);
