@@ -38,26 +38,30 @@ class Utils : public QObject {
 		return match.hasMatch();
 	}
 
+	bool isPolishPending{false};
+	std::vector<QPointer<QWidget>> widgetPolishQueue;
+
 public:
 	Utils();
 
-	bool isPolishPending{false};
-	std::list<QPointer<QWidget>> widgetPolishQueue;
 	void addToPolishQueue(QWidget *widget);
+	void removeFromPolishQueue(QWidget *widget);
+	bool isQueuedForPolish(QWidget *widget) const;
 	void processPolishQueue();
 
-	// Force all children widgets to repaint
+	// Forces an immediate polish of the widget and removes it from the queue.
+	static void polishNow(QWidget *widget);
+
+	// Queue all children widgets to repaint
 	static void polishChildren(QWidget *widget);
 
-	static void repolish(QWidget *widget);
-
-	// Adds a style class to the widget
+	// Adds a style class to the widget. Queues it for a repolish only if it was not present already.
 	static void addClass(QWidget *widget, const QString &classname);
 
-	// Removes a style class from a widget
+	// Removes a style class from a widget. Queues it for a repolish only if it was present.
 	static void removeClass(QWidget *widget, const QString &classname);
 
-	// Forces the addition or removal of a style class from a widget
+	// Calls addClass or removeClass for the given widget and classname based on toggle.
 	static void toggleClass(QWidget *widget, const QString &classname, bool toggle);
 
 	static void applyColorToIcon(QAbstractButton *button);
