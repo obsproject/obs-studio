@@ -47,6 +47,6 @@ public:
 	static OBSDataArrayAutoRelease SaveCanvases(const std::vector<Canvas> &canvases);
 
 private:
-	obs_canvas_t *canvas = nullptr;
+	OBSCanvas canvas = nullptr;
 };
 } // namespace OBS

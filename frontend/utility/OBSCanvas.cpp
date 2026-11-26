@@ -28,16 +28,7 @@ Canvas::Canvas(Canvas &&other) noexcept
 	canvas = std::exchange(other.canvas, nullptr);
 }
 
-Canvas::~Canvas() noexcept
-{
-	if (!canvas) {
-		return;
-	}
-
-	obs_canvas_remove(canvas);
-	obs_canvas_release(canvas);
-	canvas = nullptr;
-}
+Canvas::~Canvas() noexcept {}
 
 Canvas &Canvas::operator=(Canvas &&other) noexcept
 {
@@ -61,7 +52,7 @@ std::optional<OBSDataAutoRelease> Canvas::Save() const
 std::unique_ptr<Canvas> Canvas::Load(obs_data_t *data)
 {
 	if (OBSDataAutoRelease canvas_data = obs_data_get_obj(data, "info")) {
-		if (obs_canvas_t *canvas = obs_load_canvas(canvas_data)) {
+		if (OBSCanvasAutoRelease canvas = obs_load_canvas(canvas_data)) {
 			return std::make_unique<Canvas>(canvas);
 		}
 	}

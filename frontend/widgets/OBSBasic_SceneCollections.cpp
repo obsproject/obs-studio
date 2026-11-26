@@ -868,8 +868,6 @@ void OBSBasic::Save(SceneCollection &collection)
 		return true;
 	};
 
-	obs_enum_scenes(exportSceneItemsCallback, &sourcesAndGroups);
-
 	// Iterate over all canvases, save their scenes and groups.
 	for (const OBS::Canvas &canvas : getCanvases()) {
 		// Do not store sources from ephemeral canvases.
@@ -922,6 +920,11 @@ void OBSBasic::Save(SceneCollection &collection)
 	// Canvases
 	OBSDataArrayAutoRelease canvasesData = obs_data_array_create();
 	for (const OBS::Canvas &canvas : getCanvases()) {
+		if (obs_canvas_get_flags(canvas) & MAIN) {
+			// Main canvas gets saved explicitly in the "main_canvas" key above.
+			continue;
+		}
+
 		auto canvasInfo = canvas.Save();
 		if (!canvasInfo.has_value()) {
 			continue;
@@ -1426,6 +1429,7 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	}
 
 	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+	canvases.insert(canvases.begin(), OBS::Canvas(mainCanvas));
 
 	OBSDataAutoRelease mainCanvasData = obs_data_get_obj(data, "main_canvas");
 	if (!mainCanvasData) {
