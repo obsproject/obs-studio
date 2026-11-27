@@ -72,8 +72,9 @@ public:
 	void GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnVPSBuf, mfxU16 *pnSPSBuf,
 			  mfxU16 *pnPPSBuf);
 	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV, uint32_t strideY, uint32_t strideUV,
-			 mfxBitstream **pBS);
-	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS);
+			 mfxBitstream **pBS, bool forceIdr);
+	mfxStatus Encode_tex(uint64_t ts, void *tex, uint64_t lock_key, uint64_t *next_key, mfxBitstream **pBS,
+			     bool forceIdr);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();

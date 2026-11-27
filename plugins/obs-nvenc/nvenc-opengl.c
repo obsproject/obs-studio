@@ -141,5 +141,5 @@ bool cuda_opengl_encode(void *data, struct encoder_texture *tex, int64_t pts, ui
 	/* ------------------------------------ */
 	/* do actual encode call                */
 
-	return nvenc_encode_base(enc, bs, surf->mapped_res, pts, packet, received_packet);
+	return nvenc_encode_base(enc, bs, surf->mapped_res, pts, packet, received_packet, tex->flags);
 }
