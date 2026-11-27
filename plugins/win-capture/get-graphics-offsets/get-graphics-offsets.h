@@ -8,7 +8,7 @@
 #include <graphics-hook-info.h>
 #endif
 
-#define DUMMY_WNDCLASS "get_addrs_wndclass"
+#define DUMMY_WNDCLASS L"get_addrs_wndclass"
 
 #ifdef __cplusplus
 extern "C" {

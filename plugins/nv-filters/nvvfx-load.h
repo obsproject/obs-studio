@@ -502,47 +502,47 @@ static inline void release_vfx_lib(void)
 	}
 }
 
-static inline bool nvvfx_get_sdk_path(char *buffer, const size_t len)
+static inline bool nvvfx_get_sdk_path(wchar_t *buffer, const size_t len)
 {
-	DWORD ret = GetEnvironmentVariableA("NV_VIDEO_EFFECTS_PATH", buffer, (DWORD)len);
+	DWORD ret = GetEnvironmentVariableW(L"NV_VIDEO_EFFECTS_PATH", buffer, (DWORD)len);
 
-	if (!ret || ret >= len - 1) {
-		char path[MAX_PATH];
-		if (!GetEnvironmentVariableA("ProgramFiles", path, MAX_PATH)) {
+	if (!ret || ret >= len) {
+		wchar_t path[MAX_PATH];
+		if (!GetEnvironmentVariableW(L"ProgramFiles", path, MAX_PATH)) {
 			buffer[0] = 0;
 			return false;
 		}
 
-		if (_snprintf_s(buffer, len, _TRUNCATE, "%s\\NVIDIA Corporation\\NVIDIA Video Effects", path) > 0) {
-			return true;
+		int r = _snwprintf_s(buffer, len, _TRUNCATE, L"%s\\NVIDIA Corporation\\NVIDIA Video Effects", path);
+		if (r < 0 || r >= len) {
+			buffer[0] = 0;
+			return false;
 		}
-
-		return false;
 	}
 
 	return true;
 }
 
-static inline bool load_vfx_module(HMODULE *module, const char *sdk_path, const char *filename)
+static inline bool load_vfx_module(HMODULE *module, const wchar_t *sdk_path, const wchar_t *filename)
 {
-	char path[MAX_PATH];
+	wchar_t path[MAX_PATH];
 
-	if (_snprintf_s(path, _countof(path), _TRUNCATE, "%s\\%s", sdk_path, filename) == -1)
+	if (_snwprintf_s(path, _countof(path), _TRUNCATE, L"%s\\%s", sdk_path, filename) == -1)
 		return false;
 
-	*module = LoadLibraryExA(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+	*module = LoadLibraryExW(path, NULL, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
 	return *module != NULL;
 }
 
 static inline bool load_nv_vfx_libs(unsigned int version)
 {
-	char sdk_path[MAX_PATH];
+	wchar_t sdk_path[MAX_PATH];
 
 	if (!nvvfx_get_sdk_path(sdk_path, MAX_PATH))
 		return false;
 
-	if (!load_vfx_module(&nv_cvimage, sdk_path, "NVCVImage.dll") ||
-	    !load_vfx_module(&nv_videofx, sdk_path, "NVVideoEffects.dll")) {
+	if (!load_vfx_module(&nv_cvimage, sdk_path, L"NVCVImage.dll") ||
+	    !load_vfx_module(&nv_videofx, sdk_path, L"NVVideoEffects.dll")) {
 		release_vfx_lib();
 		return false;
 	}
@@ -550,8 +550,8 @@ static inline bool load_nv_vfx_libs(unsigned int version)
 	if (version < MIN_ARM_VFX_SDK_VERSION)
 		return true;
 
-	if (!load_vfx_module(&nv_greenscreen, sdk_path, "nvVFXGreenScreen.dll") ||
-	    !load_vfx_module(&nv_blur, sdk_path, "nvVFXBackgroundBlur.dll")) {
+	if (!load_vfx_module(&nv_greenscreen, sdk_path, L"nvVFXGreenScreen.dll") ||
+	    !load_vfx_module(&nv_blur, sdk_path, L"nvVFXBackgroundBlur.dll")) {
 		release_vfx_lib();
 		return false;
 	}
@@ -568,14 +568,14 @@ static unsigned int get_lib_version(void)
 
 	version_checked = true;
 
-	char sdkPath[MAX_PATH];
+	wchar_t sdkPath[MAX_PATH];
 	wchar_t dllPath[MAX_PATH];
 
 	if (!nvvfx_get_sdk_path(sdkPath, MAX_PATH)) {
 		return version;
 	}
 
-	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%S\\NVVideoEffects.dll", sdkPath) == -1) {
+	if (_snwprintf_s(dllPath, _countof(dllPath), _TRUNCATE, L"%s\\NVVideoEffects.dll", sdkPath) == -1) {
 		return version;
 	}
 
