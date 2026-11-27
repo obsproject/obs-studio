@@ -50,8 +50,8 @@ private slots:
 	void EnableVirtualCamButtons();
 
 public:
-	OBSBasicControls(OBSBasic *main);
-	inline ~OBSBasicControls() {}
+	OBSBasicControls(QWidget *parent, OBSBasic *main);
+	~OBSBasicControls() {}
 
 signals:
 	void StreamButtonClicked();
