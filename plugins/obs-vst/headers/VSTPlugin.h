@@ -73,7 +73,7 @@ class VSTPlugin : public QObject {
 	CFBundleRef bundle = NULL;
 #elif WIN32
 	HINSTANCE dllHandle = nullptr;
-#elif __linux__
+#elif __linux__ || __FreeBSD__
 	void *soHandle = nullptr;
 #endif
 
