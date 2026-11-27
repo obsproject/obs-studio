@@ -62,6 +62,7 @@ class ScreenshotObj;
 class VolumeControl;
 #ifdef YOUTUBE_ENABLED
 class YouTubeAppDock;
+class YoutubeApiWrappers;
 #endif
 class QMessageBox;
 class QWidgetAction;
@@ -1677,7 +1678,7 @@ private:
 	QPointer<YouTubeAppDock> youtubeAppDock;
 	uint64_t lastYouTubeAppDockCreationTime = 0;
 
-	void YoutubeStreamCheck(const std::string &key);
+	void YoutubeStreamCheck(YoutubeApiWrappers *apiYouTube, const std::string &key);
 	void ShowYouTubeAutoStartWarning();
 	void YouTubeActionDialogOk(const std::string &broadcastId, const std::string &streamId, const std::string &key,
 				   bool autostart, bool autostop, bool startNow);
