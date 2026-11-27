@@ -81,6 +81,9 @@ typedef struct SRTContext {
 	char *localport;
 	int linger;
 	int tsbpd;
+#if SRT_VERSION_VALUE >= 0x010400
+	char *packetfilter;
+#endif
 	double time; // time in s in order to post logs at definite intervals
 	struct srt_err last_error;
 } SRTContext;
@@ -416,6 +419,10 @@ static int libsrt_set_options_pre(URLContext *h, SRTSOCKET fd)
 						       sizeof(s->payload_size)) < 0) ||
 	    (/*(h->flags & AVIO_FLAG_WRITE) &&*/
 	     libsrt_setsockopt(h, fd, SRTO_SENDER, "SRTO_SENDER", &yes, sizeof(yes)) < 0) ||
+#if SRT_VERSION_VALUE >= 0x010400
+	    (s->packetfilter && libsrt_setsockopt(h, fd, SRTO_PACKETFILTER, "SRTO_PACKETFILTER", s->packetfilter,
+						  (int)strlen(s->packetfilter)) < 0) ||
+#endif
 	    (s->tsbpd >= 0 &&
 	     libsrt_setsockopt(h, fd, SRTO_TSBPDMODE, "SRTO_TSBPDMODE", &s->tsbpd, sizeof(s->tsbpd)) < 0)) {
 		s->last_error.srt_error_code = srt_getlasterror(NULL);
@@ -651,6 +658,9 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->transtype = SRTT_LIVE;
 	s->linger = -1;
 	s->tsbpd = -1;
+#if SRT_VERSION_VALUE >= 0x010400
+	s->packetfilter = NULL;
+#endif
 }
 
 static int libsrt_close(URLContext *h);
@@ -804,6 +814,16 @@ static int libsrt_open(URLContext *h, const char *uri)
 		if (av_find_info_tag(buf, sizeof(buf), "localport", p)) {
 			s->localport = av_strndup(buf, strlen(buf));
 		}
+#if SRT_VERSION_VALUE >= 0x010400
+		if (av_find_info_tag(buf, sizeof(buf), "packetfilter", p)) {
+			av_freep(&s->packetfilter);
+			s->packetfilter = av_strdup(buf);
+			if (!s->packetfilter) {
+				ret = OBS_OUTPUT_ERROR;
+				goto err;
+			}
+		}
+#endif
 	}
 	ret = libsrt_setup(h, uri);
 	if (ret < 0) {
@@ -839,6 +859,9 @@ static int libsrt_open(URLContext *h, const char *uri)
 err:
 	av_freep(&s->smoother);
 	av_freep(&s->streamid);
+#if SRT_VERSION_VALUE >= 0x010400
+	av_freep(&s->packetfilter);
+#endif
 	srt_cleanup();
 	return ret;
 }
@@ -890,6 +913,10 @@ static int libsrt_close(URLContext *h)
 		av_freep(&s->streamid);
 	if (s->passphrase)
 		av_freep(&s->passphrase);
+#if SRT_VERSION_VALUE >= 0x010400
+	if (s->packetfilter)
+		av_freep(&s->packetfilter);
+#endif
 	/* Log stream stats. */
 	SRT_TRACEBSTATS perf = {0};
 	srt_bstats(s->fd, &perf, 1);
