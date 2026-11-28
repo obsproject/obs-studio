@@ -23,6 +23,7 @@
 #include "formats.h"
 
 #include <util/darray.h>
+#include <util/platform.h>
 
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
@@ -32,6 +33,7 @@
 #include <glad/glad.h>
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
+#include <spa/param/audio/format-utils.h>
 #include <spa/param/video/format-utils.h>
 #include <spa/buffer/meta.h>
 #include <spa/debug/format.h>
@@ -93,6 +95,7 @@ struct _obs_pipewire {
 	struct spa_hook registry_listener;
 
 	GPtrArray *streams;
+	GPtrArray *audio_streams;
 };
 
 struct _obs_pipewire_stream {
@@ -147,6 +150,17 @@ struct _obs_pipewire_stream {
 		bool release_point_will_signal;
 		bool set;
 	} sync;
+};
+
+struct _obs_pipewire_audio_stream {
+	obs_pipewire *obs_pw;
+	obs_source_t *source;
+
+	struct pw_stream *stream;
+	struct spa_hook stream_listener;
+
+	struct spa_audio_info_raw format;
+	enum speaker_layout speakers;
 };
 
 /* auxiliary methods */
@@ -1156,6 +1170,7 @@ obs_pipewire *obs_pipewire_connect_fd(int pipewire_fd, const struct pw_registry_
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 
 	obs_pw->streams = g_ptr_array_new();
+	obs_pw->audio_streams = g_ptr_array_new();
 
 	return obs_pw;
 }
@@ -1185,6 +1200,11 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 		obs_pipewire_stream_destroy(obs_pw_stream);
 	}
 	g_clear_pointer(&obs_pw->streams, g_ptr_array_unref);
+	while (obs_pw->audio_streams->len > 0) {
+		obs_pipewire_audio_stream *obs_pw_audio_stream = g_ptr_array_index(obs_pw->audio_streams, 0);
+		obs_pipewire_audio_stream_destroy(obs_pw_audio_stream);
+	}
+	g_clear_pointer(&obs_pw->audio_streams, g_ptr_array_unref);
 	teardown_pipewire(obs_pw);
 	bfree(obs_pw);
 }
@@ -1468,4 +1488,179 @@ void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw_stream, cons
 
 	/* Signal to renegotiate */
 	pw_loop_signal_event(pw_thread_loop_get_loop(obs_pw->thread_loop), obs_pw_stream->reneg);
+}
+
+/* Audio streams */
+
+/* Counterpart to linux-pulseaudio's pulse_channel_map() */
+static uint32_t speaker_layout_positions(enum speaker_layout layout, uint32_t position[SPA_AUDIO_MAX_CHANNELS])
+{
+	static const uint32_t order[] = {SPA_AUDIO_CHANNEL_FL,  SPA_AUDIO_CHANNEL_FR, SPA_AUDIO_CHANNEL_FC,
+					 SPA_AUDIO_CHANNEL_LFE, SPA_AUDIO_CHANNEL_RL, SPA_AUDIO_CHANNEL_RR,
+					 SPA_AUDIO_CHANNEL_SL,  SPA_AUDIO_CHANNEL_SR};
+
+	memcpy(position, order, sizeof(order));
+	switch (layout) {
+	case SPEAKERS_MONO:
+		position[0] = SPA_AUDIO_CHANNEL_MONO;
+		break;
+	case SPEAKERS_2POINT1:
+		position[2] = SPA_AUDIO_CHANNEL_LFE;
+		break;
+	case SPEAKERS_4POINT0:
+		position[3] = SPA_AUDIO_CHANNEL_RC;
+		break;
+	case SPEAKERS_4POINT1:
+		position[4] = SPA_AUDIO_CHANNEL_RC;
+		break;
+	default:
+		break;
+	}
+	return get_audio_channels(layout);
+}
+
+static void on_audio_process_cb(void *user_data)
+{
+	obs_pipewire_audio_stream *obs_pw_audio_stream = user_data;
+	const struct spa_audio_info_raw *format = &obs_pw_audio_stream->format;
+	struct obs_source_audio audio = {0};
+	struct spa_buffer *buffer = NULL;
+	struct pw_buffer *b = NULL;
+
+	b = pw_stream_dequeue_buffer(obs_pw_audio_stream->stream);
+	if (!b)
+		return;
+
+	buffer = b->buffer;
+	if (format->channels == 0 || format->channels > MAX_AV_PLANES || buffer->n_datas < format->channels)
+		goto done;
+
+	for (uint32_t i = 0; i < format->channels; i++) {
+		struct spa_data *data = &buffer->datas[i];
+
+		if (!data->data || !data->chunk)
+			goto done;
+		audio.data[i] = SPA_PTROFF(data->data, data->chunk->offset, uint8_t);
+	}
+
+	audio.frames = buffer->datas[0].chunk->size / sizeof(float);
+	if (audio.frames == 0)
+		goto done;
+
+	audio.speakers = obs_pw_audio_stream->speakers;
+	audio.format = AUDIO_FORMAT_FLOAT_PLANAR;
+	audio.samples_per_sec = format->rate;
+	audio.timestamp = os_gettime_ns() - audio_frames_to_ns(format->rate, audio.frames);
+
+	obs_source_output_audio(obs_pw_audio_stream->source, &audio);
+
+done:
+	pw_stream_queue_buffer(obs_pw_audio_stream->stream, b);
+}
+
+static void on_audio_param_changed_cb(void *user_data, uint32_t id, const struct spa_pod *param)
+{
+	obs_pipewire_audio_stream *obs_pw_audio_stream = user_data;
+	struct spa_audio_info_raw format = {0};
+
+	if (id != SPA_PARAM_Format || !param)
+		return;
+
+	obs_pw_audio_stream->format.channels = 0;
+
+	if (spa_format_audio_raw_parse(param, &format) < 0 || format.format != SPA_AUDIO_FORMAT_F32P ||
+	    format.channels != get_audio_channels(obs_pw_audio_stream->speakers)) {
+		blog(LOG_WARNING, "[pipewire] Unsupported audio format");
+		return;
+	}
+
+	obs_pw_audio_stream->format = format;
+
+	blog(LOG_INFO, "[pipewire] Negotiated audio format: %u channels, %u Hz", format.channels, format.rate);
+}
+
+static void on_audio_state_changed_cb(void *user_data, enum pw_stream_state old, enum pw_stream_state state,
+				      const char *error)
+{
+	UNUSED_PARAMETER(old);
+
+	obs_pipewire_audio_stream *obs_pw_audio_stream = user_data;
+
+	blog(LOG_INFO, "[pipewire] Audio stream %p state: \"%s\" (error: %s)", obs_pw_audio_stream->stream,
+	     pw_stream_state_as_string(state), error ? error : "none");
+}
+
+static const struct pw_stream_events audio_stream_events = {
+	PW_VERSION_STREAM_EVENTS,
+	.state_changed = on_audio_state_changed_cb,
+	.param_changed = on_audio_param_changed_cb,
+	.process = on_audio_process_cb,
+};
+
+obs_pipewire_audio_stream *
+obs_pipewire_connect_audio_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+				  const struct obs_pipewire_connect_stream_info *connect_info)
+{
+	obs_pipewire_audio_stream *obs_pw_audio_stream = NULL;
+	struct spa_audio_info_raw format = {0};
+	const struct spa_pod *params[1] = {NULL};
+	struct spa_pod_builder pod_builder = {0};
+	struct obs_audio_info audio_info = {0};
+	uint8_t params_buffer[1024] = {0};
+
+	assert(connect_info != NULL);
+
+	obs_pw_audio_stream = bzalloc(sizeof(obs_pipewire_audio_stream));
+	obs_pw_audio_stream->obs_pw = obs_pw;
+	obs_pw_audio_stream->source = source;
+
+	/* Never fall back to another node, such as the default source */
+	pw_properties_set(connect_info->stream_properties, PW_KEY_NODE_DONT_RECONNECT, "true");
+	pw_properties_set(connect_info->stream_properties, "node.dont-fallback", "true");
+
+	/* PipeWire converts to OBS's sample rate and remixes to its layout */
+	format = SPA_AUDIO_INFO_RAW_INIT(.format = SPA_AUDIO_FORMAT_F32P);
+	obs_pw_audio_stream->speakers = SPEAKERS_STEREO;
+	if (obs_get_audio_info(&audio_info)) {
+		format.rate = audio_info.samples_per_sec;
+		obs_pw_audio_stream->speakers = audio_info.speakers;
+	}
+	format.channels = speaker_layout_positions(obs_pw_audio_stream->speakers, format.position);
+
+	pod_builder = SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
+	params[0] = spa_format_audio_raw_build(&pod_builder, SPA_PARAM_EnumFormat, &format);
+
+	pw_thread_loop_lock(obs_pw->thread_loop);
+
+	obs_pw_audio_stream->stream =
+		pw_stream_new(obs_pw->core, connect_info->stream_name, connect_info->stream_properties);
+	pw_stream_add_listener(obs_pw_audio_stream->stream, &obs_pw_audio_stream->stream_listener, &audio_stream_events,
+			       obs_pw_audio_stream);
+
+	pw_stream_connect(obs_pw_audio_stream->stream, PW_DIRECTION_INPUT, pipewire_node,
+			  PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params, 1);
+
+	blog(LOG_INFO, "[pipewire] Playing audio stream %p (node %d)", obs_pw_audio_stream->stream, pipewire_node);
+
+	pw_thread_loop_unlock(obs_pw->thread_loop);
+
+	g_ptr_array_add(obs_pw->audio_streams, obs_pw_audio_stream);
+
+	return obs_pw_audio_stream;
+}
+
+void obs_pipewire_audio_stream_destroy(obs_pipewire_audio_stream *obs_pw_audio_stream)
+{
+	if (!obs_pw_audio_stream)
+		return;
+
+	g_ptr_array_remove(obs_pw_audio_stream->obs_pw->audio_streams, obs_pw_audio_stream);
+
+	pw_thread_loop_lock(obs_pw_audio_stream->obs_pw->thread_loop);
+	if (obs_pw_audio_stream->stream)
+		pw_stream_disconnect(obs_pw_audio_stream->stream);
+	g_clear_pointer(&obs_pw_audio_stream->stream, pw_stream_destroy);
+	pw_thread_loop_unlock(obs_pw_audio_stream->obs_pw->thread_loop);
+
+	bfree(obs_pw_audio_stream);
 }

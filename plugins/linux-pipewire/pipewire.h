@@ -26,6 +26,7 @@
 
 typedef struct _obs_pipewire obs_pipewire;
 typedef struct _obs_pipewire_stream obs_pipewire_stream;
+typedef struct _obs_pipewire_audio_stream obs_pipewire_audio_stream;
 
 struct obs_pipewire_connect_stream_info {
 	const char *stream_name;
@@ -61,3 +62,8 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream);
 
 void obs_pipewire_stream_set_framerate(obs_pipewire_stream *obs_pw_stream, const struct spa_fraction *framerate);
 void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw, const struct spa_rectangle *resolution);
+
+obs_pipewire_audio_stream *
+obs_pipewire_connect_audio_stream(obs_pipewire *obs_pw, obs_source_t *source, int pipewire_node,
+				  const struct obs_pipewire_connect_stream_info *connect_info);
+void obs_pipewire_audio_stream_destroy(obs_pipewire_audio_stream *obs_pw_audio_stream);
