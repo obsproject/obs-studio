@@ -95,10 +95,11 @@ struct active_slides {
 	struct deque prev;
 	struct deque next;
 	struct source_data cur;
+	float elapsed;
+	bool pending_auto_change;
 };
 
 struct slideshow_data {
-	struct active_slides slides;
 	image_file_array_t files;
 	float slide_time;
 	uint32_t tr_speed;
@@ -106,28 +107,23 @@ struct slideshow_data {
 	bool manual;
 	bool randomize;
 	bool loop;
-	bool restart_on_activate;
-	bool pause_on_deactivate;
-	bool restart;
 	bool hide;
-	bool use_cut;
-	bool paused;
-	bool stop;
-	calldata_t cd;
-	float elapsed;
 	enum behavior behavior;
-
-	enum obs_media_state state;
 };
 
 struct slideshow {
 	obs_source_t *source;
 
+	struct active_slides slides;
 	struct slideshow_data data;
 	os_task_queue_t *queue;
 	obs_source_t *transition;
+	calldata_t cd;
 	uint32_t cx;
 	uint32_t cy;
+	enum obs_media_state state;
+	bool paused;
+	bool stop;
 
 	obs_hotkey_id play_pause_hotkey;
 	obs_hotkey_id restart_hotkey;
@@ -136,16 +132,54 @@ struct slideshow {
 	obs_hotkey_id prev_hotkey;
 };
 
-static void set_media_state(void *data, enum obs_media_state state)
+/* Sets new media state.
+signal_change should be false for media callbacks that are managed by the caller to avoid double signaling. Otherwise true. */
+static void set_media_state(void *data, enum obs_media_state state, bool signal_change)
 {
 	struct slideshow *ss = data;
-	ss->data.state = state;
+	enum obs_media_state old_state = ss->state;
+
+	ss->state = state;
+
+	if (signal_change) {
+		bool was_stopped = (old_state == OBS_MEDIA_STATE_ENDED || old_state == OBS_MEDIA_STATE_STOPPED);
+		bool is_stopped = (state == OBS_MEDIA_STATE_ENDED || state == OBS_MEDIA_STATE_STOPPED);
+
+		if (!was_stopped && is_stopped) {
+			obs_source_media_ended(ss->source);
+		} else if (was_stopped && !is_stopped) {
+			obs_source_media_started(ss->source);
+		}
+	}
 }
 
 static enum obs_media_state ss_get_state(void *data)
 {
 	struct slideshow *ss = data;
-	return ss->data.state;
+	return ss->state;
+}
+
+bool is_last_slide(struct slideshow *ss)
+{
+	struct slideshow_data *ssd = &ss->data;
+
+	return ssd->files.num == 0 || (!ssd->randomize && !ssd->loop && ss->slides.cur.slide_idx == ssd->files.num - 1);
+}
+
+static void update_media_state(struct slideshow *ss)
+{
+	enum obs_media_state state;
+
+	if (is_last_slide(ss))
+		state = OBS_MEDIA_STATE_ENDED;
+	else if (ss->stop)
+		state = OBS_MEDIA_STATE_STOPPED;
+	else if (ss->paused)
+		state = OBS_MEDIA_STATE_PAUSED;
+	else
+		state = OBS_MEDIA_STATE_PLAYING;
+
+	set_media_state(ss, state, true);
 }
 
 static inline obs_source_t *get_transition(struct slideshow *ss)
@@ -173,6 +207,7 @@ static void free_active_slides(struct active_slides *slides)
 	}
 
 	free_source_data(&slides->cur);
+	slides->cur.source = NULL;
 
 	deque_free(&slides->prev);
 	deque_free(&slides->next);
@@ -180,10 +215,8 @@ static void free_active_slides(struct active_slides *slides)
 
 static inline void free_slideshow_data(struct slideshow_data *ssd)
 {
-	free_active_slides(&ssd->slides);
 	for (size_t i = 0; i < ssd->files.num; i++)
 		bfree(ssd->files.array[i].path);
-	calldata_free(&ssd->cd);
 	da_free(ssd->files);
 }
 
@@ -237,30 +270,28 @@ static inline void add_file(image_file_array_t *new_files, const char *path)
 extern bool valid_extension(const char *ext);
 
 /* transition to new source. assumes cur has already been set to new file */
-static void do_transition(void *data, bool to_null)
+static void do_transition(void *data, bool to_null, bool use_cut)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data *ssd = &ss->data;
-	bool valid = !!ss->data.files.num;
+	obs_source_t *source = (to_null || !ssd->files.num) ? NULL : ss->slides.cur.source;
 
-	if (valid && ssd->use_cut) {
-		obs_transition_set(ss->transition, ssd->slides.cur.source);
+	if (use_cut) {
+		obs_transition_set(ss->transition, source);
 
-	} else if (valid && !to_null) {
-		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO, ssd->tr_speed, ssd->slides.cur.source);
-
+		// To keep the same transition interval after cutting
+		if (source)
+			ss->slides.elapsed = (float)ssd->tr_speed / 1000.0f;
 	} else {
-		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO, ssd->tr_speed, NULL);
-		set_media_state(ss, OBS_MEDIA_STATE_ENDED);
-		obs_source_media_ended(ss->source);
+		obs_transition_start(ss->transition, OBS_TRANSITION_MODE_AUTO, ssd->tr_speed, source);
 	}
 
-	if (valid && !to_null) {
-		calldata_set_int(&ssd->cd, "index", ssd->slides.cur.slide_idx);
-		calldata_set_string(&ssd->cd, "path", ssd->slides.cur.path);
+	if (source) {
+		calldata_set_int(&ss->cd, "index", ss->slides.cur.slide_idx);
+		calldata_set_string(&ss->cd, "path", ss->slides.cur.path);
 
 		signal_handler_t *sh = obs_source_get_signal_handler(ss->source);
-		signal_handler_signal(sh, "slide_changed", &ssd->cd);
+		signal_handler_signal(sh, "slide_changed", &ss->cd);
 	}
 }
 
@@ -340,7 +371,7 @@ static struct source_data get_new_source(struct slideshow *ss, struct active_sli
 	/* ----------------------------------------------- */
 	/* use existing source if we already have it       */
 
-	psd = find_existing_source(&ssd->slides, slide_idx);
+	psd = find_existing_source(&ss->slides, slide_idx);
 	if (psd) {
 		sd = *psd;
 		sd.source = obs_source_get_ref(sd.source);
@@ -369,12 +400,54 @@ static struct source_data get_new_source(struct slideshow *ss, struct active_sli
 	return sd;
 }
 
+bool slides_match_at_idx(struct slideshow_data *old_data, struct slideshow_data *new_data, size_t new_i, size_t old_i)
+{
+	image_file_array_t *files = &new_data->files;
+	image_file_array_t *old_files = &old_data->files;
+
+	if (old_i != new_i || strcmp(files->array[new_i].path, old_files->array[old_i].path) != 0)
+		return false;
+
+	size_t old_idx = old_i;
+	size_t new_idx = new_i;
+	size_t i;
+	for (i = 0; i < SLIDE_BUFFER_COUNT; i++) {
+		new_idx = get_new_file(new_data, new_idx, true);
+		old_idx = get_new_file(old_data, old_idx, true);
+
+		if (old_idx != new_idx || strcmp(files->array[new_idx].path, old_files->array[old_idx].path) != 0)
+			return false;
+	}
+	old_idx = old_i;
+	new_idx = new_i;
+	for (i = 0; i < SLIDE_BUFFER_COUNT; i++) {
+		new_idx = get_new_file(new_data, new_idx, false);
+		old_idx = get_new_file(old_data, old_idx, false);
+
+		if (old_idx != new_idx || strcmp(files->array[new_idx].path, old_files->array[old_idx].path) != 0)
+			return false;
+	}
+	return true;
+}
+
+static bool slides_are_reusable(struct slideshow *ss, struct slideshow_data *new)
+{
+	if (!ss->slides.cur.source || ss->data.randomize || new->randomize)
+		return false;
+
+	size_t old_idx = ss->slides.cur.slide_idx;
+	return (old_idx < new->files.num) && slides_match_at_idx(&ss->data, new, old_idx, old_idx);
+}
+
 static void restart_slides(struct slideshow *ss)
 {
 	struct slideshow_data *ssd = &ss->data;
 	size_t start_idx = 0;
 
-	if (ssd->randomize && ssd->files.num > 0) {
+	// Re-use old index if available, random only after, so we can keep the same slide if possible
+	if (ss->slides.cur.source && ss->slides.cur.slide_idx < ssd->files.num) {
+		start_idx = ss->slides.cur.slide_idx;
+	} else if (ssd->randomize && ssd->files.num > 0) {
 		start_idx = (size_t)rand() % ssd->files.num;
 	}
 
@@ -401,15 +474,14 @@ static void restart_slides(struct slideshow *ss)
 		}
 	}
 
-	free_active_slides(&ssd->slides);
-	ssd->slides = new_slides;
+	free_active_slides(&ss->slides);
+	ss->slides = new_slides;
 }
 
 static void ss_update(void *data, obs_data_t *settings)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data new_data = {0};
-	struct slideshow_data old_data = ss->data;
 	obs_data_array_t *array;
 	obs_source_t *new_tr = NULL;
 	obs_source_t *old_tr = NULL;
@@ -437,15 +509,10 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	new_data.manual = (astrcmpi(mode, S_MODE_MANUAL) == 0);
 
-	tr_name = obs_data_get_string(settings, S_TRANSITION);
-	if (astrcmpi(tr_name, TR_CUT) == 0)
-		tr_name = "cut_transition";
-	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
-		tr_name = "swipe_transition";
-	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
-		tr_name = "slide_transition";
-	else
-		tr_name = "fade_transition";
+	// Only change current pause status if original settings were edited
+	if (ss->data.manual != new_data.manual) {
+		ss->paused = new_data.manual;
+	}
 
 	/* Migrate and old loop/random settings to playback mode. */
 	if (!obs_data_has_user_value(settings, S_PLAYBACK_MODE)) {
@@ -463,14 +530,23 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	new_data.hide = obs_data_get_bool(settings, S_HIDE);
 
-	if (!old_data.tr_name || strcmp(tr_name, old_data.tr_name) != 0)
+	tr_name = obs_data_get_string(settings, S_TRANSITION);
+	if (astrcmpi(tr_name, TR_CUT) == 0)
+		tr_name = "cut_transition";
+	else if (astrcmpi(tr_name, TR_SWIPE) == 0)
+		tr_name = "swipe_transition";
+	else if (astrcmpi(tr_name, TR_SLIDE) == 0)
+		tr_name = "slide_transition";
+	else
+		tr_name = "fade_transition";
+
+	new_data.tr_name = tr_name;
+
+	if (!ss->data.tr_name || strcmp(tr_name, ss->data.tr_name) != 0)
 		new_tr = obs_source_create_private(tr_name, NULL, NULL);
 
 	new_duration = (uint32_t)obs_data_get_int(settings, S_SLIDE_TIME);
 	new_data.tr_speed = (uint32_t)obs_data_get_int(settings, S_TR_SPEED);
-
-	array = obs_data_get_array(settings, S_FILES);
-	count = obs_data_array_count(array);
 
 	if (strcmp(tr_name, "cut_transition") != 0) {
 		if (new_duration < 100)
@@ -480,12 +556,16 @@ static void ss_update(void *data, obs_data_t *settings)
 	} else {
 		if (new_duration < 50)
 			new_duration = 50;
+		new_data.tr_speed = 0;
 	}
 
 	new_data.slide_time = (float)new_duration / 1000.0f;
 
 	/* ------------------------------------- */
 	/* create new list of sources            */
+
+	array = obs_data_get_array(settings, S_FILES);
+	count = obs_data_array_count(array);
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(array, i);
@@ -528,44 +608,41 @@ static void ss_update(void *data, obs_data_t *settings)
 
 		obs_data_release(item);
 	}
+	obs_data_array_release(array);
 
 	/* ------------------------------------- */
-	/* get new size                          */
+	/* update files				 */
 
-	const char *res_str = obs_data_get_string(settings, S_CUSTOM_SIZE);
-	bool valid = false;
+	bool reuse_slides = slides_are_reusable(ss, &new_data);
 
-	int ret = sscanf(res_str, "%" PRIu32 "x%" PRIu32, &cx, &cy);
-	if (ret == 2) {
-		valid = true;
-	} else {
-		cx = 0;
-		cy = 0;
+	free_slideshow_data(&ss->data);
+	ss->data = new_data;
+
+	if (!reuse_slides && ss->state != OBS_MEDIA_STATE_STOPPED) {
+
+		// restart_slides() uses old indexes to reuse data if able,
+		// so free first because existing indexes point to different files now
+		free_active_slides(&ss->slides);
+		restart_slides(ss);
 	}
 
 	/* ------------------------------------- */
-	/* update settings data                  */
+	/* update transition                     */
 
-	ss->data = new_data;
 	if (new_tr) {
 		old_tr = ss->transition;
 		ss->transition = new_tr;
+
+		if (old_tr)
+			obs_source_release(old_tr);
 	}
 
-	/* ------------------------------------- */
-	/* clean up                              */
-
-	if (old_tr)
-		obs_source_release(old_tr);
-	free_slideshow_data(&old_data);
-
-	/* ------------------------------------- */
-	/* update files                          */
-
-	restart_slides(ss);
-
-	/* ------------------------------------- */
-	/* restart transition                    */
+	const char *res_str = obs_data_get_string(settings, S_CUSTOM_SIZE);
+	int ret = sscanf(res_str, "%" PRIu32 "x%" PRIu32, &cx, &cy);
+	if (ret != 2) {
+		cx = 0;
+		cy = 0;
+	}
 
 	ss->cx = cx;
 	ss->cy = cy;
@@ -575,37 +652,31 @@ static void ss_update(void *data, obs_data_t *settings)
 
 	if (new_tr)
 		obs_source_add_active_child(ss->source, new_tr);
-	if (ss->data.files.num) {
-		do_transition(ss, false);
 
-		if (ss->data.manual)
-			set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
-		else
-			set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
+	/* ------------------------------------- */
+	/* restart transition                    */
 
-		obs_source_media_started(ss->source);
-	}
+	do_transition(ss, ss->state == OBS_MEDIA_STATE_STOPPED, true);
 
-	obs_data_array_release(array);
+	// Don't change play state if update was called while not active (e.g. via api)
+	if (obs_source_active(ss->source))
+		update_media_state(ss);
 }
 
 static void ss_play_pause(void *data, bool pause)
 {
 	struct slideshow *ss = data;
 
-	if (ss->data.stop) {
-		ss->data.stop = false;
-		ss->data.paused = false;
-		do_transition(ss, false);
-	} else {
-		ss->data.paused = pause;
-		ss->data.manual = pause;
+	if (ss->stop) {
+		obs_source_media_restart(ss->source);
+		return;
 	}
 
+	ss->paused = pause;
 	if (pause)
-		set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+		set_media_state(ss, OBS_MEDIA_STATE_PAUSED, false);
 	else
-		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING, false);
 }
 
 static void ss_restart(void *data)
@@ -613,44 +684,50 @@ static void ss_restart(void *data)
 	struct slideshow *ss = data;
 
 	restart_slides(ss);
-	ss->data.elapsed = 0.0f;
-	ss->data.stop = false;
-	ss->data.paused = false;
-	do_transition(ss, false);
-
-	set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
+	ss->stop = false;
+	ss->paused = false;
+	do_transition(ss, false, true);
+	set_media_state(ss, OBS_MEDIA_STATE_PLAYING, false);
 }
 
 static void ss_stop(void *data)
 {
 	struct slideshow *ss = data;
 
-	restart_slides(ss);
-	ss->data.elapsed = 0.0f;
-	ss->data.stop = true;
-	ss->data.paused = false;
-	do_transition(ss, true);
+	ss->stop = true;
+	ss->paused = false;
+	do_transition(ss, true, true);
 
-	set_media_state(ss, OBS_MEDIA_STATE_STOPPED);
+	set_media_state(ss, OBS_MEDIA_STATE_STOPPED, false);
+
+	// Free slide textures while stopped
+	free_active_slides(&ss->slides);
 }
 
 static void ss_next_slide(void *data)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data *ssd = &ss->data;
-	struct active_slides *slides = &ssd->slides;
+	struct active_slides *slides = &ss->slides;
 	struct source_data sd;
 
-	if (!ssd->files.num || obs_transition_get_time(ss->transition) < 1.0f)
+	if (ss->stop) {
+		obs_source_media_restart(ss->source);
+		return;
+	}
+
+	if (!ssd->files.num)
 		return;
 
-	struct source_data *last = deque_data(&slides->next, (SLIDE_BUFFER_COUNT - 1) * sizeof(sd));
+	// Automatic slide changes adjust for drift, but manual changes should reset the timer
+	if (slides->pending_auto_change) {
+		slides->pending_auto_change = false;
+	} else {
+		slides->elapsed = 0.0f;
+	}
 
-	size_t slide_idx = last->slide_idx;
-	if (ss->data.randomize)
-		slide_idx = random_file(&ss->data, slide_idx);
-	else if (++slide_idx >= ssd->files.num)
-		slide_idx = 0;
+	struct source_data *last = deque_data(&slides->next, (SLIDE_BUFFER_COUNT - 1) * sizeof(sd));
+	size_t slide_idx = get_new_file(ssd, last->slide_idx, true);
 
 	sd = get_new_source(ss, NULL, slide_idx);
 	deque_push_back(&slides->next, &sd, sizeof(sd));
@@ -659,28 +736,37 @@ static void ss_next_slide(void *data)
 	deque_pop_front(&slides->prev, &sd, sizeof(sd));
 	free_source_data(&sd);
 
-	do_transition(ss, false);
+	do_transition(ss, false, false);
+
+	// If we were at the end, update the media state now that we're moving
+	if (ss->state == OBS_MEDIA_STATE_ENDED)
+		update_media_state(ss);
 }
 
 static void ss_previous_slide(void *data)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data *ssd = &ss->data;
-	struct active_slides *slides = &ssd->slides;
+	struct active_slides *slides = &ss->slides;
 	struct source_data sd;
 
-	if (!ssd->files.num || obs_transition_get_time(ss->transition) < 1.0f)
+	if (ss->stop) {
+		obs_source_media_restart(ss->source);
+		return;
+	}
+
+	if (!ssd->files.num)
 		return;
 
-	struct source_data *first = deque_data(&slides->prev, 0);
+	// Automatic slide changes adjust for drift, but manual changes should reset the timer
+	if (slides->pending_auto_change) {
+		slides->pending_auto_change = false;
+	} else {
+		slides->elapsed = 0.0f;
+	}
 
-	size_t slide_idx = first->slide_idx;
-	if (ss->data.randomize)
-		slide_idx = random_file(&ss->data, slide_idx);
-	else if (slide_idx == 0)
-		slide_idx = ss->data.files.num - 1;
-	else
-		--slide_idx;
+	struct source_data *first = deque_data(&slides->prev, 0);
+	size_t slide_idx = get_new_file(ssd, first->slide_idx, false);
 
 	sd = get_new_source(ss, NULL, slide_idx);
 	deque_push_front(&slides->prev, &sd, sizeof(sd));
@@ -689,7 +775,11 @@ static void ss_previous_slide(void *data)
 	deque_pop_back(&slides->next, &sd, sizeof(sd));
 	free_source_data(&sd);
 
-	do_transition(ss, false);
+	do_transition(ss, false, false);
+
+	// If we were at the end, update the media state now that we're moving
+	if (ss->state == OBS_MEDIA_STATE_ENDED)
+		update_media_state(ss);
 }
 
 static void play_pause_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
@@ -700,7 +790,7 @@ static void play_pause_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey
 	struct slideshow *ss = data;
 
 	if (pressed && obs_source_showing(ss->source))
-		obs_source_media_play_pause(ss->source, !ss->data.paused);
+		obs_source_media_play_pause(ss->source, !ss->paused);
 }
 
 static void restart_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey, bool pressed)
@@ -732,9 +822,6 @@ static void next_slide_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey
 
 	struct slideshow *ss = data;
 
-	if (!ss->data.manual)
-		return;
-
 	if (pressed && obs_source_showing(ss->source))
 		obs_source_media_next(ss->source);
 }
@@ -746,9 +833,6 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *ho
 
 	struct slideshow *ss = data;
 
-	if (!ss->data.manual)
-		return;
-
 	if (pressed && obs_source_showing(ss->source))
 		obs_source_media_previous(ss->source);
 }
@@ -756,13 +840,13 @@ static void previous_slide_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *ho
 static void current_slide_proc(void *data, calldata_t *cd)
 {
 	struct slideshow *ss = data;
-	calldata_set_int(cd, "current_index", ss->data.slides.cur.slide_idx);
+	calldata_set_int(cd, "current_index", ss->slides.cur.slide_idx);
 }
 
 static void total_slides_proc(void *data, calldata_t *cd)
 {
 	struct slideshow *ss = data;
-	calldata_set_int(cd, "total_files", ss->data.files.num);
+	calldata_set_int(cd, "total_files", ss->stop ? 0 : ss->data.files.num);
 }
 
 static void ss_destroy(void *data)
@@ -771,6 +855,8 @@ static void ss_destroy(void *data)
 
 	os_task_queue_destroy(ss->queue);
 	obs_source_release(ss->transition);
+	free_active_slides(&ss->slides);
+	calldata_free(&ss->cd);
 	free_slideshow_data(&ss->data);
 	bfree(ss);
 }
@@ -782,9 +868,9 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 
 	ss->source = source;
 
-	ss->data.manual = false;
-	ss->data.paused = false;
-	ss->data.stop = false;
+	ss->paused = false;
+	ss->stop = false;
+	ss->state = OBS_MEDIA_STATE_ENDED;
 
 	ss->queue = os_task_queue_create();
 
@@ -833,50 +919,28 @@ static void ss_video_tick(void *data, float seconds)
 {
 	struct slideshow *ss = data;
 	struct slideshow_data *ssd = &ss->data;
+	struct active_slides *slides = &ss->slides;
 
-	if (!ss->transition || !ssd->slide_time)
+	if (ss->state != OBS_MEDIA_STATE_PLAYING)
 		return;
-
-	if (ssd->restart_on_activate && ssd->use_cut) {
-		ssd->elapsed = 0.0f;
-		restart_slides(ss);
-		do_transition(ss, false);
-		ssd->restart_on_activate = false;
-		ssd->use_cut = false;
-		ssd->stop = false;
-		return;
-	}
-
-	if (ssd->pause_on_deactivate || ssd->manual || ssd->stop || ssd->paused)
-		return;
-
-	/* ----------------------------------------------------- */
-	/* fade to transparency when the file list becomes empty */
-	if (!ssd->files.num) {
-		obs_source_t *active_transition_source = obs_transition_get_active_source(ss->transition);
-
-		if (active_transition_source) {
-			obs_source_release(active_transition_source);
-			do_transition(ss, true);
-		}
-	}
 
 	/* ----------------------------------------------------- */
 	/* do transition when slide time reached                 */
-	ssd->elapsed += seconds;
 
-	if (ssd->elapsed > ssd->slide_time) {
-		ssd->elapsed -= ssd->slide_time;
+	slides->elapsed += seconds;
 
-		if (!ssd->randomize && !ssd->loop && ssd->slides.cur.slide_idx == ssd->files.num - 1) {
+	if (slides->elapsed > ssd->slide_time) {
+		slides->elapsed -= ssd->slide_time;
+
+		if (is_last_slide(ss)) {
 			if (ssd->hide)
-				do_transition(ss, true);
-			else
-				do_transition(ss, false);
+				do_transition(ss, true, false);
 
+			set_media_state(ss, OBS_MEDIA_STATE_ENDED, true);
 			return;
 		}
 
+		slides->pending_auto_change = true;
 		obs_source_media_next(ss->source);
 	}
 }
@@ -952,11 +1016,11 @@ static uint32_t ss_height(void *data)
 
 static void ss_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_string(settings, S_TRANSITION, "fade");
+	obs_data_set_default_string(settings, S_TRANSITION, TR_FADE);
 	obs_data_set_default_int(settings, S_SLIDE_TIME, 2000); //8000);
 	obs_data_set_default_int(settings, S_TR_SPEED, 700);
 	obs_data_set_default_string(settings, S_CUSTOM_SIZE, "1920x1080");
-	obs_data_set_default_string(settings, S_BEHAVIOR, S_BEHAVIOR_ALWAYS_PLAY);
+	obs_data_set_default_string(settings, S_BEHAVIOR, S_BEHAVIOR_PAUSE_UNPAUSE);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
 	obs_data_set_default_string(settings, S_PLAYBACK_MODE, S_PLAYBACK_LOOP);
 }
@@ -1045,22 +1109,36 @@ static void ss_activate(void *data)
 	struct slideshow *ss = data;
 
 	if (ss->data.behavior == BEHAVIOR_STOP_RESTART) {
-		ss->data.restart_on_activate = true;
-		ss->data.use_cut = true;
-		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
-	} else if (ss->data.behavior == BEHAVIOR_PAUSE_UNPAUSE) {
-		ss->data.pause_on_deactivate = false;
-		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
+
+		// Don't restart yet if the stop was manual
+		if (!ss->stop) {
+			restart_slides(ss);
+			do_transition(ss, false, true);
+		}
 	}
+
+	// Update state regardless of current behavior, because APIs may have updated behavior without changing state
+	update_media_state(ss);
 }
 
 static void ss_deactivate(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (ss->data.behavior == BEHAVIOR_PAUSE_UNPAUSE) {
-		ss->data.pause_on_deactivate = true;
-		set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+	if (ss->data.behavior == BEHAVIOR_STOP_RESTART) {
+
+		// Don't override ended state with stop
+		if (ss->state != OBS_MEDIA_STATE_ENDED)
+			set_media_state(ss, OBS_MEDIA_STATE_STOPPED, true);
+
+		// Free slide textures when stopped. Transition still holds the current image for fast re-activate.
+		free_active_slides(&ss->slides);
+
+	} else if (ss->data.behavior == BEHAVIOR_PAUSE_UNPAUSE) {
+
+		// Don't override stop or ended states with pause
+		if (ss->state == OBS_MEDIA_STATE_PLAYING)
+			set_media_state(ss, OBS_MEDIA_STATE_PAUSED, true);
 	}
 }
 
