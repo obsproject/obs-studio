@@ -10,6 +10,8 @@
 
 #include <qt-wrappers.hpp>
 
+#include <exception>
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <shellapi.h>
@@ -95,6 +97,9 @@ try {
 
 } catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
+	return false;
+} catch (const exception &e) {
+	blog(LOG_WARNING, "%s: %s", __FUNCTION__, e.what());
 	return false;
 }
 

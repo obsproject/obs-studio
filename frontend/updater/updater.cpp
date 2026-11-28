@@ -23,6 +23,7 @@
 
 #include <util/windows/CoTaskMemPtr.hpp>
 
+#include <algorithm>
 #include <exception>
 #include <future>
 #include <mutex>
@@ -1048,22 +1049,13 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 		if (file.patchable) {
 			Log(L"Patching %s...", file.outputPath.c_str());
 
-			error_code = ApplyPatch(ctx, patch_data.data(), file.fileSize, file.outputPath.c_str());
+			error_code = ApplyPatch(ctx, patch_data.data(), patch_data.size(), file.outputPath.c_str(),
+						file.hash);
 
 			installed_ok = (error_code == 0);
 
-			if (installed_ok) {
-				B2Hash patchedFileHash;
-				if (!CalculateFileHash(file.outputPath.c_str(), patchedFileHash)) {
-					Status(L"Update failed: Couldn't "
-					       L"verify integrity of patched %s",
-					       curFileName);
-
-					file.state = STATE_INSTALL_FAILED;
-					return false;
-				}
-
-				if (file.hash != patchedFileHash) {
+			if (!installed_ok) {
+				if (error_code == kErrorHashMismatch) {
 					Status(L"Update failed: Integrity "
 					       L"check of patched "
 					       L"%s failed",
@@ -1098,9 +1090,9 @@ static bool UpdateFile(ZSTD_DCtx *ctx, update_t &file)
 				       curFileName);
 			} else {
 				DWORD err = GetLastError();
-				Status(L"Update failed: Couldn't update %s "
+				Status(L"Update failed: Couldn't %s %s "
 				       L"(error %d)",
-				       curFileName, err ? err : error_code);
+				       file.patchable ? L"patch" : L"install", curFileName, err ? err : error_code);
 			}
 
 			file.state = STATE_INSTALL_FAILED;
@@ -1623,6 +1615,9 @@ static bool Update(wchar_t *cmdLine)
 					      newManifest);
 
 		if (!success) {
+			Status(L"Update failed: Couldn't download "
+			       L"patch manifest (error %d)",
+			       responseCode);
 			return false;
 		}
 
@@ -1651,6 +1646,28 @@ static bool Update(wchar_t *cmdLine)
 	/* Update updates with patch information. */
 	int patchableFiles = 0;
 	for (const PatchResponse &patch : patches) {
+		if (patch.hash.size() != kBlake2StrLength) {
+			Status(L"Update failed: Invalid patch manifest entry hash size");
+			return false;
+		}
+
+		// Patches must not share a hash with downloads: downloads are decompressed but
+		// patches are applied compressed, so a patch shared with a download would
+		// write the raw zstd data to the download target.
+		B2Hash patchHash{};
+
+		StringToHash(patch.hash, patchHash);
+
+		bool patchHashCollidesWithDownload{
+			any_of(updates.begin(), updates.end(), [&patchHash](const update_t &update) {
+				return !update.patchable && update.downloadHash == patchHash;
+			})};
+
+		if (patchHashCollidesWithDownload) {
+			Log(L"Ignoring patch for %S: hash collides with a download", patch.name.c_str());
+			continue;
+		}
+
 		if (UpdateWithPatchIfAvailable(patch)) {
 			patchableFiles++;
 		}
