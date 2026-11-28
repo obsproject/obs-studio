@@ -797,7 +797,7 @@ void AudioMixer::createMixerContextMenu()
 		mixerMenu->deleteLater();
 	}
 
-	mixerMenu = new QMenu(this);
+	mixerMenu = new QMenu(window());
 
 	// Create menu actions
 	QAction *unhideAllAction = new QAction(QTStr("UnhideAll"), mixerMenu);
