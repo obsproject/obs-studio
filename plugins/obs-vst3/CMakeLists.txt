@@ -56,11 +56,6 @@ add_dependencies(obs-vst3 obs-vst3-scanner)
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-vst3.rc)
   target_sources(obs-vst3 PRIVATE obs-vst3.rc)
-  configure_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/windows/obs-studio.ico
-    ${CMAKE_CURRENT_BINARY_DIR}/obs-studio.ico
-    COPYONLY
-  )
 endif()
 
 set_target_properties_obs(obs-vst3 PROPERTIES FOLDER plugins/obs-vst3 PREFIX "" AUTOMOC ON)
