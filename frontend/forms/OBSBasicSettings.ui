@@ -35,112 +35,145 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QListWidget" name="listWidget">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <widget class="QFrame" name="sidebarFrame">
+       <property name="frameShape">
+        <enum>QFrame::Shape::NoFrame</enum>
        </property>
-       <property name="maximumSize">
-        <size>
-         <width>180</width>
-         <height>16777215</height>
-        </size>
+       <property name="frameShadow">
+        <enum>QFrame::Shadow::Plain</enum>
        </property>
-       <property name="iconSize">
-        <size>
-         <width>16</width>
-         <height>16</height>
-        </size>
-       </property>
-       <property name="spacing">
-        <number>1</number>
-       </property>
-       <property name="currentRow">
+       <property name="lineWidth">
         <number>0</number>
        </property>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.General</string>
+       <property name="class" stdset="0">
+        <string>dialog-frame</string>
+       </property>
+       <layout class="QVBoxLayout" name="sidebarLayout">
+        <property name="spacing">
+         <number>0</number>
         </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
+        <property name="leftMargin">
+         <number>0</number>
         </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Appearance</string>
+        <property name="topMargin">
+         <number>0</number>
         </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/appearance.svg</normaloff>:/settings/images/settings/appearance.svg</iconset>
+        <property name="rightMargin">
+         <number>0</number>
         </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Stream</string>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/stream.svg</normaloff>:/settings/images/settings/stream.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Output</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/output.svg</normaloff>:/settings/images/settings/output.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Audio</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/audio.svg</normaloff>:/settings/images/settings/audio.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Video</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/video.svg</normaloff>:/settings/images/settings/video.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Hotkeys</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/hotkeys.svg</normaloff>:/settings/images/settings/hotkeys.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Accessibility</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/accessibility.svg</normaloff>:/settings/images/settings/accessibility.svg</iconset>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Basic.Settings.Advanced</string>
-        </property>
-        <property name="icon">
-         <iconset resource="obs.qrc">
-          <normaloff>:/settings/images/settings/advanced.svg</normaloff>:/settings/images/settings/advanced.svg</iconset>
-        </property>
-       </item>
+        <item>
+         <widget class="QListWidget" name="listWidget">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>180</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
+          </property>
+          <property name="spacing">
+           <number>1</number>
+          </property>
+          <property name="currentRow">
+           <number>0</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.General</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Appearance</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/appearance.svg</normaloff>:/settings/images/settings/appearance.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Stream</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/stream.svg</normaloff>:/settings/images/settings/stream.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Output</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/output.svg</normaloff>:/settings/images/settings/output.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Audio</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/audio.svg</normaloff>:/settings/images/settings/audio.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Video</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/video.svg</normaloff>:/settings/images/settings/video.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Hotkeys</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/hotkeys.svg</normaloff>:/settings/images/settings/hotkeys.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Accessibility</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/accessibility.svg</normaloff>:/settings/images/settings/accessibility.svg</iconset>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Basic.Settings.Advanced</string>
+           </property>
+           <property name="icon">
+            <iconset resource="obs.qrc">
+             <normaloff>:/settings/images/settings/advanced.svg</normaloff>:/settings/images/settings/advanced.svg</iconset>
+           </property>
+          </item>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
      <item>

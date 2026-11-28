@@ -59,6 +59,8 @@ target_sources(
     components/MuteCheckBox.hpp
     components/OBSAdvAudioCtrl.cpp
     components/OBSAdvAudioCtrl.hpp
+    components/OBSInlineNameEditor.cpp
+    components/OBSInlineNameEditor.hpp
     components/OBSPreviewScalingComboBox.cpp
     components/OBSPreviewScalingComboBox.hpp
     components/OBSPreviewScalingLabel.cpp

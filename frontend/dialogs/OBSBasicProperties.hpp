@@ -19,7 +19,10 @@
 
 #include "ui_OBSBasicProperties.h"
 
+#include <components/OBSInlineNameEditor.hpp>
+
 #include <QDialog>
+#include <QPointer>
 
 class OBSBasic;
 class OBSPropertiesView;
@@ -39,12 +42,13 @@ private:
 	OBSSignal updatePropertiesSignal;
 	OBSData oldSettings;
 	OBSPropertiesView *view;
-	QSplitter *windowSplitter;
 
 	OBSSourceAutoRelease sourceA;
 	OBSSourceAutoRelease sourceB;
 	OBSSourceAutoRelease sourceClone;
 	bool direction = true;
+
+	QPointer<OBSInlineNameEditor> sourceNameEditor;
 
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
@@ -55,6 +59,8 @@ private:
 	bool ConfirmQuit();
 	int CheckSettings();
 	void Cleanup();
+
+	void mousePressEvent(QMouseEvent *event) override;
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
@@ -67,8 +73,12 @@ public:
 
 	void Init();
 
+	void focusNameEditor();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual bool nativeEvent(const QByteArray &eventType, void *message, qintptr *result) override;
 	virtual void reject() override;
+
+	void saveSettings();
 };
