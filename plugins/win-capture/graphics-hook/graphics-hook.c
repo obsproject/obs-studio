@@ -45,8 +45,8 @@ static HINSTANCE dll_inst = NULL;
 static volatile bool stop_loop = false;
 static HANDLE dup_hook_mutex = NULL;
 static HANDLE capture_thread = NULL;
-char system_path[MAX_PATH] = {0};
-char process_name[MAX_PATH] = {0};
+wchar_t system_path[MAX_PATH] = {0};
+wchar_t process_name[MAX_PATH] = {0};
 wchar_t keepalive_name[64] = {0};
 HWND dummy_window = NULL;
 
@@ -147,7 +147,7 @@ static inline bool init_mutexes(void)
 
 static inline bool init_system_path(void)
 {
-	UINT ret = GetSystemDirectoryA(system_path, MAX_PATH);
+	UINT ret = GetSystemDirectoryW(system_path, MAX_PATH);
 	if (!ret) {
 		hlog("Failed to get windows system path: %lu", GetLastError());
 		return false;
@@ -158,10 +158,13 @@ static inline bool init_system_path(void)
 
 static inline void log_current_process(void)
 {
-	DWORD len = GetModuleBaseNameA(GetCurrentProcess(), NULL, process_name, MAX_PATH);
+	DWORD len = GetModuleBaseNameW(GetCurrentProcess(), NULL, process_name, MAX_PATH);
 	if (len > 0) {
 		process_name[len] = 0;
-		hlog("graphics-hook.dll loaded against process: %s", process_name);
+		char *process_name_utf8 = wide_to_utf8_ptr(process_name);
+		hlog("graphics-hook.dll loaded against process: %s",
+		     process_name_utf8 ? process_name_utf8 : "<unknown>");
+		free(process_name_utf8);
 	} else {
 		hlog("graphics-hook.dll loaded");
 	}

@@ -263,10 +263,11 @@ char *os_get_config_path_ptr(const char *name)
 			bcrash("Could not get $HOME\n");
 
 		dstr_init_copy(&path, home_ptr);
-		dstr_cat(&path, "/.config/");
-		dstr_cat(&path, name);
+		dstr_cat(&path, "/.config");
 	} else {
 		dstr_init_copy(&path, xdg_ptr);
+	}
+	if (name && *name) {
 		dstr_cat(&path, "/");
 		dstr_cat(&path, name);
 	}
@@ -403,11 +404,12 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 	char newpath[PATH_MAX];
 	int ret;
 
-	if (!abspath)
-		return 0;
-
 	if (!realpath(path, newpath))
 		return 0;
+
+	if (!abspath) {
+		return strlen(newpath);
+	}
 
 	ret = snprintf(abspath, min_size, "%s", newpath);
 	return ret >= 0 ? ret : 0;
@@ -415,9 +417,13 @@ size_t os_get_abs_path(const char *path, char *abspath, size_t size)
 
 char *os_get_abs_path_ptr(const char *path)
 {
-	char *ptr = bmalloc(512);
+	size_t len = os_get_abs_path(path, NULL, 0);
+	if (!len)
+		return NULL;
 
-	if (!os_get_abs_path(path, ptr, 512)) {
+	char *ptr = bmalloc(len + 1);
+
+	if (!os_get_abs_path(path, ptr, len + 1)) {
 		bfree(ptr);
 		ptr = NULL;
 	}
@@ -468,10 +474,7 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	if (!dir->cur_dirent)
 		return NULL;
 
-	const size_t length = strlen(dir->cur_dirent->d_name);
-	if (sizeof(dir->out.d_name) <= length)
-		return NULL;
-	memcpy(dir->out.d_name, dir->cur_dirent->d_name, length + 1);
+	dir->out.d_name = dir->cur_dirent->d_name;
 
 	dstr_copy(&file_path, dir->path);
 	dstr_cat(&file_path, "/");
