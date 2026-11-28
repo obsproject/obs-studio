@@ -5,7 +5,7 @@ if(NOT ENABLE_PIPEWIRE)
   return()
 endif()
 
-find_package(PipeWire 0.3.33 REQUIRED)
+find_package(PipeWire 0.3.44 REQUIRED)
 find_package(Gio 2.76 REQUIRED)
 find_package(Libdrm REQUIRED)
 get_target_property(libdrm_include_directories Libdrm::Libdrm INTERFACE_INCLUDE_DIRECTORIES)
