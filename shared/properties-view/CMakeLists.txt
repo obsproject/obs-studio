@@ -40,6 +40,8 @@ target_sources(
   INTERFACE
     double-slider.cpp
     double-slider.hpp
+    int-slider.cpp
+    int-slider.hpp
     properties-view.cpp
     properties-view.hpp
     properties-view.moc.hpp
