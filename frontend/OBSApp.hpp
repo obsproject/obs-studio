@@ -89,6 +89,7 @@ private:
 
 	bool enableHotkeysInFocus = true;
 	bool enableHotkeysOutOfFocus = true;
+	bool hotkeysDisabled = false;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 
@@ -242,6 +243,9 @@ public:
 	// Plugin Manager Accessors
 	void pluginManagerOpenDialog();
 	void handlePluginLoadState();
+
+private slots:
+	void widgetFocusChanged(QWidget *old, QWidget *now);
 
 public slots:
 	void addLogLine(int logLevel, const QString &message);
