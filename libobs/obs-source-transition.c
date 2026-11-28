@@ -1036,6 +1036,11 @@ void obs_transition_swap_begin(obs_source_t *tr_dest, obs_source_t *tr_source)
 	if (tr_dest == tr_source)
 		return;
 
+	if (transition_active(tr_dest) || transition_active(tr_source)) {
+		blog(LOG_WARNING, "Cannot swap transitions while one is active");
+		return;
+	}
+
 	lock_textures(tr_source);
 	lock_textures(tr_dest);
 
@@ -1056,6 +1061,10 @@ void obs_transition_swap_end(obs_source_t *tr_dest, obs_source_t *tr_source)
 {
 	if (tr_dest == tr_source)
 		return;
+
+	if (transition_active(tr_dest) || transition_active(tr_source)) {
+		return;
+	}
 
 	obs_transition_clear(tr_source);
 

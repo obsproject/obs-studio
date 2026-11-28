@@ -1514,7 +1514,6 @@ private:
 	obs_hotkey_id transitionHotkey = 0;
 
 	int quickTransitionIdCounter = 1;
-	bool overridingTransition = false;
 
 	QSlider *tBar;
 	bool tBarActive = false;
@@ -1524,7 +1523,7 @@ private:
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
 	obs_source_t *FindTransition(const char *name);
-	OBSSource GetCurrentTransition();
+	OBSSource getDefaultTransition();
 	obs_data_array_t *SaveTransitions();
 	void LoadTransitions(obs_data_array_t *transitions, obs_load_source_cb cb, void *private_data);
 
@@ -1565,7 +1564,7 @@ public slots:
 	void SetCurrentScene(OBSSource scene, bool force = false);
 
 	void SetTransition(OBSSource transition);
-	void OverrideTransition(OBSSource transition);
+	void swapCurrentTransition(OBSSource transition);
 	void TransitionToScene(OBSScene scene, bool force = false);
 	void TransitionToScene(OBSSource scene, bool force = false, bool quickTransition = false, int quickDuration = 0,
 			       bool black = false, bool manual = false);
