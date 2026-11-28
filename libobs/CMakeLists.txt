@@ -112,6 +112,8 @@ target_sources(
     util/dstr.h
     util/file-serializer.c
     util/file-serializer.h
+    util/file-watcher.c
+    util/file-watcher.h
     util/lexer.c
     util/lexer.h
     util/pipe.c
@@ -349,6 +351,7 @@ set(
   util/dstr.h
   util/dstr.hpp
   util/file-serializer.h
+  util/file-watcher.h
   util/lexer.h
   util/pipe.h
   util/platform.h
