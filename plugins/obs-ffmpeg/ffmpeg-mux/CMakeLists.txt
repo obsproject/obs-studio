@@ -16,4 +16,9 @@ target_link_libraries(
 
 target_compile_definitions(obs-ffmpeg-mux PRIVATE $<$<BOOL:${ENABLE_FFMPEG_MUX_DEBUG}>:ENABLE_FFMPEG_MUX_DEBUG>)
 
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg-mux.rc)
+  target_sources(obs-ffmpeg-mux PRIVATE obs-ffmpeg-mux.rc)
+endif()
+
 set_target_properties_obs(obs-ffmpeg-mux PROPERTIES FOLDER plugins/obs-ffmpeg)

@@ -11,4 +11,9 @@ target_link_libraries(
   PRIVATE OBS::COMutils AMF::AMF d3d11 dxgi dxguid
 )
 
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-amf-test.rc)
+  target_sources(obs-amf-test PRIVATE obs-amf-test.rc)
+endif()
+
 set_target_properties_obs(obs-amf-test PROPERTIES FOLDER plugins/obs-ffmpeg)

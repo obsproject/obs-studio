@@ -9,4 +9,9 @@ target_sources(obs-vst3-scanner PRIVATE vst3-scanner.cpp)
 
 target_link_libraries(obs-vst3-scanner PRIVATE OBS::libobs OBS::vst3-library Steinberg::VST3)
 
+if(OS_WINDOWS)
+  configure_file(cmake/windows/obs-module.rc.in obs-vst3-scanner.rc)
+  target_sources(obs-vst3-scanner PRIVATE obs-vst3-scanner.rc)
+endif()
+
 set_target_properties_obs(obs-vst3-scanner PROPERTIES FOLDER plugins/obs-vst3)
