@@ -676,6 +676,13 @@ void OBSBasic::on_idianPlayground_triggered()
 #endif
 }
 
+void OBSBasic::on_actionBasic_MainMenu_File_Save_triggered()
+{
+	SaveProject();
+
+	ShowStatusBarMessage(QTStr("Basic.StatusBar.SceneCollectionSaved"));
+}
+
 void OBSBasic::on_actionShowAbout_triggered()
 {
 	if (about) {
