@@ -37,7 +37,7 @@ bool StateEventFilter::eventFilter(QObject *obj, QEvent *event)
 		return QObject::eventFilter(obj, event);
 	}
 
-	QWidget *widget = qobject_cast<QWidget *>(obj);
+	QWidget *widget = static_cast<QWidget *>(obj);
 	QFocusEvent *focusEvent = nullptr;
 
 	bool updateIconColors = true;
