@@ -114,7 +114,7 @@ void OBSStudioAPI::obs_frontend_release_tbar()
 
 void OBSStudioAPI::obs_frontend_set_tbar_position(int position)
 {
-	QMetaObject::invokeMethod(main, &OBSBasic::TBarChanged, position);
+	QMetaObject::invokeMethod(main, &OBSBasic::SetTbarPosition, position);
 }
 
 int OBSStudioAPI::obs_frontend_get_tbar_position()
