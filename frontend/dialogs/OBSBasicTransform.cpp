@@ -100,8 +100,9 @@ OBSBasicTransform::OBSBasicTransform(OBSSceneItem item, OBSBasic *parent)
 
 	installEventFilter(CreateShortcutFilter());
 
-	OBSScene scene = obs_sceneitem_get_scene(item);
-	setScene(scene);
+	attachMediator(main->getActiveCanvasMediator());
+	connect(main, &OBSBasic::activeCanvasChanged, this, &OBSBasicTransform::attachMediator);
+
 	setItem(item);
 
 	std::string name = obs_source_get_name(obs_sceneitem_get_source(item));
@@ -134,8 +135,26 @@ OBSBasicTransform::~OBSBasicTransform()
 	}
 }
 
+void OBSBasicTransform::setSceneWeak(OBSWeakSource weak)
+{
+	OBSSource source = OBSGetStrongRef(weak);
+	if (!source) {
+		return;
+	}
+
+	OBSScene scene = obs_scene_from_source(source);
+	if (!scene) {
+		return;
+	}
+
+	setScene(scene);
+}
+
 void OBSBasicTransform::setScene(OBSScene scene)
 {
+	setWindowTitle(QTStr("Basic.TransformWindow.NoSelectedSource"));
+	setItem(FindASelectedItem(scene));
+
 	sigs.clear();
 
 	if (scene) {
@@ -161,6 +180,31 @@ void OBSBasicTransform::setEnabled(bool enable)
 	ui->boundsSettings->setEnabled(enable);
 	ui->cropSettings->setEnabled(enable);
 	ui->buttonBox->button(QDialogButtonBox::Reset)->setEnabled(enable);
+}
+
+void OBSBasicTransform::attachMediator(std::shared_ptr<OBS::mediator::Canvas> mediator)
+{
+	auto currentMediator = this->mediator.lock();
+
+	if (currentMediator == mediator) {
+		return;
+	}
+
+	if (currentMediator) {
+		disconnect(currentMediator.get(), &OBS::mediator::Canvas::previewChanged, this,
+			   &OBSBasicTransform::setSceneWeak);
+	}
+
+	this->mediator = mediator;
+
+	if (!mediator) {
+		return;
+	}
+
+	connect(mediator.get(), &OBS::mediator::Canvas::previewChanged, this, &OBSBasicTransform::setSceneWeak);
+	if (auto newPreviewScene = mediator->getPreviewScene()) {
+		setScene(newPreviewScene);
+	}
 }
 
 void OBSBasicTransform::setItemQt(OBSSceneItem newItem)

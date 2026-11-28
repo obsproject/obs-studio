@@ -43,13 +43,15 @@ void *OBSStudioAPI::obs_frontend_get_system_tray()
 
 void OBSStudioAPI::obs_frontend_get_scenes(struct obs_frontend_source_list *sources)
 {
-	for (int i = 0; i < main->ui->scenes->count(); i++) {
-		QListWidgetItem *item = main->ui->scenes->item(i);
-		OBSScene scene = GetOBSRef<OBSScene>(item);
-		obs_source_t *source = obs_scene_get_source(scene);
+	if (auto activeCanvas = main->getActiveCanvasMediator()) {
+		auto scenes = activeCanvas->getScenes();
 
-		if (obs_source_get_ref(source) != nullptr) {
-			da_push_back(sources->sources, &source);
+		for (auto &weak : scenes) {
+			OBSSource source = OBSGetStrongRef(weak);
+
+			if (obs_source_get_ref(source) != nullptr) {
+				da_push_back(sources->sources, &source);
+			}
 		}
 	}
 }
@@ -681,7 +683,7 @@ void OBSStudioAPI::obs_frontend_add_undo_redo_action(const char *name, const und
 
 void OBSStudioAPI::obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_list)
 {
-	for (const auto &canvas : main->canvases) {
+	for (const auto &canvas : main->getCanvases()) {
 		obs_canvas_t *ref = obs_canvas_get_ref(canvas);
 		if (ref) {
 			da_push_back(canvas_list->canvases, &ref);
@@ -691,13 +693,13 @@ void OBSStudioAPI::obs_frontend_get_canvases(obs_frontend_canvas_list *canvas_li
 
 obs_canvas_t *OBSStudioAPI::obs_frontend_add_canvas(const char *name, obs_video_info *ovi, int flags)
 {
-	auto &canvas = main->AddCanvas(std::string(name), ovi, flags);
+	auto &canvas = main->addCanvas(std::string(name), ovi, flags);
 	return obs_canvas_get_ref(canvas);
 }
 
 bool OBSStudioAPI::obs_frontend_remove_canvas(obs_canvas_t *canvas)
 {
-	return main->RemoveCanvas(canvas);
+	return main->removeCanvas(canvas);
 }
 
 void OBSStudioAPI::obs_frontend_copy_sceneitem(obs_sceneitem_t *item)

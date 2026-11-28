@@ -868,10 +868,8 @@ void OBSBasic::Save(SceneCollection &collection)
 		return true;
 	};
 
-	obs_enum_scenes(exportSceneItemsCallback, &sourcesAndGroups);
-
-	// Iterate over our additional canvases (if any), save their scenes and groups.
-	for (const auto &canvas : canvases) {
+	// Iterate over all canvases, save their scenes and groups.
+	for (const OBS::Canvas &canvas : getCanvases()) {
 		// Do not store sources from ephemeral canvases.
 		if (obs_canvas_get_flags(canvas) & EPHEMERAL) {
 			continue;
@@ -883,11 +881,29 @@ void OBSBasic::Save(SceneCollection &collection)
 	obs_data_set_array(saveData, "sources", sourcesArray);
 	obs_data_set_array(saveData, "groups", groupsArray);
 
-	// UI scene order
-	OBSDataArrayAutoRelease sceneOrder = SaveSceneListOrder();
-	obs_data_set_array(saveData, "scene_order", sceneOrder);
+	// [Legacy] Scene order in root of collection data
+	// TODO: Remove me in a future Major version.
+	OBSDataArrayAutoRelease sceneOrderData = obs_data_array_create();
 
-	// Current preview/program scenes
+	auto mainCanvasMediator = this->mainCanvasMediator.lock();
+	auto scenes = mainCanvasMediator->getScenes();
+	for (size_t i = 0; i < scenes.size(); ++i) {
+		OBSWeakSource weak = scenes[i];
+		OBSSource source = OBSGetStrongRef(weak);
+		if (!source) {
+			continue;
+		}
+
+		const char *name = obs_source_get_name(source);
+
+		OBSDataAutoRelease orderEntry = obs_data_create();
+		obs_data_set_string(orderEntry, "name", name);
+		obs_data_array_push_back(sceneOrderData, orderEntry);
+	}
+	obs_data_set_array(saveData, "scene_order", sceneOrderData);
+
+	// [Legacy] Current preview/program scenes in root of collection data
+	// TODO: Remove me in a future Major version.
 	OBSScene scene = GetCurrentScene();
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 	if (!curProgramScene) {
@@ -897,9 +913,34 @@ void OBSBasic::Save(SceneCollection &collection)
 	obs_data_set_string(saveData, "current_scene", obs_source_get_name(obs_scene_get_source(scene)));
 	obs_data_set_string(saveData, "current_program_scene", obs_source_get_name(curProgramScene));
 
+	// Main canvas state
+	OBSDataAutoRelease mainCanvasState = mainCanvasMediator->serializeStateToOBSData();
+	obs_data_set_obj(saveData, "main_canvas", mainCanvasState);
+
 	// Canvases
-	OBSDataArrayAutoRelease savedCanvases = OBS::Canvas::SaveCanvases(canvases);
-	obs_data_set_array(saveData, "canvases", savedCanvases);
+	OBSDataArrayAutoRelease canvasesData = obs_data_array_create();
+	for (const OBS::Canvas &canvas : getCanvases()) {
+		if (obs_canvas_get_flags(canvas) & MAIN) {
+			// Main canvas gets saved explicitly in the "main_canvas" key above.
+			continue;
+		}
+
+		auto canvasInfo = canvas.Save();
+		if (!canvasInfo.has_value()) {
+			continue;
+		}
+
+		auto mediator = App()->getCanvasMediator(canvas);
+		if (!mediator) {
+			continue;
+		}
+
+		OBSDataAutoRelease canvasState = mediator->serializeStateToOBSData();
+
+		obs_data_set_obj(canvasState, "info", canvasInfo.value());
+		obs_data_array_push_back(canvasesData, canvasState);
+	}
+	obs_data_set_array(saveData, "canvases", canvasesData);
 
 	// Transitions
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
@@ -1107,22 +1148,40 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 
 void OBSBasic::LogScenes()
 {
-	blog(LOG_INFO, "------------------------------------------------");
-	blog(LOG_INFO, "Loaded scenes:");
+	// Defer scene loaded logging to the Qt event loop
+	QTimer::singleShot(0, 0, [this]() {
+		blog(LOG_INFO, "------------------------------------------------");
 
-	for (int i = 0; i < ui->scenes->count(); i++) {
-		QListWidgetItem *item = ui->scenes->item(i);
-		OBSScene scene = GetOBSRef<OBSScene>(item);
+		for (const OBS::Canvas &canvas : getCanvases()) {
+			if (!canvas) {
+				continue;
+			}
 
-		obs_source_t *source = obs_scene_get_source(scene);
-		const char *name = obs_source_get_name(source);
+			auto mediator = App()->getCanvasMediator(canvas);
+			if (!mediator) {
+				continue;
+			}
 
-		blog(LOG_INFO, "- scene '%s':", name);
-		obs_scene_enum_items(scene, LogSceneItem, (void *)(intptr_t)1);
-		obs_source_enum_filters(source, LogFilter, (void *)(intptr_t)1);
-	}
+			const char *canvasName = obs_canvas_get_name(canvas);
 
-	blog(LOG_INFO, "------------------------------------------------");
+			blog(LOG_INFO, "Loaded scenes for canvas '%s':", canvasName);
+
+			auto canvasScenes = mediator->getScenes();
+
+			for (auto &weak : canvasScenes) {
+				OBSSource source = OBSGetStrongRef(weak);
+				OBSScene scene = obs_scene_from_source(source);
+
+				const char *name = obs_source_get_name(source);
+
+				blog(LOG_INFO, "- scene '%s':", name);
+				obs_scene_enum_items(scene, LogSceneItem, (void *)(intptr_t)1);
+				obs_source_enum_filters(source, LogFilter, (void *)(intptr_t)1);
+			}
+		}
+
+		blog(LOG_INFO, "------------------------------------------------");
+	});
 }
 
 void OBSBasic::Load(SceneCollection &collection)
@@ -1248,8 +1307,8 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	obs_data_set_default_string(data, "name", curSceneCollection);
 
 	const char *name = obs_data_get_string(data, "name");
-	OBSSourceAutoRelease curScene;
-	OBSSourceAutoRelease curProgramScene;
+	OBSSource curScene;
+	OBSSource curProgramScene;
 	obs_source_t *curTransition;
 
 	if (!name || !*name) {
@@ -1353,9 +1412,42 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	if (transitionsData) {
 		LoadTransitions(transitionsData, addMissingFiles, files);
 	}
-	if (sceneOrder) {
-		LoadSceneListOrder(sceneOrder);
+
+	// Intialize mediator data
+	for (auto &canvas : getCanvases()) {
+		auto mediator = App()->getCanvasMediator(canvas);
+		if (!mediator) {
+			continue;
+		}
+
+		auto data = canvas.Save();
+		if (!data.has_value()) {
+			continue;
+		}
+
+		mediator->loadStateFromOBSData(data.value());
 	}
+
+	OBSCanvasAutoRelease mainCanvas = obs_get_main_canvas();
+	canvases.insert(canvases.begin(), OBS::Canvas(mainCanvas));
+
+	OBSDataAutoRelease mainCanvasData = obs_data_get_obj(data, "main_canvas");
+	if (!mainCanvasData) {
+		// Cobble main Canvas state together from legacy data
+		mainCanvasData = obs_data_create();
+		obs_data_set_string(mainCanvasData, "preview_scene",
+				    obs_source_get_uuid(OBSSourceAutoRelease(obs_get_source_by_name(sceneName))));
+		obs_data_set_string(
+			mainCanvasData, "program_scene",
+			obs_source_get_uuid(OBSSourceAutoRelease(obs_get_source_by_name(programSceneName))));
+		obs_data_set_array(mainCanvasData, "scene_order", sceneOrder);
+	}
+
+	auto mainCanvasMediator = App()->getCanvasMediator(mainCanvas);
+	mainCanvasMediator->loadStateFromOBSData(mainCanvasData);
+	setActiveMediator(mainCanvasMediator);
+
+	this->mainCanvasMediator = mainCanvasMediator;
 
 	curTransition = FindTransition(transitionName);
 	if (!curTransition) {
@@ -1366,8 +1458,8 @@ void OBSBasic::LoadData(obs_data_t *data, SceneCollection &collection)
 	SetTransition(curTransition);
 
 retryScene:
-	curScene = obs_get_source_by_name(sceneName);
-	curProgramScene = obs_get_source_by_name(programSceneName);
+	curScene = obs_scene_get_source(mainCanvasMediator->getPreviewScene());
+	curProgramScene = obs_scene_get_source(mainCanvasMediator->getProgramScene());
 
 	/* if the starting scene command line parameter is bad at all,
 	 * fall back to original settings */
@@ -1380,16 +1472,20 @@ retryScene:
 
 	if (!curScene) {
 		auto find_scene_cb = [](void *source_ptr, obs_source_t *scene) {
-			*static_cast<OBSSourceAutoRelease *>(source_ptr) = obs_source_get_ref(scene);
+			*static_cast<OBSSource *>(source_ptr) = scene;
 			return false;
 		};
 		obs_enum_scenes(find_scene_cb, &curScene);
 	}
 
-	SetCurrentScene(curScene.Get(), true);
+	OBSScene loadedPreviewScene = obs_scene_from_source(curScene);
+	if (loadedPreviewScene) {
+		mainCanvasMediator->setPreviewScene(loadedPreviewScene);
+		SetCurrentScene(loadedPreviewScene, true);
+	}
 
 	if (!curProgramScene) {
-		curProgramScene = std::move(curScene);
+		curProgramScene = curScene;
 	}
 	if (IsPreviewProgramMode()) {
 		TransitionToScene(curProgramScene.Get(), true);
@@ -1564,7 +1660,6 @@ void OBSBasic::ClearSceneData()
 
 	CloseDialogs();
 
-	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();
 
@@ -1597,19 +1692,19 @@ void OBSBasic::ClearSceneData()
 	copyFiltersSource_ = nullptr;
 	copyFilter = nullptr;
 
-	auto cb = [](void *, obs_source_t *source) {
+	auto removeSourceCallback = [](void *, obs_source_t *source) {
 		obs_source_remove(source);
 		return true;
 	};
 
-	obs_enum_scenes(cb, nullptr);
-	obs_enum_sources(cb, nullptr);
+	obs_enum_scenes(removeSourceCallback, nullptr);
+	obs_enum_sources(removeSourceCallback, nullptr);
 
-	for (const auto &canvas : canvases) {
-		obs_canvas_enum_scenes(canvas, cb, nullptr);
+	for (const auto &canvas : getCanvases()) {
+		obs_canvas_enum_scenes(canvas, removeSourceCallback, nullptr);
 	}
 
-	ClearCanvases();
+	clearCanvases();
 
 	OnEvent(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP);
 
@@ -1665,6 +1760,8 @@ void OBSBasic::ClearSceneData()
 		blog(LOG_INFO, "All scene data cleared");
 		blog(LOG_INFO, "------------------------------------------------");
 	}
+
+	App()->pruneMediators();
 }
 
 void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)

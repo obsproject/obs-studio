@@ -177,7 +177,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	ui->multitrackVideoAdditionalCanvas->clear();
 	ui->multitrackVideoAdditionalCanvas->addItem(QTStr("None"));
-	for (const auto &canvas : main->GetCanvases()) {
+	for (const auto &canvas : main->getCanvases()) {
 		if (obs_canvas_get_flags(canvas) & EPHEMERAL) {
 			continue;
 		}

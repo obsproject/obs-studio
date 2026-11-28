@@ -17,13 +17,54 @@
 
 #include "OBSBasic.hpp"
 
-void OBSBasic::CanvasRemoved(void *data, calldata_t *params)
+void OBSBasic::setActiveMediator(std::shared_ptr<OBS::mediator::Canvas> mediator)
 {
-	OBSCanvas canvas = static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
-	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::RemoveCanvas, canvas);
+	if (activeCanvasMediator.lock() == mediator) {
+		return;
+	}
+
+	// Disconnect old signals
+	for (auto &connection : activeCanvasConnections) {
+		disconnect(connection);
+	}
+
+	activeCanvasConnections.clear();
+
+	activeCanvasMediator = mediator;
+	if (!mediator) {
+		return;
+	}
+
+	// Bind frontend events to mediator signals
+	activeCanvasConnections.push_back(connect(mediator.get(), &OBS::mediator::Canvas::sceneOrderChanged, this,
+						  [this]() { OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED); }));
+	activeCanvasConnections.push_back(connect(mediator.get(), &OBS::mediator::Canvas::sceneRenamed, this,
+						  [this]() { OnEvent(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED); }));
+
+	// Connect canvas signals
+	activeCanvasConnections.push_back(
+		connect(mediator.get(), &OBS::mediator::Canvas::previewChanged, this, [this](OBSWeakSource weak) {
+			OBSSource source = OBSGetStrongRef(weak);
+			OBSScene scene = obs_scene_from_source(source);
+			if (!scene) {
+				return;
+			}
+
+			ui->sources->RefreshItems();
+			SetCurrentScene(scene);
+		}));
+
+	emit activeCanvasChanged(mediator);
+	OnEvent(OBS_FRONTEND_EVENT_CANVAS_ACTIVE_CHANGED);
 }
 
-const OBS::Canvas &OBSBasic::AddCanvas(const std::string &name, obs_video_info *ovi, int flags)
+void OBSBasic::canvasRemoved(void *data, calldata_t *params)
+{
+	OBSCanvas canvas = static_cast<obs_canvas_t *>(calldata_ptr(params, "canvas"));
+	QMetaObject::invokeMethod(static_cast<OBSBasic *>(data), &OBSBasic::removeCanvas, canvas);
+}
+
+const OBS::Canvas &OBSBasic::addCanvas(const std::string &name, obs_video_info *ovi, int flags)
 {
 	OBSCanvas canvas = obs_canvas_create(name.c_str(), ovi, flags);
 	auto &it = canvases.emplace_back(canvas);
@@ -31,7 +72,7 @@ const OBS::Canvas &OBSBasic::AddCanvas(const std::string &name, obs_video_info *
 	return it;
 }
 
-bool OBSBasic::RemoveCanvas(OBSCanvas canvas)
+bool OBSBasic::removeCanvas(OBSCanvas canvas)
 {
 	bool removed = false;
 	if (!canvas) {
@@ -40,10 +81,6 @@ bool OBSBasic::RemoveCanvas(OBSCanvas canvas)
 
 	auto canvas_it = std::find(std::begin(canvases), std::end(canvases), canvas);
 	if (canvas_it != std::end(canvases)) {
-		// Move canvas to a temporary object to delay removal of the canvas and calls to its signal handlers
-		// until after erase() completes. This is to avoid issues with recursion coming from the
-		// CanvasRemoved() signal handler.
-		OBS::Canvas tmp = std::move(*canvas_it);
 		canvases.erase(canvas_it);
 		removed = true;
 	}
@@ -55,10 +92,10 @@ bool OBSBasic::RemoveCanvas(OBSCanvas canvas)
 	return removed;
 }
 
-void OBSBasic::ClearCanvases()
+void OBSBasic::clearCanvases()
 {
 	// Delete canvases one-by-one to ensure OBS_FRONTEND_EVENT_CANVAS_REMOVED is sent for each
 	while (!canvases.empty()) {
-		RemoveCanvas(OBSCanvas(canvases.back()));
+		removeCanvas(OBSCanvas(canvases.back()));
 	}
 }
