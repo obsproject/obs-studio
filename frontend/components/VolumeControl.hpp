@@ -67,7 +67,7 @@ public:
 
 private:
 	OBSWeakSource weakSource_;
-	const char *uuid;
+	std::string uuid;
 	std::vector<OBSSignal> obsSignals;
 	bool obsMonitoring;
 	bool obsMuted;

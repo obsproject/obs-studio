@@ -597,7 +597,7 @@ void VolumeControl::setLocked(bool locked)
 	mixerStatus().set(VolumeControl::MixerStatus::Locked, locked);
 
 	OBSBasic *main = OBSBasic::Get();
-	emit main->mixerStatusChanged(uuid);
+	emit main->mixerStatusChanged(QString::fromStdString(uuid));
 }
 
 void VolumeControl::onMuteChanged(bool muted)
@@ -746,7 +746,7 @@ void VolumeControl::onSourceActiveChanged(bool active)
 	mixerStatus().set(VolumeControl::MixerStatus::Active, active);
 
 	OBSBasic *main = OBSBasic::Get();
-	emit main->mixerStatusChanged(uuid);
+	emit main->mixerStatusChanged(QString::fromStdString(uuid));
 }
 
 void VolumeControl::processMixerState()
@@ -942,7 +942,7 @@ void VolumeControl::setGlobalInMixer(bool global)
 		mixerStatus().set(VolumeControl::MixerStatus::Global, global);
 
 		OBSBasic *main = OBSBasic::Get();
-		emit main->mixerStatusChanged(uuid);
+		emit main->mixerStatusChanged(QString::fromStdString(uuid));
 	}
 }
 
@@ -964,7 +964,7 @@ void VolumeControl::setPinnedInMixer(bool pinned)
 		}
 
 		OBSBasic *main = OBSBasic::Get();
-		emit main->mixerStatusChanged(uuid);
+		emit main->mixerStatusChanged(QString::fromStdString(uuid));
 	}
 }
 
@@ -981,7 +981,7 @@ void VolumeControl::setHiddenInMixer(bool hidden)
 		mixerStatus().set(VolumeControl::MixerStatus::Hidden, hidden);
 
 		OBSBasic *main = OBSBasic::Get();
-		emit main->mixerStatusChanged(uuid);
+		emit main->mixerStatusChanged(QString::fromStdString(uuid));
 	}
 }
 
