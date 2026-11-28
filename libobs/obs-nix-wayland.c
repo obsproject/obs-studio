@@ -19,9 +19,14 @@
 #include "obs-nix-platform.h"
 #include "obs-nix-wayland.h"
 
+#include <wayland-xx-hotkey-v1-client-protocol.h>
+
 #include <unistd.h>
 #include <sys/mman.h>
 #include <string.h>
+#include <poll.h>
+#include <errno.h>
+#include <pthread.h>
 
 #include <wayland-client.h>
 #include <xkbcommon/xkbcommon.h>
@@ -30,6 +35,54 @@
 #define MAX_KEYCODES 256
 // X11 keymaps only have 4 shift levels, im not sure xkbcommon supports a way to shift the state into a higher level anyway.
 #define MAX_SHIFT_LEVELS 4
+
+/* An OBS key combination: INTERACT_* modifier bits plus the trigger key, or
+ * OBS_KEY_NONE for a modifier-only combination. */
+struct global_hotkey_combo {
+	uint32_t modifiers;
+	obs_key_t key;
+};
+
+enum global_hotkey_trigger_kind {
+	GLOBAL_HOTKEY_TRIGGER_INVALID = 0,
+	GLOBAL_HOTKEY_TRIGGER_KEY = 1,
+	GLOBAL_HOTKEY_TRIGGER_BUTTON = 2,
+};
+
+/* What we ask the compositor to bind: a keysym or a pointer button code plus
+ * XX_HOTKEY_MANAGER_V1_MODIFIERS_* bits. One OBS combination may expand to
+ * several triggers (see global_hotkey_collect_triggers). */
+struct global_hotkey_trigger {
+	enum global_hotkey_trigger_kind kind;
+	uint32_t code;
+	uint32_t modifiers;
+};
+
+struct global_hotkey_desired {
+	struct global_hotkey_combo combo;
+	struct global_hotkey_trigger trigger;
+};
+
+/* Heap allocated so its address stays stable as wl listener user data. */
+struct global_hotkey_binding {
+	obs_hotkeys_platform_t *plat;
+	struct global_hotkey_combo combo;
+	struct global_hotkey_trigger trigger;
+	struct xx_hotkey_v1 *obj;
+	bool active;
+};
+
+/* A trigger the compositor currently reports as held. */
+struct global_hotkey_held {
+	struct global_hotkey_combo combo;
+	struct global_hotkey_trigger trigger;
+	/* The libobs hotkey thread has run at least one poll cycle with this
+	 * entry present. */
+	bool observed;
+	/* The compositor already sent "released", but the entry is kept until
+	 * it has been observed so that a tap is not lost. */
+	bool release_pending;
+};
 
 struct obs_hotkeys_platform {
 	struct wl_display *display;
@@ -41,9 +94,26 @@ struct obs_hotkeys_platform {
 	xkb_keysym_t key_to_sym[MAX_SHIFT_LEVELS][MAX_KEYCODES];
 	xkb_keysym_t obs_to_key[OBS_KEY_LAST_VALUE];
 	uint32_t current_layout;
+
+	/* xx_hotkey_v1 state, owned by the global hotkey thread, except
+	 * global_hotkey_held which is also read by the libobs hotkey thread. global_hotkey_held
+	 * is guarded by global_hotkey_mutex; entries are only added or removed while
+	 * obs->hotkeys.mutex is also held, so a hotkey poll cycle sees a
+	 * consistent set. */
+	struct wl_event_queue *global_hotkey_queue;
+	struct xx_hotkey_manager_v1 *global_hotkey_manager;
+	pthread_t global_hotkey_thread;
+	bool global_hotkey_thread_active;
+	volatile bool global_hotkey_running;
+	int global_hotkey_stop_pipe[2];
+	pthread_mutex_t global_hotkey_mutex;
+	DARRAY(struct global_hotkey_binding *) global_hotkey_bindings;
+	DARRAY(struct global_hotkey_trigger) global_hotkey_denied;
+	DARRAY(struct global_hotkey_held) global_hotkey_held;
 };
 
 static obs_key_t obs_nix_wayland_key_from_virtual_key(int sym);
+static int obs_nix_wayland_key_to_virtual_key(obs_key_t key);
 
 static void load_keymap_data(struct xkb_keymap *keymap, xkb_keycode_t key, void *data)
 {
@@ -225,6 +295,541 @@ const struct wl_registry_listener registry_listener = {
 	.global_remove = platform_registry_remover,
 };
 
+/* The libobs hotkey thread drives press/release detection off is_pressed().
+ * On X11 that polls the X server, but Wayland never delivers key events to
+ * unfocused clients, so out-of-focus hotkeys historically did not work. When
+ * the compositor supports xx_hotkey_v1 we instead bind every distinct OBS
+ * combination as a global hotkey, track which ones the compositor reports as
+ * held, and answer is_pressed() from that set.
+ *
+ * A trigger on a modifier keysym is a tap: the compositor sends "triggered"
+ * and "released" back to back on key release. To make sure the 25ms poll
+ * cycle still sees such a press, a held entry is only removed once a poll
+ * cycle has observed it (see global_hotkey_held_release and global_hotkey_flush_released). */
+
+/* Button codes as in wl_pointer.button (linux/input-event-codes.h). OBS
+ * numbers mouse buttons left, right, middle, then the extra buttons, which
+ * matches the evdev order starting at BTN_LEFT. */
+#define EVDEV_BTN_LEFT 0x110
+
+static inline bool global_hotkey_combo_equal(const struct global_hotkey_combo *a,
+					     const struct global_hotkey_combo *binding)
+{
+	return a->key == binding->key && a->modifiers == binding->modifiers;
+}
+
+static inline bool global_hotkey_trigger_equal(const struct global_hotkey_trigger *a,
+					       const struct global_hotkey_trigger *binding)
+{
+	return a->kind == binding->kind && a->code == binding->code && a->modifiers == binding->modifiers;
+}
+
+static inline uint32_t obs_modifiers_to_global_hotkey(uint32_t modifiers)
+{
+	uint32_t modifier_bits = 0;
+	if (modifiers & INTERACT_SHIFT_KEY)
+		modifier_bits |= XX_HOTKEY_MANAGER_V1_MODIFIERS_SHIFT;
+	if (modifiers & INTERACT_CONTROL_KEY)
+		modifier_bits |= XX_HOTKEY_MANAGER_V1_MODIFIERS_CTRL;
+	if (modifiers & INTERACT_ALT_KEY)
+		modifier_bits |= XX_HOTKEY_MANAGER_V1_MODIFIERS_ALT;
+	if (modifiers & INTERACT_COMMAND_KEY)
+		modifier_bits |= XX_HOTKEY_MANAGER_V1_MODIFIERS_SUPER;
+	return modifier_bits;
+}
+
+/* The protocol expects unshifted keysyms (XKB_KEY_b, not XKB_KEY_B), so
+ * prefer the live keymap and lowercase letters from the fallback table. */
+static uint32_t global_hotkey_keysym_for_key(obs_hotkeys_platform_t *plat, obs_key_t key)
+{
+	xkb_keycode_t keycode = plat->obs_to_key[key];
+	if (keycode) {
+		xkb_keysym_t keymap_keysym = plat->key_to_sym[0][keycode];
+		if (keymap_keysym)
+			return keymap_keysym;
+	}
+
+	int fallback_keysym = obs_nix_wayland_key_to_virtual_key(key);
+	if (fallback_keysym >= XKB_KEY_A && fallback_keysym <= XKB_KEY_Z)
+		fallback_keysym = fallback_keysym - XKB_KEY_A + XKB_KEY_a;
+	return (uint32_t)fallback_keysym;
+}
+
+static inline void global_hotkey_push_desired(struct darray *list, const struct global_hotkey_combo *combo,
+					      enum global_hotkey_trigger_kind kind, uint32_t code, uint32_t modifiers)
+{
+	struct global_hotkey_desired desired = {*combo, {kind, code, modifiers}};
+	struct global_hotkey_desired *array = list->array;
+	for (size_t i = 0; i < list->num; i++) {
+		if (global_hotkey_trigger_equal(&array[i].trigger, &desired.trigger))
+			return;
+	}
+	darray_push_back(sizeof(struct global_hotkey_desired), list, &desired);
+}
+
+/* Expand one OBS combination into the triggers to request. */
+static void global_hotkey_collect_triggers(obs_hotkeys_platform_t *plat, const struct global_hotkey_combo *combo,
+					   struct darray *desired)
+{
+	uint32_t modifiers = obs_modifiers_to_global_hotkey(combo->modifiers);
+
+	if (combo->key == OBS_KEY_NONE) {
+		/* Modifier-only combination: a tap on any one of its modifiers
+		 * while the others are held. Both the left and right key of a
+		 * modifier count. */
+		static const struct {
+			uint32_t obs_bit;
+			uint32_t protocol_bit;
+			xkb_keysym_t keysyms[2];
+		} modifier_keys[] = {
+			{INTERACT_SHIFT_KEY, XX_HOTKEY_MANAGER_V1_MODIFIERS_SHIFT, {XKB_KEY_Shift_L, XKB_KEY_Shift_R}},
+			{INTERACT_CONTROL_KEY,
+			 XX_HOTKEY_MANAGER_V1_MODIFIERS_CTRL,
+			 {XKB_KEY_Control_L, XKB_KEY_Control_R}},
+			{INTERACT_ALT_KEY, XX_HOTKEY_MANAGER_V1_MODIFIERS_ALT, {XKB_KEY_Alt_L, XKB_KEY_Alt_R}},
+			{INTERACT_COMMAND_KEY, XX_HOTKEY_MANAGER_V1_MODIFIERS_SUPER, {XKB_KEY_Super_L, XKB_KEY_Super_R}},
+		};
+		for (size_t i = 0; i < sizeof(modifier_keys) / sizeof(modifier_keys[0]); i++) {
+			if (!(combo->modifiers & modifier_keys[i].obs_bit))
+				continue;
+			uint32_t other_modifiers = modifiers & ~modifier_keys[i].protocol_bit;
+			global_hotkey_push_desired(desired, combo, GLOBAL_HOTKEY_TRIGGER_KEY,
+						   modifier_keys[i].keysyms[0], other_modifiers);
+			global_hotkey_push_desired(desired, combo, GLOBAL_HOTKEY_TRIGGER_KEY,
+						   modifier_keys[i].keysyms[1], other_modifiers);
+		}
+		return;
+	}
+
+	if (combo->key >= OBS_KEY_MOUSE1 && combo->key <= OBS_KEY_MOUSE29) {
+		uint32_t button = EVDEV_BTN_LEFT + (combo->key - OBS_KEY_MOUSE1);
+		global_hotkey_push_desired(desired, combo, GLOBAL_HOTKEY_TRIGGER_BUTTON, button, modifiers);
+		return;
+	}
+
+	uint32_t keysym = global_hotkey_keysym_for_key(plat, combo->key);
+	if (keysym)
+		global_hotkey_push_desired(desired, combo, GLOBAL_HOTKEY_TRIGGER_KEY, keysym, modifiers);
+}
+
+static size_t global_hotkey_held_find(obs_hotkeys_platform_t *plat, const struct global_hotkey_trigger *trigger)
+{
+	for (size_t i = 0; i < plat->global_hotkey_held.num; i++) {
+		if (global_hotkey_trigger_equal(&plat->global_hotkey_held.array[i].trigger, trigger))
+			return i;
+	}
+	return DARRAY_INVALID;
+}
+
+/* Both take obs->hotkeys.mutex so the change lands between two poll cycles
+ * of the libobs hotkey thread, never in the middle of one. */
+static void global_hotkey_held_press(obs_hotkeys_platform_t *plat, const struct global_hotkey_binding *binding)
+{
+	pthread_mutex_lock(&obs->hotkeys.mutex);
+	pthread_mutex_lock(&plat->global_hotkey_mutex);
+	size_t index = global_hotkey_held_find(plat, &binding->trigger);
+	if (index == DARRAY_INVALID) {
+		struct global_hotkey_held held = {binding->combo, binding->trigger, false, false};
+		da_push_back(plat->global_hotkey_held, &held);
+	} else {
+		plat->global_hotkey_held.array[index].release_pending = false;
+	}
+	pthread_mutex_unlock(&plat->global_hotkey_mutex);
+	pthread_mutex_unlock(&obs->hotkeys.mutex);
+}
+
+static void global_hotkey_held_release(obs_hotkeys_platform_t *plat, const struct global_hotkey_trigger *trigger,
+				       bool force)
+{
+	pthread_mutex_lock(&obs->hotkeys.mutex);
+	pthread_mutex_lock(&plat->global_hotkey_mutex);
+	size_t index = global_hotkey_held_find(plat, trigger);
+	if (index != DARRAY_INVALID) {
+		struct global_hotkey_held *held = &plat->global_hotkey_held.array[index];
+		if (force || held->observed)
+			da_erase(plat->global_hotkey_held, index);
+		else
+			held->release_pending = true;
+	}
+	pthread_mutex_unlock(&plat->global_hotkey_mutex);
+	pthread_mutex_unlock(&obs->hotkeys.mutex);
+}
+
+/* Drop released entries that a poll cycle has seen since. Returns whether
+ * any entry is still waiting to be observed. */
+static bool global_hotkey_flush_released(obs_hotkeys_platform_t *plat)
+{
+	bool pending = false;
+
+	pthread_mutex_lock(&plat->global_hotkey_mutex);
+	for (size_t i = 0; i < plat->global_hotkey_held.num; i++) {
+		if (plat->global_hotkey_held.array[i].release_pending) {
+			pending = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&plat->global_hotkey_mutex);
+	if (!pending)
+		return false;
+
+	pending = false;
+	pthread_mutex_lock(&obs->hotkeys.mutex);
+	pthread_mutex_lock(&plat->global_hotkey_mutex);
+	for (size_t i = plat->global_hotkey_held.num; i > 0; i--) {
+		struct global_hotkey_held *held = &plat->global_hotkey_held.array[i - 1];
+		if (!held->release_pending)
+			continue;
+		if (held->observed)
+			da_erase(plat->global_hotkey_held, i - 1);
+		else
+			pending = true;
+	}
+	pthread_mutex_unlock(&plat->global_hotkey_mutex);
+	pthread_mutex_unlock(&obs->hotkeys.mutex);
+	return pending;
+}
+
+static const char *global_hotkey_trigger_kind_name(const struct global_hotkey_trigger *trigger)
+{
+	switch (trigger->kind) {
+	case GLOBAL_HOTKEY_TRIGGER_KEY:
+		return "keysym";
+	case GLOBAL_HOTKEY_TRIGGER_BUTTON:
+		return "button";
+	default:
+		return "invalid";
+	}
+}
+
+static void global_hotkey_hotkey_handle_bound(void *data, struct xx_hotkey_v1 *hotkey)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct global_hotkey_binding *binding = data;
+	binding->active = true;
+	blog(LOG_DEBUG, "[wayland] global hotkey bound (%s 0x%x, modifier_keys 0x%x)",
+	     global_hotkey_trigger_kind_name(&binding->trigger), binding->trigger.code, binding->trigger.modifiers);
+}
+
+static void global_hotkey_remove_binding(obs_hotkeys_platform_t *plat, struct global_hotkey_binding *binding, bool deny)
+{
+	struct global_hotkey_trigger trigger = binding->trigger;
+	global_hotkey_held_release(plat, &trigger, true);
+
+	for (size_t i = 0; i < plat->global_hotkey_bindings.num; i++) {
+		if (plat->global_hotkey_bindings.array[i] == binding) {
+			da_erase(plat->global_hotkey_bindings, i);
+			break;
+		}
+	}
+
+	if (binding->obj)
+		xx_hotkey_v1_destroy(binding->obj);
+	bfree(binding);
+
+	if (deny)
+		da_push_back(plat->global_hotkey_denied, &trigger);
+}
+
+static void global_hotkey_hotkey_handle_denied(void *data, struct xx_hotkey_v1 *hotkey, uint32_t reason,
+					       const char *message)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct global_hotkey_binding *binding = data;
+	blog(LOG_DEBUG, "[wayland] global hotkey denied (%s 0x%x, modifier_keys 0x%x, reason %u): %s",
+	     global_hotkey_trigger_kind_name(&binding->trigger), binding->trigger.code, binding->trigger.modifiers,
+	     reason, message ? message : "");
+	/* Remember the denial so reconcile does not keep re-requesting it. */
+	global_hotkey_remove_binding(binding->plat, binding, true);
+}
+
+static void global_hotkey_hotkey_handle_revoked(void *data, struct xx_hotkey_v1 *hotkey, const char *message)
+{
+	UNUSED_PARAMETER(hotkey);
+	struct global_hotkey_binding *binding = data;
+	blog(LOG_DEBUG, "[wayland] global hotkey revoked (%s 0x%x, modifier_keys 0x%x): %s",
+	     global_hotkey_trigger_kind_name(&binding->trigger), binding->trigger.code, binding->trigger.modifiers,
+	     message ? message : "");
+	/* The protocol forbids silently committing a revoked trigger again;
+	 * it gets another chance once the user reconfigures the shortcut. */
+	global_hotkey_remove_binding(binding->plat, binding, true);
+}
+
+static void global_hotkey_hotkey_handle_triggered(void *data, struct xx_hotkey_v1 *hotkey, uint32_t serial,
+						  uint32_t time)
+{
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(serial);
+	UNUSED_PARAMETER(time);
+	struct global_hotkey_binding *binding = data;
+	global_hotkey_held_press(binding->plat, binding);
+}
+
+static void global_hotkey_hotkey_handle_released(void *data, struct xx_hotkey_v1 *hotkey, uint32_t serial,
+						 uint32_t time)
+{
+	UNUSED_PARAMETER(hotkey);
+	UNUSED_PARAMETER(serial);
+	UNUSED_PARAMETER(time);
+	struct global_hotkey_binding *binding = data;
+	global_hotkey_held_release(binding->plat, &binding->trigger, false);
+}
+
+static const struct xx_hotkey_v1_listener global_hotkey_listener = {
+	.bound = global_hotkey_hotkey_handle_bound,
+	.denied = global_hotkey_hotkey_handle_denied,
+	.revoked = global_hotkey_hotkey_handle_revoked,
+	.triggered = global_hotkey_hotkey_handle_triggered,
+	.released = global_hotkey_hotkey_handle_released,
+};
+
+static void global_hotkey_registry_global(void *data, struct wl_registry *registry, uint32_t name,
+					  const char *interface, uint32_t version)
+{
+	obs_hotkeys_platform_t *plat = data;
+	if (strcmp(interface, xx_hotkey_manager_v1_interface.name) == 0) {
+		uint32_t bind_version = version < 1 ? version : 1;
+		plat->global_hotkey_manager =
+			wl_registry_bind(registry, name, &xx_hotkey_manager_v1_interface, bind_version);
+	}
+}
+
+static void global_hotkey_registry_global_remove(void *data, struct wl_registry *registry, uint32_t name)
+{
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(registry);
+	UNUSED_PARAMETER(name);
+}
+
+static const struct wl_registry_listener global_hotkey_registry_listener = {
+	.global = global_hotkey_registry_global,
+	.global_remove = global_hotkey_registry_global_remove,
+};
+
+static bool global_hotkey_has_binding(obs_hotkeys_platform_t *plat, const struct global_hotkey_trigger *trigger)
+{
+	for (size_t i = 0; i < plat->global_hotkey_bindings.num; i++) {
+		if (global_hotkey_trigger_equal(&plat->global_hotkey_bindings.array[i]->trigger, trigger))
+			return true;
+	}
+	return false;
+}
+
+static bool global_hotkey_trigger_in(const struct darray *list, const struct global_hotkey_trigger *trigger)
+{
+	const struct global_hotkey_trigger *array = list->array;
+	for (size_t i = 0; i < list->num; i++) {
+		if (global_hotkey_trigger_equal(&array[i], trigger))
+			return true;
+	}
+	return false;
+}
+
+static bool global_hotkey_trigger_desired(const struct darray *list, const struct global_hotkey_trigger *trigger)
+{
+	const struct global_hotkey_desired *array = list->array;
+	for (size_t i = 0; i < list->num; i++) {
+		if (global_hotkey_trigger_equal(&array[i].trigger, trigger))
+			return true;
+	}
+	return false;
+}
+
+static void global_hotkey_request_binding(obs_hotkeys_platform_t *plat, const struct global_hotkey_desired *desired)
+{
+	struct global_hotkey_binding *binding = bzalloc(sizeof(struct global_hotkey_binding));
+	binding->plat = plat;
+	binding->combo = desired->combo;
+	binding->trigger = desired->trigger;
+	binding->obj = xx_hotkey_manager_v1_create_hotkey(plat->global_hotkey_manager);
+	xx_hotkey_v1_add_listener(binding->obj, &global_hotkey_listener, binding);
+	xx_hotkey_v1_set_description(binding->obj, "OBS Studio hotkey");
+	if (desired->trigger.kind == GLOBAL_HOTKEY_TRIGGER_BUTTON)
+		xx_hotkey_v1_set_button_trigger(binding->obj, desired->trigger.code, desired->trigger.modifiers);
+	else
+		xx_hotkey_v1_set_key_trigger(binding->obj, desired->trigger.code, desired->trigger.modifiers);
+	xx_hotkey_v1_commit(binding->obj);
+	da_push_back(plat->global_hotkey_bindings, &binding);
+}
+
+/* Make the set of xx_hotkey_v1 objects match the combinations OBS has
+ * bound. Runs on the global hotkey thread. */
+static void global_hotkey_reconcile(obs_hotkeys_platform_t *plat)
+{
+	if (!plat->global_hotkey_manager)
+		return;
+
+	DARRAY(struct global_hotkey_desired) desired_triggers;
+	da_init(desired_triggers);
+
+	pthread_mutex_lock(&obs->hotkeys.mutex);
+	for (size_t i = 0; i < obs->hotkeys.bindings.num; i++) {
+		obs_hotkey_binding_t *obs_binding = &obs->hotkeys.bindings.array[i];
+		struct global_hotkey_combo combo = {obs_binding->key.modifiers, obs_binding->key.key};
+		if (combo.key >= OBS_KEY_LAST_VALUE)
+			continue;
+		if (combo.key == OBS_KEY_NONE && !combo.modifiers)
+			continue;
+		global_hotkey_collect_triggers(plat, &combo, &desired_triggers.da);
+	}
+	pthread_mutex_unlock(&obs->hotkeys.mutex);
+
+	for (size_t i = plat->global_hotkey_bindings.num; i > 0; i--) {
+		struct global_hotkey_binding *binding = plat->global_hotkey_bindings.array[i - 1];
+		if (!global_hotkey_trigger_desired(&desired_triggers.da, &binding->trigger))
+			global_hotkey_remove_binding(plat, binding, false);
+	}
+
+	/* Forget denials for triggers no longer in use so a reconfigured
+	 * shortcut gets another chance. */
+	for (size_t i = plat->global_hotkey_denied.num; i > 0; i--) {
+		if (!global_hotkey_trigger_desired(&desired_triggers.da, &plat->global_hotkey_denied.array[i - 1]))
+			da_erase(plat->global_hotkey_denied, i - 1);
+	}
+
+	for (size_t i = 0; i < desired_triggers.num; i++) {
+		const struct global_hotkey_desired *desired = &desired_triggers.array[i];
+		if (global_hotkey_has_binding(plat, &desired->trigger) ||
+		    global_hotkey_trigger_in(&plat->global_hotkey_denied.da, &desired->trigger))
+			continue;
+		global_hotkey_request_binding(plat, desired);
+	}
+
+	da_free(desired_triggers);
+}
+
+static void *global_hotkey_thread(void *arg)
+{
+	obs_hotkeys_platform_t *plat = arg;
+	struct wl_display *display = plat->display;
+	struct wl_event_queue *queue = plat->global_hotkey_queue;
+
+	os_set_thread_name("libobs: wayland global hotkey thread");
+
+	struct pollfd poll_fds[2] = {0};
+	poll_fds[0].fd = wl_display_get_fd(display);
+	poll_fds[0].events = POLLIN;
+	poll_fds[1].fd = plat->global_hotkey_stop_pipe[0];
+	poll_fds[1].events = POLLIN;
+
+	while (os_atomic_load_bool(&plat->global_hotkey_running)) {
+		global_hotkey_reconcile(plat);
+		/* Poll faster while a released tap waits for the libobs hotkey
+		 * thread (25ms cycle) to observe it. */
+		int timeout_ms = global_hotkey_flush_released(plat) ? 25 : 250;
+
+		while (wl_display_prepare_read_queue(display, queue) != 0)
+			wl_display_dispatch_queue_pending(display, queue);
+		wl_display_flush(display);
+
+		poll_fds[0].revents = 0;
+		poll_fds[1].revents = 0;
+		int num_ready = poll(poll_fds, 2, timeout_ms);
+		if (num_ready < 0) {
+			wl_display_cancel_read(display);
+			if (errno == EINTR)
+				continue;
+			break;
+		}
+
+		if (!os_atomic_load_bool(&plat->global_hotkey_running) || (poll_fds[1].revents & POLLIN)) {
+			wl_display_cancel_read(display);
+			break;
+		}
+
+		if (poll_fds[0].revents & POLLIN) {
+			if (wl_display_read_events(display) < 0)
+				break;
+			wl_display_dispatch_queue_pending(display, queue);
+		} else {
+			wl_display_cancel_read(display);
+		}
+	}
+
+	return NULL;
+}
+
+static void global_hotkey_init(obs_hotkeys_platform_t *plat)
+{
+	struct wl_display *display = plat->display;
+
+	plat->global_hotkey_queue = wl_display_create_queue(display);
+
+	struct wl_registry *registry = wl_display_get_registry(display);
+	wl_proxy_set_queue((struct wl_proxy *)registry, plat->global_hotkey_queue);
+	wl_registry_add_listener(registry, &global_hotkey_registry_listener, plat);
+	wl_display_roundtrip_queue(display, plat->global_hotkey_queue);
+	wl_registry_destroy(registry);
+
+	if (!plat->global_hotkey_manager) {
+		blog(LOG_INFO, "[wayland] xx_hotkey_v1 not available; "
+			       "global hotkeys are limited to when OBS is focused");
+		wl_event_queue_destroy(plat->global_hotkey_queue);
+		plat->global_hotkey_queue = NULL;
+		return;
+	}
+
+	/* Must be sent at most once and before the first commit. */
+	xx_hotkey_manager_v1_set_app_id(plat->global_hotkey_manager, "com.obsproject.Studio");
+
+	if (pipe(plat->global_hotkey_stop_pipe) != 0) {
+		blog(LOG_WARNING, "[wayland] failed to create global hotkey stop pipe; global hotkeys disabled");
+		xx_hotkey_manager_v1_destroy(plat->global_hotkey_manager);
+		plat->global_hotkey_manager = NULL;
+		wl_event_queue_destroy(plat->global_hotkey_queue);
+		plat->global_hotkey_queue = NULL;
+		return;
+	}
+
+	os_atomic_set_bool(&plat->global_hotkey_running, true);
+	if (pthread_create(&plat->global_hotkey_thread, NULL, global_hotkey_thread, plat) == 0) {
+		plat->global_hotkey_thread_active = true;
+		blog(LOG_INFO, "[wayland] xx_hotkey_v1 available; global hotkeys enabled");
+	} else {
+		os_atomic_set_bool(&plat->global_hotkey_running, false);
+		blog(LOG_WARNING, "[wayland] failed to start global hotkey thread; global hotkeys disabled");
+		close(plat->global_hotkey_stop_pipe[0]);
+		close(plat->global_hotkey_stop_pipe[1]);
+		xx_hotkey_manager_v1_destroy(plat->global_hotkey_manager);
+		plat->global_hotkey_manager = NULL;
+		wl_event_queue_destroy(plat->global_hotkey_queue);
+		plat->global_hotkey_queue = NULL;
+	}
+}
+
+static void global_hotkey_free(obs_hotkeys_platform_t *plat)
+{
+	if (plat->global_hotkey_thread_active) {
+		os_atomic_set_bool(&plat->global_hotkey_running, false);
+		const char stop = 1;
+		(void)!write(plat->global_hotkey_stop_pipe[1], &stop, 1);
+		pthread_join(plat->global_hotkey_thread, NULL);
+		plat->global_hotkey_thread_active = false;
+		close(plat->global_hotkey_stop_pipe[0]);
+		close(plat->global_hotkey_stop_pipe[1]);
+	}
+
+	for (size_t i = 0; i < plat->global_hotkey_bindings.num; i++) {
+		struct global_hotkey_binding *binding = plat->global_hotkey_bindings.array[i];
+		if (binding->obj)
+			xx_hotkey_v1_destroy(binding->obj);
+		bfree(binding);
+	}
+	da_free(plat->global_hotkey_bindings);
+	da_free(plat->global_hotkey_denied);
+	da_free(plat->global_hotkey_held);
+
+	if (plat->global_hotkey_manager) {
+		xx_hotkey_manager_v1_destroy(plat->global_hotkey_manager);
+		plat->global_hotkey_manager = NULL;
+		wl_display_flush(plat->display);
+	}
+	if (plat->global_hotkey_queue) {
+		wl_event_queue_destroy(plat->global_hotkey_queue);
+		plat->global_hotkey_queue = NULL;
+	}
+	pthread_mutex_destroy(&plat->global_hotkey_mutex);
+}
+
 void obs_nix_wayland_log_info(void)
 {
 	struct wl_display *display = obs_get_nix_platform_display();
@@ -246,12 +851,16 @@ static bool obs_nix_wayland_hotkeys_platform_init(struct obs_core_hotkeys *hotke
 	struct wl_registry *registry = wl_display_get_registry(display);
 	wl_registry_add_listener(registry, &registry_listener, hotkeys->platform_context);
 	wl_display_roundtrip(display);
+
+	pthread_mutex_init(&hotkeys->platform_context->global_hotkey_mutex, NULL);
+	global_hotkey_init(hotkeys->platform_context);
 	return true;
 }
 
 static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys)
 {
 	obs_hotkeys_platform_t *plat = hotkeys->platform_context;
+	global_hotkey_free(plat);
 	xkb_context_unref(plat->xkb_context);
 	xkb_keymap_unref(plat->xkb_keymap);
 	xkb_state_unref(plat->xkb_state);
@@ -260,14 +869,43 @@ static void obs_nix_wayland_hotkeys_platform_free(struct obs_core_hotkeys *hotke
 
 static bool obs_nix_wayland_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context, obs_key_t key)
 {
-	UNUSED_PARAMETER(context);
-	UNUSED_PARAMETER(key);
-	// This function is only used by the hotkey thread for capturing out of
-	// focus hotkey triggers. Since wayland never delivers key events when out
-	// of focus we leave this blank intentionally.
-	return false;
-}
+	/* A modifier key is pressed if any held combination requires it, any
+	 * other key if a held combination uses it as its trigger. Without the
+	 * protocol global_hotkey_held stays empty and this returns false as it always
+	 * did on Wayland.
+	 *
+	 * The caller is the libobs hotkey thread holding obs->hotkeys.mutex,
+	 * so every entry present now stays present for the whole poll cycle;
+	 * mark them all observed. */
+	bool pressed = false;
+	pthread_mutex_lock(&context->global_hotkey_mutex);
+	for (size_t i = 0; i < context->global_hotkey_held.num; i++) {
+		struct global_hotkey_held *held = &context->global_hotkey_held.array[i];
+		held->observed = true;
+		if (pressed)
+			continue;
 
+		switch (key) {
+		case OBS_KEY_SHIFT:
+			pressed = held->combo.modifiers & INTERACT_SHIFT_KEY;
+			break;
+		case OBS_KEY_CONTROL:
+			pressed = held->combo.modifiers & INTERACT_CONTROL_KEY;
+			break;
+		case OBS_KEY_ALT:
+			pressed = held->combo.modifiers & INTERACT_ALT_KEY;
+			break;
+		case OBS_KEY_META:
+			pressed = held->combo.modifiers & INTERACT_COMMAND_KEY;
+			break;
+		default:
+			pressed = held->combo.key == key;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&context->global_hotkey_mutex);
+	return pressed;
+}
 static void obs_nix_wayland_key_to_str(obs_key_t key, struct dstr *dstr)
 {
 	if (key >= OBS_KEY_MOUSE1 && key <= OBS_KEY_MOUSE29) {
