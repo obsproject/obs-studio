@@ -2123,11 +2123,27 @@
             "servers": [
                 {
                     "name": "North America",
-                    "url": "rtmp://live.joystick.tv/live/"
+                    "url": "rtmp://ingest.playbackhost.com/live/"
+                },
+                {
+                    "name": "North America (RTMPS)",
+                    "url": "rtmps://ingest.playbackhost.com:1937/live/"
+                },
+                {
+                    "name": "North America Southeast",
+                    "url": "rtmp://ingest-na-se.playbackhost.com/live/"
+                },
+                {
+                    "name": "North America Southeast (RTMPS)",
+                    "url": "rtmps://ingest-na-se.playbackhost.com:1937/live/"
                 },
                 {
                     "name": "Europe",
-                    "url": "rtmp://eu.live.joystick.tv/live/"
+                    "url": "rtmp://ingest-eu.playbackhost.com/live/"
+                },
+                {
+                    "name": "Europe (RTMPS)",
+                    "url": "rtmps://ingest-eu.playbackhost.com:1937/live/"
                 }
             ],
             "recommended": {
