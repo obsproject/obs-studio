@@ -6,11 +6,14 @@ if(NOT TARGET OBS::w32-pthreads)
   add_subdirectory("${CMAKE_SOURCE_DIR}/deps/w32-pthreads" "${CMAKE_BINARY_DIR}/deps/w32-pthreads")
 endif()
 
-find_package(MbedTLS 3...<4 REQUIRED)
+include("${CMAKE_SOURCE_DIR}/cmake/common/crypto-backend.cmake")
+
 find_package(Detours REQUIRED)
 find_package(nlohmann_json 3.11 REQUIRED)
 
 configure_file(cmake/windows/obs.rc.in obs.rc)
+
+get_target_property(crypto_helpers_source OBS::crypto OBS_CRYPTO_HELPERS_SOURCE)
 
 target_sources(
   obs-studio
@@ -28,7 +31,7 @@ target_sources(
     utility/WhatsNewBrowserInitThread.hpp
     utility/WhatsNewInfoThread.cpp
     utility/WhatsNewInfoThread.hpp
-    utility/crypto-helpers-mbedtls.cpp
+    ${crypto_helpers_source}
     utility/crypto-helpers.hpp
     utility/models/branches.hpp
     utility/models/whatsnew.hpp
@@ -51,7 +54,7 @@ target_link_libraries(
     OBS::blake2
     OBS::updater-manifest
     OBS::w32-pthreads
-    MbedTLS::mbedtls
+    OBS::crypto
     nlohmann_json::nlohmann_json
     Detours::Detours
 )
