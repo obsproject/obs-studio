@@ -1681,16 +1681,23 @@ bool obs_scripting_load_python(const char *python_path)
 		return false;
 #endif
 
-	/* ---------------------------------------------- */
-	/* Must set arguments for guis to work            */
+/* PySys_SetArgv has been deprecated since Python 3.11 and will be removed
+in Python 3.15. Use PyConfig_InitPythonConfig instead, which was added
+in Python 3.8. */
+PyConfig config;
+PyConfig_InitPythonConfig(&config);
 
-	wchar_t *argv[] = {L"", NULL};
-	int argc = sizeof(argv) / sizeof(wchar_t *) - 1;
+config.parse_argv = 0;
+config.safe_path = 1;
 
-	PRAGMA_WARN_PUSH
-	PRAGMA_WARN_DEPRECATION
-	PySys_SetArgv(argc, argv);
-	PRAGMA_WARN_POP
+PyWideStringList_Append(&config.argv, L"");
+
+PyStatus status = Py_InitializeFromConfig(&config);
+PyConfig_Clear(&config);
+
+if (PyStatus_Exception(status)) {
+	Py_ExitStatusException(status);
+}
 
 #ifdef __APPLE__
 	PyRun_SimpleString("import sys");
