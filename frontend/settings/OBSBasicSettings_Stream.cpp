@@ -1058,6 +1058,7 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 	BPtr<obs_service_resolution> res_list;
 	size_t res_count;
 	int fps;
+	const char *protocol = obs_service_get_protocol(service);
 
 	obs_service_get_max_bitrate(service, &vbitrate, &abitrate);
 	obs_service_get_supported_resolutions(service, &res_list, &res_count);
@@ -1101,6 +1102,14 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 		}
 
 		text += ENFORCE_TEXT("MaxFPS").arg(QString::number(fps));
+	}
+	if (astrcmpi(protocol, "rtmp") == 0 ||
+		astrcmpi(protocol, "rtmps") == 0) {
+		if (!text.isEmpty()) {
+			text += "<br>";
+		}
+
+		text += ENFORCE_TEXT("RTMPRateControlWarn");
 	}
 #undef ENFORCE_TEXT
 
